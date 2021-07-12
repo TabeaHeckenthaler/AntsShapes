@@ -1,0 +1,3 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-12 (Shed various tests)
+fps = 30
+S4080021 13:46 L

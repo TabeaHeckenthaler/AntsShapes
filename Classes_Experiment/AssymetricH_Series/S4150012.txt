@@ -1,0 +1,3 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-24 (Shed small HI)
+fps = 30
+S4150012 11:19 R

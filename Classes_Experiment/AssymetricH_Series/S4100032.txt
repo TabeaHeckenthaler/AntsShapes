@@ -1,0 +1,5 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-16 (Shed special T & sHT)
+fps = 30
+S4100032 14:50 L 
+S4100035 15:06 R
+S4100036 15:09 L

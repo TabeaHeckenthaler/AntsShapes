@@ -1,0 +1,7 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-11 (Shed sHIT & asymmetric H)
+fps = 25
+S4170022 14:48 R
+S4170024 14:55 L
+S4170026 15:02 L
+S4170032 15:13 R R
+S4170033 15:17 R

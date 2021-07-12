@@ -1,0 +1,5 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-11 (Line's nest, 3D printed chiral H)
+fps = 50
+S4210001 10:27 R R R R R 
+S4210002 10:38 R R R R R
+S4210003 10:50 R R L

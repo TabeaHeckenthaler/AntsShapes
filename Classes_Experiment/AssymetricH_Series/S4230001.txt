@@ -1,0 +1,9 @@
+\\antgranary\Data\Aviram\Shapes\2019-09-15 (Line's nest, 3D printed chrital H)
+fps = 50
+S4230001 11:55 L L L L R R
+S4230002 12:07 R R L L R R L L R
+S4230003 12:18 R L R R R L L L R R R 
+S4230004 12:30 L L L L R R 
+S4230005 12:42 R R R R L L L R 
+S4230006 12:53 R R R L L 
+S4230007 13:58 L 
