@@ -1,13 +1,13 @@
 import pandas as pd
 from os import listdir
-from trajectory import home, solvers, SaverDirectories, Get, communication, length_unit, length_unit_func, maze_size
+from trajectory import data_home, solvers, SaverDirectories, Get, communication, length_unit, length_unit_func, maze_size
 from Analysis_Functions.Pathlength import path_length_per_experiment, path_length_during_attempts
 from tqdm import tqdm
 from Setup.Maze import Maze
 from Setup.Attempts import Attempts
 import numpy as np
 
-df_dir = home + 'DataFrame\\data_frame'
+df_dir = data_home + 'DataFrame\\data_frame'
 
 
 def get_filenames(solver):

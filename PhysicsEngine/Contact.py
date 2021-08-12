@@ -63,9 +63,10 @@ def Contact_loop2(load, maze):
     return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
 
 
-def Contact_loop(load_vertices, my_maze):
+def Contact_loop(my_load, my_maze):
     contact = []
     edge_points = []
+    load_vertices = Load_loop(my_load)
     for NumFixture in range(int(len(load_vertices) / 4)):
         edge_points = edge_points + BoxIt(load_vertices[NumFixture * 4:(NumFixture + 1) * 4],
                                           distance_upper_bound).tolist()

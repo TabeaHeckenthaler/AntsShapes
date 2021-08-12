@@ -5,6 +5,7 @@ from progressbar import progressbar
 import itertools
 from joblib import Parallel, delayed
 
+
 solver = 'ant'
 shapes = ['H', 'I', 'T', 'SPT']
 sizes = ['XL']

@@ -66,8 +66,8 @@ def participants_force_arrows(x, my_load, i):
                                          np.sin(
                                              x.angle[i] + x.participants.frames[i].angle[name] + angle_shift[name])]],
                            str(name + 1)))
-        if abs(x.participants.frames[i].angle[name]) > np.pi / 2:
-            print()
+        # if abs(x.participants.frames[i].angle[name]) > np.pi / 2:
+        #     print()
     return arrows
 
 

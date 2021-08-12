@@ -157,6 +157,8 @@ def AddLoadFixtures(load, size, shape, solver):
 
     if shape == 'SPT':  # This is the Special T
         [shape_height, shape_width, shape_thickness, _] = getLoadDim(solver, shape, size)
+        print(str(getLoadDim(solver, shape, size)))
+
         # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the long middle
         h = shift * shape_width  # distance of the centroid away from the center of the long middle
         # part of the T. (1.445 calculated)

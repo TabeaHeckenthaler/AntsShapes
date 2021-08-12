@@ -80,7 +80,7 @@ class PhaseSpace(object):
                                   (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))))
         print("PhaseSpace: Calculating space " + self.name)
 
-        # lines_stat, circles = Display_setup(maze, [], [])
+        # lines_stat, circles = screen(maze, [], [])
 
         for x, y, theta in self.iterate_coordinates():
             load.position, load.angle = [x, y], float(theta)

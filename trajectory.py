@@ -26,9 +26,10 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'human': ['S', 'M', 'L'],
          'humanhand': ''}
 solvers = ['ant', 'human', 'humanhand', 'dstar']
-home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
-work_dir = home + 'Pickled_Trajectories\\'
 
+home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
+data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
+work_dir = data_home + 'Pickled_Trajectories\\'
 AntSaverDirectory = work_dir + 'Ant_Trajectories'
 HumanSaverDirectory = work_dir + 'Human_Trajectories'
 HumanHandSaverDirectory = work_dir + 'HumanHand_Trajectories'
@@ -776,9 +777,12 @@ class Trajectory:
             Save(self)
         return self, complaints
 
-    def play(self, interval, *args, **kwargs):
+    def step(self, my_load, i):
+        my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
+        return
+
+    def play(self, *args, interval=1, **kwargs):
         from copy import deepcopy
-        from Load_tracked_data.Load_Experiment import step
         x = deepcopy(self)
 
         if hasattr(x, 'contact'):
@@ -800,4 +804,4 @@ class Trajectory:
         if 'L_I_425' in x.filename:
             args = args + ('L_I1',)
 
-        return Box2D_GameLoops.MainGameLoop(x, *args, interval=interval, step=step, **kwargs)
+        return Box2D_GameLoops.MainGameLoop(x, *args, display=True, interval=interval, **kwargs)

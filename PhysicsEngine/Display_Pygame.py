@@ -5,9 +5,10 @@ from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP,
                            K_RIGHT, K_LEFT, K_r, K_l)
 import math
 import pygame.camera
+from Setup.Load import Load_loop
 
 global Delta_total, DeltaAngle_total
-PPM, SCREEN_HEIGHT, screen = 0, 0, 0
+PPM, SCREEN_HEIGHT, SCREEN_WIDTH = 0, 0, 0
 Delta_total, DeltaAngle_total = [0, 0], 0
 
 # printable colors
@@ -27,7 +28,35 @@ pygame.font.init()  # display and fonts
 font = pygame.font.Font('freesansbold.ttf', 25)
 
 
-def Display_setup(my_maze, lines_stat, circles_stat, free=False):
+def lines_circles_points(my_maze, my_load=None, lines=None, circles=None, points=None):
+    if lines is None:
+        lines = []
+    if circles is None:
+        circles = []
+    if points is None:
+        points = []
+
+    for body in my_maze.bodies:
+        for fixture in body.fixtures:
+            if not (body.userData == 'my_load'):
+                if str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2PolygonShape'>":
+                    lines.append([[(body.transform * v) for v in fixture.shape.vertices],
+                                  colors[body.userData]])
+                elif str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2CircleShape'>":
+                    circles.append([fixture.shape.radius,
+                                    body.position + fixture.shape.pos,
+                                    colors[body.userData]])
+
+    if my_load is not None:
+        points = points + [my_load.position]
+        load_vertices = Load_loop(my_load)
+        for ii in range(int(len(load_vertices) / 4)):
+            lines.append([load_vertices[ii * 4: ii * 4 + 4], colors[my_load.userData]])  # Display the load
+
+    return lines, circles, points
+
+
+def Display_screen(my_maze=None, free=False):
     pygame.font.init()  # display and fonts
     pygame.font.Font('freesansbold.ttf', 25)
     global screen, PPM, SCREEN_HEIGHT
@@ -47,21 +76,10 @@ def Display_setup(my_maze, lines_stat, circles_stat, free=False):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     # 0 means default display, 32 is the depth
     # (something about colour and bits)
-    pygame.display.set_caption(my_maze.shape + '  ' + my_maze.size + '  Ants solver')
+    if my_maze is not None:
+        pygame.display.set_caption(my_maze.shape + '  ' + my_maze.size + '  Ants solver')
     # what to print on top of the game window
-
-    ''' Draw the fixtures which are not moving '''
-    for body in my_maze.bodies:
-        for fixture in body.fixtures:
-            if not (body.userData == 'my_load'):
-                if str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2PolygonShape'>":
-                    lines_stat.append([[(body.transform * v) for v in fixture.shape.vertices],
-                                       colors[body.userData]])
-                elif str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2CircleShape'>":
-                    circles_stat.append([fixture.shape.radius,
-                                         body.position + fixture.shape.pos,
-                                         colors[body.userData]])
-    return lines_stat, circles_stat
+    return screen
 
 
 def event_key(key, delta, delta_angle, lateral=0.05, rotational=0.01):
@@ -80,20 +98,15 @@ def event_key(key, delta, delta_angle, lateral=0.05, rotational=0.01):
     return list(delta), delta_angle
 
 
-def Pygame_EventManager(i, my_maze, my_load, points, lines, circles, *args, **kwargs):
-    from Setup.Load import Load_loop
+def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, **kwargs):
     global Delta_total, DeltaAngle_total
     pause = False
 
     if 'pause' in kwargs:
         pause = kwargs['pause']
 
-    points = points + [my_load.position]
-    load_vertices = Load_loop(my_load)
-    for ii in range(int(len(load_vertices) / 4)):
-        lines.append([load_vertices[ii * 4: ii * 4 + 4], colors[my_load.userData]])  # Display the load
-
-    Display_loop(i, my_maze, my_load, points, lines, circles, *args, **kwargs)
+    Display_renew(screen, my_maze=my_maze, i=i, **kwargs)
+    Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, **kwargs)
     events = pygame.event.get()
 
     for event in events:  # what happened in the last event?
@@ -106,7 +119,6 @@ def Pygame_EventManager(i, my_maze, my_load, points, lines, circles, *args, **kw
             pause = not pause
 
     if pause:
-        # breakpoint()
         delta, delta_angle = [0, 0], 0
 
         for event in events:
@@ -127,7 +139,7 @@ def Pygame_EventManager(i, my_maze, my_load, points, lines, circles, *args, **kw
     return True, i, pause
 
 
-def arrow(start, end, *args):
+def arrow(start, end, name, screen):
     rad = math.pi / 180
     start, end = [int(start[0] * PPM), SCREEN_HEIGHT - int(start[1] * PPM)], \
                  [int(end[0] * PPM), SCREEN_HEIGHT - int(end[1] * PPM)]
@@ -142,23 +154,17 @@ def arrow(start, end, *args):
                                                   (end[0] + trirad * math.sin(rotation + arrow_width * rad),
                                                    end[1] + trirad * math.cos(rotation + arrow_width * rad))))
 
-    for a in args:
-        text = font.render(str(a), True, colors['text'])
-        screen.blit(text, start)
+    text = font.render(str(name), True, colors['text'])
+    screen.blit(text, start)
     return
 
 
-#
-# scale_factor=1, color=(0, 0, 0)
-# scale_factor=0.2,color=(1, 0, 0)
-
-def Display_renew(i, my_maze, *args, interval=1, **kwargs):
+def Display_renew(screen, my_maze=None, *args, interval=1, i=0, **kwargs):
     """
     :param int i: index of frame
     :param Maze my_maze: maze
     :param int interval: interval between two displayed frames
     """
-    global screen, PPM, SCREEN_HEIGHT
     if 'wait' in kwargs.keys():
         pygame.time.wait(int(kwargs['wait']))
 
@@ -167,8 +173,9 @@ def Display_renew(i, my_maze, *args, interval=1, **kwargs):
     else:
         attempt = ''
     screen.fill(colors['background' + attempt])
-
-    DrawGrid(screen, my_maze.arena_length, my_maze.arena_height, PPM, SCREEN_HEIGHT)
+    if my_maze is not None:
+        global PPM, SCREEN_HEIGHT
+        DrawGrid(screen, my_maze.arena_length, my_maze.arena_height, PPM, SCREEN_HEIGHT)
     if 'Trajectory' in kwargs.keys():
         x = kwargs['Trajectory']
 
@@ -184,7 +191,16 @@ def Display_renew(i, my_maze, *args, interval=1, **kwargs):
         screen.blit(text, text_rect)
 
 
-def Display_loop(i, my_maze, my_load, points, lines, circles, *args, free=False, **kwargs):
+def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=None, circles=None, points=None, **kwargs):
+    if lines is None:
+        lines = []
+    if circles is None:
+        circles = []
+    if points is None:
+        points = []
+
+    lines, circles, points = lines_circles_points(my_maze, my_load=my_load, lines=lines, circles=circles, points=points)
+
     # and draw all the circles passed (hollow, so I put two on top of each other)
     if "PhaseSpace" in kwargs.keys():
         if i < kwargs['interval']:
@@ -194,8 +210,8 @@ def Display_loop(i, my_maze, my_load, points, lines, circles, *args, free=False,
                                                                        color=(0, 0, 0))
         else:
             kwargs['ps_figure'] = kwargs["PhaseSpace"].draw_trajectory(kwargs['ps_figure'],
-                                                                       my_load.position[i:i+kwargs['interval']],
-                                                                       my_load.angle[i:i+kwargs['interval']],
+                                                                       my_load.position[i:i + kwargs['interval']],
+                                                                       my_load.angle[i:i + kwargs['interval']],
                                                                        scale_factor=1,
                                                                        color=(1, 0, 0))
 
@@ -240,7 +256,7 @@ def Display_loop(i, my_maze, my_load, points, lines, circles, *args, free=False,
 
     if 'arrows' in kwargs:
         for a_i in kwargs['arrows']:
-            arrow(*a_i)
+            arrow(*a_i, screen)
 
     if 'participants' in kwargs:
         for part in kwargs['participants'](x, my_load):
@@ -251,9 +267,12 @@ def Display_loop(i, my_maze, my_load, points, lines, circles, *args, free=False,
     return
 
 
-def Display_end(filename):
+def Display_end(filename=None):
     # global Delta_total
-    # CreatePNG(pygame.display.get_surface(), filename)
+
+    if filename is not None:
+        CreatePNG(pygame.display.get_surface(), filename)
+
     pygame.display.quit()
     # pygame.quit()
     return False

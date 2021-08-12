@@ -46,7 +46,7 @@ def force_filename(human):
     return text_file_name
 
 
-def convert_to_frames(x, times):
+def convert_to_frames(fps, times):
     seconds = [int(time[0].split(':')[0]) * 3600 + int(time[0].split(':')[1]) * 60 + int(time[0].split(':')[2]) for time
                in times]
     seconds = [sec - seconds[0] for sec in seconds]
@@ -54,7 +54,7 @@ def convert_to_frames(x, times):
     for second in range(seconds[-1]):
         measurements_per_second = len([sec for sec in seconds if sec == second])
         for ii in range(measurements_per_second):
-            frames.append(second * x.fps + int(ii * x.fps / measurements_per_second))
+            frames.append(second * fps + int(ii * fps / measurements_per_second))
     return frames
 
 
@@ -114,6 +114,7 @@ class Humans:
         self.number = len(self.gender())
         self.occupied = list(self.gender().keys())
         if isinstance(sheet.cell(row=excel_worksheet_index(self.filename), column=16).value, str):
+            self.matlab_human_loading(x)
             self.forces_loading(x)
         self.gender_string = self.gender()
 
@@ -145,11 +146,12 @@ class Humans:
         return
 
     def forces_loading(self, x):
+        # read force meter file
         with open(force_directory(self) + path.sep + force_filename(self), 'r') as f:
             reader = csv.reader(f, delimiter='\t')
             text_file_content = [line for line in reader]
 
-        sampled_frames = convert_to_frames(x, text_file_content[1::2][1:-1])
+        sampled_frames = convert_to_frames(x.fps, text_file_content[1::2][1:-1])
 
         # load forces and set them relative to the baseline
         forces = [[float(fu) for fu in fo[0].split(' ') if len(fu) > 1] for fo in text_file_content[0::2][:-1]]
@@ -161,12 +163,15 @@ class Humans:
             forces[:, empty_index] = np.zeros(forces[:, empty_index].shape)
         forces_all_frames = []
 
+        # every frame of the movie gets a force for every force meter
         for frames_index in range(len(sampled_frames) - 1):
             for ii in range(sampled_frames[frames_index], sampled_frames[frames_index + 1]):
                 forces_all_frames.append(forces[frames_index])
 
+        # find the offset of the first frame of the movie to the start of the force meter measurement
         synch_offset = synchronization_offset(self, x)
 
+        # write the force into the self.frame[:].forces variable
         for i, force_index in enumerate(range(synch_offset, len(self.frames) + synch_offset)):
             if force_index > len(forces_all_frames) - 1:
                 self.frames[i].forces = [np.nan for i in range(9)]

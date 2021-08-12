@@ -1,10 +1,10 @@
 import pandas as pd
 from os import listdir
-from trajectory import home, solvers, SaverDirectories, Get, Save
+from trajectory import data_home, solvers, SaverDirectories, Get, Save
 import numpy as np
 from DataFrame.create_dataframe import get_filenames
 
-df_dir = home + 'DataFrame\\data_frame'
+df_dir = data_home + 'DataFrame\\data_frame'
 
 solver = 'dstar'
 df = pd.read_json(df_dir + '.json')

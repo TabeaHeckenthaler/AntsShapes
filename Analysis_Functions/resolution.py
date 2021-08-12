@@ -1,4 +1,4 @@
-from trajectory import Get, home
+from trajectory import Get, data_home, home
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
@@ -11,11 +11,13 @@ from Setup.Maze import ResizeFactors
 # What is the dependency on size?
 # Give an upper boundary on the noise for XL and recalculate for size.
 
-df = pd.read_json(home + 'DataFrame\\data_frame.json')
+df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
 
 df_dir = home + 'Analysis_Functions\\resolution_noise_exp'
 # TODO: resolution dependent on object size
 
+# x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')
+# x.play(10, 'Display')
 
 def resolution(size, solver):
     return 0.1 * ResizeFactors[solver][size]
@@ -24,8 +26,10 @@ def resolution(size, solver):
 def noise(values):
     return np.abs(np.mean(values[1:] - values[:-1]))
 
-#
-# filenames_group = df[['filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
+
+
+
+# filenames_group = df[[d'filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
 # columns = ['filename', 'size', 'shape', 'x noise', 'theta noise']
 # df_noise = pd.DataFrame(
 #     # columns=columns, index=['filename', ]

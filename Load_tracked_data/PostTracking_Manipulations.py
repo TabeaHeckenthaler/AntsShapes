@@ -1,6 +1,6 @@
 import trajectory
 import numpy as np
-from Load_tracked_data.Load_Experiment import MainGameLoop
+from PhysicsEngine.Box2D_GameLoops import MainGameLoop
 from scipy.ndimage import gaussian_filter
 
 
@@ -12,21 +12,21 @@ def SmoothConnector(file1, file2):
     velocity1 = velocity(file1.position, file1.angle, file1.fps, file1.size, file1.shape, 1, 'x', 'y')
     velocity2 = velocity(file2.position, file2.angle, file2.fps, file2.size, file2.shape, 1, 'x', 'y')
 
-    con_vel = max(0.01, np.mean(np.hstack([velocity1[:, -200:-1],velocity2[:, 1:200]])))
+    con_vel = max(0.01, np.mean(np.hstack([velocity1[:, -200:-1], velocity2[:, 1:200]])))
     # connector velocity in distance (cm) per frame
 
     # Instantiate a new load which has the right starting position
     connector_load = trajectory.Trajectory(size=file1.size, shape=file1.shape, solver=file1.solver,
-                                          filename=file1.VideoChain[-1] + '_CONNECTOR_' + file2.VideoChain[0],
-                                          free=file1.free, fps=file1.fps,
-                                          winner=False,
-                                          )
+                                           filename=file1.VideoChain[-1] + '_CONNECTOR_' + file2.VideoChain[0],
+                                           free=file1.free, fps=file1.fps,
+                                           winner=False,
+                                           )
     # Find the end position
     dx = file1.position[-1][0] - file2.position[1][0]
     dy = file1.position[-1][1] - file2.position[1][1]
 
     per = 2 * np.pi / periodicity[file1.shape]
-    con_frames = int(np.sqrt(dx**2 + dy**2) / con_vel)
+    con_frames = int(np.sqrt(dx ** 2 + dy ** 2) / con_vel)
 
     connector_load.position, connector_load.angle, connector_load.frames = np.ndarray([con_frames, 2]), np.ndarray(
         [con_frames]), np.ndarray([con_frames])
@@ -40,8 +40,7 @@ def SmoothConnector(file1, file2):
     # all the other stuff
     connector_load.frames = np.int0(np.linspace(1, con_frames, num=con_frames))
     # connector_load.contact = [[] for i in range(len(connector_load.frames))]
-    from Load_tracked_data.Load_Experiment import step
-    connector_load = MainGameLoop(connector_load, step=step)
+    connector_load = MainGameLoop(connector_load)
     return connector_load
 
 

@@ -7,11 +7,6 @@ Created on Sun May  3 10:35:01 2020
 from PhysicsEngine.Box2D_GameLoops import MainGameLoop
 
 
-def step(my_load, x, my_maze, i, pause, **kwargs):
-    my_load.position.x, my_load.position.y, my_load.angle = x.position[i][0], x.position[i][1], x.angle[i]
-    return my_load, x, my_maze, i
-
-
 def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_error, angle_error, fps, free,
                     *args, **kwargs):
     import trajectory
@@ -34,5 +29,5 @@ def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_erro
 
     if 'L_I_425' in x.filename:
         args = args + ('L_I1', )
-    x = MainGameLoop(x, step=step, *args, **kwargs)
+    x = MainGameLoop(x, *args, **kwargs)
     return x

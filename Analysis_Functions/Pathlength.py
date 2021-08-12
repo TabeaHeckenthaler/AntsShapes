@@ -51,7 +51,7 @@ def calculate_path_length(position, angle, aver_radius, shape, size, solver, rot
 
 
 from trajectory import Get, sizes
-p = [resolution(size, 'ant') for size in sizes]
+p = [resolution(size, 'ant') for size in sizes['ant']]
 x = Get('M_H_4180002_1_ants', 'ant')
 # x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
 calculate_path_length(x.position, x.angle, average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver,

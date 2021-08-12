@@ -2,7 +2,9 @@ import pandas as pd
 from scipy.ndimage import median_filter
 import numpy as np
 from Setup.MazeFunctions import extend
-from Setup.Load import getLoadDim, Load_loop
+from Setup.Maze import Maze
+from Setup.Load import getLoadDim, Load_loop, Load
+from trajectory import Get
 
 smoothing_window = 6
 
@@ -20,7 +22,8 @@ def Attempt_setup(x, my_load, my_attempt_zone, starting_line, *args):
     return x
 
 
-def Attempt_loop(finish_line, my_attempt_zone, load_vertices, interval=1, **kwargs):
+def Attempt_loop(finish_line, my_attempt_zone, my_load, interval=1, **kwargs):
+    load_vertices = Load_loop(my_load)
     inside = False
     for zone_fixture in my_attempt_zone.fixtures:
         for vertices in load_vertices:
@@ -86,7 +89,7 @@ def AddAttemptZone(my_maze, x, **kwargs):
     for fix in my_attempts_zone.fixtures:
         fix.sensor = True
 
-    return my_maze, my_attempts_zone
+    return my_attempts_zone
 
 
 def Attempts(x, *args, **kwargs):
@@ -140,3 +143,23 @@ def AttemptDuration(x, *args, **kwargs):
     for at in a:
         durations.append((at[-1] - at[0]) / x.fps)
     return np.sum(durations), [['Duration per attempt', 'Duration/exit_size [s/cm]']]
+
+
+if __name__ == '__main__':
+    solver = 'human'
+    x = Get('medium_20201221135753_20201221140218', solver)
+    attempts = [False]
+    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
+    my_attempt_zone = AddAttemptZone(my_maze, x)
+    my_load = Load(my_maze)
+    my_load.position = x.position[0]
+    my_load.angle = x.angle[0]
+
+    starting_line = -AttemptZoneDim(x.solver, x.shape, x.size, my_maze)[0] + my_maze.slits[0]
+    finish_line = my_maze.slits[-1] + my_maze.wallthick
+
+    for i in range(10):
+        attempts = attempts + Attempt_loop(finish_line, my_attempt_zone, my_load, **kwargs)
+        kwargs['attempt'] = attempts[-1]
+
+    x = Attempt_setup(x, my_load, my_attempt_zone, starting_line)
