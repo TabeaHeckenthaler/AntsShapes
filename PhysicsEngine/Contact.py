@@ -3,12 +3,50 @@ from Setup.MazeFunctions import BoxIt
 import numpy as np
 from Setup.Maze import Maze, maze_corners
 from Analysis_Functions.Velocity import velocity_x
-from Setup.Load import Load_loop
+from Setup.Load import Load_loop, Load
+from PhysicsEngine.Display_Pygame import Display_screen, Display_end, Pygame_EventManager
 
 distance_upper_bound = 0.04
 
 
 # maximum distance between fixtures to have a contact (in cm)
+def find_contact(x, display=False):
+    contact = []
+    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
+    my_load = Load(my_maze, position=x.position[0])
+    running, pause = True, False
+
+    # # to display single frame
+    # screen = Display_screen(my_maze=my_maze)
+    # Display_renew(screen)
+    # Display_loop(my_load, my_maze, screen)
+    # Display_end()
+    #
+    # to find contact in entire experiment
+    if display:
+        screen = Display_screen(my_maze=my_maze)
+
+    i = 0
+    while i < len(x.frames):
+        x.step(my_load, i)  # update the position of the load (very simple function, take a look)
+
+        if not pause:
+            contact.append(Contact_loop(my_load, my_maze))
+            i += 1
+
+        if display:
+            """Option 1"""
+            # more simplistic, you are just renewing the screen, and displaying the objects
+            # Display_renew(screen)
+            # Display_loop(my_load, my_maze, screen, points=contact[-1])
+
+            """Option 2"""
+            # if you want to be able to pause the display, use this command:
+            running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=pause, points=contact[-1])
+
+    if display:
+        Display_end()
+    return contact
 
 
 def theta(r):
