@@ -7,7 +7,7 @@ Created on Thu Jun 11 12:55:29 2020
 import numpy as np
 import random as rd  # import (gauss, uniform)
 from trajectory import NewFileName, Trajectory
-from Setup.Load import Load_loop
+from Setup.Load import Loops
 from PhysicsEngine.Display_Pygame import arrow
 
 
@@ -31,7 +31,7 @@ def Forces(my_load, x, my_maze, **kwargs):
     gravCenter = np.array([my_maze.arena_length * grC,
                            my_maze.arena_height / 2])  # this is the 'far away point', to which the load gravitates
 
-    load_vertices = Load_loop(my_load)
+    load_vertices = Loops(my_load)
 
     """ Where Force attaches """
     ForceAttachments = [ClosestCorner(load_vertices, gravCenter)]
