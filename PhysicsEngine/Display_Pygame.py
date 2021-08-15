@@ -105,7 +105,7 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, **kwargs):
     if 'pause' in kwargs:
         pause = kwargs['pause']
 
-    Display_renew(screen, my_maze=my_maze, i=i, **kwargs)
+    Display_renew(screen, my_maze=my_maze, i=i, frame=x.frames[i], movie_name=x.old_filenames(0), **kwargs)
     Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, **kwargs)
     events = pygame.event.get()
 
@@ -159,7 +159,7 @@ def arrow(start, end, name, screen):
     return
 
 
-def Display_renew(screen, my_maze=None, *args, interval=1, i=0, **kwargs):
+def Display_renew(screen, my_maze=None, frame=None, movie_name=None, **kwargs):
     """
     :param int i: index of frame
     :param Maze my_maze: maze
@@ -176,18 +176,19 @@ def Display_renew(screen, my_maze=None, *args, interval=1, i=0, **kwargs):
     if my_maze is not None:
         global PPM, SCREEN_HEIGHT
         DrawGrid(screen, my_maze.arena_length, my_maze.arena_height, PPM, SCREEN_HEIGHT)
-    if 'Trajectory' in kwargs.keys():
-        x = kwargs['Trajectory']
 
-        movie = x.old_filenames(0)
-        if x.frames.size > 1:
-            text = font.render(movie, True, colors['text'])
-            text_rect = text.get_rect()
-            text2 = font.render('Frame: ' + str(x.frames[i]), True, colors['text'])
-            screen.blit(text2, [0, 25])
-        else:
-            text = font.render('Frame: ' + str(x.frames[0]), True, colors['text'])
-            text_rect = text.get_rect()
+    if frame is not None:
+        # x = kwargs['Trajectory']
+
+        # movie = x.old_filenames(0)
+        # if x.frames.size > 1:
+        text = font.render(movie_name, True, colors['text'])
+        text_rect = text.get_rect()
+        text2 = font.render('Frame: ' + str(frame), True, colors['text'])
+        screen.blit(text2, [0, 25])
+        # else:
+        #     text = font.render('Frame: ' + str(frame), True, colors['text'])
+        #     text_rect = text.get_rect()
         screen.blit(text, text_rect)
 
 

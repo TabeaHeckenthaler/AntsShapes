@@ -8,6 +8,7 @@ from PhysicsEngine.Contact import find_contact
 
 solver = 'human'
 x = Get('medium_20201221135753_20201221140218', solver)
+x.play()
 
 ''' find vertices '''
 my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
