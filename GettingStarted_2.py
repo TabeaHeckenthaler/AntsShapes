@@ -35,6 +35,7 @@ Display_end()
 # force_from_text(directory).shape
 
 # to find contact in entire experiment
+
 def find_entire_contacts(x, load):
     if display:
         screen = Display_screen(my_maze=my_maze)
