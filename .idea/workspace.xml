@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+<<<<<<< HEAD
   <component name="BranchesTreeState">
     <expand>
       <path>
@@ -20,11 +21,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="892b0549-1c2e-43c5-a0f5-b97459ff51b7" name="Default Changelist" comment="Display filename and frame number" />
+=======
+  <component name="ChangeListManager">
+    <list default="true" id="8b310bd3-c79a-4e00-9904-ff6cd7d7f163" name="Default Changelist" comment="08/12 - 05:16PM">
+      <change beforePath="$PROJECT_DIR$/061402.TXT" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/GettingStarted_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/GettingStarted_2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GettingStarted_3.py" beforeDir="false" afterPath="$PROJECT_DIR$/GettingStarted_3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pygame_EventManager" beforeDir="false" afterPath="$PROJECT_DIR$/Pygame_EventManager" afterDir="false" />
+    </list>
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+<<<<<<< HEAD
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -37,6 +48,12 @@
   </component>
   <component name="ProjectId" id="1nvqqWIYIFiQDfKaOsOVbhcWwly" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+=======
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1wcek9TBcCBqp3BF44QYrwOcrof" />
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -44,6 +61,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+<<<<<<< HEAD
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.github.ui.GithubSettingsConfigurable" />
@@ -134,6 +152,12 @@
       <method v="2" />
     </configuration>
     <configuration name="GettingStarted_3" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+=======
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../yuval" />
+  </component>
+  <component name="RunManager" selected="Python.GettingStarted_2">
+    <configuration name="GettingStarted_2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
       <module name="AntsShapes" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -145,7 +169,11 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+<<<<<<< HEAD
       <option name="SCRIPT_NAME" value="C:\Users\tabea\PycharmProjects\AntsShapes\GettingStarted_3.py" />
+=======
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/GettingStarted_2.py" />
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -166,6 +194,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+<<<<<<< HEAD
       <option name="SCRIPT_NAME" value="C:\Users\tabea\PycharmProjects\AntsShapes\GettingStarted_3.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -188,6 +217,9 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DataFrame/create_dataframe.py" />
+=======
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/GettingStarted_3.py" />
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -198,6 +230,7 @@
     </configuration>
     <recent_temporary>
       <list>
+<<<<<<< HEAD
         <item itemvalue="Python.GettingStarted_3 (1)" />
         <item itemvalue="Python.GettingStarted_3" />
         <item itemvalue="Python.Display_Pygame" />
@@ -260,6 +293,37 @@
       <updated>1629022175753</updated>
     </task>
     <option name="localTasksCounter" value="7" />
+=======
+        <item itemvalue="Python.GettingStarted_2" />
+        <item itemvalue="Python.GettingStarted_3" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8b310bd3-c79a-4e00-9904-ff6cd7d7f163" name="Default Changelist" comment="" />
+      <created>1628762446448</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1628762446448</updated>
+    </task>
+    <task id="LOCAL-00001" summary="08/12 - 05:16PM">
+      <created>1628777815080</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1628777815080</updated>
+    </task>
+    <task id="LOCAL-00002" summary="08/12 - 05:16PM">
+      <created>1628777872650</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1628777872650</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -272,6 +336,7 @@
         </entry>
       </map>
     </option>
+<<<<<<< HEAD
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
@@ -434,11 +499,18 @@
     </state>
     <state x="681" y="210" width="672" height="676" key="search.everywhere.popup/2560.0.2048.1112/0.0.2048.1112@0.0.2048.1112" timestamp="1628080977268" />
     <state x="3241" y="210" width="672" height="676" key="search.everywhere.popup/2560.0.2048.1112/0.0.2048.1112@2560.0.2048.1112" timestamp="1628751005869" />
+=======
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="08/12 - 05:16PM" />
+    <option name="LAST_COMMIT_MESSAGE" value="08/12 - 05:16PM" />
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+<<<<<<< HEAD
           <url>file://$PROJECT_DIR$/Analysis_Functions/Velocity.py</url>
           <line>97</line>
           <option name="timeStamp" value="66" />
@@ -604,5 +676,33 @@
         <watch expression="df_gr_solver" />
       </configuration>
     </watches-manager>
+=======
+          <url>file://$PROJECT_DIR$/Classes_Experiment/humans.py</url>
+          <line>211</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/GettingStarted_3.py</url>
+          <line>36</line>
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/GettingStarted_2.py</url>
+          <line>38</line>
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/GettingStarted_2.py</url>
+          <line>68</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/PhysicsEngine/Display_Pygame.py</url>
+          <line>182</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+>>>>>>> 7e94e3c08fc420bec1fa1b42a59a4e5dfbc51d65
   </component>
 </project>

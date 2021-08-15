@@ -146,6 +146,7 @@ class Humans:
         return
 
     def forces_loading(self, x):
+
         # read force meter file
         with open(force_directory(self) + path.sep + force_filename(self), 'r') as f:
             reader = csv.reader(f, delimiter='\t')
@@ -197,6 +198,18 @@ class Humans:
 
 def human_participants(x, my_load):
     return [force_attachment_positions(my_load, x)[name] for name in x.participants.occupied]
+
+
+def force_from_text(directory):
+    # read force meter file
+    with open(directory, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        text_file_content = [line for line in reader]
+
+    # load forces and set them relative to the baseline
+    forces = [[float(fu) for fu in fo[0].split(' ') if len(fu) > 1] for fo in text_file_content[0::2][:-1]]
+    # forces = relative_to_minimum(forces)
+    return np.array(forces)
 
 
 def excel_worksheet_index(filename):

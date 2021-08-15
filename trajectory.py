@@ -482,6 +482,7 @@ class Trajectory:
             for index in range(index1, index2):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
+
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 

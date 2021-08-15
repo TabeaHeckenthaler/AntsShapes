@@ -3,6 +3,7 @@ from Box2D import b2BodyDef, b2_staticBody, b2World
 from Setup.MazeFunctions import BoxIt
 from scipy.spatial import cKDTree
 from pandas import read_excel
+from os import path
 
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -54,7 +55,10 @@ class Maze(b2World):
         self.get_zone()
 
     def getMazeDim(self, *args):
-        df = read_excel('C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Setup\\MazeDimensions_' + self.solver + '.xlsx',
+        dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}ExperimentalSetup{6}'.format(path.sep, path.sep,
+                                                                       path.sep, path.sep, path.sep, path.sep, path.sep,
+                                                                                                 path.sep)
+        df = read_excel(dir + 'MazeDimensions_' + self.solver + '.xlsx',
                         engine='openpyxl')
         if self.solver in ['ant', 'dstar']:  # all measurements in cm
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
