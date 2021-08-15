@@ -1,0 +1,11 @@
+Reduce inspected frames for attempt partitioning to every 1th frame
+Attempt zone is a capsule.
+I cut off experiments once all the points crossed through the slit
+Counted as attempt if any corner of the shape is found in the AttemptZone in given frame
+Median filter with window 6 s, when separating attempts 
+Path length calculation smooths trajectory with Savitzky-Golay (order 2) with window size 1s.
+Path length calculation with rot = True as rot. distance * aver_radius
+Path length in experiment counted only during attempt
+Normalized by maze exit size
+Extended run by linear continuation in x direction until all the corners passed the finish line 
+Mean of data points with standard deviation divided by sqrt(data points) (standard error of the mean) 

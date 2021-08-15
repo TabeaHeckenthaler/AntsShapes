@@ -1,0 +1,2 @@
+trajectory smoothed with Gaussian (over 1 seconds)
+ only took component of velocity ('angle', 'abs')into account
