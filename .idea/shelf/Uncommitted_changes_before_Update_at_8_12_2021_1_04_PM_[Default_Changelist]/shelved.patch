@@ -1,8 +1,0 @@
-Index: .idea/.gitignore
-===================================================================
---- .idea/.gitignore	(revision 82d332ab96e09c923f496e321aa4c96307d8a0b4)
-+++ .idea/.gitignore	(revision 82d332ab96e09c923f496e321aa4c96307d8a0b4)
-@@ -1,3 +0,0 @@
--# Default ignored files
--/shelf/
--/workspace.xml
