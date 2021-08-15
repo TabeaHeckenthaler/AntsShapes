@@ -5,7 +5,7 @@ from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP,
                            K_RIGHT, K_LEFT, K_r, K_l)
 import math
 import pygame.camera
-from Setup.Load import Load_loop
+from Setup.Load import Loops
 
 global Delta_total, DeltaAngle_total
 PPM, SCREEN_HEIGHT, SCREEN_WIDTH = 0, 0, 0
@@ -37,23 +37,23 @@ def lines_circles_points(my_maze, my_load=None, lines=None, circles=None, points
         points = []
 
     for body in my_maze.bodies:
-        for fixture in body.fixtures:
-            if not (body.userData == 'my_load'):
-                if str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2PolygonShape'>":
-                    lines.append([[(body.transform * v) for v in fixture.shape.vertices],
-                                  colors[body.userData]])
-                elif str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2CircleShape'>":
-                    circles.append([fixture.shape.radius,
-                                    body.position + fixture.shape.pos,
-                                    colors[body.userData]])
+        body_lines(body, lines=lines, circles=circles, points=points)
 
     if my_load is not None:
-        points = points + [my_load.position]
-        load_vertices = Load_loop(my_load)
-        for ii in range(int(len(load_vertices) / 4)):
-            lines.append([load_vertices[ii * 4: ii * 4 + 4], colors[my_load.userData]])  # Display the load
+        body_lines(my_load, lines=lines, circles=circles, points=points)
 
     return lines, circles, points
+
+
+def body_lines(body, lines, circles, points):
+    for fixture in body.fixtures:
+        if str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2PolygonShape'>":
+            lines.append([[(body.transform * v) for v in fixture.shape.vertices], colors[body.userData]])
+        elif str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2CircleShape'>":
+            circles.append([fixture.shape.radius, body.position + fixture.shape.pos, colors[body.userData]])
+
+    if body.userData == 'my_load':
+            points.append(np.array(body.position))
 
 
 def Display_screen(my_maze=None, free=False):
@@ -199,7 +199,7 @@ def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=Non
     if points is None:
         points = []
 
-    lines, circles, points = lines_circles_points(my_maze, my_load=my_load, lines=lines, circles=circles, points=points)
+    lines, circles, points = lines_circles_points(my_maze, lines=lines, circles=circles, points=points)
 
     # and draw all the circles passed (hollow, so I put two on top of each other)
     if "PhaseSpace" in kwargs.keys():

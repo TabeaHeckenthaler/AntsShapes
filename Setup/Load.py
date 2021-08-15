@@ -11,12 +11,17 @@ assymetric_h_shift = 1.22 * 2
 # TODO: Does the load have a preferred orientation while moving?
 
 
-def Load_loop(my_load):
-    load_vertices = []
-    for fixture in my_load.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
-        vertices = [(my_load.transform * v) for v in fixture.shape.vertices]
-        load_vertices = load_vertices + vertices  # Save vertices of the load
-    return load_vertices
+def Loops(Box2D_Object, vertices=None):
+    if vertices is None:
+        vertices = []
+
+    if hasattr(Box2D_Object, 'bodies'):
+        for body in Box2D_Object.bodies:
+            Loops(body, vertices=vertices)
+    else:
+        for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
+            vertices.append([(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
+    return vertices
 
 
 def average_radius(size, shape, solver):

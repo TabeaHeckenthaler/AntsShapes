@@ -3,12 +3,45 @@ from Setup.MazeFunctions import BoxIt
 import numpy as np
 from Setup.Maze import Maze, maze_corners
 from Analysis_Functions.Velocity import velocity_x
-from Setup.Load import Load_loop
+from Setup.Load import Loops
+from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew, Display_loop
+from Setup.Load import Load
 
+# maximum distance between fixtures to have a contact (in cm)
 distance_upper_bound = 0.04
 
 
-# maximum distance between fixtures to have a contact (in cm)
+def find_contact(x, display=False):
+    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
+    my_load = Load(my_maze, position=x.position[0])
+    contact = []
+    running, pause = True, False
+
+    # to find contact in entire experiment
+    if display:
+        screen = Display_screen(my_maze=my_maze)
+
+    i = 0
+    while i < len(x.frames):
+        x.step(my_load, i)  # update the position of the load (very simple function, take a look)
+
+        if not pause:
+            contact.append(Contact_loop(my_load, my_maze))
+            i += 1
+
+        if display:
+            """Option 1"""
+            # more simplistic, you are just renewing the screen, and displaying the objects
+            Display_renew(screen)
+            Display_loop(my_load, my_maze, screen, points=contact[-1])
+
+            """Option 2"""
+            # if you want to be able to pause the display, use this command:
+            # running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=pause, points=contact[-1])
+
+    if display:
+        Display_end()
+    return
 
 
 def theta(r):
@@ -45,7 +78,7 @@ def Contact_loop2(load, maze):
     #     return False
 
     # if we are close enough to a boundary then we have to calculate all the vertices.
-    load_corners = Load_loop(load)
+    load_corners = Loops(load)
     maze_corners1 = maze_corners(maze)
     for load_NumFixture in range(int(len(load_corners) / 4)):
         load_vertices_list = load_corners[load_NumFixture * 4:(load_NumFixture + 1) * 4] \
@@ -66,12 +99,12 @@ def Contact_loop2(load, maze):
 def Contact_loop(my_load, my_maze):
     contact = []
     edge_points = []
-    load_vertices = Load_loop(my_load)
-    for NumFixture in range(int(len(load_vertices) / 4)):
-        edge_points = edge_points + BoxIt(load_vertices[NumFixture * 4:(NumFixture + 1) * 4],
-                                          distance_upper_bound).tolist()
-    load_tree = cKDTree(edge_points)
+    load_vertices = Loops(my_load)
 
+    for load_vertice in load_vertices:
+        edge_points = edge_points + BoxIt(load_vertice, distance_upper_bound).tolist()
+
+    load_tree = cKDTree(edge_points)
     in_contact = load_tree.query(my_maze.slitTree.data, distance_upper_bound=distance_upper_bound)[1] < \
                  load_tree.data.shape[0]
 
