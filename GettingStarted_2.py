@@ -13,7 +13,7 @@ import re
 ''' Display a experiment '''
 # names are found in P:\Tabea\PyCharm_Data\AntsShapes\Pickled_Trajectories\Human_Trajectories
 solver = 'human'
-x = Get('medium_20201221135753_20201221140218', solver)
+x = Get('large_20210526202254_20210526203449', solver)
 x.participants = Humans(x)
 x.play(forces=[participants_force_arrows])
 # press Esc to stop the display
@@ -22,7 +22,7 @@ x.play(forces=[participants_force_arrows])
 contact = []
 my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
 my_load = Load(my_maze, position=x.position[0])
-screen = Display_screen(my_maze=my_maze)
+screen = Display_screen(my_maze=my_maze, caption=x.filename)
 running, pause = True, False
 display = True
 
@@ -31,6 +31,7 @@ Display_renew(screen)
 Display_loop(my_load, my_maze, screen)
 Display_end()
 
+
 # forces txt to array
 # force_from_text(directory).shape
 
@@ -38,7 +39,7 @@ Display_end()
 
 def find_entire_contacts(x, load):
     if display:
-        screen = Display_screen(my_maze=my_maze)
+        screen = Display_screen(my_maze=my_maze, caption=x.filename)
 
     i = 0
     while i < len(x.frames):
@@ -60,10 +61,11 @@ def find_entire_contacts(x, load):
 
     if display:
         Display_end()
-relevent_lines = []
 
 
-f = open('calibration_exp.txt','r').read().replace('26 6:15:9', '')
+relevant_lines = []
+
+f = open('calibration_exp.txt', 'r').read().replace('26 6:15:9', '')
 b = np.array(f.read())
 print(b)
 # lines = re.search("^[^26]",f)
@@ -125,4 +127,3 @@ f.close()
 
 
 # press Esc to stop the display
-

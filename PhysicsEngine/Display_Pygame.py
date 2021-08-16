@@ -56,7 +56,7 @@ def body_lines(body, lines, circles, points):
             points.append(np.array(body.position))
 
 
-def Display_screen(my_maze=None, free=False):
+def Display_screen(my_maze=None, free=False, caption=None):
     pygame.font.init()  # display and fonts
     pygame.font.Font('freesansbold.ttf', 25)
     global screen, PPM, SCREEN_HEIGHT
@@ -77,7 +77,7 @@ def Display_screen(my_maze=None, free=False):
     # 0 means default display, 32 is the depth
     # (something about colour and bits)
     if my_maze is not None:
-        pygame.display.set_caption(my_maze.shape + '  ' + my_maze.size + '  Ants solver')
+        pygame.display.set_caption(my_maze.shape + ' ' + my_maze.size + ' ' + my_maze.solver + ': ' + caption)
     # what to print on top of the game window
     return screen
 
@@ -143,10 +143,10 @@ def arrow(start, end, name, screen):
     rad = math.pi / 180
     start, end = [int(start[0] * PPM), SCREEN_HEIGHT - int(start[1] * PPM)], \
                  [int(end[0] * PPM), SCREEN_HEIGHT - int(end[1] * PPM)]
-    thickness, trirad = int(0.1 * PPM), int(0.4 * PPM)
+    thickness, trirad = int(0.05 * PPM), int(0.2 * PPM)
+    arrow_width = 150
     pygame.draw.line(screen, colors['arrow'], start, end, thickness)
     rotation = (math.atan2(start[1] - end[1], end[0] - start[0])) + math.pi / 2
-    arrow_width = 150
     pygame.draw.polygon(screen, colors['arrow'], ((end[0] + trirad * math.sin(rotation),
                                                    end[1] + trirad * math.cos(rotation)),
                                                   (end[0] + trirad * math.sin(rotation - arrow_width * rad),
@@ -178,17 +178,10 @@ def Display_renew(screen, my_maze=None, frame=None, movie_name=None, **kwargs):
         DrawGrid(screen, my_maze.arena_length, my_maze.arena_height, PPM, SCREEN_HEIGHT)
 
     if frame is not None:
-        # x = kwargs['Trajectory']
-
-        # movie = x.old_filenames(0)
-        # if x.frames.size > 1:
         text = font.render(movie_name, True, colors['text'])
         text_rect = text.get_rect()
         text2 = font.render('Frame: ' + str(frame), True, colors['text'])
         screen.blit(text2, [0, 25])
-        # else:
-        #     text = font.render('Frame: ' + str(frame), True, colors['text'])
-        #     text_rect = text.get_rect()
         screen.blit(text, text_rect)
 
 

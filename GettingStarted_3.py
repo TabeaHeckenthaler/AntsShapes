@@ -31,7 +31,7 @@ plt.scatter(load_vertices.reshape(4*len(load_vertices), 2)[:, 0],
 contact = find_contact(x, display=False)
 
 '''to display single frame'''
-screen = Display_screen(my_maze=my_maze)
+screen = Display_screen(my_maze=my_maze, caption=x.filename)
 Display_renew(screen)
 Display_loop(my_load, my_maze, screen)
 x.play( )

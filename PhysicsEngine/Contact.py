@@ -19,7 +19,7 @@ def find_contact(x, display=False):
 
     # to find contact in entire experiment
     if display:
-        screen = Display_screen(my_maze=my_maze)
+        screen = Display_screen(my_maze=my_maze, caption=x.filename)
 
     i = 0
     while i < len(x.frames):

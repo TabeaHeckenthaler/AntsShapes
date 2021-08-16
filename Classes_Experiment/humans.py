@@ -116,11 +116,16 @@ class Humans:
         if isinstance(sheet.cell(row=excel_worksheet_index(self.filename), column=16).value, str):
             self.matlab_human_loading(x)
             self.forces_loading(x)
+        else:
+            print('\nI do not have a force measurement or I have not synchronized measurement yet...')
         self.gender_string = self.gender()
 
     def matlab_human_loading(self, x):
         file = sio.loadmat(MatlabFolder('human', x.size, x.shape, x.free) + path.sep + self.VideoChain[0])
         matlab_cell = file['hats']
+
+        Medium_id_correction_dict = {1: 1, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2}
+
         for i, Frame in enumerate(matlab_cell):
             data = Frame[0]
 
@@ -131,15 +136,16 @@ class Humans:
             if data.shape[1] > 4:
                 data = data[data[:, 4].argsort()]
 
-            # are multiple hats detected?
-            if data[:, 2:4].shape[0] > 1:
-                humans_frame.position[self.occupied] = data[:, 2:4][0] + [x.x_error[0], x.y_error[0]]
-            else:
-                humans_frame.position[self.occupied] = data[:, 2:4] + [x.x_error[0], x.y_error[0]]
+            if x.size == 'Medium':
+                # correct the wrong hat identities
+                data = data[np.vectorize(Medium_id_correction_dict.get)(data[:, 4]).argsort()]
+                data[:, 4] = np.vectorize(Medium_id_correction_dict.get)(data[:, 4])
 
-            # tracked participants have a carrying boolean, and an angle to their force meter
-            if data.shape[1] > 5:
+                # tracked participants have a carrying boolean, and an angle to their force meter
+                humans_frame.position[self.occupied] = data[:, 2:4] + [x.x_error[0], x.y_error[0]]
                 humans_frame.carrying[self.occupied] = data[:, 5]
+
+                # angle to force meter
                 humans_frame.angle[self.occupied] = data[:, 6] * np.pi / 180 + x.angle_error[0]
 
             self.frames.append(humans_frame)
@@ -185,10 +191,6 @@ class Humans:
     def gender(self):
         index = excel_worksheet_index(self.filename)
         gender_string = list(sheet.cell(row=index, column=17).value)
-        if len(gender_string) > 1 and self.size == 'Medium':
-            right_way_around = gender_string[1:]
-            right_way_around.reverse()
-            gender_string = gender_string[0:1] + right_way_around
 
         if len(gender_string) != participant_number[self.size]\
                 and not (len(gender_string) in [1, 2] and self.size == 'Medium'):

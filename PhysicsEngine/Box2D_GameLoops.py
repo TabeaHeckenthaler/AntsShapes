@@ -11,7 +11,7 @@ def MainGameLoop(x, *args, interval=1, display=False, **kwargs):
     pause = False
     my_maze = Maze(*args, size=x.size, shape=x.shape, solver=x.solver)
     my_load = Load(my_maze)
-    screen = Display_screen(my_maze)
+    screen = Display_screen(my_maze, caption=x.filename)
 
     """
     --- main game loop ---
