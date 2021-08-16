@@ -2,11 +2,18 @@ from Box2D import b2Vec2
 import numpy as np
 from Analysis_Functions.Velocity import crappy_velocity
 
+
 angle_shift = {0: 0,
                1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
                4: np.pi, 5: np.pi,
                6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2}
 force_scaling_factor = 1 / 5
+
+# angle_shift = {0: 0,
+#                1: np.pi / 2, 2: -np.pi / 2, 3: np.pi / 2,
+#                4: -np.pi, 5: np.pi,
+#                6: -np.pi / 2, 7: np.pi / 2, 8: np.pi / 2}
+# force_scaling_factor = 1 / 5
 
 
 def force_in_frame(x, i):
@@ -24,10 +31,20 @@ def force_attachment_positions(my_load, x):
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
         a29, a38, a47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
 
+
+       # I played a little with the positions here is the original:
+            
         positions = [[shape_width / 2, 0], [a29, shape_thickness / 2], [a38, shape_thickness / 2],
                      [a47, shape_thickness / 2], [-shape_width / 2, shape_height / 4],
                      [-shape_width / 2, -shape_height / 4],
                      [a47, -shape_thickness / 2], [a38, -shape_thickness / 2], [a29, -shape_thickness / 2]]
+            
+        
+
+        # positions = [[shape_width / 2, 0], [a29, -shape_thickness / 2], [a38, shape_thickness / 2],
+        #              [a47, -shape_thickness / 2], [-shape_width / 2, -shape_height / 4],
+        #              [-shape_width / 2, shape_height / 4],
+        #              [a47, shape_thickness / 2], [a38, -shape_thickness / 2], [a29, shape_thickness / 2]]
 
         # shift the shape...
         h = shift * shape_width
