@@ -1,5 +1,5 @@
 import numpy as np
-from Box2D import b2BodyDef, b2_dynamicBody
+from Box2D import b2BodyDef, b2_dynamicBody, b2Vec2
 from Setup.Maze import ResizeFactors
 
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
@@ -308,3 +308,80 @@ def Load(my_maze, position=None, angle=0, point_particle=False):
     if not point_particle:
         my_load = AddLoadFixtures(my_load, my_maze.size, my_maze.shape, my_maze.solver)
     return my_load
+
+
+def force_attachment_positions(my_load, x):
+    from Classes_Experiment.humans import participant_number
+    if x.solver == 'human' and x.size == 'Medium' and x.shape == 'SPT':
+
+        # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+        x29, x38, x47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
+
+        # (0, 0) is the middle of the shape
+        positions = [[shape_width / 2, 0],
+                     [x29, shape_thickness / 2],
+                     [x38, shape_thickness / 2],
+                     [x47, shape_thickness / 2],
+                     [-shape_width / 2, shape_height / 4],
+                     [-shape_width / 2, -shape_height / 4],
+                     [x47, -shape_thickness / 2],
+                     [x38, -shape_thickness / 2],
+                     [x29, -shape_thickness / 2]]
+        h = shift * shape_width
+
+    elif x.solver == 'human' and x.size == 'Large' and x.shape == 'SPT':
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+
+        xMNOP = -shape_width / 2,
+        xLQ = xMNOP + shape_thickness / 2
+        xAB = (-1) * xMNOP
+        xCZ = (-1) * xLQ
+        xKR = xMNOP + shape_thickness
+        xDY, xEX, xFW, xGV, xHU, xIT, xJS = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
+
+        yA_B = short_edge / 6
+        yC_Z = short_edge / 2
+        yDEFGHIJ_STUVWXY = shape_thickness / 2
+        yK_R = shape_height / 10 * 2
+        yL_Q = shape_height / 2
+        yM_P = shape_height / 10 * 3
+        yN_O = shape_height / 10
+
+        positions = [[xAB, yA_B],
+                     [xAB, - yA_B],
+                     [xCZ, yC_Z],
+                     [xDY, yDEFGHIJ_STUVWXY],
+                     [xEX, yDEFGHIJ_STUVWXY],
+                     [xFW, yDEFGHIJ_STUVWXY],
+                     [xGV, yDEFGHIJ_STUVWXY],
+                     [xHU, yDEFGHIJ_STUVWXY],
+                     [xIT, yDEFGHIJ_STUVWXY],
+                     [xJS, yDEFGHIJ_STUVWXY],
+                     [xKR, yK_R],
+                     [xLQ, yL_Q],
+                     [xMNOP, yM_P],
+                     [xMNOP, yN_O],
+                     [xMNOP, -yN_O],
+                     [xMNOP, -yM_P],
+                     [xLQ, -yL_Q],
+                     [xKR, -yK_R],
+                     [xJS, -yDEFGHIJ_STUVWXY],
+                     [xIT, -yDEFGHIJ_STUVWXY],
+                     [xHU, -yDEFGHIJ_STUVWXY],
+                     [xGV, -yDEFGHIJ_STUVWXY],
+                     [xFW, -yDEFGHIJ_STUVWXY],
+                     [xEX, -yDEFGHIJ_STUVWXY],
+                     [xDY, -yDEFGHIJ_STUVWXY],
+                     [xCZ, -yC_Z],
+                     ]
+        h = shift * shape_width
+
+    else:
+        positions = [[0, 0] for i in range(participant_number[x.size])]
+        h = 0
+
+    # shift the shape...
+    positions = [[r[0] - h, r[1]] for r in positions]
+
+    return [my_load.GetWorldPoint(b2Vec2(r)) for r in positions]

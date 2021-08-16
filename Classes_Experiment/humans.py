@@ -4,7 +4,7 @@ import numpy as np
 from os import path, listdir
 from openpyxl import load_workbook
 import csv
-from Classes_Experiment.forces import force_attachment_positions
+from Setup.Load import force_attachment_positions
 
 excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.format(path.sep, path.sep,
                                                                                        path.sep,

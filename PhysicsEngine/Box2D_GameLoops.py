@@ -36,5 +36,5 @@ def MainGameLoop(x, *args, interval=1, display=False, **kwargs):
             if display:
                 if len(x.frames) < 4:  # just to check the error.
                     running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=True)
-                running = Display_end('../OldFunctions/ErrorFinding.png')
+                running = Display_end()
     return x
