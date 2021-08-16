@@ -112,7 +112,7 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, **kwargs):
     for event in events:  # what happened in the last event?
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):  # you can also add 'or Finished'
             # The user closed the window or pressed escape
-            Display_end('Pygame_EventManager')
+            Display_end()
             return False, i, False
 
         elif event.type == KEYDOWN and event.key == K_SPACE:
