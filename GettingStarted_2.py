@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from trajectory import Get
@@ -10,15 +11,16 @@ from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Di
 from Classes_Experiment.humans import force_from_text
 import re
 
+
 ''' Display a experiment '''
 # names are found in P:\Tabea\PyCharm_Data\AntsShapes\Pickled_Trajectories\Human_Trajectories
 solver = 'human'
-x = Get('large_20210526202254_20210526203449', solver)
+x = Get('medium_20201221111935_20201221112858', solver)
 x.participants = Humans(x)
 x.play(forces=[participants_force_arrows])
 # press Esc to stop the display
 
-''' Find contact p oints '''
+''' Find contact points '''
 contact = []
 my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
 my_load = Load(my_maze, position=x.position[0])
@@ -63,15 +65,41 @@ def find_entire_contacts(x, load):
         Display_end()
 
 
-relevant_lines = []
+relevant_lines = force_from_text('calibration_exp.TXT')
+max_index, max_values = [np.argmax(relevant_lines[i]) for i in range(len(relevant_lines))], \
+                        [max(relevant_lines[i]) for i in range(len(relevant_lines))]
+values_ordered = np.dstack((max_index, max_values))
+ABC = [chr(i) for i in range(ord('A'), ord('Z') + 1)]
 
-f = open('calibration_exp.txt', 'r').read().replace('26 6:15:9', '')
-b = np.array(f.read())
-print(b)
-# lines = re.search("^[^26]",f)
-print(f.read())
-f.close()
-# close('C:\Users\einavt\Desktop\AntsShapes\calibration_exp')
+num_of_relevat_graphes = len(set(max_index))
+
+fig, axes = plt.subplots((round(np.sqrt(num_of_relevat_graphes)) + 1), round(np.sqrt(num_of_relevat_graphes)), figsize=(9, 9))  # Create a figure with 3 over 3 axes
+axes = axes.flatten()  # Convert the object storing the axes for a 3 by 3 array into a 1D array of lenth 9.
+fig.tight_layout(pad=5.0)
+counter = 0
+
+for i in range(1, 27):
+    data = []
+
+    for j in range(len(max_index)):
+        if values_ordered[0][j][0] == i:
+            data.append(values_ordered[0][j][1])
+    if (data):
+        axes[counter].plot(data,'+')
+        axes[counter].set_title(ABC[(i+11)%len(ABC)]) #beacause it's start with 'L'
+        axes[counter].set_xlabel('frame number')
+        axes[counter].set_ylabel('Force[]')
+        counter +=1
+
+plt.savefig('force_detector_check.png')
+
+#
+# for i_field, field in enumerate(x_fields):
+#     ax = axes[i_field]
+#     ax.plot(dataset[field].values, dataset['Rented Bike Count'].values, '.', markersize=1)
+#     ax.set_xlabel(field)
+#     ax.set_ylabel('Rented Bike Count')
+#
 # def theta_trajectory(twoD_vec):
 #     '''
 #
@@ -93,10 +121,10 @@ f.close()
 #     return d_alpha
 #
 #
-# def numeral_velocity(obj, i):
-#     return obj.position[min(i + int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)] - \
-#            obj.position[min(i - int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)]
-#
+def numeral_velocity(obj, i):
+    return obj.position[min(i + int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)] - \
+           obj.position[min(i - int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)]
+
 #
 # fig, axs = plt.subplots(3, 1, constrained_layout=True)
 # fig.suptitle('forces and cart movement test', fontsize=16)
