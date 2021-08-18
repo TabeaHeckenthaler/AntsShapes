@@ -41,7 +41,7 @@ def find_contact(x, display=False):
 
     if display:
         Display_end()
-    return
+    return contact
 
 
 def theta(r):

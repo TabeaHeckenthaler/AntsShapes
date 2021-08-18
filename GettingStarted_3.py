@@ -8,7 +8,7 @@ from PhysicsEngine.Contact import find_contact
 
 solver = 'human'
 x = Get('medium_20201221135753_20201221140218', solver)
-x.play()
+# x.play()
 
 ''' find vertices '''
 my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
@@ -29,10 +29,11 @@ plt.scatter(load_vertices.reshape(4*len(load_vertices), 2)[:, 0],
 
 ''' find contact points '''
 contact = find_contact(x, display=False)
-
+# [i for i, l in enumerate(contact) if len(l)>0]
 '''to display single frame'''
 screen = Display_screen(my_maze=my_maze, caption=x.filename)
 Display_renew(screen)
 Display_loop(my_load, my_maze, screen)
-x.play( )
 Display_end()
+
+x.play()
