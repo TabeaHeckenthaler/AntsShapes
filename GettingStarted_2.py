@@ -68,7 +68,7 @@ display = False
 # if display:
 #     Display_end()
 
-def forces_check_func(SOURCE, ADDRESS):
+def forces_check_func(SOURCE, ADDRESS, measured_forces = []):
     relevant_lines = force_from_text(SOURCE)
     max_index, max_values = [np.argmax(relevant_lines[i]) for i in range(len(relevant_lines))], \
                             [max(relevant_lines[i]) for i in range(len(relevant_lines))]
@@ -76,8 +76,7 @@ def forces_check_func(SOURCE, ADDRESS):
     ABC = [chr(i) for i in range(ord('A'), ord('Z') + 1)]  #gives an array of the ABC...
     num_of_relevat_graphes = len(set(max_index))
 
-    measurements = [-1, 3.9, 7.4, 11.3, 11.3, -1, 16.5, 6.3, 2.1, 5.3, 9.1, 11.1, 4.3, 5.6, 2.9, 4.3, 2.2,
-                    1, -2, 10, 6.3, 6, 12.1, 5.4, 6.5, 6.5] # -1 means broken, -2 means a short pulse
+
 
     fig, axes = plt.subplots((round(np.sqrt(num_of_relevat_graphes)) + 1),
                              round(np.sqrt(num_of_relevat_graphes)), figsize=(9, 9))  # Create a figure with all the relevant data
@@ -93,7 +92,8 @@ def forces_check_func(SOURCE, ADDRESS):
                 data.append(values_ordered[0][j][1])
         if (data):
             axes[counter].plot(data,'+')
-            axes[counter].plot((measurements[(i+7)%len(measurements)]*(np.ones(50))), 'g')
+            if measured_forces:
+                axes[counter].plot((measured_forces[(i+7)%len(measured_forces)]*(np.ones(50))), 'g')
             axes[counter].set_title(ABC[(i+7)%len(ABC)]) #beacause it's start with 'H'
             axes[counter].set_xlabel('frame number')
             axes[counter].set_ylabel('Force[]')
@@ -105,7 +105,10 @@ def forces_check_func(SOURCE, ADDRESS):
 forces_check_func('force_check\\150521.TXT', 'force_check\\force_detector_check_trash.png')
 forces_check_func('force_check\\150608.TXT', 'force_check\\force_detector_check_W.png')
 forces_check_func('force_check\\150624.TXT', 'force_check\\force_detector_check_WXY.png')
-forces_check_func('calibration_exp.TXT', 'force_detector_check5.png')
+
+measurements_calibration1 = [-1, 3.9, 7.4, 11.3, 11.3, -1, 16.5, 6.3, 2.1, 5.3, 9.1, 11.1, 4.3, 5.6, 2.9, 4.3, 2.2,
+                1, -2, 10, 6.3, 6, 12.1, 5.4, 6.5, 6.5]  # -1 means broken, -2 means a short pulse
+forces_check_func('calibration_exp.TXT', 'force_detector_check5.png', measurements_calibration1)
 
 
 def theta_trajectory(twoD_vec):
@@ -193,10 +196,10 @@ def second_method_graphes(force_treshhold = 0.5):
     human_forces = [force_in_frame(x, i) for i in range(len(x.frames))]
 
     human_total_force = (np.sum(human_forces, axis=1)).reshape(9097,2)
-    human_total_force_treshhold = [human_total_force[i]*(abs_value_2D(human_total_force[i]) > force_trashhold)
+    human_total_force_treshhold = [human_total_force[i]*(abs_value_2D(human_total_force[i]) > force_treshhold)
                                    for i in range(len(human_total_force))]
 
-    dot_prodacts = [normalized_dot_prod(cart_velocity[i],human_total_force_trashhold[i]) for i in range(len(human_forces))]
+    dot_prodacts = [normalized_dot_prod(cart_velocity[i],human_total_force_treshhold[i]) for i in range(len(human_forces))]
 
     axs.plot(dot_prodacts, 'b')
     axs.scatter([i for i in range(len(is_frame_in_contact))],np.zeros(len(is_frame_in_contact)) , c = colormap[is_frame_in_contact])
@@ -207,4 +210,4 @@ def second_method_graphes(force_treshhold = 0.5):
     # plt.savefig('fixed_arrows.png')
     plt.show()
 # press Esc to stop the display
-second_method_graphes(force_treshhold = 2)
+second_method_graphes(force_treshhold = 4)
