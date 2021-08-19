@@ -5,6 +5,8 @@ from PhysicsEngine.Display_Pygame import Display_screen, Display_end, Display_re
 import numpy as np
 from matplotlib import pyplot as plt
 from PhysicsEngine.Contact import find_contact
+from trajectory import Get
+from Classes_Experiment.humans import Humans
 
 solver = 'human'
 x = Get('medium_20201221135753_20201221140218', solver)

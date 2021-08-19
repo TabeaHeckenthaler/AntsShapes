@@ -11,26 +11,13 @@ from PhysicsEngine.Contact import Contact_loop
 from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew, Display_loop
 from Classes_Experiment.humans import force_from_text
 from PhysicsEngine.Contact import find_contact
-
-
-''' Display a experiment '''
-# names are found in P:\Tabea\PyCharm_Data\AntsShapes\Pickled_Trajectories\Human_Trajectories
-solver = 'human'
-x = Get('medium_20201221111935_20201221112858', solver)
-x.participants = Humans(x)
-# x.play(forces=[participants_force_arrows])
-# press Esc to stop the display
-
-''' Find contact points '''
-contact = []
-my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
-my_load = Load(my_maze, position=x.position[0])
+from Setup.Load import getLoadDim
+from Setup.Load import periodicity, shift, assymetric_h_shift
 
 # x.play()
 
 running, pause = True, False
 display = False
-
 # to display single frame
 #     Display_renew(screen)
 #     Display_loop(my_load, my_maze, screen)
@@ -102,13 +89,9 @@ def forces_check_func(SOURCE, ADDRESS, measured_forces = []):
     plt.savefig(ADDRESS)
 
 
-forces_check_func('force_check\\150521.TXT', 'force_check\\force_detector_check_trash.png')
-forces_check_func('force_check\\150608.TXT', 'force_check\\force_detector_check_W.png')
-forces_check_func('force_check\\150624.TXT', 'force_check\\force_detector_check_WXY.png')
 
-measurements_calibration1 = [-1, 3.9, 7.4, 11.3, 11.3, -1, 16.5, 6.3, 2.1, 5.3, 9.1, 11.1, 4.3, 5.6, 2.9, 4.3, 2.2,
-                1, -2, 10, 6.3, 6, 12.1, 5.4, 6.5, 6.5]  # -1 means broken, -2 means a short pulse
-forces_check_func('calibration_exp.TXT', 'force_detector_check5.png', measurements_calibration1)
+
+
 
 
 def theta_trajectory(twoD_vec):
@@ -146,8 +129,116 @@ def normalized_dot_prod(vec_A, vec_B):
     abs_val = abs_value_2D(vec_A)*abs_value_2D(vec_B)
     return dot_prod/abs_val
 
+def cross_prod(vec_A, vec_B):
+    """
+    It's important to notice that the action is (A X B) and NOT!!!! ---> (B X A)
+    and because in our case the maze is only 2D, the prod will always be in Z direction
+    """
+    prod = vec_A[0]*vec_B[1] - vec_A[1]*vec_B[0]
+    return prod
 
-def first_method_graphes():
+
+def sum_of_cross_prods(vec_A, vec_B):
+
+    if len(vec_A) != len(vec_B):
+        print("Not in the same length")
+        return
+
+    prod = [cross_prod(vec_A[i], vec_B[i]) for i in range(len(vec_A))]
+    return prod
+
+
+
+def vector_rotation(vec_A, radian_angle):
+
+    rotation_matrix = [[np.cos(radian_angle), -np.sin(radian_angle)], [np.sin(radian_angle), np.cos(radian_angle)]]
+    return  np.matmul(rotation_matrix, vec_A)
+
+
+def force_vector_positions_In_LOAD_FRAME(my_load, x):
+    from Classes_Experiment.humans import participant_number
+    if x.solver == 'human' and x.size == 'Medium' and x.shape == 'SPT':
+
+        # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+        x29, x38, x47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
+
+        # (0, 0) is the middle of the shape
+        positions = [[shape_width / 2, 0],
+                     [x29, shape_thickness / 2],
+                     [x38, shape_thickness / 2],
+                     [x47, shape_thickness / 2],
+                     [-shape_width / 2, shape_height / 4],
+                     [-shape_width / 2, -shape_height / 4],
+                     [x47, -shape_thickness / 2],
+                     [x38, -shape_thickness / 2],
+                     [x29, -shape_thickness / 2]]
+        h = shift * shape_width
+
+    elif x.solver == 'human' and x.size == 'Large' and x.shape == 'SPT':
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+
+        xMNOP = -shape_width / 2,
+        xLQ = xMNOP + shape_thickness / 2
+        xAB = (-1) * xMNOP
+        xCZ = (-1) * xLQ
+        xKR = xMNOP + shape_thickness
+        xDY, xEX, xFW, xGV, xHU, xIT, xJS = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
+
+        yA_B = short_edge / 6
+        yC_Z = short_edge / 2
+        yDEFGHIJ_STUVWXY = shape_thickness / 2
+        yK_R = shape_height / 10 * 2
+        yL_Q = shape_height / 2
+        yM_P = shape_height / 10 * 3
+        yN_O = shape_height / 10
+
+        positions = [[xAB, yA_B],
+                     [xAB, - yA_B],
+                     [xCZ, yC_Z],
+                     [xDY, yDEFGHIJ_STUVWXY],
+                     [xEX, yDEFGHIJ_STUVWXY],
+                     [xFW, yDEFGHIJ_STUVWXY],
+                     [xGV, yDEFGHIJ_STUVWXY],
+                     [xHU, yDEFGHIJ_STUVWXY],
+                     [xIT, yDEFGHIJ_STUVWXY],
+                     [xJS, yDEFGHIJ_STUVWXY],
+                     [xKR, yK_R],
+                     [xLQ, yL_Q],
+                     [xMNOP, yM_P],
+                     [xMNOP, yN_O],
+                     [xMNOP, -yN_O],
+                     [xMNOP, -yM_P],
+                     [xLQ, -yL_Q],
+                     [xKR, -yK_R],
+                     [xJS, -yDEFGHIJ_STUVWXY],
+                     [xIT, -yDEFGHIJ_STUVWXY],
+                     [xHU, -yDEFGHIJ_STUVWXY],
+                     [xGV, -yDEFGHIJ_STUVWXY],
+                     [xFW, -yDEFGHIJ_STUVWXY],
+                     [xEX, -yDEFGHIJ_STUVWXY],
+                     [xDY, -yDEFGHIJ_STUVWXY],
+                     [xCZ, -yC_Z],
+                     ]
+        h = shift * shape_width
+
+    else:
+        positions = [[0, 0] for i in range(participant_number[x.size])]
+        h = 0
+
+    # shift the shape...
+    positions = [[r[0] - h, r[1]] for r in positions]  # r vectors in the load frame
+
+    return positions
+
+
+def torque_in_load(my_load, x, force_vector_In_Lab_Frame, amgle_In_rads):
+    r_positions = force_vector_positions_In_LOAD_FRAME(my_load, x)
+    forces_in_load_frame = [vector_rotation(force_vector_In_Lab_Frame[i],amgle_In_rads) for i in range(len(force_vector_In_Lab_Frame))]
+    return sum_of_cross_prods(r_positions, forces_in_load_frame)
+
+
+def first_method_graphes(x):
     contact = find_contact(x, display=False)
     is_frame_in_contact = [int(len(contact[i]) != 0) for i in range(len(contact))]
     colormap = np.array(['b', 'r'])
@@ -184,7 +275,7 @@ def first_method_graphes():
     plt.show()
 
 
-def second_method_graphes(force_treshhold = 0.5):
+def second_method_graphes(x, force_treshhold = 0.5):
     contact = find_contact(x, display=False)
     is_frame_in_contact = [int(len(contact[i]) != 0) for i in range(len(contact))]
     colormap = np.array(['b', 'r'])
@@ -210,4 +301,3 @@ def second_method_graphes(force_treshhold = 0.5):
     # plt.savefig('fixed_arrows.png')
     plt.show()
 # press Esc to stop the display
-second_method_graphes(force_treshhold = 4)

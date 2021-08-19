@@ -38,6 +38,23 @@ def participants_force_arrows(x, my_load, i):
         #     print()
     return arrows
 
+def center_pull_point_vectors(x, my_load, i):
+    arrows = []
+    if len(x.participants.frames) == 0:
+        raise Exception('Either you have no force measurement or you have not configured it. Check in Testable!')
+
+    frame = x.participants.frames[i]
+    for name in x.participants.occupied:
+        force = (frame.forces[name]) * force_scaling_factor_DISPLAY
+        force_meter_coor = force_attachment_positions(my_load, x)[name]
+        if abs(force) > 0.2:
+            arrows.append((force_meter_coor,
+                           force_meter_coor + force * norm_force_vector(x, i, name),
+                           str(name + 1)))
+        # if abs(x.participants.frames[i].angle[name]) > np.pi / 2:
+        #     print()
+    return arrows
+
 
 def correlation_force_velocity(x, i):
     net_force = np.sum(np.array(force_in_frame(x, i)), axis=0)
