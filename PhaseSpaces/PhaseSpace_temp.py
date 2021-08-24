@@ -37,4 +37,6 @@ def calc(point_particle, shape, size):
 #                    for point_particle, shape, size in
 #                    itertools.product(point_particle_bools, shapes, sizes)
 #                    )
-calc(False, 'H', 'XL')
+
+if __name__ == '__main__':
+    calc(False, 'H', 'XL')

@@ -23,7 +23,7 @@ ps_dir = home + '\\PhaseSpaces'
 
 class PhaseSpace(object):
 
-    def __init__(self, solver, size, shape, name="",):
+    def __init__(self, solver, size, shape, name="", ):
         """
         :param board_coords:
         :param load_coords:
@@ -56,7 +56,9 @@ class PhaseSpace(object):
     def number_of_points(self):
         # x_num = np.ceil(self.extent['x'][1]/resolution)
         y_num = np.ceil(self.extent['y'][1] / resolution(self.size, self.solver))
-        theta_num = np.ceil(self.extent['theta'][1] * average_radius(self.size, self.shape, self.solver) / resolution(self.size, self.solver))
+        theta_num = np.ceil(
+            self.extent['theta'][1] * average_radius(self.size, self.shape, self.solver) / resolution(self.size,
+                                                                                                      self.solver))
         return {'x': None, 'y': y_num, 'theta': theta_num}
 
     def initialize_maze_edges(self):
@@ -232,6 +234,8 @@ class PhaseSpace(object):
                      ]
         return
 
-# ps = PhaseSpace('ant', 'XL', 'H', name='XL_H')
-# ps.load_space()
-# ps.visualize_space(ps.name)
+
+if __name__ == '__main__':
+    ps = PhaseSpace('ant', 'XL', 'H', name='XL_H')
+    ps.load_space()
+    ps.visualize_space(ps.name)
