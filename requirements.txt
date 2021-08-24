@@ -1,0 +1,12 @@
+box2d
+matplotlib
+scipy
+numpy
+pandas
+pygame
+tqdm
+plotly
+mayavi
+joblib
+openpyxl
+scikit-fmm
