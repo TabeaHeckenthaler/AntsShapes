@@ -1,6 +1,11 @@
+import numpy as np
 
 import GettingStarted_2 as gt
 from Classes_Experiment.forces import force_attachment_positions
+import glob
+import os
+import matplotlib.pyplot as plt
+
 
 from trajectory import Get
 from Classes_Experiment.humans import Humans
@@ -8,8 +13,8 @@ from Setup.Maze import Maze
 from Setup.Load import Load
 from Classes_Experiment.forces import force_in_frame
 
-def main():
 
+def main():
 
     ''' Display a experiment '''
     # names are found in P:\Tabea\PyCharm_Data\AntsShapes\Pickled_Trajectories\Human_Trajectories
@@ -32,9 +37,39 @@ def main():
 
     forces_in_frames = [force_in_frame(x, i) for i in range(len(x.frames))]
     angles = x.angle
+    ratio = (0.453592)
 
-    tourqes = [ gt.torque_in_load(my_load, x, forces_in_frames[i], angles[i]) for i in range(len(forces_in_frames))]
-    print("SHABAT HAYOM")
+    tourqes = [ gt.torque_in_load(my_load, x, forces_in_frames[j], angles[j]) for j in range(len(forces_in_frames))]
+    ang_vel = [ gt.numeral_angular_velocity(x,i) for i in range(len(x.angle))]
+
+
+    measurements_calibration_153151 = []
+    measurements_calibration_153632 = [-1, 17.4, 14.1, 12.8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22.5, 12.1, 31.1, 24.7]
+    measurements_calibration_155425 = [-1, 0, 0, 0, 13.0, -1, 20.1, 22.3, 28.0, 19.2, 23.6, 10.4, 15.4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    measurements_calibration_161453 = [-1, 0, 0, 0, 13.0, -1, 0, 0, 0, 0, 0, 0, 0, 11.5, 20.7, 14.1, 15.2, 10.1, 23.1, 30.6, 13.4, 11.0, 0, 0, 0, 0]
+
+
+    measurements_calibration = {'153151' : [],
+                                '153632': [-1, 17.4, 14.1, 12.8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22.5, 12.1, 31.1, 24.7],
+                                '155425' : [-1, 0, 0, 0, 13.0, -1, 20.1, 22.3, 28.0, 19.2, 23.6, 10.4, 15.4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                '161453' : [-1, 0, 0, 0, 13.0, -1, 0, 0, 0, 0, 0, 0, 0, 11.5, 20.7, 14.1, 15.2, 10.1, 23.1, 30.6, 13.4, 11.0, 0, 0, 0, 0]}
+
+    # gt.second_method_graphes(x, force_treshhold=2)
+
+    for filename in glob.glob('force_check_Aug_19\\*.TXT'):
+        with open(os.path.join(os.getcwd(), filename), 'r') as f:
+            g = ((filename.split('\\'))[1].split('.'))[0]
+            gt.forces_check_func(filename,'force_check_Aug_19\\' + g + '.png', 'save' , measurements_calibration[g], ratio = ratio)
+
+    ABC = [chr(i) for i in range(ord('A'), ord('Z') + 1)]  # gives an array of the ABC...
+
+    for filename in glob.glob('force_check_Aug_19\\*.TXT'):
+        with open(os.path.join(os.getcwd(), filename), 'r') as f:
+            g = ((filename.split('\\'))[1].split('.'))[0]
+            for letter in ABC:
+                 gt.single_force_check_func(filename,'force_check_Aug_19\\' + g + '_' +  letter  + '.png',letter, 'save'
+                                                                     , measurements_calibration[g], ratio = ratio)
+
 
 if __name__ == "__main__":
     main()

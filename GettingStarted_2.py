@@ -18,6 +18,8 @@ from Setup.Load import periodicity, shift, assymetric_h_shift
 
 running, pause = True, False
 display = False
+
+
 # to display single frame
 #     Display_renew(screen)
 #     Display_loop(my_load, my_maze, screen)
@@ -55,42 +57,69 @@ display = False
 # if display:
 #     Display_end()
 
-def forces_check_func(SOURCE, ADDRESS, measured_forces = []):
+def forces_check_func(SOURCE, ADDRESS, action='save', measured_forces=None , ratio = 1):
     relevant_lines = force_from_text(SOURCE)
     max_index, max_values = [np.argmax(relevant_lines[i]) for i in range(len(relevant_lines))], \
                             [max(relevant_lines[i]) for i in range(len(relevant_lines))]
     values_ordered = np.dstack((max_index, max_values))
-    ABC = [chr(i) for i in range(ord('A'), ord('Z') + 1)]  #gives an array of the ABC...
+    ABC = [chr(i) for i in range(ord('A'), ord('Z') + 1)]  # gives an array of the ABC...
     num_of_relevat_graphes = len(set(max_index))
 
-
-
     fig, axes = plt.subplots((round(np.sqrt(num_of_relevat_graphes)) + 1),
-                             round(np.sqrt(num_of_relevat_graphes)), figsize=(9, 9))  # Create a figure with all the relevant data
+                             round(np.sqrt(num_of_relevat_graphes)),
+                             figsize=(9, 9))  # Create a figure with all the relevant data
     axes = axes.flatten()  # Convert the object storing the axes for a 3 by 3 array into a 1D array.
-    fig.tight_layout(pad=5.0) # padding between the subplots
-    counter = 0  #counter for the loop that generate the graphes
+    fig.tight_layout(pad=5.0)  # padding between the subplots
+    counter = 0  # counter for the loop that generate the graphes
 
-    for i in range(1, 27):
-        data = []
+    for i in range(len(ABC)):
+        data = list()
 
         for j in range(len(max_index)):
             if values_ordered[0][j][0] == i:
                 data.append(values_ordered[0][j][1])
         if (data):
-            axes[counter].plot(data,'+')
+            axes[counter].plot(data, '+')
             if measured_forces:
-                axes[counter].plot((measured_forces[(i+7)%len(measured_forces)]*(np.ones(50))), 'g')
-            axes[counter].set_title(ABC[(i+7)%len(ABC)]) #beacause it's start with 'H'
+                axes[counter].plot((measured_forces[(i + 6) % len(measured_forces)] * (np.ones(50))*ratio), 'g')
+            axes[counter].set_title(ABC[(i + 6) % len(ABC)])  # beacause it's start with 'H'
             axes[counter].set_xlabel('frame number')
             axes[counter].set_ylabel('Force[]')
-            counter +=1
+            counter += 1
 
-    plt.savefig(ADDRESS)
+    if action == 'save':
+        plt.savefig(ADDRESS)
+    elif action == 'open':
+        plt.show()
+    else:
+        print("action is not valid")
 
 
 
+def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save', measured_forces=None , ratio = 1):
+    ABC_effective_dict = {
+        'A' : 20, 'B' : 21, 'C': 22, 'D': 23, 'E': 24,
+        'F': 25, 'G': 0, 'H': 1, 'I': 2, 'J': 3, 'K': 4, 'L': 5, 'M': 6, 'N': 7, 'O': 8, 'P': 9,
+        'Q': 10, 'R': 11, 'S': 12, 'T': 13, 'U': 14, 'V': 15, 'W': 16, 'X': 17,'Y': 18,'Z': 19
+    }
 
+    relevant_lines = force_from_text(SOURCE)
+    values = [relevant_lines[i][ABC_effective_dict[sensor]] for i in range(len(relevant_lines))]
+
+    plt.figure(SOURCE + sensor)
+    plt.plot(values)
+    plt.title(sensor)
+    plt.xlabel('frame number')
+    plt.ylabel('Force[]')
+
+    if action == 'save':
+        plt.savefig(ADDRESS)
+    elif action == 'open':
+        plt.show()
+    else:
+        print("action is not valid")
+
+    plt.close
 
 
 
@@ -120,39 +149,53 @@ def numeral_velocity(obj, i):
            obj.position[min(i - int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)]
 
 
+def numeral_angular_velocity(obj, i):
+    vel = calc_angle_diff(obj.angle[min(i + int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)], \
+                          obj.angle[min(i - int(np.divide(obj.fps, 2)), obj.position.shape[0] - 1)])
+    res = vel % (2 * (np.pi))
+    if res > 6:
+        res = 2 * (np.pi) - res
+    return res
+
+
 def abs_value_2D(twoD_vec):
-    return np.sqrt(twoD_vec[0]**2 + twoD_vec[1]**2)
+    return np.sqrt(twoD_vec[0] ** 2 + twoD_vec[1] ** 2)
 
 
 def normalized_dot_prod(vec_A, vec_B):
-    dot_prod = (vec_A[0]*vec_B[0] + vec_A[1]*vec_B[1])
-    abs_val = abs_value_2D(vec_A)*abs_value_2D(vec_B)
-    return dot_prod/abs_val
+    dot_prod = (vec_A[0] * vec_B[0] + vec_A[1] * vec_B[1])
+    abs_val = abs_value_2D(vec_A) * abs_value_2D(vec_B)
+    return dot_prod / abs_val
+
 
 def cross_prod(vec_A, vec_B):
     """
     It's important to notice that the action is (A X B) and NOT!!!! ---> (B X A)
     and because in our case the maze is only 2D, the prod will always be in Z direction
     """
-    prod = vec_A[0]*vec_B[1] - vec_A[1]*vec_B[0]
+    prod = vec_A[0] * vec_B[1] - vec_A[1] * vec_B[0]
     return prod
 
 
 def sum_of_cross_prods(vec_A, vec_B):
-
     if len(vec_A) != len(vec_B):
         print("Not in the same length")
         return
 
     prod = [cross_prod(vec_A[i], vec_B[i]) for i in range(len(vec_A))]
-    return prod
-
+    return np.sum(prod)
 
 
 def vector_rotation(vec_A, radian_angle):
+    if len(vec_A) != 2:
+        vec_A = np.transpose(vec_A)
+
+    if len(vec_A) != 2:
+        print("There is a dimension problem")
+        return
 
     rotation_matrix = [[np.cos(radian_angle), -np.sin(radian_angle)], [np.sin(radian_angle), np.cos(radian_angle)]]
-    return  np.matmul(rotation_matrix, vec_A)
+    return np.matmul(rotation_matrix, vec_A)
 
 
 def force_vector_positions_In_LOAD_FRAME(my_load, x):
@@ -234,7 +277,8 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
 
 def torque_in_load(my_load, x, force_vector_In_Lab_Frame, amgle_In_rads):
     r_positions = force_vector_positions_In_LOAD_FRAME(my_load, x)
-    forces_in_load_frame = [vector_rotation(force_vector_In_Lab_Frame[i],amgle_In_rads) for i in range(len(force_vector_In_Lab_Frame))]
+    forces_in_load_frame = [vector_rotation(force_vector_In_Lab_Frame[i], amgle_In_rads) for i in
+                            range(len(force_vector_In_Lab_Frame))]
     return sum_of_cross_prods(r_positions, forces_in_load_frame)
 
 
@@ -247,10 +291,11 @@ def first_method_graphes(x):
     fig.suptitle('forces and cart movement test - FIRST METHOD', fontsize=16)
 
     human_forces = [force_in_frame(x, i) for i in range(len(x.frames))]
-    human_total_force = (np.sum(human_forces, axis=1)).reshape(9097,2)
+    human_total_force = (np.sum(human_forces, axis=1)).reshape(9097, 2)
     theta_human = np.unwrap(theta_trajectory(human_total_force))
     axs[0].plot(theta_human, 'b')
-    axs[0].scatter([i for i in range(len(is_frame_in_contact))],np.zeros(len(is_frame_in_contact)) , c = colormap[is_frame_in_contact])
+    axs[0].scatter([i for i in range(len(is_frame_in_contact))], np.zeros(len(is_frame_in_contact)),
+                   c=colormap[is_frame_in_contact])
     axs[0].set_title('total human direction')
     axs[0].set_xlabel('frame number')
     axs[0].set_ylabel('direction [degrees]')
@@ -259,7 +304,8 @@ def first_method_graphes(x):
     theta_cart = np.unwrap(theta_trajectory(cart_velocity))
 
     axs[1].plot(theta_cart, 'g')
-    axs[1].scatter([i for i in range(len(is_frame_in_contact))],np.zeros(len(is_frame_in_contact)) , c = colormap[is_frame_in_contact])
+    axs[1].scatter([i for i in range(len(is_frame_in_contact))], np.zeros(len(is_frame_in_contact)),
+                   c=colormap[is_frame_in_contact])
     axs[1].set_title('cart direction')
     axs[1].set_xlabel('frame number')
     axs[1].set_ylabel('direction [degrees]')
@@ -267,7 +313,8 @@ def first_method_graphes(x):
     velocity_compare = calc_angle_diff(theta_human, theta_cart)
 
     axs[2].plot(velocity_compare, 'r')
-    axs[2].scatter([i for i in range(len(is_frame_in_contact))],np.zeros(len(is_frame_in_contact)) , c = colormap[is_frame_in_contact])
+    axs[2].scatter([i for i in range(len(is_frame_in_contact))], np.zeros(len(is_frame_in_contact)),
+                   c=colormap[is_frame_in_contact])
     axs[2].set_title('subtraction between cart and human power')
     axs[2].set_xlabel('frame number')
     axs[2].set_ylabel('direction [degrees]')
@@ -275,7 +322,7 @@ def first_method_graphes(x):
     plt.show()
 
 
-def second_method_graphes(x, force_treshhold = 0.5):
+def second_method_graphes(x, force_treshhold=0.5):
     contact = find_contact(x, display=False)
     is_frame_in_contact = [int(len(contact[i]) != 0) for i in range(len(contact))]
     colormap = np.array(['b', 'r'])
@@ -286,14 +333,16 @@ def second_method_graphes(x, force_treshhold = 0.5):
     cart_velocity = [numeral_velocity(x, i) for i in range(len(x.frames))]
     human_forces = [force_in_frame(x, i) for i in range(len(x.frames))]
 
-    human_total_force = (np.sum(human_forces, axis=1)).reshape(9097,2)
-    human_total_force_treshhold = [human_total_force[i]*(abs_value_2D(human_total_force[i]) > force_treshhold)
+    human_total_force = (np.sum(human_forces, axis=1)).reshape(9097, 2)
+    human_total_force_treshhold = [human_total_force[i] * (abs_value_2D(human_total_force[i]) > force_treshhold)
                                    for i in range(len(human_total_force))]
 
-    dot_prodacts = [normalized_dot_prod(cart_velocity[i],human_total_force_treshhold[i]) for i in range(len(human_forces))]
+    dot_prodacts = [normalized_dot_prod(cart_velocity[i], human_total_force_treshhold[i]) for i in
+                    range(len(human_forces))]
 
     axs.plot(dot_prodacts, 'b')
-    axs.scatter([i for i in range(len(is_frame_in_contact))],np.zeros(len(is_frame_in_contact)) , c = colormap[is_frame_in_contact])
+    axs.scatter([i for i in range(len(is_frame_in_contact))], np.zeros(len(is_frame_in_contact)),
+                c=colormap[is_frame_in_contact])
     axs.set_title('forces and cart movement test - SECOND METHOD')
     axs.set_xlabel('frame number')
     axs.set_ylabel('direction [degrees]')
