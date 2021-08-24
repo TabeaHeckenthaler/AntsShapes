@@ -50,14 +50,6 @@ def calculate_path_length(position, angle, aver_radius, shape, size, solver, rot
     return path_length
 
 
-from trajectory import Get, sizes
-p = [resolution(size, 'ant') for size in sizes['ant']]
-x = Get('M_H_4180002_1_ants', 'ant')
-# x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
-calculate_path_length(x.position, x.angle, average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver,
-                      rot=True, plot=True)
-
-
 def path_length_per_experiment(x, **kwargs):
     """
     Path length is calculated from beginning to end.
@@ -114,3 +106,12 @@ def mean_path_length_per_attempt(x, *args, attempts=None, **kwargs):
                                                   )
                             )
     return np.mean(path_per_att)
+
+
+if __name__ == '__main__':
+    from trajectory import Get, sizes
+    p = [resolution(size, 'ant') for size in sizes['ant']]
+    x = Get('M_H_4180002_1_ants', 'ant')
+    # x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
+    calculate_path_length(x.position, x.angle, average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver,
+                          rot=True, plot=True)

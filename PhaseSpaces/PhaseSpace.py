@@ -236,6 +236,8 @@ class PhaseSpace(object):
 
 
 if __name__ == '__main__':
-    ps = PhaseSpace('ant', 'XL', 'H', name='XL_H')
-    ps.load_space()
+    shape = 'SPT'
+    ps = PhaseSpace('ant', 'XL', shape, name='XL_' + shape)
+    ps.load_space(path=os.path.join('C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\PhaseSpaces\\ant\\XL_'+ shape +'.pkl'))
     ps.visualize_space(ps.name)
+    k = 1

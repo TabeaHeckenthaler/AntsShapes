@@ -221,7 +221,7 @@ class D_star_lite:
 
 
 def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False,
-         filename='test'):
+         filename='test', save=False):
     print('Calculating: ' + filename)
 
     # ====Search Path with RRT====
@@ -264,8 +264,9 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
         d_star_lite_finished.show_animation(save=False)
 
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='dstar', filename=filename)
-    # x.play(1, 'Display', wait=200)
-    Save(x)
+    x.play(1, 'Display', wait=200)
+    if save:
+        Save(x)
     return
 
 
@@ -296,10 +297,10 @@ if __name__ == '__main__':
         #      )
 
 
-    Parallel(n_jobs=6)(delayed(calc)(sensing_radius, dil_radius, shape)
-                       for dil_radius, sensing_radius, shape in
-                       itertools.product(range(0, 16, 1), range(1, 16, 1), ['SPT'])
-                       # itertools.product([0], [0], ['H', 'I', 'T'])
-                       )
+    # Parallel(n_jobs=6)(delayed(calc)(sensing_radius, dil_radius, shape)
+    #                    for dil_radius, sensing_radius, shape in
+    #                    itertools.product(range(0, 16, 1), range(1, 16, 1), ['SPT'])
+    #                    # itertools.product([0], [0], ['H', 'I', 'T'])
+    #                    )
 
-    # calc(10, 0, 'SPT')
+    calc(100, 0, 'H')

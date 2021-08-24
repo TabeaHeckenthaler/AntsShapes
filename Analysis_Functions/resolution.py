@@ -19,14 +19,13 @@ if __name__ == '__main__':
 # x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')
 # x.play(10, 'Display')
 
+
 def resolution(size, solver):
     return 0.1 * ResizeFactors[solver][size]
 
 
 def noise(values):
     return np.abs(np.mean(values[1:] - values[:-1]))
-
-
 
 
 # filenames_group = df[[d'filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
