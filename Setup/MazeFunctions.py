@@ -5,15 +5,12 @@ Created on Sun Apr 26 18:41:04 2020
 @author: tabea
 """
 
-## Give CreateSlitObject the world object, and the x position of the left corner of the slit (L), the maze height (H), the exit size (e) and the wall thickness (d). 
-''' General Functions '''
-from Box2D import (b2ContactListener)
+from Box2D import b2ContactListener
 import numpy as np
 import pygame
+from Analysis_Functions.usefull_stuff import flatten
 from matplotlib import pyplot as plt
 
-
-# from os import listdir, path, getcwd
 
 def threads_over_lists(fn):
     def wrapped(x):
@@ -95,9 +92,11 @@ def MeasureDistance(position1, position2, angle1, angle2, averRad, rot=True, **k
 
 
 def ClosestCorner(vertices, gravCenter):
-    corners = np.array([vertices[0].x, vertices[0].y])
-    for i in range(1, len(vertices)):
-        corners = np.vstack((corners, np.array([vertices[i].x, vertices[i].y])))
+    flattened_vert = flatten(vertices)
+    corners = np.array([flattened_vert[0].x, flattened_vert[0].y])
+
+    for i in range(1, len(flattened_vert)):
+        corners = np.vstack((corners, np.array([flattened_vert[i].x, flattened_vert[i].y])))
 
     Distances = np.sqrt(np.power((corners - gravCenter), 2).sum(axis=1))
     closestCorner = corners[np.argmin(Distances), :]
@@ -110,7 +109,7 @@ def DrawGrid(window, width, height, PPM, SCREEN_HEIGHT):
     block_size = block * PPM
     # for y in range(round(height / 2)):
     #     for x in range(round(width / 2)):
-    for y in range(np.int(np.ceil(height / block)+1)):
+    for y in range(np.int(np.ceil(height / block) + 1)):
         for x in range(np.int(np.ceil(width / block))):
             rect = pygame.Rect(x * block_size, SCREEN_HEIGHT -
                                y * block_size, block_size, block_size)

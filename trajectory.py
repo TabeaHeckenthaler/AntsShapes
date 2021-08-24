@@ -778,9 +778,16 @@ class Trajectory:
             Save(self)
         return self, complaints
 
-    def step(self, my_load, i):
+    def step(self, my_load, i, my_maze=None, pause=None):
+        from PhysicsEngine.MazeSimulation_Ising import step
+
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
-        return
+
+        arrows = []
+
+        if self.solver == 'sim' and not pause:
+            arrows = step(my_load, self, my_maze, pause)
+        return arrows
 
     def play(self, *args, interval=1, **kwargs):
         from copy import deepcopy

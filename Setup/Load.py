@@ -45,7 +45,7 @@ def average_radius(size, shape, solver):
 
 
 def getLoadDim(solver, shape, size):
-    if solver in ['ant', 'dstar']:
+    if solver in ['ant', 'dstar', 'sim']:
         resize_factor = ResizeFactors[solver][size]
         shape_sizes = {'H': [5.6, 7.2, 1.6],
                        'SPT': [4.85, 9.65, 0.85, 2.44],

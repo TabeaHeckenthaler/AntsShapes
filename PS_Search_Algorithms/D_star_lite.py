@@ -9,7 +9,7 @@ from mayavi import mlab
 import os
 import numpy as np
 from Analysis_Functions.GeneralFunctions import graph_dir
-from skfmm import distance
+from skfmm import distance, travel_time # use this! https://pythonhosted.org/scikit-fmm/
 import itertools
 from joblib import Parallel, delayed
 from Classes_Experiment.mr_dstar import filename_dstar

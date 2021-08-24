@@ -119,7 +119,7 @@ def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
     return list(delta), delta_angle, i
 
 
-def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, **kwargs):
+def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, **kwargs):
     global Delta_total, DeltaAngle_total
     pause = False
 
@@ -127,7 +127,7 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, **kwargs):
         pause = kwargs['pause']
 
     Display_renew(screen, my_maze=my_maze, i=i, frame=x.frames[i], movie_name=x.old_filenames(0), **kwargs)
-    Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, **kwargs)
+    Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, arrows=arrows, **kwargs)
     events = pygame.event.get()
 
     for event in events:  # what happened in the last event?
@@ -207,14 +207,18 @@ def Display_renew(screen, my_maze=None, frame=None, movie_name=None, **kwargs):
         screen.blit(text, text_rect)
 
 
-def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=None, circles=None, points=None, **kwargs):
+def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=None, circles=None, points=None,
+                 arrows=None, **kwargs):
     if lines is None:
         lines = []
     if circles is None:
         circles = []
     if points is None:
         points = []
+    if arrows is None:
+        arrows = []
 
+    [arrow(*a_i, screen) for a_i in arrows]
     lines, circles, points = lines_circles_points(my_maze, lines=lines, circles=circles, points=points)
 
     # and draw all the circles passed (hollow, so I put two on top of each other)

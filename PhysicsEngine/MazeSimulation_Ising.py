@@ -6,30 +6,29 @@ Created on Thu Jun 11 12:55:29 2020
 """
 import numpy as np
 import random as rd  # import (gauss, uniform)
-from trajectory import NewFileName, Trajectory
+from trajectory import NewFileName
 from Setup.Load import Loops
-from PhysicsEngine.Display_Pygame import arrow
+
+TARGET_FPS = 100  # Frames per second
+TIME_STEP = 1 / TARGET_FPS  # time step in simulation (seconds)
 
 
-def step(my_load, x, my_maze, i, pause, **kwargs):
-    TARGET_FPS = 100  # Frames per second
-    TIME_STEP = 1 / TARGET_FPS  # time step in simulation (seconds)
+def step(my_load, x, my_maze, pause):
+    arrows = None
     if not pause:
-        ForceAttachments, arrows = Forces(my_load, x, my_maze, **kwargs)
-        for a_i in arrows:
-            arrow(*a_i)
+        ForceAttachments, arrows = Forces(my_load, my_maze)
         my_maze.Step(TIME_STEP, 10, 10)
+
         x.position = np.vstack((x.position, [my_load.position.x, my_load.position.y]))
         x.angle = np.hstack((x.angle, my_load.angle))
-    return my_load, x, my_maze, i
+    return arrows
 
 
-def Forces(my_load, x, my_maze, **kwargs):
+def Forces(my_load, my_maze):
     from Setup.MazeFunctions import ClosestCorner
     from Box2D import b2Vec2
     grC = 1
-    gravCenter = np.array([my_maze.arena_length * grC,
-                           my_maze.arena_height / 2])  # this is the 'far away point', to which the load gravitates
+    gravCenter = np.array([my_maze.arena_length * grC, my_maze.arena_height / 2])  # this is the 'far away point', to which the load gravitates
 
     load_vertices = Loops(my_load)
 
@@ -39,15 +38,16 @@ def Forces(my_load, x, my_maze, **kwargs):
     """ Magnitude of forces """
     arrows = []
     for ForceAttachment in ForceAttachments:
-        f_x = -rd.gauss(x.xForce * (ForceAttachment[0] - my_maze.arena_length * grC) / my_maze.arena_length * grC,
-                        x.xDev)
-        f_y = -rd.gauss(x.yForce * (my_load.position.y - my_maze.arena_height / 2) / my_maze.arena_height / 2, x.yDev)
+        # f_x = -rd.gauss(x.xForce * (ForceAttachment[0] - my_maze.arena_length * grC) / my_maze.arena_length * grC,
+        #                 x.xDev)
+        # f_y = -rd.gauss(x.yForce * (my_load.position.y - my_maze.arena_height / 2) / my_maze.arena_height / 2, x.yDev)
 
         f_x = 1
         f_y = 0
 
         my_load.ApplyForce(b2Vec2([f_x, f_y]),
-                           b2Vec2(ForceAttachment),
+                           # b2Vec2(ForceAttachment),
+                           my_load.position,
                            True)
 
         start = ForceAttachment
@@ -57,15 +57,14 @@ def Forces(my_load, x, my_maze, **kwargs):
     return ForceAttachments, arrows
 
 
-def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * (2 * np.pi)]), **kwargs):
+def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * (2 * np.pi)]), display=True):
     from PhysicsEngine.Box2D_GameLoops import MainGameLoop
     from trajectory import Trajectory
     from Setup.Maze import Maze
     """
     Instatiate a x-Object
     """
-    solver='sim'
-    x = Trajectory(size=size, shape=shape, solver=solver, filename=NewFileName('', size, shape, solver))
+    x = Trajectory(size=size, shape=shape, solver='sim', filename=NewFileName('', size, shape, expORsim='sim'))
     """
     Here are all the parameters: 
     """
@@ -79,16 +78,20 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * 
     x.contact = [[] for _ in range(frames)]
 
     """
-    Now start instantiating the World and the load... 
+    Now start instantiating the world and the load... 
     """
-    my_maze = Maze(size=size, shape=shape, solver=solver)
-    if '_sim_' in x.filename:
-        x.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
-        x.angle = init_angle  # array to store the position and angle of the load
+    my_maze = Maze(size=size, shape=shape, solver='sim')
 
-    x = MainGameLoop(x, 'Display')
+    x.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
+    x.angle = init_angle  # array to store the position and angle of the load
+
+    x = MainGameLoop(x, display=display)
     return x
 
-#
-# frames = 10000
-# MazeSimulation('XL', 'H', frames)
+
+if __name__ == '__main__':
+    frames = 6000
+    my_trajectory = MazeSimulation('XL', 'H', frames)
+
+    # my_trajectory.play()
+

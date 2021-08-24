@@ -1,0 +1,7 @@
+# number_of_points = {'SPT': (None, 219, 126),
+#                     'H': (None, 200, 32),
+#                     'T': (None, 200, 32),
+#                     'I': (None, 200, 32),
+#                     'LASH': (None, 300, 126),
+#                     'RASH': (None, 300, 126),
+#                     }
