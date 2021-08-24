@@ -382,6 +382,7 @@ def force_attachment_positions(my_load, x):
         h = 0
 
     # shift the shape...
-    positions = [[r[0] - h, r[1]] for r in positions]
+    positions = [[r[0] - h, r[1]] for r in positions]  # r vectors in the load frame
 
-    return [my_load.GetWorldPoint(b2Vec2(r)) for r in positions]
+    #
+    return [my_load.GetWorldPoint(b2Vec2(r)) for r in positions]  # r vectors in the lab frame

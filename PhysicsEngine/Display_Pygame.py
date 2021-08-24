@@ -2,7 +2,7 @@ import pygame
 import numpy as np
 from Setup.MazeFunctions import DrawGrid
 from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP,
-                           K_RIGHT, K_LEFT, K_r, K_l)
+                           K_RIGHT, K_LEFT, K_r, K_l, K_d, K_a, K_KP4, K_KP6)
 import math
 import pygame.camera
 from Setup.Load import Loops
@@ -10,6 +10,8 @@ from Setup.Load import Loops
 global Delta_total, DeltaAngle_total
 PPM, SCREEN_HEIGHT, SCREEN_WIDTH = 0, 0, 0
 Delta_total, DeltaAngle_total = [0, 0], 0
+global flag
+
 
 # printable colors
 colors = {'my_maze': (0, 0, 0),
@@ -82,20 +84,39 @@ def Display_screen(my_maze=None, free=False, caption=None):
     return screen
 
 
-def event_key(key, delta, delta_angle, lateral=0.05, rotational=0.01):
-    if key == K_DOWN:
-        delta = np.array(delta) + np.array([0, -lateral])
-    elif key == K_UP:
-        delta = np.array(delta) + np.array([0, lateral])
-    elif key == K_RIGHT:
-        delta = np.array(delta) + np.array([lateral, 0])
-    elif key == K_LEFT:
-        delta = np.array(delta) + np.array([-lateral, 0])
-    elif key == K_r:
-        delta_angle += rotational
-    elif key == K_l:
-        delta_angle -= rotational
-    return list(delta), delta_angle
+def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
+
+    """
+    To control the frames:
+    'D' = one frame forward
+    'A' = one frame backward
+    '4' (one the keypad) = one second forward
+    '6' (one the keypad) = one second backward
+    """
+
+    # if key == K_DOWN:
+    #     delta = np.array(delta) + np.array([0, -lateral])
+    # elif key == K_UP:
+    #     delta = np.array(delta) + np.array([0, lateral])
+    # elif key == K_RIGHT:
+    #     delta = np.array(delta) + np.array([lateral, 0])
+    # elif key == K_LEFT:
+    #     delta = np.array(delta) + np.array([-lateral, 0])
+    # elif key == K_r:
+    #     delta_angle += rotational
+    # elif key == K_l:
+    #     delta_angle -= rotational
+    if key == K_a:
+        i -= 1
+    elif key == K_d:
+        i += 1
+    elif key == K_KP4:
+        i -= 30
+    elif key == K_KP6:
+        i += 30
+
+
+    return list(delta), delta_angle, i
 
 
 def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, **kwargs):
@@ -122,10 +143,10 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
         delta, delta_angle = [0, 0], 0
 
         for event in events:
-            if hasattr(event, 'key'):
-                delta, delta_angle = event_key(event.key, delta, delta_angle)
-        if 'Trajectory' in kwargs.keys():
-            x = kwargs['Trajectory']
+            if hasattr(event, 'key') and event.type == KEYDOWN:
+                pygame.key.set_repeat(500, 100)
+                delta, delta_angle, i = event_key(event.key, delta, delta_angle, i)
+
             if delta != [0, 0] or delta_angle != 0:
                 x.position = x.position + delta
                 x.angle = x.angle + delta_angle
@@ -134,6 +155,7 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
 
         Delta_total, DeltaAngle_total = [arg1 + arg2 for arg1, arg2 in
                                          zip(Delta_total, delta)], DeltaAngle_total + delta_angle
+
         return True, i, pause
 
     return True, i, pause
