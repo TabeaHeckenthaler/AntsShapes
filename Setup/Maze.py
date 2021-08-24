@@ -23,7 +23,7 @@ ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, '
                  'dstar': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 1, 'Small Far': 1, 'S': 1, 'M': 1, 'Medium': 1, 'Large': 1, 'L': 1},
                  'humanhand': {'': 1}}
-
+ResizeFactors['sim'] = ResizeFactors['ant']
 
 # there are a few I mazes, which have a different exit size,
 
@@ -58,9 +58,13 @@ class Maze(b2World):
         dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}ExperimentalSetup{6}'.format(path.sep, path.sep,
                                                                        path.sep, path.sep, path.sep, path.sep, path.sep,
                                                                                                  path.sep)
-        df = read_excel(dir + 'MazeDimensions_' + self.solver + '.xlsx',
+        if self.solver == 'sim':
+            df = read_excel(dir + 'MazeDimensions_' + 'ant' + '.xlsx',
                         engine='openpyxl')
-        if self.solver in ['ant', 'dstar']:  # all measurements in cm
+        else:
+            df = read_excel(dir + 'MazeDimensions_' + self.solver + '.xlsx',
+                        engine='openpyxl')
+        if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
             if 'L_I1' in args:

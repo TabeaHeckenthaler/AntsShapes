@@ -11,7 +11,9 @@ def MainGameLoop(x, *args, interval=1, display=False, **kwargs):
     pause = False
     my_maze = Maze(*args, size=x.size, shape=x.shape, solver=x.solver)
     my_load = Load(my_maze)
-    screen = Display_screen(my_maze, caption=x.filename)
+    screen = None
+    if display:
+        screen = Display_screen(my_maze, caption=x.filename)
 
     """
     --- main game loop ---
@@ -21,12 +23,12 @@ def MainGameLoop(x, *args, interval=1, display=False, **kwargs):
 
     # Loop that runs the simulation... 
     while running:
-        x.step(my_load, i)
+        arrows = x.step(my_load, i, my_maze=my_maze, pause=pause)
 
         """ Display the frame """
         if display:
             running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=pause, interval=interval,
-                                                    **kwargs)
+                                                    arrows=arrows, **kwargs)
 
         if not pause:
             i += interval  # we start a new iteration
