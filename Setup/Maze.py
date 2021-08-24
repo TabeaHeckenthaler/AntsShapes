@@ -55,9 +55,12 @@ class Maze(b2World):
         self.get_zone()
 
     def getMazeDim(self, *args):
-        dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}ExperimentalSetup{6}'.format(path.sep, path.sep,
-                                                                       path.sep, path.sep, path.sep, path.sep, path.sep,
-                                                                                                 path.sep)
+        # dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}ExperimentalSetup{6}'.format(path.sep, path.sep,
+        #                                                                path.sep, path.sep, path.sep, path.sep, path.sep,
+        #                                                                                          path.sep)
+
+        dir = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Setup\\'
+
         if self.solver == 'sim':
             df = read_excel(dir + 'MazeDimensions_' + 'ant' + '.xlsx',
                         engine='openpyxl')

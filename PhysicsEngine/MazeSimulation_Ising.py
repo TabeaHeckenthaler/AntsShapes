@@ -6,16 +6,14 @@ Created on Thu Jun 11 12:55:29 2020
 """
 import numpy as np
 import random as rd  # import (gauss, uniform)
-from trajectory import NewFileName, Trajectory
+from trajectory import NewFileName
 from Setup.Load import Loops
-from PhysicsEngine.Display_Pygame import arrow
 
 TARGET_FPS = 100  # Frames per second
 TIME_STEP = 1 / TARGET_FPS  # time step in simulation (seconds)
 
 
 def step(my_load, x, my_maze, pause):
-
     arrows = None
     if not pause:
         ForceAttachments, arrows = Forces(my_load, my_maze)
@@ -59,7 +57,7 @@ def Forces(my_load, my_maze):
     return ForceAttachments, arrows
 
 
-def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * (2 * np.pi)])):
+def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * (2 * np.pi)]), display=True):
     from PhysicsEngine.Box2D_GameLoops import MainGameLoop
     from trajectory import Trajectory
     from Setup.Maze import Maze
@@ -87,7 +85,7 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * 
     x.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
     x.angle = init_angle  # array to store the position and angle of the load
 
-    x = MainGameLoop(x, display=True)
+    x = MainGameLoop(x, display=display)
     return x
 
 
