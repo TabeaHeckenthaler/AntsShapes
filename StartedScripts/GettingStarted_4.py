@@ -18,3 +18,5 @@ ps.load_space(path=os.path.join(path))
 ps.visualize_space(ps.name)
 
 print(ps.name)
+
+#  e7e1dbf266e6d5d96177c95b825eefdf40e7fd22
