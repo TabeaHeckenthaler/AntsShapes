@@ -13,6 +13,7 @@ SaverDirectories = {'ant': AntSaverDirectory,
                     'human': HumanSaverDirectory,
                     'humanhand': HumanHandSaverDirectory,
                     'dstar': DstarSaverDirectory}
+PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
 
 def SetupDirectories():

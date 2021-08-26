@@ -1,10 +1,10 @@
 from PhaseSpaces import PhaseSpace
 import os
-from PhaseSpaces.PhaseSpace import ps_dir
+from Directories import PhaseSpaceDirectory
 import itertools
 from joblib import Parallel, delayed
 
-solvers = ['ant']
+solvers = ['ant', 'human', 'humanhand']
 shapes = ['SPT', 'H', 'I', 'T', ]
 sizes = ['XL']
 point_particle_bools = [False, True, ]
@@ -16,7 +16,7 @@ def calc(point_particle, shape, size, solver, parallel=False):
     if point_particle:
         name = name + '_pp'
 
-    path = os.path.join(ps_dir, solver, name + ".pkl")
+    path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace.PhaseSpace(solver, size, shape, name=name)
     ps.load_space(path=path, point_particle=point_particle, parallel=parallel)
 

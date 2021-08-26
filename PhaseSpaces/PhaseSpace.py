@@ -9,7 +9,7 @@ import os
 from Setup.Load import average_radius, getLoadDim
 from Setup.Maze import Maze
 from progressbar import progressbar
-from Directories import home
+from Directories import home, PhaseSpaceDirectory, data_home
 from Analysis_Functions.Pathlength import resolution
 from PhysicsEngine.Display_Pygame import Pygame_EventManager, Display_renew
 
@@ -19,7 +19,7 @@ scale = 5
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
-ps_dir = home + '\\PhaseSpaces'
+ps_dir = PhaseSpaceDirectory
 
 
 class PhaseSpace(object):
@@ -188,7 +188,7 @@ class PhaseSpace(object):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
-    def load_space(self, path=home + '\\PhaseSpaces\\ant\\XL_SPT.pkl', point_particle=False, parallel=False):
+    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False, parallel=False):
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -278,8 +278,11 @@ if __name__ == '__main__':
     if point_particle:
         name = name + '_pp'
 
-    path = os.path.join(ps_dir, solver, name + ".pkl")
+    path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace(solver, size, shape, name=name)
     ps.load_space(path=os.path.join(path))
+
+    ps = PhaseSpace('ant', 'XL', shape, name='XL_' + shape)
+    ps.load_space(path=os.path.join(data_home + '\\' + solver + '\\' + size + '_' + shape + '.pkl'))
     ps.visualize_space(ps.name)
     k = 1

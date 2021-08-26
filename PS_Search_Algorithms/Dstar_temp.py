@@ -8,7 +8,7 @@ size = 'XL'
 shape = 'SPT'
 solver = 'ant'
 
-data_dir = 'PhaseSpaces\\' + solver
+data_dir = 'PhaseSpace\\' + solver
 
 x = Get('Dlite_prior_knowledge_of_walls', 'dstar')
 # x.play(1, 'Display', wait=20)

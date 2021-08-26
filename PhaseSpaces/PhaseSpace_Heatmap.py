@@ -5,6 +5,7 @@ from mayavi import mlab
 from Analysis_Functions.GeneralFunctions import graph_dir
 from DataFrame.create_dataframe import df
 from trajectory import Get
+from Directories import data_home
 
 filenames_group = df[['filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
 
@@ -25,7 +26,7 @@ for (solver, size, shape), df1 in filenames_group:
             ps = PhaseSpace.PhaseSpace(solver, size, shape,
                                        name=size + '_' + shape)
 
-            data_dir = 'PhaseSpaces\\' + solver
+            data_dir = data_home + 'PhaseSpace\\' + solver
 
             ps.load_space(path=os.path.join(data_dir, ps.name + ".pkl"))
 

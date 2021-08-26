@@ -15,6 +15,7 @@ from joblib import Parallel, delayed
 from Classes_Experiment.mr_dstar import filename_dstar
 from PS_Search_Algorithms.Dstar_functions import voxel
 from scipy.ndimage.measurements import label
+from Directories import PhaseSpaceDirectory
 
 structure = np.ones((3, 3, 3), dtype=int)
 
@@ -228,8 +229,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
                                        name=size + '_' + shape)
 
-    path = os.path.join(os.path.dirname(SaverDirectories[solver]),
-                        PhaseSpace.ps_dir, solver, conf_space.name + ".pkl")
+    path = os.path.join(PhaseSpaceDirectory, solver, conf_space.name + ".pkl")
     conf_space.load_space(path=path)
 
     # known_conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
@@ -304,3 +304,5 @@ if __name__ == '__main__':
     #                    )
 
     calc(100, 0, 'SPT')
+    calc(100, 0, 'H')
+
