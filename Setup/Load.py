@@ -8,7 +8,7 @@ assymetric_h_shift = 1.22 * 2
 
 
 # I multiply all these values with 2, because I got them in L, but want to state them in XL.
-# TODO: Does the load have a preferred orientation while moving?
+# StartedScripts: Does the load have a preferred orientation while moving?
 
 
 def Loops(Box2D_Object, vertices=None):

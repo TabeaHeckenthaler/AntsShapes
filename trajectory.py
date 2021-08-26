@@ -10,12 +10,13 @@ import glob
 from Box2D import b2BodyDef
 import matplotlib.pyplot as plt
 import scipy.io as sio
-from os import (listdir, getcwd, mkdir, path)
+from os import (listdir, getcwd, path)
 import pickle
 import shutil
 from copy import deepcopy
 from Setup.MazeFunctions import BoxIt, PlotPolygon
 from PhysicsEngine import Box2D_GameLoops
+from Directories import SaverDirectories
 
 # import handheld
 
@@ -26,18 +27,6 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'human': ['S', 'M', 'L'],
          'humanhand': ''}
 solvers = ['ant', 'human', 'humanhand', 'dstar']
-
-home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
-data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
-work_dir = data_home + 'Pickled_Trajectories\\'
-AntSaverDirectory = work_dir + 'Ant_Trajectories'
-HumanSaverDirectory = work_dir + 'Human_Trajectories'
-HumanHandSaverDirectory = work_dir + 'HumanHand_Trajectories'
-DstarSaverDirectory = work_dir + 'Dstar_Trajectories'
-SaverDirectories = {'ant': AntSaverDirectory,
-                    'human': HumanSaverDirectory,
-                    'humanhand': HumanHandSaverDirectory,
-                    'dstar': DstarSaverDirectory}
 
 length_unit = {'ant': 'cm',
                'human': 'm',
@@ -77,22 +66,6 @@ def time(x, condition):
             return x.time
         else:
             return 60 * 40  # time in seconds after which the maze supposedly would have been solved?
-
-
-def Directories():
-    if not (path.isdir(AntSaverDirectory)):
-        breakpoint()
-        mkdir(AntSaverDirectory)
-        mkdir(AntSaverDirectory + path.sep + 'OnceConnected')
-        mkdir(AntSaverDirectory + path.sep + 'Free_Motion')
-        mkdir(AntSaverDirectory + path.sep + 'Free_Motion' + path.sep + 'OnceConnected')
-    if not (path.isdir(HumanSaverDirectory)):
-        mkdir(HumanSaverDirectory)
-    if not (path.isdir(HumanHandSaverDirectory)):
-        mkdir(HumanHandSaverDirectory)
-    if not (path.isdir(DstarSaverDirectory)):
-        mkdir(DstarSaverDirectory)
-    return
 
 
 def NewFileName(old_filename, size, shape, expORsim):
@@ -139,7 +112,6 @@ def Get(filename, solver, address=None):
 
 
 def Save(x, address=None):
-    Directories()
     if address is None:
         if x.solver in solvers:
             if x.free:
@@ -211,9 +183,9 @@ class Trajectory:
                  winner=bool,
                  x_error=None, y_error=None, angle_error=None, falseTracking=None,
                  **kwargs):
-        self.shape = shape  # shape (maybe this will become name of the maze...)
-        self.size = size  # size
-        self.solver = solver
+        self.shape = shape  # shape (maybe this will become name of the maze...) (H, I, T, SPT)
+        self.size = size  # size (XL, SL, L, M, S, XS)
+        self.solver = solver  # ant, human, sim, humanhand
 
         if 'old_filename' in kwargs:
             self.filename = NewFileName(kwargs['old_filename'], self.size, self.shape, 'exp')

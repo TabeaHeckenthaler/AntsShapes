@@ -9,8 +9,8 @@ max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 
                                {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
 
 
-# TODO: Are all the trajectories in the right direction??
-# TODO: rewrite the velocity module... (SH_4170007_SmallHT_2_ants, SH_4170006_smallHT_2_ants.mat for example)
+# StartedScripts: Are all the trajectories in the right direction??
+# StartedScripts: rewrite the velocity module... (SH_4170007_SmallHT_2_ants, SH_4170006_smallHT_2_ants.mat for example)
 
 def crappy_velocity(x, i):
     return x.position[min(i + 30, x.position.shape[0] - 1)] - x.position[i]
@@ -70,7 +70,7 @@ def velocity(position, angle, fps, size, shape, second_smooth, solver, *args, **
 
     if 'withoutConnectors':
         pass
-        # TODO: add an option to the velocity to exclude the frames from the SmoothConnector
+        # StartedScripts: add an option to the velocity to exclude the frames from the SmoothConnector
 
     if 'abs' in args:
         for ang_index in np.where(['radian/s' in unit for unit in units])[0]:
@@ -105,7 +105,7 @@ def acceleration(x, second_smooth, *args, **kwargs):
 
     if 'withoutConnectors':
         pass
-        # TODO: add an option to the velocity to exclude the frames from the SmoothConnector
+        # StartedScripts: add an option to the velocity to exclude the frames from the SmoothConnector
 
     return acc
 

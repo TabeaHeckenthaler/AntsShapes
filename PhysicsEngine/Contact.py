@@ -6,6 +6,7 @@ from Analysis_Functions.Velocity import velocity_x
 from Setup.Load import Loops
 from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew, Display_loop
 from Setup.Load import Load
+from Analysis_Functions.usefull_stuff import flatten
 
 # maximum distance between fixtures to have a contact (in cm)
 distance_upper_bound = 0.04
@@ -78,7 +79,7 @@ def Contact_loop2(load, maze):
     #     return False
 
     # if we are close enough to a boundary then we have to calculate all the vertices.
-    load_corners = Loops(load)
+    load_corners = flatten(Loops(load))
     maze_corners1 = maze_corners(maze)
     for load_NumFixture in range(int(len(load_corners) / 4)):
         load_vertices_list = load_corners[load_NumFixture * 4:(load_NumFixture + 1) * 4] \

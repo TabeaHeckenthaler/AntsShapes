@@ -3,7 +3,7 @@ from Box2D import b2BodyDef, b2_staticBody, b2World
 from Setup.MazeFunctions import BoxIt
 from scipy.spatial import cKDTree
 from pandas import read_excel
-from os import path
+from Directories import home
 
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -55,18 +55,13 @@ class Maze(b2World):
         self.get_zone()
 
     def getMazeDim(self, *args):
-        # dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}ExperimentalSetup{6}'.format(path.sep, path.sep,
-        #                                                                path.sep, path.sep, path.sep, path.sep, path.sep,
-        #                                                                                          path.sep)
-
-        dir = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Setup\\'
+        # dir = getcwd().split('\\')[0] + '\\' + path.join(*getcwd().split('\\')[1:-1]) + '\\Setup'
+        dir = home + '\\Setup'
 
         if self.solver == 'sim':
-            df = read_excel(dir + 'MazeDimensions_' + 'ant' + '.xlsx',
-                        engine='openpyxl')
+            df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
         else:
-            df = read_excel(dir + 'MazeDimensions_' + self.solver + '.xlsx',
-                        engine='openpyxl')
+            df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
         if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
@@ -83,7 +78,7 @@ class Maze(b2World):
                 self.slits = [d['slits'].values[0]]
 
         elif self.solver == 'human':  # all measurements in meters
-            # TODO: measure the slits again...
+            # StartedScripts: measure the slits again...
             # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
             # Experiments\ExperimentalSetup
             d = df.loc[df['Name'] == self.size]

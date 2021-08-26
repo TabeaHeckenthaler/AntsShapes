@@ -6,7 +6,7 @@ Created on Thu Jun 11 12:55:29 2020
 """
 import numpy as np
 import random as rd  # import (gauss, uniform)
-from trajectory import NewFileName
+from trajectory import NewFileName, Save, Get
 from Setup.Load import Loops
 
 TARGET_FPS = 100  # Frames per second
@@ -68,12 +68,11 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * 
     """
     Here are all the parameters: 
     """
-    x.buffer = 0
-    x.xForce, x.xDev, x.yForce, x.yDev = 1, 10, 0, 5  # These numbers give a magnitude to the force acting towards
-
-    # the gravitational center at distance grC*MazeLength
-    x.linearDamping, x.angularDamping = 0.1, 0.1  # Damping coefficient
-    x.friction, x.restitution = 0, 0.5
+    # x.xForce, x.xDev, x.yForce, x.yDev = 1, 10, 0, 5  # These numbers give a magnitude to the force acting towards
+    #
+    # # the gravitational center at distance grC*MazeLength
+    # x.linearDamping, x.angularDamping = 0.1, 0.1  # Damping coefficient
+    # x.friction, x.restitution = 0, 0.5
     x.frames = np.linspace(1, frames, frames)
     x.contact = [[] for _ in range(frames)]
 
@@ -91,7 +90,9 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([rd.uniform(0, 1) * 
 
 if __name__ == '__main__':
     frames = 6000
-    my_trajectory = MazeSimulation('XL', 'H', frames)
+    my_trajectory = MazeSimulation(size='XL', shape='H', frames=frames)
+    Save(my_trajectory)
 
-    # my_trajectory.play()
+    my_trajectory.play()
+
 

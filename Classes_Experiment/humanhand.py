@@ -5,6 +5,6 @@ class Humanhand:
         return
 
     @staticmethod
-    def averageCarrierNumber():
+    def averageCarrierNumber(self):
         return 1
 

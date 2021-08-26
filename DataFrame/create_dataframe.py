@@ -92,7 +92,7 @@ df = pd.read_json(df_dir + '.json')
 #     df = df.append(new_experiments_df(df, solver=solver), ignore_index=True)
 #
 #
-# TODO: path length during attempts is sometimes 0 for some reason
+# StartedScripts: path length during attempts is sometimes 0 for some reason
 #  Attempts is also problematic , because smoothing window is off
 #  just make all the Attempts for SPT NaN, and also path length during attempts
 

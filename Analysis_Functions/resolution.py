@@ -1,5 +1,4 @@
-from trajectory import Get, data_home, home
-from matplotlib import pyplot as plt
+from Directories import data_home, home
 import pandas as pd
 import numpy as np
 from Setup.Maze import ResizeFactors
@@ -14,7 +13,7 @@ from Setup.Maze import ResizeFactors
 if __name__ == '__main__':
     df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
     df_dir = home + 'Analysis_Functions\\resolution_noise_exp'
-# TODO: resolution dependent on object size
+# StartedScripts: resolution dependent on object size
 
 # x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')
 # x.play(10, 'Display')

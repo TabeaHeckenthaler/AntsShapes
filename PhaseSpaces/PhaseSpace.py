@@ -9,8 +9,9 @@ import os
 from Setup.Load import average_radius, getLoadDim
 from Setup.Maze import Maze
 from progressbar import progressbar
-from trajectory import home
+from Directories import home
 from Analysis_Functions.Pathlength import resolution
+from PhysicsEngine.Display_Pygame import Pygame_EventManager, Display_renew
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -71,7 +72,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, point_particle=False):
+    def calculate_space(self, point_particle=False, screen=None, parallel=False):
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
         load = Load(maze, point_particle=point_particle)
 
@@ -82,14 +83,45 @@ class PhaseSpace(object):
                                   (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))))
         print("PhaseSpace: Calculating space " + self.name)
 
-        # lines_stat, circles = screen(maze, [], [])
+        # how to iterate over phase space
+        def ps_calc(x0, x1):
+            space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
+            for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
+                load.position, load.angle = [x, y], float(theta)
+                space[self.coords_to_indexes(x, y, theta)] = np.any(Contact_loop2(load, maze))
+                if screen is not None:
+                    if not self.space[self.coords_to_indexes(x, y, theta)]:
+                        Display_renew(0, maze)
+                        _, _, _ = Pygame_EventManager(0, maze, load, [], copy(lines_stat), circles, pause=False)
+            return space
 
-        for x, y, theta in self.iterate_coordinates():
-            load.position, load.angle = [x, y], float(theta)
-            self.space[self.coords_to_indexes(x, y, theta)] = np.any(Contact_loop2(load, maze))
-            # if not self.space[self.coords_to_indexes(x, y, theta)]:
-            #     Display_renew(0, maze)
-            #     _, _, _ = Pygame_EventManager(0, maze, load, [], copy(lines_stat), circles, pause=False)
+        # iterate using parallel processing
+        # if parallel:
+        #     n_jobs = 5
+        #     x_index_first = int(np.floor(self.space.shape[0]/n_jobs))
+        #     split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs-1)]
+        #     split_list.append((split_list[-1][-1], self.space.shape[0]))
+        #
+        #     # we should be able to paralyze this process...
+        #     # results = ps_calc(*split_list[0])
+        #     import multiprocessing as mp
+        #     pool = mp.Pool(mp.cpu_count())
+        #     # k = ps_calc(self, load, maze, 0, 2)
+        #     results = [pool.apply(ps_calc, args=(copy(self), copy(load), copy(maze), copy(x0), copy(x1)))
+        #                for x0, x1 in [(0, 2), (2, 4)]]
+        #     # results = Parallel(n_jobs=5)(delayed(ps_calc)(x0, x1) for x0, x1 in [(0, 2), (2, 4)])
+        #     # results = Parallel(n_jobs=5)(delayed(ps_calc)(x0, x1) for x0, x1 in split_list)
+        #     self.space = np.concatenate(results, axis=0)
+
+        # iterate without parallel processing
+        # else:
+        if screen is not None:
+            lines_stat, circles = screen(maze, [], [])
+        else:
+            lines_stat, circles = None, None
+
+        self.space = ps_calc(0, self.space.shape[0])
+        return
 
     def visualize_space(self, name):
         vis_space = copy(self.space)
@@ -127,8 +159,9 @@ class PhaseSpace(object):
         ax.label_text_property.font_family = 'times'
         return fig
 
-    def iterate_coordinates(self):
-        for x in progressbar(np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)):
+    def iterate_coordinates(self, x0=0, x1=-1):
+        x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
+        for x in progressbar(x_iter):
             for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
                 for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
                     yield x, y, theta
@@ -152,18 +185,17 @@ class PhaseSpace(object):
         mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
     def save_space(self, path='SLT.pkl'):
+        print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
-    def load_space(self, path=os.path.join('C:\\Users\\tabea\\PycharmProjects\\AntsShapes'
-                                           '\\PhaseSpaces\\ant\\XL_SPT.pkl'),
-                   point_particle=False):
+    def load_space(self, path=home + '\\PhaseSpaces\\ant\\XL_SPT.pkl', point_particle=False, parallel=False):
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
         else:
-            self.calculate_boundary(point_particle=point_particle)
+            self.calculate_boundary(point_particle=point_particle, parallel=parallel)
             self.save_space(path=path)
         return
 
@@ -203,9 +235,9 @@ class PhaseSpace(object):
                 for itheta in range(self.space.shape[2]):
                     yield ix, iy, itheta
 
-    def calculate_boundary(self, point_particle=False):
+    def calculate_boundary(self, point_particle=False, parallel=False):
         if self.space is None:
-            self.calculate_space(point_particle=point_particle)
+            self.calculate_space(point_particle=point_particle, parallel=parallel)
         self.space_boundary = np.zeros(
             (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
@@ -237,7 +269,17 @@ class PhaseSpace(object):
 
 if __name__ == '__main__':
     shape = 'SPT'
-    ps = PhaseSpace('ant', 'XL', shape, name='XL_' + shape)
-    ps.load_space(path=os.path.join('C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\PhaseSpaces\\ant\\XL_'+ shape +'.pkl'))
+    size = 'XL'
+    point_particle = False
+    solver = 'ant'
+
+    name = size + '_' + shape
+
+    if point_particle:
+        name = name + '_pp'
+
+    path = os.path.join(ps_dir, solver, name + ".pkl")
+    ps = PhaseSpace(solver, size, shape, name=name)
+    ps.load_space(path=os.path.join(path))
     ps.visualize_space(ps.name)
     k = 1

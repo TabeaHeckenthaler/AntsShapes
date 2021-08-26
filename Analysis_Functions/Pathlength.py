@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from progressbar import progressbar
 
 # --- from experimental data--- #
-# TODO: check the noises (humans!!!)
+# StartedScripts: check the noises (humans!!!)
 noise_xy_ants_ImageAnaylsis = [0.01, 0.05, 0.02]  # cm
 noise_angle_ants_ImageAnaylsis = [0.01, 0.01, 0.02]  # rad
 

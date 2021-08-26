@@ -114,8 +114,6 @@ def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
         i -= 30
     elif key == K_KP6:
         i += 30
-
-
     return list(delta), delta_angle, i
 
 

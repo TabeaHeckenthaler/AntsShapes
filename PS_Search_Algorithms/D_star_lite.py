@@ -71,7 +71,7 @@ class D_star_lite:
         If you are able to walk to next_node is, make next_node your current_node.
         Else, recompute your distances.
         """
-        # TODO: ways to make less efficient:
+        # StartedScripts: ways to make less efficient:
         # limited memory
         # locality (patch size)
         # accuracy of greedy node, add stochasticity
@@ -303,4 +303,4 @@ if __name__ == '__main__':
     #                    # itertools.product([0], [0], ['H', 'I', 'T'])
     #                    )
 
-    calc(100, 0, 'H')
+    calc(100, 0, 'SPT')

@@ -3,9 +3,9 @@ from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 from trajectory import Save, MatlabFolder
 from os import listdir
 
-# TODO: You still have to load the SL Asymmetric H. Its difficult, because the maze is twisted.
+# StartedScripts: You still have to load the SL Asymmetric H. Its difficult, because the maze is twisted.
 #  I have to untwist the data
-# TODO: Load the new human and ant movies
+# StartedScripts: Load the new human and ant movies
 
 for mat_filename in listdir(MatlabFolder('ant', 'SL', 'RASH', False)):
     print(mat_filename)

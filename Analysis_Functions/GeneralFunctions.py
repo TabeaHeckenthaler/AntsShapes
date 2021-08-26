@@ -1,8 +1,8 @@
 import numpy as np
-from os import path, getcwd, mkdir
+from os import path, mkdir
 import datetime
 from matplotlib import pyplot as plt
-from trajectory import home
+from Directories import home
 
 
 def gauss(x, a, x0, sigma):
