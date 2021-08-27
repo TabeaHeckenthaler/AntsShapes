@@ -1,4 +1,3 @@
-import os
 from PhaseSpaces.PhaseSpace import PhaseSpace
 from Directories import ps_path
 from trajectory import Get
@@ -20,6 +19,7 @@ fig = ps.visualize_space(ps.name)
 print(ps.name)
 
 x = Get('XL_SPT_dil2_sensing15', 'dstar', )
-x.play(1, PhaseSpace=ps, ps_figure=fig, wait=20, interval=10)
+print(x.play.__doc__)  # this will print for you, how to use the .play method!
+x.play(1, PhaseSpace=ps, ps_figure=fig, wait=200, interval=10)
 
 k = 1

@@ -4,7 +4,7 @@ from Setup.Load import Load
 from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew
 
 
-def MainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure=None, **kwargs):
+def MainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, **kwargs):
     """
     Start instantiating the World and the load...
     """
@@ -28,7 +28,8 @@ def MainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure
         """ Display the frame """
         if display:
             running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=pause, interval=interval,
-                                                    arrows=arrows, PhaseSpace=PhaseSpace, ps_figure=ps_figure, **kwargs)
+                                                    arrows=arrows, PhaseSpace=PhaseSpace, ps_figure=ps_figure,
+                                                    wait=wait, **kwargs)
 
         if not pause:
             i += interval  # we start a new iteration

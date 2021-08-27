@@ -3,25 +3,26 @@ from trajectory import SaverDirectories, Trajectory, Save
 from Setup.Load import average_radius
 from Setup.Maze import start, end
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
+from PS_Search_Algorithms.Dstar_functions import plot_distances
 from copy import copy
 from progressbar import progressbar
 from mayavi import mlab
 import os
 import numpy as np
 from Analysis_Functions.GeneralFunctions import graph_dir
-from skfmm import distance, travel_time # use this! https://pythonhosted.org/scikit-fmm/
+from skfmm import distance, travel_time  # use this! https://pythonhosted.org/scikit-fmm/
 import itertools
 from joblib import Parallel, delayed
 from Classes_Experiment.mr_dstar import filename_dstar
 from PS_Search_Algorithms.Dstar_functions import voxel
 from scipy.ndimage.measurements import label
-from Directories import PhaseSpaceDirectory
+from Directories import PhaseSpaceDirectory, ps_path
 
 structure = np.ones((3, 3, 3), dtype=int)
 
 
 class D_star_lite:
-    """
+    r"""
     Class for path planning
     """
 
@@ -33,14 +34,19 @@ class D_star_lite:
                  max_iter=100000,
                  av_radius=None,
                  ):
-        """
+        r"""
         Setting Parameter
 
-        start:Start Position [x,y]
-        end:Goal Position [x,y]
-        conf_space:Configuration Space [[x,y,size],...]
+        start:Start Position [x,y] (current node will be set to this)
+        end:Goal Position [x,y] (I only take into account the x coordinate in my mazes... its more like a finish line)
+        conf_space:Configuration Space [PhaseSpace]
+        known_conf_space:configuration space according to which the solver plans his path before taking his first step
 
-        Set current node as the start node.
+        Keyword Arguments:
+            * *max_inter* [int] --
+              after how many iterations does the solver stop?
+            * *av_radius* [int] --
+              average radius of the load (you can find it by executing average_radius(size, shape, solver))
         """
         self.max_iter = max_iter
 
@@ -51,6 +57,11 @@ class D_star_lite:
         self.average_radius = av_radius
         self.distance = None
 
+        # this is just an example for a speed
+        self.speed = np.ones_like(conf_space.space)
+        self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
+
+        # Set current node as the start node.
         self.start = Node_ind(*starting_point, self.conf_space.space.shape, av_radius)
         if self.collision(self.start):
             raise Exception('Your start is not in configuration space')
@@ -62,7 +73,7 @@ class D_star_lite:
         self.winner = False
 
     def planning(self, sensing_radius=7):
-        """
+        r"""
         d star path planning
         While the current node is not the end node, and we have iterated more than max_iter
         compute the distances to the end node (of adjacent nodes).
@@ -71,12 +82,18 @@ class D_star_lite:
         current node with the minimal distance (+cost) (next_node).
         If you are able to walk to next_node is, make next_node your current_node.
         Else, recompute your distances.
+
+
+        :Keyword Arguments:
+            * *sensing_radius* (``int``) --
+              At an interception with the wall, sensing_radius gives the radius of the area of knowledge added to
+              the solver around the point of interception.
         """
-        # StartedScripts: ways to make less efficient:
-        # limited memory
-        # locality (patch size)
-        # accuracy of greedy node, add stochasticity
-        # false walls because of limited resolution
+        # TODO: WAYS TO MAKE LESS EFFICIENT:
+        #  limited memory
+        #  locality (patch size)
+        #  accuracy of greedy node, add stochastic behaviour
+        #  false walls because of limited resolution
 
         self.compute_distances(self.known_conf_space)
         # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
@@ -101,16 +118,17 @@ class D_star_lite:
         return self
 
     def add_knowledge(self, central_node, sensing_radius=7):
+        r"""
+        Adds knowledge to the known configuration space of the solver with a certain sensing_radius around
+        the central node, which is the point of interception
+        """
         # roll the array
-        conf_space_rolled = np.roll(self.conf_space.space, [- max(central_node.xi - sensing_radius, 0),
-                                                            - max(central_node.yi - sensing_radius, 0),
-                                                            - (central_node.thetai - sensing_radius)],
-                                    axis=(0, 1, 2))
+        rolling_indices = [- max(central_node.xi - sensing_radius, 0),
+                           - max(central_node.yi - sensing_radius, 0),
+                           - (central_node.thetai - sensing_radius)]
 
-        known_conf_space_rolled = np.roll(self.known_conf_space.space, [- max(central_node.xi - sensing_radius, 0),
-                                                                        - max(central_node.yi - sensing_radius, 0),
-                                                                        - (central_node.thetai - sensing_radius)],
-                                          axis=(0, 1, 2))
+        conf_space_rolled = np.roll(self.conf_space.space, rolling_indices, axis=(0, 1, 2))
+        known_conf_space_rolled = np.roll(self.known_conf_space.space, rolling_indices, axis=(0, 1, 2))
 
         # only the connected component which we sense
         sr = sensing_radius
@@ -120,15 +138,12 @@ class D_star_lite:
                 np.array(known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], dtype=bool),
                 np.array(labeled == labeled[sr, sr, sr])).astype(int)
 
-        # roll back
-        self.known_conf_space.space = np.roll(known_conf_space_rolled, [max(central_node.xi - sensing_radius, 0),
-                                                                        max(central_node.yi - sensing_radius, 0),
-                                                                        (central_node.thetai - sensing_radius)],
-                                              axis=(0, 1, 2))
+        # update known_conf_space by using known_conf_space_rolled and rolling back
+        self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
     def compute_distances(self, conf_space):
-        """
-
+        r"""
+        Computes distance of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
         phi = np.ones_like(conf_space.space)
@@ -142,8 +157,14 @@ class D_star_lite:
         phi[self.end.xi, :, :] = 0
 
         # calculate the distances from the goal position
-        self.distance = distance(phi, periodic=(0, 0, 1)).data
-        # self.plot_distances(index=current_indices[1], plane='y')
+        # self.distance = distance(phi, periodic=(0, 0, 1)).data this is the easiest, if the speed is uniform
+
+        # if the speed is not uniform:
+        self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
+
+        # how to plot your results in 2D in a certain plane
+        # plot_distances(self, index=self.current.yi, plane='y')
+        # plot_distances(self, index=self.current.xi, plane='x')
         return
 
     def find_greedy_node(self, conf_space):
@@ -196,6 +217,11 @@ class D_star_lite:
         return fig
 
     def generate_path(self, length=np.infty, ind=False):
+        r"""
+        Generates path from current node, its parent node, and parents parents node etc.
+        Returns an numpy array with the x, y, and theta coordinates of the path,
+        starting with the initial node and ending with the current node.
+        """
         path = [self.current.coord(self.conf_space)]
         node = self.current
         i = 0
@@ -221,24 +247,22 @@ class D_star_lite:
             # mlab.close()
 
 
-def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False,
-         filename='test', save=False):
+def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False, filename='test',
+         save=False):
     print('Calculating: ' + filename)
 
     # ====Search Path with RRT====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
                                        name=size + '_' + shape)
+    conf_space.load_space(path=ps_path(size, shape, solver, point_particle=False))
 
-    path = os.path.join(PhaseSpaceDirectory, solver, conf_space.name + ".pkl")
-    conf_space.load_space(path=path)
+    # ====Set known_conf_space ====
+    # 1) known_conf_space are just the maze walls
+    # known_conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape + '_pp')
+    # known_conf_space.load_space(path=ps_path(size, shape, solver, point_particle=True))
 
-    # known_conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
-    #                                          name=size + '_' + shape + '_pp')
-    # known_conf_space.load_space(path=os.path.join(os.path.dirname(SaverDirectories[solver]),
-    #                                               PhaseSpace.data_dir, solver, known_conf_space.name + ".pkl"))
-
+    # 2) dilated version of the conf_space
     known_conf_space = copy(conf_space)
-
     if dil_radius > 0:
         known_conf_space = PS_transformations.dilation(known_conf_space, radius=dil_radius)
 
@@ -251,6 +275,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
         known_conf_space=known_conf_space,
     )
 
+    # ====Calculate the trajectory the solver takes====
     d_star_lite_finished = d_star_lite.planning(sensing_radius=sensing_radius)
     path = d_star_lite_finished.generate_path()
 
@@ -259,10 +284,11 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     else:
         print("found path in {} iterations!!".format(len(path)))
 
-    # Draw final path
+    # === Draw final path ===
     if show_animation:
-        d_star_lite_finished.show_animation(save=False)
+        d_star_lite_finished.show_animation(save=save)
 
+    # ====Turn this into trajectory object====
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='dstar', filename=filename)
     x.play(1, 'Display', wait=200)
     if save:
@@ -277,6 +303,7 @@ if __name__ == '__main__':
 
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)
+
         if filename in os.listdir(SaverDirectories['dstar']):
             pass
         else:
@@ -287,22 +314,14 @@ if __name__ == '__main__':
                  dil_radius=dil_radius,
                  filename=filename
                  )
-        #
-        # main(size=size,
-        #      shape=shape,
-        #      solver=solver,
-        #      sensing_radius=sensing_radius,
-        #      dil_radius=dil_radius,
-        #      filename=filename
-        #      )
 
-
+    # === For parallel processing multiple trajectories on multiple cores of your computer ===
     # Parallel(n_jobs=6)(delayed(calc)(sensing_radius, dil_radius, shape)
     #                    for dil_radius, sensing_radius, shape in
     #                    itertools.product(range(0, 16, 1), range(1, 16, 1), ['SPT'])
     #                    # itertools.product([0], [0], ['H', 'I', 'T'])
     #                    )
 
-    calc(100, 10, 'SPT')
+    # === For processing a solver ===
+    calc(100, 0, 'SPT')
     # calc(100, 0, 'H')
-

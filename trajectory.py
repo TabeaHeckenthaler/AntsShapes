@@ -761,7 +761,28 @@ class Trajectory:
             arrows = step(my_load, self, my_maze, pause)
         return arrows
 
-    def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, **kwargs):
+    def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, wait=0, indices=None, **kwargs):
+        r"""Displays a given trajectory (self)
+
+        :Non-key-worded Arguments:
+            * *attempt* --
+              when passed, an attempt zone is installed and a parameter
+
+        :Keyword Arguments:
+            * *interval* (``int``) --
+              Display only every nth frame
+            * *PhaseSpace* (``PhaseSpace``) --
+              PhaseSpace in which the shape is moving
+            * *ps_figure* (``mayavi figure``) --
+              figure in which the PhaseSpace is displayed and the trajectory shall be drawn
+            * *wait* (``int``) --
+              milliseconds between the display of consecutive frames
+            * *indices* (``[int, int]``) --
+              starting and ending frame of trajectory, which you would like to display
+            * *attempt* (``bool``) --
+              milliseconds between the display of consecutive frames
+        """
+
         from copy import deepcopy
         x = deepcopy(self)
 
@@ -771,18 +792,18 @@ class Trajectory:
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if 'indices' in kwargs.keys():
-            f1, f2 = int(kwargs['indices'][0]), int(kwargs['indices'][1]) + 1
+        if indices is not None:
+            f1, f2 = int(indices[0]), int(indices[1]) + 1
             x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
             x.frames = x.frames[int(f1):int(f2)]
 
-        if 'attempt' in args:
-            if not ('moreBodies' in kwargs.keys()):
-                from Setup.Attempts import AddAttemptZone
-                kwargs['moreBodies'] = AddAttemptZone
+        # if 'attempt' in args:
+        #     if not ('moreBodies' in kwargs.keys()):
+        #         from Setup.Attempts import AddAttemptZone
+        #         kwargs['moreBodies'] = AddAttemptZone
 
         if 'L_I_425' in x.filename:
             args = args + ('L_I1',)
 
         return Box2D_GameLoops.MainGameLoop(x, *args, display=True, interval=interval,
-                                            PhaseSpace=PhaseSpace, ps_figure=ps_figure, **kwargs)
+                                            PhaseSpace=PhaseSpace, ps_figure=ps_figure, wait=wait, **kwargs)

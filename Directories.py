@@ -16,7 +16,9 @@ SaverDirectories = {'ant': AntSaverDirectory,
 PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
 
-def ps_path(size, shape, solver):
+def ps_path(size, shape, solver, point_particle=False):
+    if point_particle:
+        return path.join(PhaseSpaceDirectory + '\\' + solver + '\\' + size + '_' + shape + '_pp.pkl')
     return path.join(PhaseSpaceDirectory + '\\' + solver + '\\' + size + '_' + shape + '.pkl')
 
 

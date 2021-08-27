@@ -116,14 +116,14 @@ def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
 
 
 def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, PhaseSpace=None, ps_figure=None,
-                        **kwargs):
+                        wait=0, **kwargs):
     global Delta_total, DeltaAngle_total
     pause = False
 
     if 'pause' in kwargs:
         pause = kwargs['pause']
 
-    Display_renew(screen, my_maze=my_maze, i=i, frame=x.frames[i], movie_name=x.old_filenames(0), **kwargs)
+    Display_renew(screen, my_maze=my_maze, i=i, frame=x.frames[i], movie_name=x.old_filenames(0), wait=wait, **kwargs)
     Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, arrows=arrows,
                  PhaseSpace=PhaseSpace, ps_figure=ps_figure, **kwargs)
     events = pygame.event.get()
@@ -179,14 +179,14 @@ def arrow(start, end, name, screen):
     return
 
 
-def Display_renew(screen, my_maze=None, frame=None, movie_name=None, **kwargs):
+def Display_renew(screen, my_maze=None, frame=None, movie_name=None, wait=0, **kwargs):
     """
     :param int i: index of frame
     :param Maze my_maze: maze
     :param int interval: interval between two displayed frames
     """
-    if 'wait' in kwargs.keys():
-        pygame.time.wait(int(kwargs['wait']))
+    if wait > 0:
+        pygame.time.wait(int(wait))
 
     if 'attempt' in kwargs and kwargs['attempt']:
         attempt = '_inAttempt'
