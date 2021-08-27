@@ -12,7 +12,6 @@ PPM, SCREEN_HEIGHT, SCREEN_WIDTH = 0, 0, 0
 Delta_total, DeltaAngle_total = [0, 0], 0
 global flag
 
-
 # printable colors
 colors = {'my_maze': (0, 0, 0),
           'my_load': (250, 0, 0),
@@ -55,7 +54,7 @@ def body_lines(body, lines, circles, points):
             circles.append([fixture.shape.radius, body.position + fixture.shape.pos, colors[body.userData]])
 
     if body.userData == 'my_load':
-            points.append(np.array(body.position))
+        points.append(np.array(body.position))
 
 
 def Display_screen(my_maze=None, free=False, caption=None):
@@ -85,7 +84,6 @@ def Display_screen(my_maze=None, free=False, caption=None):
 
 
 def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
-
     """
     To control the frames:
     'D' = one frame forward
@@ -117,7 +115,8 @@ def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
     return list(delta), delta_angle, i
 
 
-def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, **kwargs):
+def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, PhaseSpace=None, ps_figure=None,
+                        **kwargs):
     global Delta_total, DeltaAngle_total
     pause = False
 
@@ -125,7 +124,8 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
         pause = kwargs['pause']
 
     Display_renew(screen, my_maze=my_maze, i=i, frame=x.frames[i], movie_name=x.old_filenames(0), **kwargs)
-    Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, arrows=arrows, **kwargs)
+    Display_loop(my_load, my_maze, screen, x=x, i=i, points=points, arrows=arrows,
+                 PhaseSpace=PhaseSpace, ps_figure=ps_figure, **kwargs)
     events = pygame.event.get()
 
     for event in events:  # what happened in the last event?
@@ -206,7 +206,7 @@ def Display_renew(screen, my_maze=None, frame=None, movie_name=None, **kwargs):
 
 
 def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=None, circles=None, points=None,
-                 arrows=None, **kwargs):
+                 arrows=None, PhaseSpace=None, ps_figure=None, **kwargs):
     if lines is None:
         lines = []
     if circles is None:
@@ -220,18 +220,19 @@ def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=Non
     lines, circles, points = lines_circles_points(my_maze, lines=lines, circles=circles, points=points)
 
     # and draw all the circles passed (hollow, so I put two on top of each other)
-    if "PhaseSpace" in kwargs.keys():
+    if PhaseSpace is not None:
         if i < kwargs['interval']:
-            kwargs['ps_figure'] = kwargs["PhaseSpace"].draw_trajectory(kwargs['ps_figure'],
-                                                                       np.array([my_load.position[i]]),
-                                                                       np.array([my_load.angle[i]]), scale_factor=1,
-                                                                       color=(0, 0, 0))
+            ps_figure = PhaseSpace.draw_trajectory(ps_figure,
+                                                   np.array([my_load.position]),
+                                                   np.array([my_load.angle]),
+                                                   scale_factor=1,
+                                                   color=(0, 0, 0))
         else:
-            kwargs['ps_figure'] = kwargs["PhaseSpace"].draw_trajectory(kwargs['ps_figure'],
-                                                                       my_load.position[i:i + kwargs['interval']],
-                                                                       my_load.angle[i:i + kwargs['interval']],
-                                                                       scale_factor=1,
-                                                                       color=(1, 0, 0))
+            ps_figure = PhaseSpace.draw_trajectory(ps_figure,
+                                                   x.position[i:i + kwargs['interval']],
+                                                   x.angle[i:i + kwargs['interval']],
+                                                   scale_factor=1,
+                                                   color=(1, 0, 0))
 
     if 'attempt' in kwargs and kwargs['attempt']:
         attempt = '_inAttempt'

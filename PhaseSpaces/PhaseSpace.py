@@ -19,8 +19,6 @@ scale = 5
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
-ps_dir = PhaseSpaceDirectory
-
 
 class PhaseSpace(object):
 
@@ -270,7 +268,7 @@ class PhaseSpace(object):
 if __name__ == '__main__':
     shape = 'SPT'
     size = 'XL'
-    point_particle = False
+    point_particle = True
     solver = 'ant'
 
     name = size + '_' + shape
@@ -280,9 +278,7 @@ if __name__ == '__main__':
 
     path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace(solver, size, shape, name=name)
-    ps.load_space(path=os.path.join(path))
+    ps.load_space(path=path)
 
-    ps = PhaseSpace('ant', 'XL', shape, name='XL_' + shape)
-    ps.load_space(path=os.path.join(data_home + '\\' + solver + '\\' + size + '_' + shape + '.pkl'))
     ps.visualize_space(ps.name)
     k = 1

@@ -62,11 +62,11 @@ class Maze(b2World):
             df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
         else:
             df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
+
         if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
-
             if 'L_I1' in args:
-                d = df.loc[df['Name'] == 'L_I1']
+                d = df.loc[df['Name'] == 'L_I1'] # these are special maze dimensions
 
             self.arena_length = d['arena_length'].values[0]
             self.arena_height = d['arena_height'].values[0]

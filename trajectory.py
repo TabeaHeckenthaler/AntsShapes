@@ -761,7 +761,7 @@ class Trajectory:
             arrows = step(my_load, self, my_maze, pause)
         return arrows
 
-    def play(self, *args, interval=1, **kwargs):
+    def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, **kwargs):
         from copy import deepcopy
         x = deepcopy(self)
 
@@ -784,4 +784,5 @@ class Trajectory:
         if 'L_I_425' in x.filename:
             args = args + ('L_I1',)
 
-        return Box2D_GameLoops.MainGameLoop(x, *args, display=True, interval=interval, **kwargs)
+        return Box2D_GameLoops.MainGameLoop(x, *args, display=True, interval=interval,
+                                            PhaseSpace=PhaseSpace, ps_figure=ps_figure, **kwargs)

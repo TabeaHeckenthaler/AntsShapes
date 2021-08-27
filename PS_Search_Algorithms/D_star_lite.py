@@ -303,6 +303,6 @@ if __name__ == '__main__':
     #                    # itertools.product([0], [0], ['H', 'I', 'T'])
     #                    )
 
-    calc(100, 0, 'SPT')
-    calc(100, 0, 'H')
+    calc(100, 10, 'SPT')
+    # calc(100, 0, 'H')
 

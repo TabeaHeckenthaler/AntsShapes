@@ -16,6 +16,10 @@ SaverDirectories = {'ant': AntSaverDirectory,
 PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
 
+def ps_path(size, shape, solver):
+    return path.join(PhaseSpaceDirectory + '\\' + solver + '\\' + size + '_' + shape + '.pkl')
+
+
 def SetupDirectories():
     if not (path.isdir(AntSaverDirectory)):
         breakpoint()
