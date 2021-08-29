@@ -252,8 +252,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     print('Calculating: ' + filename)
 
     # ====Search Path with RRT====
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
-                                       name=size + '_' + shape)
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
     conf_space.load_space(path=ps_path(size, shape, solver, point_particle=False))
 
     # ====Set known_conf_space ====
