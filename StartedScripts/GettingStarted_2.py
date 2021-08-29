@@ -57,7 +57,7 @@ display = False
 # if display:
 #     Display_end()
 
-def forces_check_func(SOURCE, ADDRESS, action='save', measured_forces=None , ratio = 1):
+def forces_check_func(SOURCE, ADDRESS, action='save', size='M', measured_forces=None , ratio = 1):
     relevant_lines = force_from_text(SOURCE)
     max_index, max_values = [np.argmax(relevant_lines[i]) for i in range(len(relevant_lines))], \
                             [max(relevant_lines[i]) for i in range(len(relevant_lines))]
@@ -96,7 +96,7 @@ def forces_check_func(SOURCE, ADDRESS, action='save', measured_forces=None , rat
 
 
 
-def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save', measured_forces=None , ratio = 1):
+def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save',  size='M',measured_forces=None , ratio = 1):
     ABC_effective_dict = {
         'A' : 20, 'B' : 21, 'C': 22, 'D': 23, 'E': 24,
         'F': 25, 'G': 0, 'H': 1, 'I': 2, 'J': 3, 'K': 4, 'L': 5, 'M': 6, 'N': 7, 'O': 8, 'P': 9,
@@ -104,11 +104,17 @@ def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save', measured_fo
     }
 
     relevant_lines = force_from_text(SOURCE)
-    values = [relevant_lines[i][ABC_effective_dict[sensor]] for i in range(len(relevant_lines))]
+    if size == 'L':
+        values = [relevant_lines[i][ABC_effective_dict[sensor]] for i in range(len(relevant_lines))]
+    elif size == 'M':
+        values = [relevant_lines[i][sensor] for i in range(len(relevant_lines))]
+    else:
+        print("single_force_check_func: Unknown size")
 
-    plt.figure(SOURCE + sensor)
+
+    plt.figure(SOURCE + str(sensor))
     plt.plot(values)
-    plt.title(sensor)
+    plt.title(str(sensor))
     plt.xlabel('frame number')
     plt.ylabel('Force[]')
 
@@ -179,7 +185,7 @@ def cross_prod(vec_A, vec_B):
 
 def sum_of_cross_prods(vec_A, vec_B):
     if len(vec_A) != len(vec_B):
-        print("Not in the same length")
+        print("sum_of_cross_prods: Not in the same length")
         return
 
     prod = [cross_prod(vec_A[i], vec_B[i]) for i in range(len(vec_A))]
@@ -232,7 +238,6 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
         yC_Z = short_edge / 2
         yDEFGHIJ_STUVWXY = shape_thickness / 2
         yK_R = shape_height / 10 * 2
-        yL_Q = shape_height / 2
         yM_P = shape_height / 10 * 3
         yN_O = shape_height / 10
 
@@ -276,7 +281,7 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
 
 
 def torque_in_load(my_load, x, force_vector_In_Lab_Frame, amgle_In_rads):
-    r_positions = force_vector_positions_In_LOAD_FRAME(my_load, x)
+    r_positions = [(force_vector_positions_In_LOAD_FRAME(my_load, x))[name] for name in x.participants.occupied ]
     forces_in_load_frame = [vector_rotation(force_vector_In_Lab_Frame[i], amgle_In_rads) for i in
                             range(len(force_vector_In_Lab_Frame))]
     return sum_of_cross_prods(r_positions, forces_in_load_frame)

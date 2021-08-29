@@ -73,12 +73,18 @@ def synchronization_offset(self, x):
     return frame_tracking - frame_force_meter
 
 
-def relative_to_minimum(forces):
+# def relative_to_minimum(forces):
+#     forces = np.array(forces)
+#     for i in range(len(forces[0])):
+#         forces[:, i] = np.array(forces)[:, i] - min(forces[:, i])
+#     return forces
+
+
+def peaks_filter(forces):
     forces = np.array(forces)
     for i in range(len(forces[0])):
         forces[:, i] = np.array(forces)[:, i] - min(forces[:, i])
     return forces
-
 
 def force_debugger(human, forces_all_frames, x):
     if np.isnan(np.sum([human.frames[i].forces[1] for i in range(0, len(human.frames))])):
@@ -162,12 +168,13 @@ class Humans:
 
         # load forces and set them relative to the baseline
         forces = [[float(fu) for fu in fo[0].split(' ') if len(fu) > 1] for fo in text_file_content[0::2][:-1]]
-        forces = relative_to_minimum(forces)
 
         # all unoccupied force meters should have zero force
         empty_indices = [i for i in range(len(list(self.gender()))) if i not in self.occupied]
         for empty_index in empty_indices:
-            forces[:, empty_index] = np.zeros(forces[:, empty_index].shape)
+            for j in range(len(forces)):
+                forces[j][empty_index] = 0
+            # forces[:, empty_index] = np.zeros(forces[:, empty_index].shape)
         forces_all_frames = []
 
         # every frame of the movie gets a force for every force meter
