@@ -1,8 +1,8 @@
-from os import getcwd, path, mkdir
+from os import path, mkdir
 
 # home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
 
-home = __file__.split('\\')[0] + '\\' + path.join(*__file__.split('\\')[1:-1])
+home = path.abspath(__file__).split('\\')[0] + path.sep + path.join(*path.abspath(__file__).split(path.sep)[1:-1])
 data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
 work_dir = data_home + 'Pickled_Trajectories\\'
 AntSaverDirectory = work_dir + 'Ant_Trajectories'
@@ -18,8 +18,8 @@ PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
 def ps_path(size, shape, solver, point_particle=False):
     if point_particle:
-        return path.join(PhaseSpaceDirectory + '\\' + solver + '\\' + size + '_' + shape + '_pp.pkl')
-    return path.join(PhaseSpaceDirectory + '\\' + solver + '\\' + size + '_' + shape + '.pkl')
+        return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
+    return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '.pkl')
 
 
 def SetupDirectories():
