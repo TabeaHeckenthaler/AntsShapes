@@ -24,7 +24,8 @@ def ps_path(size, shape, solver, point_particle=False):
 
 def SetupDirectories():
     if not (path.isdir(AntSaverDirectory)):
-        breakpoint()
+        if not path.isdir('\\\\' + AntSaverDirectory.split('\\')[2]):
+            return
         mkdir(AntSaverDirectory)
         mkdir(AntSaverDirectory + path.sep + 'OnceConnected')
         mkdir(AntSaverDirectory + path.sep + 'Free_Motion')

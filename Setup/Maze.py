@@ -17,7 +17,8 @@ size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                   }
 
 StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3, 4, 5],
-              'SPT': [0, 1, 2, 3, 4, 5, 6], 'LASH': [0, 1, 2, 3, 4, 5, 6], 'RASH': [0, 1, 2, 3, 4, 5, 6]}
+              'SPT': [0, 1, 2, 3, 4, 5, 6], 'LASH': [0, 1, 2, 3, 4, 5, 6], 'RASH': [0, 1, 2, 3, 4, 5, 6],
+              'circle': [0]}
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'dstar': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
@@ -50,59 +51,64 @@ class Maze(b2World):
         self.size = size  # size
         self.solver = solver
         self.statenames = StateNames[shape]
-        self.getMazeDim(*args)
+        self.getMazeDim(free, *args)
         self.body = self.CreateMaze(free)
-        self.get_zone()
+        self.get_zone(free)
 
-    def getMazeDim(self, *args):
-        # dir = getcwd().split('\\')[0] + '\\' + path.join(*getcwd().split('\\')[1:-1]) + '\\Setup'
-        dir = home + '\\Setup'
+    def getMazeDim(self, free, *args):
+        if free:
+            self.arena_height = 10
+            self.arena_length = 10
+            return
 
-        if self.solver == 'sim':
-            df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
         else:
-            df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
+            dir = home + '\\Setup'
 
-        if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
-            d = df.loc[df['Name'] == self.size + '_' + self.shape]
-            if 'L_I1' in args:
-                d = df.loc[df['Name'] == 'L_I1'] # these are special maze dimensions
-
-            self.arena_length = d['arena_length'].values[0]
-            self.arena_height = d['arena_height'].values[0]
-            self.exit_size = d['exit_size'].values[0]
-            self.wallthick = d['wallthick'].values[0]
-            if type(d['slits'].values[0]) == str:
-                self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
+            if self.solver == 'sim':
+                df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
             else:
-                self.slits = [d['slits'].values[0]]
+                df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
 
-        elif self.solver == 'human':  # all measurements in meters
-            # StartedScripts: measure the slits again...
-            # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
-            # Experiments\ExperimentalSetup
-            d = df.loc[df['Name'] == self.size]
-            A = [float(s) for s in d['A'].values[0].split(',')]
-            # B = [float(s) for s in d['B'].values[0].split(',')]
-            C = [float(s) for s in d['C'].values[0].split(',')]
-            D = [float(s) for s in d['D'].values[0].split(',')]
-            E = [float(s) for s in d['E'].values[0].split(',')]
+            if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
+                d = df.loc[df['Name'] == self.size + '_' + self.shape]
+                if 'L_I1' in args:
+                    d = df.loc[df['Name'] == 'L_I1'] # these are special maze dimensions
 
-            self.arena_length, self.exit_size = A[0], D[1] - C[1]
-            self.wallthick = 0.1
-            self.arena_height = 2 * C[1] + self.exit_size
-            self.slits = [(E[0] + self.wallthick / 2),
-                          (C[0] + self.wallthick / 2)]  # These are the x positions at which the slits are positions
+                self.arena_length = d['arena_length'].values[0]
+                self.arena_height = d['arena_height'].values[0]
+                self.exit_size = d['exit_size'].values[0]
+                self.wallthick = d['wallthick'].values[0]
+                if type(d['slits'].values[0]) == str:
+                    self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
+                else:
+                    self.slits = [d['slits'].values[0]]
 
-        elif self.solver == 'humanhand':  # only SPT
-            d = df.loc[df['Name'] == self.solver]
-            self.arena_length = d['arena_length'].values[0]
-            self.arena_height = d['arena_height'].values[0]
-            self.exit_size = d['exit_size'].values[0]
-            self.wallthick = d['wallthick'].values[0]
-            self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
+            elif self.solver == 'human':  # all measurements in meters
+                # StartedScripts: measure the slits again...
+                # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
+                # Experiments\ExperimentalSetup
+                d = df.loc[df['Name'] == self.size]
+                A = [float(s) for s in d['A'].values[0].split(',')]
+                # B = [float(s) for s in d['B'].values[0].split(',')]
+                C = [float(s) for s in d['C'].values[0].split(',')]
+                D = [float(s) for s in d['D'].values[0].split(',')]
+                E = [float(s) for s in d['E'].values[0].split(',')]
 
-        self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
+                self.arena_length, self.exit_size = A[0], D[1] - C[1]
+                self.wallthick = 0.1
+                self.arena_height = 2 * C[1] + self.exit_size
+                self.slits = [(E[0] + self.wallthick / 2),
+                              (C[0] + self.wallthick / 2)]  # These are the x positions at which the slits are positions
+
+            elif self.solver == 'humanhand':  # only SPT
+                d = df.loc[df['Name'] == self.solver]
+                self.arena_length = d['arena_length'].values[0]
+                self.arena_height = d['arena_height'].values[0]
+                self.exit_size = d['exit_size'].values[0]
+                self.wallthick = d['wallthick'].values[0]
+                self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
+
+            self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
 
     def CreateMaze(self, free):
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='my_maze'))
@@ -228,7 +234,10 @@ class Maze(b2World):
             self.slitTree = np.vstack((self.slitTree, BoxIt(slit_points, 0.01)))
         self.slitTree = cKDTree(self.slitTree)
 
-    def get_zone(self):
+    def get_zone(self, free=False):
+        if free:
+            self.zone = np.empty([0, 2])
+            return
         if self.shape == 'SPT':
             self.zone = np.array([[0, 0],
                                   [0, self.arena_height],

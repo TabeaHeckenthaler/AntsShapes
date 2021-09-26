@@ -750,7 +750,7 @@ class Trajectory:
             Save(self)
         return self, complaints
 
-    def step(self, my_load, i, my_maze=None, pause=None):
+    def step(self, my_load, i, my_maze=None, pause=None, **kwargs):
         from PhysicsEngine.MazeSimulation_Ising import step
 
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
@@ -758,7 +758,7 @@ class Trajectory:
         arrows = []
 
         if self.solver == 'sim' and not pause:
-            arrows = step(my_load, self, my_maze, pause)
+            arrows = step(my_load, self, my_maze, pause, **kwargs)
         return arrows
 
     def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, wait=0, indices=None, **kwargs):

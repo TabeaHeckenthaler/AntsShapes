@@ -23,6 +23,8 @@ colors = {'my_maze': (0, 0, 0),
           'grid': (220, 220, 220),
           'arrow': (135, 206, 250),
           'participants': (0, 0, 0),
+          'puller': (0, 250, 0),
+          'lifter': (0, 0, 0)
           }
 
 pygame.font.init()  # display and fonts
@@ -160,30 +162,42 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
 
 
 def arrow(start, end, name, screen):
+    start = [int(start[0] * PPM), SCREEN_HEIGHT - int(start[1] * PPM)]
+
+    if end is None and name == 'lifter':
+        pygame.draw.circle(screen, colors[name], start, 5)
+        return
+
+    end = [int(end[0] * PPM), SCREEN_HEIGHT - int(end[1] * PPM)]
     rad = math.pi / 180
-    start, end = [int(start[0] * PPM), SCREEN_HEIGHT - int(start[1] * PPM)], \
-                 [int(end[0] * PPM), SCREEN_HEIGHT - int(end[1] * PPM)]
     thickness, trirad = int(0.05 * PPM), int(0.2 * PPM)
     arrow_width = 150
-    pygame.draw.line(screen, colors['arrow'], start, end, thickness)
+    pygame.draw.line(screen, colors[name], start, end, thickness)
     rotation = (math.atan2(start[1] - end[1], end[0] - start[0])) + math.pi / 2
-    pygame.draw.polygon(screen, colors['arrow'], ((end[0] + trirad * math.sin(rotation),
+    pygame.draw.polygon(screen, colors[name], ((end[0] + trirad * math.sin(rotation),
                                                    end[1] + trirad * math.cos(rotation)),
                                                   (end[0] + trirad * math.sin(rotation - arrow_width * rad),
                                                    end[1] + trirad * math.cos(rotation - arrow_width * rad)),
                                                   (end[0] + trirad * math.sin(rotation + arrow_width * rad),
                                                    end[1] + trirad * math.cos(rotation + arrow_width * rad))))
-
-    text = font.render(str(name), True, colors['text'])
-    screen.blit(text, start)
+    if name == 'puller':
+        pygame.draw.circle(screen, colors[name], start, 5)
+    else:
+        text = font.render(str(name), True, colors['text'])
+        screen.blit(text, end)
     return
 
 
 def Display_renew(screen, my_maze=None, frame=None, movie_name=None, wait=0, **kwargs):
     """
-    :param int i: index of frame
-    :param Maze my_maze: maze
-    :param int interval: interval between two displayed frames
+
+    :param screen:
+    :param my_maze:
+    :param frame:
+    :param movie_name:
+    :param wait:
+    :param kwargs:
+    :return:
     """
     if wait > 0:
         pygame.time.wait(int(wait))
@@ -216,7 +230,6 @@ def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=Non
     if arrows is None:
         arrows = []
 
-    [arrow(*a_i, screen) for a_i in arrows]
     lines, circles, points = lines_circles_points(my_maze, lines=lines, circles=circles, points=points)
 
     # and draw all the circles passed (hollow, so I put two on top of each other)
@@ -273,9 +286,10 @@ def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=Non
         for arrow_function in kwargs['forces']:
             kwargs['arrows'] = kwargs['arrows'] + arrow_function(x, my_load, i)
 
-    if 'arrows' in kwargs:
-        for a_i in kwargs['arrows']:
-            arrow(*a_i, screen)
+    [arrow(*a_i, screen) for a_i in arrows]
+    # if 'arrows' in kwargs:
+    #     for a_i in kwargs['arrows']:
+    #         arrow(*a_i, screen)
 
     if 'participants' in kwargs:
         for part in kwargs['participants'](x, my_load):

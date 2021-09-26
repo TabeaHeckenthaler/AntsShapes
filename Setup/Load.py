@@ -1,5 +1,5 @@
 import numpy as np
-from Box2D import b2BodyDef, b2_dynamicBody, b2Vec2
+from Box2D import b2BodyDef, b2_dynamicBody, b2Vec2, b2CircleShape, b2FixtureDef
 from Setup.Maze import ResizeFactors
 
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
@@ -20,8 +20,33 @@ def Loops(Box2D_Object, vertices=None):
             Loops(body, vertices=vertices)
     else:
         for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
-            vertices.append([(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
+                vertices.append(
+                    [(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
     return vertices
+
+
+def sites(Box2D_Object, sites, gillespie):
+    """
+    :param Box2D_Object: Object, usually a b2Body, that contains fixtures
+    :param sites: how many attachment sites do you want to distribute around your shape
+    :return: a np.array of the form [[x0, y0], ..., [x_(sites-1), y_(sites-1)]], with the attachment positions in the coordinate
+    system of the load. This is specifically built to assist the Gillespie Code
+    """
+
+    if hasattr(Box2D_Object, 'bodies'):
+        for body in Box2D_Object.bodies:
+            return sites(body)
+
+    points = np.zeros([0, 2])
+    for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
+        if isinstance(fixture.shape, b2CircleShape):
+            [gillespie.ant_vector(i) for i in range(len(gillespie.n_p))]
+            array = np.zeros([sites, 2])
+            points = np.vstack([points, array])
+        else:
+            # TODO: implement for polygon
+            pass
+    return points
 
 
 def average_radius(size, shape, solver):
@@ -78,6 +103,11 @@ def getLoadDim(solver, shape, size):
 
 def AddLoadFixtures(load, size, shape, solver):
     assymetric_h_shift = 1.22 * 2
+
+    if shape == 'circle':
+        load.CreateFixture(b2FixtureDef(shape=b2CircleShape(pos=(0, 0), radius=0.2)),
+                           density=1, friction=0, restitution=0,
+                           )
 
     if shape == 'H':
         [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
