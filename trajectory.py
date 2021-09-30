@@ -757,7 +757,8 @@ class Trajectory:
 
         arrows = []
 
-        if self.solver == 'sim' and not pause:
+        # if self.solver == 'sim' and not pause:
+        if self.solver == 'sim':
             arrows = step(my_load, self, my_maze, pause, **kwargs)
         return arrows
 

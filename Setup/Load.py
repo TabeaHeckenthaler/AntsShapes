@@ -25,28 +25,28 @@ def Loops(Box2D_Object, vertices=None):
     return vertices
 
 
-def sites(Box2D_Object, sites, gillespie):
-    """
-    :param Box2D_Object: Object, usually a b2Body, that contains fixtures
-    :param sites: how many attachment sites do you want to distribute around your shape
-    :return: a np.array of the form [[x0, y0], ..., [x_(sites-1), y_(sites-1)]], with the attachment positions in the coordinate
-    system of the load. This is specifically built to assist the Gillespie Code
-    """
-
-    if hasattr(Box2D_Object, 'bodies'):
-        for body in Box2D_Object.bodies:
-            return sites(body)
-
-    points = np.zeros([0, 2])
-    for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
-        if isinstance(fixture.shape, b2CircleShape):
-            [gillespie.ant_vector(i) for i in range(len(gillespie.n_p))]
-            array = np.zeros([sites, 2])
-            points = np.vstack([points, array])
-        else:
-            # TODO: implement for polygon
-            pass
-    return points
+# def sites(Box2D_Object, sites, gillespie):
+#     """
+#     :param Box2D_Object: Object, usually a b2Body, that contains fixtures
+#     :param sites: how many attachment sites do you want to distribute around your shape
+#     :return: a np.array of the form [[x0, y0], ..., [x_(sites-1), y_(sites-1)]], with the attachment positions in the coordinate
+#     system of the load. This is specifically built to assist the Gillespie Code
+#     """
+#
+#     if hasattr(Box2D_Object, 'bodies'):
+#         for body in Box2D_Object.bodies:
+#             return sites(body)
+#
+#     points = np.zeros([0, 2])
+#     for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
+#         if isinstance(fixture.shape, b2CircleShape):
+#             [gillespie.ant_vector(Box2D_Object.angle, i) for i in range(len(gillespie.n_p))]
+#             array = np.zeros([sites, 2])
+#             points = np.vstack([points, array])
+#         else:
+#             # TODO: implement for polygon
+#             pass
+#     return points
 
 
 def average_radius(size, shape, solver):
@@ -105,7 +105,8 @@ def AddLoadFixtures(load, size, shape, solver):
     assymetric_h_shift = 1.22 * 2
 
     if shape == 'circle':
-        load.CreateFixture(b2FixtureDef(shape=b2CircleShape(pos=(0, 0), radius=0.2)),
+        from PhysicsEngine.Gillespie import radius
+        load.CreateFixture(b2FixtureDef(shape=b2CircleShape(pos=(0, 0), radius=radius)),
                            density=1, friction=0, restitution=0,
                            )
 
@@ -149,11 +150,17 @@ def AddLoadFixtures(load, size, shape, solver):
             (-shape_height / 2, -shape_thickness / 2)],
             density=1, friction=0, restitution=0,
         )
-        load.corners = np.array([[shape_height / 2, -shape_thickness / 2],
-                                 [-shape_height / 2, -shape_thickness / 2],
-                                 [shape_height / 2, shape_thickness / 2],
-                                 [-shape_height / 2, shape_thickness / 2]])
 
+        # old version
+        # load.corners = np.array([[shape_height / 2, -shape_thickness / 2],
+        #                          [-shape_height / 2, -shape_thickness / 2],
+        #                          [shape_height / 2, shape_thickness / 2],
+        #                          [-shape_height / 2, shape_thickness / 2]])
+
+        load.corners = np.array([[-shape_height / 2, -shape_thickness / 2],
+                                 [-shape_height / 2, shape_thickness / 2],
+                                 [shape_height / 2, shape_thickness / 2],
+                                 [shape_height / 2, -shape_thickness / 2]])
     if shape == 'T':
         [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
         resize_factor = ResizeFactors[solver][size]
@@ -304,8 +311,8 @@ def AddLoadFixtures(load, size, shape, solver):
 
 def circumference(x):
     from Setup.Maze import ResizeFactors
-    shape_thickness, shape_height, shape_width = getLoadDim(x.solver, x.shape,
-                                                            ResizeFactors[x.size])
+    shape_thickness, shape_height, shape_width = getLoadDim(x.solver, x.shape, x.size)
+
     if x.shape.endswith('ASH'):
         print('I dont know circumference of ASH!!!')
         breakpoint()
@@ -313,10 +320,10 @@ def circumference(x):
            'I': 2 * shape_height + 2 * shape_width,
            'T': 2 * shape_height + 2 * shape_width,
            'SPT': 2 * shape_height / 2 * 2.44 / 4.82 + 2 * shape_height - 2 * shape_thickness + 2 * shape_width,
-           'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[
-               x.size] - 2 * shape_thickness,
-           'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[
-               x.size] - 2 * shape_thickness
+           'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
+                   - 2 * shape_thickness,
+           'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
+                   - 2 * shape_thickness
            }
     return cir[x.shape]
 
@@ -338,6 +345,40 @@ def Load(my_maze, position=None, angle=0, point_particle=False):
     if not point_particle:
         my_load = AddLoadFixtures(my_load, my_maze.size, my_maze.shape, my_maze.solver)
     return my_load
+
+def Gillespie_sites_angels(my_load, n: int, x=None)
+    """
+
+    :param my_load: b2Body
+    :param n: number of attachment sites
+    :param x: trajectory object, if we need to know about size, etc.
+    :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the my_load coordinate system 
+    and n numpy matrix, with angles of normals of attachment sites, measured against the load coordinate system
+    """
+    if isinstance(my_load.fixtures[0].shape, b2CircleShape):
+        from PhysicsEngine.Gillespie import radius
+        theta = np.linspace(0, 2 * np.pi, n)
+        sites = radius * np.transpose(np.vstack([np.cos(theta), np.sin(theta)]))
+        phi_default = np.linspace(0, 2 * np.pi, n)
+        return sites, phi_default
+
+    else:
+        sites = np.empty([0, 2])
+        phi_default = np.empty([0])
+        delta = circumference(x) / n
+        rest = np.linalg.norm(my_load.corners[1] - my_load.corners[0])/2
+        if x.shape == 'I':
+            for corner1, corner2 in zip(my_load.corners, np.roll(my_load.corners, -1, axis=0)):
+                corner1a = corner1 + rest * (corner2 - corner1)/np.linalg.norm(corner2 - corner1)
+                number = int(np.floor(np.linalg.norm(corner1a-corner2)/delta))
+                new_points = np.linspace(corner1a, corner2, number)
+                sites = np.vstack([sites, new_points])
+                rest = np.linalg.norm(corner1a-corner2) - number * delta
+                phi_default = phi_default.vstack([phi_default, np.ones()])
+            wait = 1
+        if x.shape == 'SPT':
+            pass
+        return sites, phi_default
 
 
 def force_attachment_positions(my_load, x):

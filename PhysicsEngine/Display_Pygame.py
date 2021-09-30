@@ -117,7 +117,8 @@ def event_key(key, delta, delta_angle, i, lateral=0.05, rotational=0.01):
     return list(delta), delta_angle, i
 
 
-def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None, PhaseSpace=None, ps_figure=None,
+def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None,
+                        PhaseSpace=None, ps_figure=None,
                         wait=0, **kwargs):
     global Delta_total, DeltaAngle_total
     pause = False

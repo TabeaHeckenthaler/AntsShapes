@@ -137,7 +137,7 @@ def theta_trajectory(twoD_vec):
     '''
 
     x_comp, y_comp = zip(*twoD_vec)
-    return np.degrees(np.arctan2(x_comp, y_comp))
+    return np.degrees(np.arctan2(y_comp, x_comp))
 
 
 def calc_angle_diff(alpha, beta):

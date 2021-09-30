@@ -20,12 +20,14 @@ from PhysicsEngine.Gillespie import Gillespie
 def step(my_load, x, my_maze, pause, **kwargs):
     arrows = None
     if not pause:
-        TIME_STEP = kwargs['gillespie'].whatsNext(my_load)
+        dt = kwargs['gillespie'].whatsNext(my_load)
         ForceAttachments, arrows = Forces(my_load, my_maze, **kwargs)
-        my_maze.Step(TIME_STEP, 10, 10)
+        my_maze.Step(dt, 10, 10)
 
         x.position = np.vstack((x.position, [my_load.position.x, my_load.position.y]))
         x.angle = np.hstack((x.angle, my_load.angle))
+    if pause:
+        ForceAttachments, arrows = Forces(my_load, my_maze, pause=pause, **kwargs)
     return arrows
 
 
@@ -60,7 +62,7 @@ def Forces_old(my_load, my_maze, **kwargs):
     return ForceAttachments, arrows
 
 
-def Forces(my_load, my_maze, **kwargs):
+def Forces(my_load, my_maze, pause=False, **kwargs):
     my_load.linearVelocity = 0 * my_load.linearVelocity
     my_load.angularVelocity = 0 * my_load.angularVelocity
 
@@ -71,15 +73,15 @@ def Forces(my_load, my_maze, **kwargs):
     arrows = []
 
     for i in np.where(gillespie.n_p)[0]:
-        f_x, f_y = gillespie.ant_force(my_load, i)
-        ForceAttachments.append(gillespie.attachment_position(my_load, i))
+        f_x, f_y = gillespie.ant_force(my_load, i, pause=pause)
+        ForceAttachments.append(gillespie.attachment_site_world_coord(my_load, i))
 
         start = ForceAttachments[-1]
-        end = ForceAttachments[-1] + [1000 * f_x, 1000 * f_y]
+        end = ForceAttachments[-1] + [10 * f_x, 10 * f_y]
         arrows.append((start, end, 'puller'))
 
     for i in np.where(gillespie.n_l)[0]:
-        ForceAttachments.append(gillespie.attachment_position(my_load, i))
+        ForceAttachments.append(gillespie.attachment_site_world_coord(my_load, i))
 
         start = ForceAttachments[-1]
         end = None
@@ -118,11 +120,8 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True
     x.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
     x.angle = init_angle  # array to store the position and angle of the load
 
-    gillespie = Gillespie()
-    gillespie.new_attachment(0, my_load, type='puller')
-    gillespie.new_attachment(5, my_load, type='puller')
-    gillespie.phi[5] = 1
-    gillespie.new_attachment(10, my_load, type='lifter')
+    gillespie = Gillespie(my_load, x=x)
+    # gillespie.populate(my_load)
     x = MainGameLoop(x, display=display, gillespie=gillespie, free=free)
     return x
 
@@ -130,9 +129,9 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True
 if __name__ == '__main__':
     frames = 6000
     # my_trajectory = MazeSimulation(size='XL', shape='H', frames=frames, display=True)
-    my_trajectory = MazeSimulation(size='', shape='circle', frames=frames,
+    my_trajectory = MazeSimulation(size='L', shape='I', frames=frames,
                                    display=True, free=True)
-
+    shape = 'circle'
     # Save(my_trajectory)
     # my_trajectory.play()
 
