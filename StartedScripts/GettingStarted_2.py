@@ -57,7 +57,7 @@ display = False
 # if display:
 #     Display_end()
 
-def forces_check_func(SOURCE, ADDRESS, action='save', size='M', measured_forces=None , ratio = 1):
+def forces_check_func(SOURCE, ADDRESS, action='save', size='M', measured_forces=None, ratio=1):
     relevant_lines = force_from_text(SOURCE)
     max_index, max_values = [np.argmax(relevant_lines[i]) for i in range(len(relevant_lines))], \
                             [max(relevant_lines[i]) for i in range(len(relevant_lines))]
@@ -81,7 +81,7 @@ def forces_check_func(SOURCE, ADDRESS, action='save', size='M', measured_forces=
         if (data):
             axes[counter].plot(data, '+')
             if measured_forces:
-                axes[counter].plot((measured_forces[(i + 6) % len(measured_forces)] * (np.ones(50))*ratio), 'g')
+                axes[counter].plot((measured_forces[(i + 6) % len(measured_forces)] * (np.ones(50)) * ratio), 'g')
             axes[counter].set_title(ABC[(i + 6) % len(ABC)])  # beacause it's start with 'H'
             axes[counter].set_xlabel('frame number')
             axes[counter].set_ylabel('Force[]')
@@ -95,12 +95,11 @@ def forces_check_func(SOURCE, ADDRESS, action='save', size='M', measured_forces=
         print("action is not valid")
 
 
-
-def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save',  size='M',measured_forces=None , ratio = 1):
+def single_force_check_func(SOURCE, ADDRESS, sensor, action='save', size='M', measured_forces=None, ratio=1):
     ABC_effective_dict = {
-        'A' : 20, 'B' : 21, 'C': 22, 'D': 23, 'E': 24,
+        'A': 20, 'B': 21, 'C': 22, 'D': 23, 'E': 24,
         'F': 25, 'G': 0, 'H': 1, 'I': 2, 'J': 3, 'K': 4, 'L': 5, 'M': 6, 'N': 7, 'O': 8, 'P': 9,
-        'Q': 10, 'R': 11, 'S': 12, 'T': 13, 'U': 14, 'V': 15, 'W': 16, 'X': 17,'Y': 18,'Z': 19
+        'Q': 10, 'R': 11, 'S': 12, 'T': 13, 'U': 14, 'V': 15, 'W': 16, 'X': 17, 'Y': 18, 'Z': 19
     }
 
     relevant_lines = force_from_text(SOURCE)
@@ -110,7 +109,6 @@ def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save',  size='M',m
         values = [relevant_lines[i][sensor] for i in range(len(relevant_lines))]
     else:
         print("single_force_check_func: Unknown size")
-
 
     plt.figure(SOURCE + str(sensor))
     plt.plot(values)
@@ -126,7 +124,6 @@ def single_force_check_func(SOURCE, ADDRESS, sensor,  action='save',  size='M',m
         print("action is not valid")
 
     plt.close
-
 
 
 def theta_trajectory(twoD_vec):
@@ -281,7 +278,7 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
 
 
 def torque_in_load(my_load, x, force_vector_In_Lab_Frame, amgle_In_rads):
-    r_positions = [(force_vector_positions_In_LOAD_FRAME(my_load, x))[name] for name in x.participants.occupied ]
+    r_positions = [(force_vector_positions_In_LOAD_FRAME(my_load, x))[name] for name in x.participants.occupied]
     forces_in_load_frame = [vector_rotation(force_vector_In_Lab_Frame[i], amgle_In_rads) for i in
                             range(len(force_vector_In_Lab_Frame))]
     return sum_of_cross_prods(r_positions, forces_in_load_frame)

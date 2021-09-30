@@ -322,5 +322,5 @@ if __name__ == '__main__':
     #                    )
 
     # === For processing a solver ===
-    calc(100, 0, 'SPT')
-    # calc(100, 0, 'H')
+    # calc(100, 0, 'SPT')
+    calc(100, 0, 'T')
