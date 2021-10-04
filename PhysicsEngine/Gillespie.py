@@ -26,7 +26,7 @@ k_on = 0.0017
 radius = 0.57
 # Number of available sites
 # N_max = 20 # TODO
-N_max = 4
+N_max = 20
 #
 k_c = 0.7
 # beta, I am not sure, what this is
@@ -40,6 +40,7 @@ gamma_rot = 0.4 * gamma
 
 f_kinx, f_kiny = 0, 0
 n_av = 100  # number of available ants
+phi_max = 0.9075712110370514  # rad in either direction from the normal
 
 """
 Parameters I chose
@@ -65,13 +66,15 @@ class Gillespie:
         self.r_orient = None
         self.r_tot = None
 
+        self.time_until_next_event = 0
+
     @property
     def attachment_sites(self):
         return self._attachment_sites
 
     @attachment_sites.setter
     def attachment_sites(self, value):
-        raise AttributeError('Denied')
+        raise AttributeError('Dont change attachment sites!')
 
     @property
     def phi_default_load_coord(self):
@@ -79,7 +82,7 @@ class Gillespie:
 
     @phi_default_load_coord.setter
     def phi_default_load_coord(self, value):
-        raise AttributeError('Denied')
+        raise AttributeError('Dont change default phis!')
 
     def is_occupied(self, *i):
         if len(i) > 0:
@@ -103,11 +106,12 @@ class Gillespie:
 
     def attachment(self, i: int, my_load, ant_type: str):
         if ant_type == 'puller':
-            f_x, f_y = self.f_loc(my_load, i)
             self.n_p[i] = 1
+            f_x, f_y = self.f_loc(my_load, i)
             self.phi[i] = np.arctan2(f_y, f_x)
             # When a puller ant is attached to the cargo she contributes
-            # to the cargo’s velocity by applying a force, and gets aligned as much as possible with the
+            # to the cargo’s velocity by applying a force,
+            # and gets aligned as much as possible with the
             # direction of the local force at its point of attachment.
 
         else:
@@ -139,7 +143,7 @@ class Gillespie:
 
     def normal_site_vector(self, angle: float, i: int):
         """
-        :param i: ith position, counted counter clockwise
+        :param i: ith position, counted clockwise
         :param angle: angle of the shape to the world coordinate system (my_load.angle)
         :return: ant vector pointing in the direction that the ant is pointing in world coordinate system
         """
@@ -148,14 +152,13 @@ class Gillespie:
 
     def ant_vector(self, angle: float, i: int):
         """
-        :param i: ith position, counted counter clockwise
+        :param i: ith position, counted clockwise
         :param angle: angle of the shape to the world coordinate system (my_load.angle)
         :return: ant vector pointing in the direction that the ant is pointing in world coordinates
         """
         vector = np.array([np.cos(self.phi[i]), np.sin(self.phi[i])])
         return np.dot(rot(angle), vector)
 
-    # TODO: Check the code from here onward.
     def ant_force(self, my_load, i: int, pause=False):
         """
         Updates my_loads linear and angular velocity and returns the force vector in world coordinate system
@@ -166,7 +169,7 @@ class Gillespie:
         :return: force vector (np.array) pointing along the body axis of the ant at the ith position
         """
         if not self.n_p[i]:
-            raise ValueError('force of a non puller site')
+            raise ValueError('Force originating from a non puller site')
 
         force = np.array(f_0 / gamma * self.ant_vector(my_load.angle, i))
 
@@ -179,6 +182,7 @@ class Gillespie:
         # TODO: update angular velocity
         return force
 
+    # TODO: Check the code from here onward.
     def whatsNext(self, my_load):
         """
         Decides the new change in the ant configuration. Randomly according to calculated probabilities one of the
@@ -193,14 +197,17 @@ class Gillespie:
         lot = np.random.uniform(0, 1)
         self.update_rates(my_load)
 
+        # new attachment
         if lot < self.r_att / self.r_tot:
             i = np.random.choice(np.where([not occ for occ in self.is_occupied()])[0])
             self.new_attachment(i, my_load)
 
+        # detachment
         elif lot < (self.r_att + self.r_det) / self.r_tot:
             i = np.random.choice(np.where(self.is_occupied())[0])
             self.detachment(i)
 
+        # conversion of lifter to puller or vice versa
         elif lot < (self.r_att + self.r_det + self.r_con) / self.r_tot:
             def rl_p(ii):
                 return k_c * np.exp(np.inner(self.normal_site_vector(my_load.angle, ii),
@@ -221,10 +228,15 @@ class Gillespie:
                 raise ValueError('Switching is messed up!')
             self.n_p[i], self.n_l[i] = self.n_l[i], self.n_p[i]
 
+        # reorientation
         else:
             i = np.random.choice(np.where(self.n_p)[0])
+            # TODO: 52 degrees in both directions
             f_x, f_y = self.f_loc(my_load, i)
-            self.phi[i] = np.arctan2(f_y, f_x)
+            if abs((self.phi_default_load_coord[i] + my_load.angle) - self.phi[i]) > phi_max:
+                self.phi[i] = np.arctan2(f_y, f_x)
+            else:
+                print('overstretch!')
         return self.dt()
 
     def populate(self, my_load):
@@ -266,8 +278,6 @@ class Gillespie:
         self.r_det = np.sum([np.sum(self.is_occupied()) * (k1_off * np.heaviside(self.f_loc(my_load, i), 0)
                                                            + k2_off * (1 - np.heaviside(self.f_loc(my_load, i), 0)))
                              for i in range(N_max) if self.is_occupied(i)])
-        # TODO: The rates of attachment and detachment are independent of the orientation
-        #  with respect to the local force. (??)
         self.r_con = k_c * np.sum([self.n_p[i] * np.exp(-np.inner(self.normal_site_vector(my_load.angle, i),
                                                                   self.f_loc(my_load, i)) / f_ind)
                                    + self.n_l[i] * np.exp(-np.inner(self.normal_site_vector(my_load.angle, i),

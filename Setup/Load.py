@@ -3,8 +3,11 @@ from Box2D import b2BodyDef, b2_dynamicBody, b2Vec2, b2CircleShape, b2FixtureDef
 from Setup.Maze import ResizeFactors
 
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
-shift = - 0.10880829015544041
 assymetric_h_shift = 1.22 * 2
+
+# somehow these contain the same information
+SPT_ratio = 2.44 / 4.82
+centerOfMass_shift = - 0.10880829015544041
 
 
 # I multiply all these values with 2, because I got them in L, but want to state them in XL.
@@ -20,33 +23,9 @@ def Loops(Box2D_Object, vertices=None):
             Loops(body, vertices=vertices)
     else:
         for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
-                vertices.append(
-                    [(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
+            vertices.append(
+                [(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
     return vertices
-
-
-# def sites(Box2D_Object, sites, gillespie):
-#     """
-#     :param Box2D_Object: Object, usually a b2Body, that contains fixtures
-#     :param sites: how many attachment sites do you want to distribute around your shape
-#     :return: a np.array of the form [[x0, y0], ..., [x_(sites-1), y_(sites-1)]], with the attachment positions in the coordinate
-#     system of the load. This is specifically built to assist the Gillespie Code
-#     """
-#
-#     if hasattr(Box2D_Object, 'bodies'):
-#         for body in Box2D_Object.bodies:
-#             return sites(body)
-#
-#     points = np.zeros([0, 2])
-#     for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
-#         if isinstance(fixture.shape, b2CircleShape):
-#             [gillespie.ant_vector(Box2D_Object.angle, i) for i in range(len(gillespie.n_p))]
-#             array = np.zeros([sites, 2])
-#             points = np.vstack([points, array])
-#         else:
-#             # TODO: implement for polygon
-#             pass
-#     return points
 
 
 def average_radius(size, shape, solver):
@@ -69,17 +48,20 @@ def average_radius(size, shape, solver):
     return radii[shape]
 
 
-def getLoadDim(solver, shape, size):
+def getLoadDim(solver: str, shape: str, size: str):
+    """
+
+    """
     if solver in ['ant', 'dstar', 'sim']:
         resize_factor = ResizeFactors[solver][size]
         shape_sizes = {'H': [5.6, 7.2, 1.6],
-                       'SPT': [4.85, 9.65, 0.85, 2.44],
+                       'SPT': [4.85, 9.65, 0.85],
                        'LASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                        'RASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                        'I': [5.5, 1.75, 1.75],
                        'T': [5.4, 5.6, 1.6]
                        }
-        # dimensions = [shape_height, shape_width, shape_thickness, long_edge/short_edge]
+        # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
         dimensions = [i * resize_factor for i in shape_sizes[shape]]
 
         if (resize_factor == 1) and shape[1:] == 'ASH':  # for XL ASH
@@ -136,6 +118,7 @@ def AddLoadFixtures(load, size, shape, solver):
             density=1, friction=0, restitution=0,
         )
 
+        # TODO: implement corners and phis (the way that Gillespie needs it)
         load.corners = np.array([[shape_width / 2, -shape_height / 2],
                                  [-shape_width / 2, -shape_height / 2],
                                  [shape_width / 2, shape_height / 2],
@@ -161,6 +144,10 @@ def AddLoadFixtures(load, size, shape, solver):
                                  [-shape_height / 2, shape_thickness / 2],
                                  [shape_height / 2, shape_thickness / 2],
                                  [shape_height / 2, -shape_thickness / 2]])
+
+        # phis describe the angles of the normal between the corners to the x axis of the world coordinates
+        load.phis = np.array([np.pi, np.pi/2, 0, -np.pi/2])
+
     if shape == 'T':
         [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
         resize_factor = ResizeFactors[solver][size]
@@ -168,27 +155,45 @@ def AddLoadFixtures(load, size, shape, solver):
 
         #  Top horizontal T part
         load.CreatePolygonFixture(vertices=[
-            (-((shape_height - shape_thickness) / 2) + h, -shape_width / 2),
-            (-((shape_height + shape_thickness) / 2) + h, -shape_width / 2),
-            (-((shape_height + shape_thickness) / 2) + h, shape_width / 2),
-            (-((shape_height - shape_thickness) / 2) + h, shape_width / 2)],
+            ((-shape_height + shape_thickness) / 2 + h, -shape_width / 2),
+            ((-shape_height - shape_thickness) / 2 + h, -shape_width / 2),
+            ((-shape_height - shape_thickness) / 2 + h, shape_width / 2),
+            ((-shape_height + shape_thickness) / 2 + h, shape_width / 2)],
             density=1, friction=0, restitution=0,
         )
 
         #  Bottom vertical T part
         load.CreatePolygonFixture(vertices=[
-            (-(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2),
+            ((-shape_height + shape_thickness) / 2 + h, -shape_thickness / 2),
             ((shape_height - shape_thickness) / 2 + h, -shape_thickness / 2),
             ((shape_height - shape_thickness) / 2 + h, shape_thickness / 2),
-            (-(shape_height - shape_thickness) / 2 + h, shape_thickness / 2),
+            ((-shape_height + shape_thickness) / 2 + h, shape_thickness / 2),
         ],
             density=1, friction=0, restitution=0,
         )
 
-        load.corners = np.array([[-((shape_height + shape_thickness) / 2) + h, -shape_width / 2],
-                                 [-((shape_height + shape_thickness) / 2) + h, shape_width / 2],
-                                 [-(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2],
-                                 [-(shape_height - shape_thickness) / 2 + h, shape_thickness / 2]])
+        # load.corners = np.array([[-((shape_height + shape_thickness) / 2) + h, -shape_width / 2],
+        #                          [-((shape_height + shape_thickness) / 2) + h, shape_width / 2],
+        #                          [-(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2],
+        #                          [-(shape_height - shape_thickness) / 2 + h, shape_thickness / 2]])
+
+        # the corners  in my_load.corners must be ordered like this: finding the intersection of the negative y-axis,
+        # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
+        # TODO: implement corners and phis
+        load.corners = np.array([[],  # left
+                                 [],
+                                 [],
+                                 [],
+                                 [],
+                                 [],
+                                 [],
+                                 []])
+
+        # phis describe the angles of the normal between the corners to the x axis of the world coordinates.
+        # Starting at first corner of load.corners, and going clockwise
+        # load.phis = np.array([np.pi, np.pi / 2, 0, -np.pi / 2])
+        load.phis = np.array([])
+
 
     '''        corners = np.array([[shape_thickness/2, -shape_height/2-h],
                                 [-shape_thickness/2, -shape_height/2-h],
@@ -198,11 +203,11 @@ def AddLoadFixtures(load, size, shape, solver):
         '''
 
     if shape == 'SPT':  # This is the Special T
-        [shape_height, shape_width, shape_thickness, _] = getLoadDim(solver, shape, size)
+        [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
         print(str(getLoadDim(solver, shape, size)))
 
         # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the long middle
-        h = shift * shape_width  # distance of the centroid away from the center of the long middle
+        h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle
         # part of the T. (1.445 calculated)
 
         # This is the connecting middle piece
@@ -216,12 +221,12 @@ def AddLoadFixtures(load, size, shape, solver):
 
         # This is the short side
         load.CreatePolygonFixture(vertices=[
-            (shape_width / 2 - h, -shape_height / 2 * 2.44 / 4.82),
+            (shape_width / 2 - h, -shape_height / 2 * SPT_ratio),
             # This addition is because the special T looks like an H where one vertical side is shorter by a factor
-            # 2.44/4.82
-            (shape_width / 2 - h, shape_height / 2 * 2.44 / 4.82),
-            (shape_width / 2 - shape_thickness - h, shape_height / 2 * 2.44 / 4.82),
-            (shape_width / 2 - shape_thickness - h, -shape_height / 2 * 2.44 / 4.82)],
+            # SPT_ratio
+            (shape_width / 2 - h, shape_height / 2 * SPT_ratio),
+            (shape_width / 2 - shape_thickness - h, shape_height / 2 * SPT_ratio),
+            (shape_width / 2 - shape_thickness - h, -shape_height / 2 * SPT_ratio)],
             density=1, friction=0, restitution=0,
         )
 
@@ -234,10 +239,33 @@ def AddLoadFixtures(load, size, shape, solver):
             density=1, friction=0, restitution=0,
         )
 
-        load.corners = np.array([[shape_width / 2, -shape_height / 2 * 2.44 / 4.82],
-                                 [-shape_width / 2, -shape_height / 2],
-                                 [shape_width / 2, shape_height / 2 * 2.44 / 4.82],
-                                 [-shape_width / 2, shape_height / 2]])
+        # load.corners = np.array([[shape_width / 2, -shape_height / 2 * SPT_ratio],
+        #                          [-shape_width / 2, -shape_height / 2],
+        #                          [shape_width / 2, shape_height / 2 * SPT_ratio],
+        #                          [-shape_width / 2, shape_height / 2]])
+
+        # the corners  in my_load.corners must be ordered like this: finding the intersection of the negative y-axis,
+        # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
+        # corners = np.vstack([[0, my_load.corners[0, 1]], my_load.corners])
+        # phis = np.append(my_load.phis, my_load.phis[0])
+        load.corners = np.array([[-shape_width / 2 + shape_thickness - h, -shape_thickness / 2],  # left
+                                 [-shape_width / 2 + shape_thickness - h, -shape_height / 2],
+                                 [-shape_width / 2 - h, -shape_height / 2],
+                                 [-shape_width / 2 - h, shape_height / 2],
+                                 [-shape_width / 2 + shape_thickness - h, shape_height / 2],
+                                 [-shape_width / 2 + shape_thickness - h, shape_thickness / 2],
+                                 [shape_width / 2 - shape_thickness - h, shape_thickness / 2],  # right
+                                 [shape_width / 2 - shape_thickness - h, shape_height / 2 * SPT_ratio],
+                                 [shape_width / 2 - h, shape_height / 2 * SPT_ratio],
+                                 [shape_width / 2 - h, -shape_height / 2 * SPT_ratio],
+                                 [shape_width / 2 -shape_thickness - h, -shape_height / 2 * SPT_ratio],
+                                 [shape_width / 2 -shape_thickness - h, -shape_thickness / 2]])
+
+        # phis describe the angles of the normal between the corners to the x axis of the world coordinates.
+        # Starting at first corner of load.corners, and going clockwise
+        # load.phis = np.array([np.pi, np.pi / 2, 0, -np.pi / 2])
+        load.phis = np.array([0, -np.pi / 2, np.pi, np.pi / 2, 0, np.pi / 2,
+                              np.pi, np.pi / 2, 0, -np.pi / 2, np.pi, np.pi / 2])
 
     if shape == 'RASH':  # This is the ASymmetrical H
         [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
@@ -255,7 +283,7 @@ def AddLoadFixtures(load, size, shape, solver):
         load.CreatePolygonFixture(vertices=[
             (shape_width / 2, -shape_height / 2 + assymetric_h_shift,),
             # This addition is because the special T looks like an H where one vertical side is shorter by a factor
-            # 2.44/4.82
+            # SPT_ratio
             (shape_width / 2, shape_height / 2,),
             (shape_width / 2 - shape_thickness, shape_height / 2,),
             (shape_width / 2 - shape_thickness, -shape_height / 2 + assymetric_h_shift,)],
@@ -269,6 +297,7 @@ def AddLoadFixtures(load, size, shape, solver):
             (-shape_width / 2 + shape_thickness, -shape_height / 2,)],
             density=1, friction=0, restitution=0,
         )
+    # TODO: implement corners and phis
 
     if shape == 'LASH':  # This is the ASymmetrical H
         [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
@@ -286,7 +315,7 @@ def AddLoadFixtures(load, size, shape, solver):
         load.CreatePolygonFixture(vertices=[
             (shape_width / 2, -shape_height / 2,),
             # This addition is because the special T looks like an H where one vertical side is shorter by a factor
-            # 2.44/4.82
+            # SPT_ratio
             (shape_width / 2, shape_height / 2 - assymetric_h_shift,),
             (shape_width / 2 - shape_thickness, shape_height / 2 - assymetric_h_shift,),
             (shape_width / 2 - shape_thickness, -shape_height / 2,)],
@@ -301,6 +330,7 @@ def AddLoadFixtures(load, size, shape, solver):
             density=1, friction=0, restitution=0,
         )
 
+        # TODO: implement corners and phis
         # load.corners = np.array([[ -shape_height/2,shape_width/2, ],
         #                     [ -shape_height/2+assymetric_h_shift, -shape_width/2,],
         #                     [ shape_height/2-assymetric_h_shift, shape_width/2,],
@@ -311,7 +341,7 @@ def AddLoadFixtures(load, size, shape, solver):
 
 def circumference(x):
     from Setup.Maze import ResizeFactors
-    shape_thickness, shape_height, shape_width = getLoadDim(x.solver, x.shape, x.size)
+    shape_height, shape_width, shape_thickness = getLoadDim(x.solver, x.shape, x.size)
 
     if x.shape.endswith('ASH'):
         print('I dont know circumference of ASH!!!')
@@ -319,7 +349,14 @@ def circumference(x):
     cir = {'H': 4 * shape_height - 2 * shape_thickness + 2 * shape_width,
            'I': 2 * shape_height + 2 * shape_width,
            'T': 2 * shape_height + 2 * shape_width,
-           'SPT': 2 * shape_height / 2 * 2.44 / 4.82 + 2 * shape_height - 2 * shape_thickness + 2 * shape_width,
+           # 'SPT': 2 * shape_height / 2 * SPT_ratio +
+           #        2 * shape_height -
+           #        2 * shape_thickness +
+           #        2 * shape_width,
+           'SPT': 2 * shape_height * SPT_ratio +
+                  2 * shape_height -
+                  2 * shape_thickness +
+                  2 * shape_width,
            'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
                    - 2 * shape_thickness,
            'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
@@ -346,7 +383,8 @@ def Load(my_maze, position=None, angle=0, point_particle=False):
         my_load = AddLoadFixtures(my_load, my_maze.size, my_maze.shape, my_maze.solver)
     return my_load
 
-def Gillespie_sites_angels(my_load, n: int, x=None)
+
+def Gillespie_sites_angels(my_load, n: int, x=None):
     """
 
     :param my_load: b2Body
@@ -357,25 +395,42 @@ def Gillespie_sites_angels(my_load, n: int, x=None)
     """
     if isinstance(my_load.fixtures[0].shape, b2CircleShape):
         from PhysicsEngine.Gillespie import radius
-        theta = np.linspace(0, 2 * np.pi, n)
+        theta = -np.linspace(0, 2 * np.pi, n)
         sites = radius * np.transpose(np.vstack([np.cos(theta), np.sin(theta)]))
-        phi_default = np.linspace(0, 2 * np.pi, n)
+        phi_default = theta
         return sites, phi_default
 
     else:
-        sites = np.empty([0, 2])
-        phi_default = np.empty([0])
+        # the corners  in my_load.corners must be ordered like this: finding the intersection of the negative y-axis,
+        # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
+        # corners = np.vstack([[0, my_load.corners[0, 1]], my_load.corners])
+        # phis = np.append(my_load.phis, my_load.phis[0])
+
+        def linear_combination(step_size, start, end):
+            return start + step_size * (end - start) / np.linalg.norm(start - end)
+
+        # walk around the shape
+        i = 1
         delta = circumference(x) / n
-        rest = np.linalg.norm(my_load.corners[1] - my_load.corners[0])/2
-        if x.shape == 'I':
-            for corner1, corner2 in zip(my_load.corners, np.roll(my_load.corners, -1, axis=0)):
-                corner1a = corner1 + rest * (corner2 - corner1)/np.linalg.norm(corner2 - corner1)
-                number = int(np.floor(np.linalg.norm(corner1a-corner2)/delta))
-                new_points = np.linspace(corner1a, corner2, number)
-                sites = np.vstack([sites, new_points])
-                rest = np.linalg.norm(corner1a-corner2) - number * delta
-                phi_default = phi_default.vstack([phi_default, np.ones()])
-            wait = 1
+        step_size = delta
+        sites = np.array([linear_combination(0.5, my_load.corners[0], my_load.corners[1])])
+        phi_default = np.array([my_load.phis[0]])
+        start = sites[-1]
+        aim = my_load.corners[1]
+
+        while sites.shape[0] < n:
+            if np.linalg.norm(start - aim) > step_size:
+                sites = np.vstack([sites, linear_combination(step_size, start, aim)])
+                start = sites[-1]
+                phi_default = np.append(phi_default, my_load.phis[(i-1) % my_load.corners.shape[0]])
+                step_size = delta
+
+            else:
+                step_size = step_size - np.linalg.norm(start - aim)
+                i = i + 1
+                start = my_load.corners[(i-1) % my_load.corners.shape[0]]
+                aim = my_load.corners[i % my_load.corners.shape[0]]
+
         if x.shape == 'SPT':
             pass
         return sites, phi_default
@@ -399,7 +454,7 @@ def force_attachment_positions(my_load, x):
                      [x47, -shape_thickness / 2],
                      [x38, -shape_thickness / 2],
                      [x29, -shape_thickness / 2]]
-        h = shift * shape_width
+        h = centerOfMass_shift * shape_width
 
     elif x.solver == 'human' and x.size == 'Large' and x.shape == 'SPT':
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
@@ -446,13 +501,13 @@ def force_attachment_positions(my_load, x):
                      [xDY, -yDEFGHIJ_STUVWXY],
                      [xCZ, -yC_Z],
                      ]
-        h = shift * shape_width
+        h = centerOfMass_shift * shape_width
 
     else:
         positions = [[0, 0] for i in range(participant_number[x.size])]
         h = 0
 
-    # shift the shape...
+    # centerOfMass_shift the shape...
     positions = [[r[0] - h, r[1]] for r in positions]  # r vectors in the load frame
 
     #

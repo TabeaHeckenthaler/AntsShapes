@@ -12,7 +12,7 @@ from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Di
 from Classes_Experiment.humans import force_from_text
 from PhysicsEngine.Contact import find_contact
 from Setup.Load import getLoadDim
-from Setup.Load import periodicity, shift, assymetric_h_shift
+from Setup.Load import periodicity, centerOfMass_shift, assymetric_h_shift
 
 # x.play()
 
@@ -219,7 +219,7 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
                      [x47, -shape_thickness / 2],
                      [x38, -shape_thickness / 2],
                      [x29, -shape_thickness / 2]]
-        h = shift * shape_width
+        h = centerOfMass_shift * shape_width
 
     elif x.solver == 'human' and x.size == 'Large' and x.shape == 'SPT':
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
@@ -265,13 +265,13 @@ def force_vector_positions_In_LOAD_FRAME(my_load, x):
                      [xDY, -yDEFGHIJ_STUVWXY],
                      [xCZ, -yC_Z],
                      ]
-        h = shift * shape_width
+        h = centerOfMass_shift * shape_width
 
     else:
         positions = [[0, 0] for i in range(participant_number[x.size])]
         h = 0
 
-    # shift the shape...
+    # centerOfMass_shift the shape...
     positions = [[r[0] - h, r[1]] for r in positions]  # r vectors in the load frame
 
     return positions

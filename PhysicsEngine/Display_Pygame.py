@@ -24,7 +24,8 @@ colors = {'my_maze': (0, 0, 0),
           'arrow': (135, 206, 250),
           'participants': (0, 0, 0),
           'puller': (0, 250, 0),
-          'lifter': (0, 0, 0)
+          'lifter': (0, 250, 0),
+          'empty': (0, 0, 0),
           }
 
 pygame.font.init()  # display and fonts
@@ -165,7 +166,7 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
 def arrow(start, end, name, screen):
     start = [int(start[0] * PPM), SCREEN_HEIGHT - int(start[1] * PPM)]
 
-    if end is None and name == 'lifter':
+    if end is None and name == 'lifter' or name == 'empty':
         pygame.draw.circle(screen, colors[name], start, 5)
         return
 

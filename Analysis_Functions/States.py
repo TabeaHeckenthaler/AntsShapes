@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage import median_filter
-from Setup.Load import getLoadDim, shift
+from Setup.Load import getLoadDim, centerOfMass_shift
 
 
 def States_loop(my_maze, x, i, **kwargs):
@@ -12,7 +12,7 @@ def getState(solver, shape, size, position, angle, maze):
     state = 0
     """ Shape SPT """
     if shape == 'SPT':
-        h = shift * shape_width  # distance of the centroid away from the center of the long middle part of the T. (1.445 d)
+        h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle part of the T. (1.445 d)
         displacement = shape_width / 2 + h
         slit0, slit1 = maze.slits[0], maze.slits[1]
 

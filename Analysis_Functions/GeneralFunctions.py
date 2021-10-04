@@ -10,7 +10,7 @@ def gauss(x, a, x0, sigma):
 
 
 def angles_shift(angle):
-    # shift [0, 2pi] to [-pi, pi]
+    # centerOfMass_shift [0, 2pi] to [-pi, pi]
     angle1 = angle + np.pi
     angle1_mod = angle1 % (np.pi * 2) - np.pi
     return angle1_mod
