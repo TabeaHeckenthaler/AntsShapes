@@ -130,7 +130,10 @@ class Humans:
         self.frames = list()
         self.size = x.size
         self.number = len(self.gender())
+
+        # contains list of occupied sites, where site A carries index 0 and Z carries index 25.
         self.occupied = list(self.gender().keys())
+
         if isinstance(sheet.cell(row=excel_worksheet_index(self.filename), column=16).value, str):
             self.matlab_human_loading(x)
             self.forces_loading(x)
@@ -165,6 +168,8 @@ class Humans:
                 if x.size == 'Medium':
                     data = data[np.vectorize(Medium_id_correction_dict.get)(data[:, 4]).argsort()]
                     data[:, 4] = np.vectorize(Medium_id_correction_dict.get)(data[:, 4])
+                if x.size == 'Large':
+                    k = 1
 
                 data = data[data[:, 4].argsort()]
 
@@ -217,6 +222,12 @@ class Humans:
         return self.number
 
     def gender(self):
+        """
+        return dict which gives the gender of every participant. The keys of the dictionary are indices of participants,
+        where participant A has index 0, B has index 1, ... and Z has index 25. This is different from the counting in
+        Aviram's movies!!
+        """
+
         index = excel_worksheet_index(self.filename)
         gender_string = list(sheet.cell(row=index, column=17).value)
 

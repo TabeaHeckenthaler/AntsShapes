@@ -85,6 +85,8 @@ def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
     elif solver == 'humanhand':
         # [shape_height, shape_width, shape_thickness, short_edge]
         SPT_Human_sizes = [6, 12.9, 0.9, 3]
+        if not short_edge:
+            SPT_Human_sizes = SPT_Human_sizes[:3]
         return SPT_Human_sizes
 
 
@@ -198,14 +200,6 @@ def AddLoadFixtures(load, size, shape, solver):
         # Starting at first corner of load.corners, and going clockwise
         # load.phis = np.array([np.pi, np.pi / 2, 0, -np.pi / 2])
         load.phis = np.array([])
-
-
-    '''        corners = np.array([[shape_thickness/2, -shape_height/2-h],
-                                [-shape_thickness/2, -shape_height/2-h],
-                                [shape_width/2, shape_height/2-h],
-                                [-shape_width/2, shape_height/2-h]])
-        
-        '''
 
     if shape == 'SPT':  # This is the Special T
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(solver, shape, size, short_edge=True)
@@ -471,7 +465,8 @@ def force_attachment_positions(my_load, x):
         xAB = (-1) * xMNOP
         xCZ = (-1) * xLQ
         xKR = xMNOP + shape_thickness
-        xDY, xEX, xFW, xGV, xHU, xIT, xJS = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
+        # xDY, xEX, xFW, xGV, xHU, xIT, xJS = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
+        xJS, xIT, xHU, xGV, xFW, xEX, xDY = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
 
         yA_B = short_edge / 6
         yC_Z = short_edge / 2
@@ -481,32 +476,33 @@ def force_attachment_positions(my_load, x):
         yM_P = shape_height / 10 * 3
         yN_O = shape_height / 10
 
-        positions = [[xAB, yA_B],
-                     [xAB, - yA_B],
-                     [xCZ, yC_Z],
-                     [xDY, yDEFGHIJ_STUVWXY],
-                     [xEX, yDEFGHIJ_STUVWXY],
-                     [xFW, yDEFGHIJ_STUVWXY],
-                     [xGV, yDEFGHIJ_STUVWXY],
-                     [xHU, yDEFGHIJ_STUVWXY],
-                     [xIT, yDEFGHIJ_STUVWXY],
-                     [xJS, yDEFGHIJ_STUVWXY],
-                     [xKR, yK_R],
-                     [xLQ, yL_Q],
-                     [xMNOP, yM_P],
-                     [xMNOP, yN_O],
-                     [xMNOP, -yN_O],
-                     [xMNOP, -yM_P],
-                     [xLQ, -yL_Q],
-                     [xKR, -yK_R],
-                     [xJS, -yDEFGHIJ_STUVWXY],
-                     [xIT, -yDEFGHIJ_STUVWXY],
-                     [xHU, -yDEFGHIJ_STUVWXY],
-                     [xGV, -yDEFGHIJ_STUVWXY],
-                     [xFW, -yDEFGHIJ_STUVWXY],
-                     [xEX, -yDEFGHIJ_STUVWXY],
-                     [xDY, -yDEFGHIJ_STUVWXY],
-                     [xCZ, -yC_Z],
+        # indices in comment describe the index shown in Aviram's tracking movie
+        positions = [[xAB, -yA_B],  # 1, A
+                     [xAB, yA_B],  # 2, B
+                     [xCZ, yC_Z],  # 3, C
+                     [xDY, yDEFGHIJ_STUVWXY],  # 4, D
+                     [xEX, yDEFGHIJ_STUVWXY],  # 5, E
+                     [xFW, yDEFGHIJ_STUVWXY],  # 6, F
+                     [xGV, yDEFGHIJ_STUVWXY],  # 7, G
+                     [xHU, yDEFGHIJ_STUVWXY],  # 8, H
+                     [xIT, yDEFGHIJ_STUVWXY],  # 9, I
+                     [xJS, yDEFGHIJ_STUVWXY],  # 10, J
+                     [xKR, yK_R],  # 11, K
+                     [xLQ, yL_Q],  # 12, L
+                     [xMNOP, yM_P],  # 13, M
+                     [xMNOP, yN_O],  # 14, N
+                     [xMNOP, -yN_O],  # 15, O
+                     [xMNOP, -yM_P],  # 16, P
+                     [xLQ, -yL_Q],  # 17, Q
+                     [xKR, -yK_R],  # 18, R
+                     [xJS, -yDEFGHIJ_STUVWXY],  # 19, S
+                     [xIT, -yDEFGHIJ_STUVWXY],  # 20, T
+                     [xHU, -yDEFGHIJ_STUVWXY],  # 21, U
+                     [xGV, -yDEFGHIJ_STUVWXY],  # 22, V
+                     [xFW, -yDEFGHIJ_STUVWXY],  # 23, W
+                     [xEX, -yDEFGHIJ_STUVWXY],  # 24, X
+                     [xDY, -yDEFGHIJ_STUVWXY],  # 25, Y
+                     [xCZ, -yC_Z],  # 26, Z
                      ]
         h = centerOfMass_shift * shape_width
 

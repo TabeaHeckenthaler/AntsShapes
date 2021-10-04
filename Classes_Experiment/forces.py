@@ -8,6 +8,8 @@ angle_shift = {'Medium': {0: 0,
                      1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
                      4: np.pi, 5: np.pi,
                      6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
+
+               # for Large, this describes the number keys describe the force meter identities.
                'Large': {0: np.pi/2, 1: np.pi/2, 2: np.pi/2, 3: np.pi/2,
                      4: 0,
                      5: np.pi/2,
@@ -24,11 +26,22 @@ force_scaling_factor_DISPLAY = 1 / 5
 
 
 def force_in_frame(x, i):
+    """
+    param x: trajectory
+    param i: frame number
+    return 2x1 numpy array with x and y component of the normalized force vector
+    """
     frame = x.participants.frames[i]
     return [[frame.forces[name] * norm_force_vector(x, i, name)] for name in x.participants.occupied]
 
 
 def norm_force_vector(x, i, name):
+    """
+    param x: trajectory
+    param i: frame number
+    param name: integer, which describes the position of a participant, where A is index 0, ... and Z is index 26
+    return 2x1 numpy array with x and y component of the normalized force vector
+    """
     angle = x.angle[i] + x.participants.frames[i].angle[name] + angle_shift[x.size][name]
     return np.array([np.cos(angle), np.sin(angle)])
 
@@ -40,12 +53,13 @@ def participants_force_arrows(x, my_load, i):
 
     frame = x.participants.frames[i]
     for name in x.participants.occupied:
-        force = (frame.forces[name]) * force_scaling_factor_DISPLAY
+        # force = (frame.forces[name]) * force_scaling_factor_DISPLAY # TODO: change back
+        force = 1
         force_meter_coor = force_attachment_positions(my_load, x)[name]
         if abs(force) > 0.2:
             arrows.append((force_meter_coor,
                            force_meter_coor + force * norm_force_vector(x, i, name),
-                           str(name + 1)))
+                           str(name + 1)))  # name + 1 because A is 1 in Aviram's analysis, and in my list A is 0.
         # if abs(x.participants.frames[i].angle[name]) > np.pi / 2:
         #     print()
     return arrows
