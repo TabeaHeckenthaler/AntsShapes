@@ -11,18 +11,17 @@ angle_shift = {# the number keys describe the names, zero based (Avirams numberi
                           6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
 
                # the number keys describe the names, based on 0=A, ..., 25=Z.
-               'Large': {7: np.pi / 2, 8: np.pi / 2, 9: np.pi / 2, 10: np.pi / 2,
-                         11: 0,
-                         12: np.pi / 2,
-                         13: np.pi, 14: np.pi, 15: np.pi, 16: np.pi,
-                         17: -np.pi / 2,
-                         18: 0,
-                         19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2, 24: -np.pi / 2,
+               'Large': {3: np.pi / 2, 4: np.pi / 2, 5: np.pi/2, 6: np.pi/2, 7: np.pi / 2, 8: np.pi / 2, 9: np.pi / 2,
+                         10: 0,
+                         11: np.pi / 2,
+                         12: np.pi, 13: np.pi, 14: np.pi, 15: np.pi,
+                         16: -np.pi / 2,
+                         17: np.pi/2, # this seems to be a mistake in Avirams code
+                         18: -np.pi / 2, 19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2, 24: -np.pi / 2,
                          25: -np.pi / 2,
-                         0: -np.pi / 2,
-                         1: 0, 2: 0,
-                         3: np.pi / 2,
-                         4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2},
+                         0: 0, 1: 0,
+                         2: np.pi / 2,
+                         },
                }
 force_scaling_factor_DISPLAY = 1 / 5
 
