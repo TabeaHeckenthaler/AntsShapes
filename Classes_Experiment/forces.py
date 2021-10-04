@@ -4,23 +4,25 @@ from trajectory import Get
 from Classes_Experiment.humans import Humans
 from Setup.Load import force_attachment_positions
 
-angle_shift = {'Medium': {0: 0,
-                     1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
-                     4: np.pi, 5: np.pi,
-                     6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
+angle_shift = {# the number keys describe the names, zero based (Avirams numbering is 1 based)
+               'Medium': {0: 0,
+                          1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
+                          4: np.pi, 5: np.pi,
+                          6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
 
-               # for Large, this describes the number keys describe the force meter identities.
-               'Large': {0: np.pi/2, 1: np.pi/2, 2: np.pi/2, 3: np.pi/2,
-                     4: 0,
-                     5: np.pi/2,
-                     6: np.pi, 7: np.pi, 8: np.pi, 9: np.pi,
-                     10: -np.pi/2,
-                     11: 0,
-                     12: -np.pi/2, 13: -np.pi/2, 14: -np.pi/2, 15: -np.pi/2, 16: -np.pi/2, 17: -np.pi/2,18: -np.pi/2,
-                     19: -np.pi/2,
-                     20: 0, 21: 0,
-                     22: np.pi/2,
-                     23: np.pi/2, 24: np.pi/2, 25: np.pi/2},
+               # the number keys describe the names, based on 0=A, ..., 25=Z.
+               'Large': {7: np.pi / 2, 8: np.pi / 2, 9: np.pi / 2, 10: np.pi / 2,
+                         11: 0,
+                         12: np.pi / 2,
+                         13: np.pi, 14: np.pi, 15: np.pi, 16: np.pi,
+                         17: -np.pi / 2,
+                         18: 0,
+                         19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2, 24: -np.pi / 2,
+                         25: -np.pi / 2,
+                         0: -np.pi / 2,
+                         1: 0, 2: 0,
+                         3: np.pi / 2,
+                         4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2},
                }
 force_scaling_factor_DISPLAY = 1 / 5
 
