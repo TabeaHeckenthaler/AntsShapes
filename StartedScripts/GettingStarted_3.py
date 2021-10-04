@@ -9,7 +9,7 @@ from trajectory import Get
 from Classes_Experiment.humans import Humans
 
 solver = 'human'
-x = Get('medium_20201221135753_20201221140218', solver)
+x = Get('large_20210419100024_20210419100547', solver)
 # x.play()
 
 ''' find vertices '''

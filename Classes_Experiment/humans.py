@@ -31,7 +31,8 @@ def date(human):
 
 
 def force_directory(human):
-    day_string = str(date(human).year) + '-' + str(date(human).month) + '-' + str(date(human).day)
+
+    day_string = str(date(human).year) + '-' + str(date(human).month).zfill(2) + '-' + str(date(human).day).zfill(2)
     return ('{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}Raw Data and Videos{7}'
             + day_string + '{8}Force Measurements{9}' + human.size).format(path.sep, path.sep, path.sep, path.sep,
                                                                            path.sep, path.sep, path.sep, path.sep,
@@ -46,7 +47,17 @@ def force_filename(human):
     return text_file_name
 
 
+def correct_times(times):
+    # for the large human SPT Maze, we have an additional two digits and an space in our txt file.
+    # We have to get rid of this.
+    for i, time in enumerate(times):
+        times[i] = [times[i][0].split(' ')[-1]]
+    return times
+
+
 def convert_to_frames(fps, times):
+    times = correct_times(times)
+
     seconds = [int(time[0].split(':')[0]) * 3600 + int(time[0].split(':')[1]) * 60 + int(time[0].split(':')[2]) for time
                in times]
     seconds = [sec - seconds[0] for sec in seconds]
@@ -85,6 +96,7 @@ def peaks_filter(forces):
     for i in range(len(forces[0])):
         forces[:, i] = np.array(forces)[:, i] - min(forces[:, i])
     return forces
+
 
 def force_debugger(human, forces_all_frames, x):
     if np.isnan(np.sum([human.frames[i].forces[1] for i in range(0, len(human.frames))])):
@@ -142,10 +154,19 @@ class Humans:
             if data.shape[1] > 4:
                 data = data[data[:, 4].argsort()]
 
-            if x.size == 'Medium':
+            if x.size in ['Medium', 'Large']:
+
+                if x.filename == 'large_20210419100024_20210419100547':
+                    for false_reckog in [8., 9.]:
+                        index = np.where(data[:, 4] == false_reckog)
+                        data = np.delete(data, index, 0)
+
                 # correct the wrong hat identities
-                data = data[np.vectorize(Medium_id_correction_dict.get)(data[:, 4]).argsort()]
-                data[:, 4] = np.vectorize(Medium_id_correction_dict.get)(data[:, 4])
+                if x.size == 'Medium':
+                    data = data[np.vectorize(Medium_id_correction_dict.get)(data[:, 4]).argsort()]
+                    data[:, 4] = np.vectorize(Medium_id_correction_dict.get)(data[:, 4])
+
+                data = data[data[:, 4].argsort()]
 
                 # tracked participants have a carrying boolean, and an angle to their force meter
                 humans_frame.position[self.occupied] = data[:, 2:4] + [x.x_error[0], x.y_error[0]]

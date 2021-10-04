@@ -48,7 +48,7 @@ def average_radius(size, shape, solver):
     return radii[shape]
 
 
-def getLoadDim(solver: str, shape: str, size: str):
+def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
     """
 
     """
@@ -72,9 +72,14 @@ def getLoadDim(solver: str, shape: str, size: str):
 
     elif solver == 'human':
         # [shape_height, shape_width, shape_thickness, short_edge]
-        SPT_Human_sizes = {'S': [0.805, 1.61, 0.125, 0.805 / 0.405],
-                           'M': [1.59, 3.18, 0.240, 1.59 / 0.795],
-                           'L': [3.2, 6.38, 0.51, 3.2 / 1.585]}
+        if short_edge:
+            SPT_Human_sizes = {'S': [0.805, 1.61, 0.125, 0.805 / 0.405],
+                               'M': [1.59, 3.18, 0.240, 1.59 / 0.795],
+                               'L': [3.2, 6.38, 0.51, 3.2 / 1.585]}
+        else:
+            SPT_Human_sizes = {'S': [0.805, 1.61, 0.125],
+                               'M': [1.59, 3.18, 0.240],
+                               'L': [3.2, 6.38, 0.51]}
         return SPT_Human_sizes[size[0]]
 
     elif solver == 'humanhand':
@@ -203,7 +208,7 @@ def AddLoadFixtures(load, size, shape, solver):
         '''
 
     if shape == 'SPT':  # This is the Special T
-        [shape_height, shape_width, shape_thickness] = getLoadDim(solver, shape, size)
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(solver, shape, size, short_edge=True)
         print(str(getLoadDim(solver, shape, size)))
 
         # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the long middle
@@ -221,12 +226,12 @@ def AddLoadFixtures(load, size, shape, solver):
 
         # This is the short side
         load.CreatePolygonFixture(vertices=[
-            (shape_width / 2 - h, -shape_height / 2 * SPT_ratio),
+            (shape_width / 2 - h, -short_edge / 2),
             # This addition is because the special T looks like an H where one vertical side is shorter by a factor
             # SPT_ratio
-            (shape_width / 2 - h, shape_height / 2 * SPT_ratio),
-            (shape_width / 2 - shape_thickness - h, shape_height / 2 * SPT_ratio),
-            (shape_width / 2 - shape_thickness - h, -shape_height / 2 * SPT_ratio)],
+            (shape_width / 2 - h, short_edge / 2),
+            (shape_width / 2 - shape_thickness - h, short_edge / 2),
+            (shape_width / 2 - shape_thickness - h, -short_edge / 2)],
             density=1, friction=0, restitution=0,
         )
 
@@ -457,9 +462,11 @@ def force_attachment_positions(my_load, x):
         h = centerOfMass_shift * shape_width
 
     elif x.solver == 'human' and x.size == 'Large' and x.shape == 'SPT':
-        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+        # [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size,
+                                                                              short_edge=True)
 
-        xMNOP = -shape_width / 2,
+        xMNOP = -shape_width / 2
         xLQ = xMNOP + shape_thickness / 2
         xAB = (-1) * xMNOP
         xCZ = (-1) * xLQ

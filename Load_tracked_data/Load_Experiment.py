@@ -7,11 +7,12 @@ Created on Sun May  3 10:35:01 2020
 from PhysicsEngine.Box2D_GameLoops import MainGameLoop
 
 
-def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_error, angle_error, fps, free,
-                    *args, **kwargs):
+def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_error, angle_error, fps, free, *args,
+                    size=None, shape=None, **kwargs):
     import trajectory
     x = trajectory.Trajectory(old_filename=old_filename, solver=solver, winner=winner,
                               fps=fps, free=free, x_error=x_error, y_error=y_error, angle_error=angle_error,
+                              shape=shape, size=size,
                               falseTracking=[falseTracking], **kwargs)
 
     if x.free:
@@ -31,3 +32,11 @@ def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_erro
         args = args + ('L_I1', )
     x = MainGameLoop(x, *args, **kwargs)
     return x
+
+
+if __name__ == '__main__':
+    old_filename = 'large_20210419121802_20210419122542'
+    x = Load_Experiment('human', old_filename, [], True, 0, 0, 0, 30, False, size='L', shape='SPT', )
+    x.play()
+
+    pass

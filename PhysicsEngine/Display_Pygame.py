@@ -174,19 +174,24 @@ def arrow(start, end, name, screen):
     rad = math.pi / 180
     thickness, trirad = int(0.05 * PPM), int(0.2 * PPM)
     arrow_width = 150
-    pygame.draw.line(screen, colors[name], start, end, thickness)
-    rotation = (math.atan2(start[1] - end[1], end[0] - start[0])) + math.pi / 2
-    pygame.draw.polygon(screen, colors[name], ((end[0] + trirad * math.sin(rotation),
-                                                   end[1] + trirad * math.cos(rotation)),
-                                                  (end[0] + trirad * math.sin(rotation - arrow_width * rad),
-                                                   end[1] + trirad * math.cos(rotation - arrow_width * rad)),
-                                                  (end[0] + trirad * math.sin(rotation + arrow_width * rad),
-                                                   end[1] + trirad * math.cos(rotation + arrow_width * rad))))
-    if name == 'puller':
-        pygame.draw.circle(screen, colors[name], start, 5)
+
+    if name in ['puller', 'lifter', 'empty']:
+        color = colors[name]
     else:
+        color = colors['arrow']
         text = font.render(str(name), True, colors['text'])
         screen.blit(text, end)
+
+    pygame.draw.line(screen, color, start, end, thickness)
+    pygame.draw.circle(screen, color, start, 5)
+
+    rotation = (math.atan2(start[1] - end[1], end[0] - start[0])) + math.pi / 2
+    pygame.draw.polygon(screen, color, ((end[0] + trirad * math.sin(rotation),
+                                         end[1] + trirad * math.cos(rotation)),
+                                        (end[0] + trirad * math.sin(rotation - arrow_width * rad),
+                                         end[1] + trirad * math.cos(rotation - arrow_width * rad)),
+                                        (end[0] + trirad * math.sin(rotation + arrow_width * rad),
+                                         end[1] + trirad * math.cos(rotation + arrow_width * rad))))
     return
 
 
@@ -289,9 +294,10 @@ def Display_loop(my_load, my_maze, screen, free=False, x=None, i=None, lines=Non
             kwargs['arrows'] = kwargs['arrows'] + arrow_function(x, my_load, i)
 
     [arrow(*a_i, screen) for a_i in arrows]
-    # if 'arrows' in kwargs:
-    #     for a_i in kwargs['arrows']:
-    #         arrow(*a_i, screen)
+
+    if 'arrows' in kwargs:
+        for a_i in kwargs['arrows']:
+            arrow(*a_i, screen)
 
     if 'participants' in kwargs:
         for part in kwargs['participants'](x, my_load):
