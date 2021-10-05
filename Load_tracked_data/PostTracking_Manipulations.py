@@ -1,6 +1,6 @@
 import trajectory
 import numpy as np
-from PhysicsEngine.Box2D_GameLoops import MainGameLoop
+from PhysicsEngine.Box2D_GameLoops import mainGameLoop
 from scipy.ndimage import gaussian_filter
 
 
@@ -21,7 +21,7 @@ def SmoothConnector(file1, file2):
                                            free=file1.free, fps=file1.fps,
                                            winner=False,
                                            )
-    # Find the end position
+    # Find the end_screen position
     dx = file1.position[-1][0] - file2.position[1][0]
     dy = file1.position[-1][1] - file2.position[1][1]
 
@@ -40,7 +40,7 @@ def SmoothConnector(file1, file2):
     # all the other stuff
     connector_load.frames = np.int0(np.linspace(1, con_frames, num=con_frames))
     # connector_load.contact = [[] for i in range(len(connector_load.frames))]
-    connector_load = MainGameLoop(connector_load)
+    connector_load = mainGameLoop(connector_load)
     return connector_load
 
 
@@ -66,7 +66,7 @@ def PostTracking_Manipulations_shell(filename):
         if not (hasattr(x, 'falseTracking')):
             x.falseTracking = []
         print(str(x.falseTracking))
-        if bool(int(input('Cut off the end '))):
+        if bool(int(input('Cut off the end_screen '))):
             frame2 = int(input('EndFrame '))
             frame1 = x.frames[0]
         if bool(int(input('Cut off the start '))):
@@ -91,7 +91,7 @@ def PostTracking_Manipulations_shell(filename):
         print(x)
 
     print('0 = no corrections')
-    print('1 = Cut False tracking (if there are issues in the beginning or the end in the free motion)')
+    print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
     print('3 = Smooth out the trajectory')
     print('Connecting to another movie requieres x + y')
     manipulation = int(input('Want to correct something??  '))
@@ -103,7 +103,7 @@ def PostTracking_Manipulations_shell(filename):
             FalseTracking_Smooth()
 
         print('\n 0 = no corrections')
-        print('1 = Cut False tracking (if there are issues in the beginning or the end in the free motion)')
+        print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
         print('3 = Smooth out the trajectory')
         print('Connecting to another movie requires x + y')
         manipulation = int(input('Want to correct something else??'))

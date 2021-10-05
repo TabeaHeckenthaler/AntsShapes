@@ -52,8 +52,8 @@ def calculate_path_length(position, angle, aver_radius, shape, size, solver, rot
 
 def path_length_per_experiment(x, **kwargs):
     """
-    Path length is calculated from beginning to end.
-    End is either given through the kwarg 'minutes', or is defined as the end of the experiment.
+    Path length is calculated from beginning to end_screen.
+    End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
     """
     if 'minutes' in kwargs:
         end = min(x.fps * kwargs['minutes'] * 60, x.frames.shape[0])
@@ -72,7 +72,7 @@ def path_length_per_experiment(x, **kwargs):
 def path_length_during_attempts(x, *args, attempts=None, **kwargs):
     """
     Path length is calculated during attempts.
-    End is either given through the kwarg 'minutes', or is defined as the end of the experiment.
+    End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
     """
     total = 0
 

@@ -104,6 +104,11 @@ class Gillespie:
         return f_x, f_y
 
     def attachment(self, i: int, my_load, ant_type: str):
+        """
+        :param i: site index on which to attach
+        :param my_load: b2Body
+        :return:
+        """
         if ant_type == 'puller':
             self.n_p[i] = 1
             f_x, f_y = self.f_loc(my_load, i)
@@ -119,6 +124,10 @@ class Gillespie:
             # If a lifter ant attaches, she aligns with the outgoing normal of her attachment site
 
     def detachment(self, i: int):
+        """
+        :param i: detachment of ant at site i
+        :return:
+        """
         if not self.is_occupied(i):
             raise ValueError('Detachment at empty site')
         self.n_p[i] = 0
@@ -126,6 +135,9 @@ class Gillespie:
         self.phi[i] = np.NaN
 
     def number_attached(self):
+        """
+        :return: the number of attached ants
+        """
         return np.sum(self.is_occupied())
 
     def number_empty(self):
@@ -178,7 +190,7 @@ class Gillespie:
                        self.ant_vector(my_load.angle, i))
             my_load.linearVelocity = my_load.linearVelocity + f_0 / gamma * np.inner(*vectors)
             my_load.angularVelocity = my_load.angularVelocity + f_0 / gamma_rot * np.cross(*vectors)
-        # TODO: update angular velocity
+        # TODO: update_screen angular velocity
         return force
 
     # TODO: Check the code from here onward.
@@ -239,6 +251,9 @@ class Gillespie:
         return self.dt()
 
     def populate(self, my_load):
+        """
+        populating my_load with ants
+        """
         self.new_attachment(0, my_load, ant_type='puller')
         self.new_attachment(2, my_load, ant_type='puller')
         self.new_attachment(4, my_load, ant_type='lifter')

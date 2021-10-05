@@ -15,7 +15,7 @@ import pickle
 import shutil
 from copy import deepcopy
 from Setup.MazeFunctions import BoxIt, PlotPolygon
-from PhysicsEngine import Box2D_GameLoops
+from PhysicsEngine.mainGame import mainGame
 from Directories import SaverDirectories
 
 # import handheld
@@ -331,7 +331,7 @@ class Trajectory:
                     if self.shape == 'RASH':
                         self.angle_error = [-2 * np.pi * 0.11 + self.angle_error[
                             0]]  # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
-                        # error in the end... )
+                        # error in the end_screen... )
 
                     if self.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
                         # crooked, which messes up the contact tracking
@@ -454,7 +454,6 @@ class Trajectory:
             for index in range(index1, index2):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
-
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
@@ -540,7 +539,7 @@ class Trajectory:
             from Setup.Attempts import AddAttemptZone
             my_maze, my_attempts_zone = AddAttemptZone(my_maze, self)
 
-        ''' get the beginning and end position of load'''
+        ''' get the beginning and end_screen position of load'''
         if 'frames' in kwargs:
             frames = kwargs['frames']
         else:
@@ -750,17 +749,14 @@ class Trajectory:
             Save(self)
         return self, complaints
 
-    def step(self, my_load, i, my_maze=None, pause=None, **kwargs):
+    def step(self, my_load, i, my_maze=None, pause=None, display=None, **kwargs):
         from PhysicsEngine.MazeSimulation_Ising import step
 
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
 
-        arrows = []
-
-        # if self.solver == 'sim' and not pause:
         if self.solver == 'sim':
-            arrows = step(my_load, self, my_maze, pause, **kwargs)
-        return arrows
+            step(my_load, self, my_maze, pause, display=display, **kwargs)
+        return
 
     def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, wait=0, indices=None, **kwargs):
         r"""Displays a given trajectory (self)
@@ -806,5 +802,5 @@ class Trajectory:
         if 'L_I_425' in x.filename:
             args = args + ('L_I1',)
 
-        return Box2D_GameLoops.MainGameLoop(x, *args, display=True, interval=interval,
-                                            PhaseSpace=PhaseSpace, ps_figure=ps_figure, wait=wait, **kwargs)
+        return mainGame(x, *args, display=True, interval=interval,
+                        PhaseSpace=PhaseSpace, ps_figure=ps_figure, wait=wait, **kwargs)

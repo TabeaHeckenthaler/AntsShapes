@@ -8,7 +8,6 @@ from Classes_Experiment.forces import force_in_frame
 from Setup.Maze import Maze
 from Setup.Load import Load
 from PhysicsEngine.Contact import Contact_loop
-from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew, Display_loop
 from Classes_Experiment.humans import force_from_text
 from PhysicsEngine.Contact import find_contact
 from Setup.Load import getLoadDim
@@ -38,7 +37,7 @@ display = False
 # i = 0
 #
 # while i < len(x.frames):
-#     x.step(my_load, i)  # update the position of the load (very simple function, take a look)
+#     x.step(my_load, i)  # update_screen the position of the load (very simple function, take a look)
 #
 #     if not pause:
 #         contact.append(Contact_loop(my_load, my_maze))

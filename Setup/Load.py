@@ -22,7 +22,7 @@ def Loops(Box2D_Object, vertices=None):
         for body in Box2D_Object.bodies:
             Loops(body, vertices=vertices)
     else:
-        for fixture in Box2D_Object.fixtures:  # Here, we update the vertices of our bodies.fixtures and...
+        for fixture in Box2D_Object.fixtures:  # Here, we update_screen the vertices of our bodies.fixtures and...
             vertices.append(
                 [(Box2D_Object.transform * v) for v in fixture.shape.vertices][:4])  # Save vertices of the load
     return vertices

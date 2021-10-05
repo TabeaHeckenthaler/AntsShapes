@@ -14,59 +14,54 @@ from PhysicsEngine.Gillespie import Gillespie
 time_step = 0.01
 
 
-def step(my_load, x, my_maze, pause, **kwargs):
+def step(my_load, x, my_maze, pause, display=None, **kwargs):
     gillespie = kwargs['gillespie']
-    arrows = None
+
     if gillespie.time_until_next_event < time_step and not pause:
         gillespie.time_until_next_event = gillespie.whatsNext(my_load)
 
+    forces(my_load, pause=pause, display=display, **kwargs)
+
     if not pause:
-        ForceAttachments, arrows = Forces(my_load, **kwargs)
         gillespie.time_until_next_event -= time_step
         my_maze.Step(time_step, 10, 10)
 
         x.position = np.vstack((x.position, [my_load.position.x, my_load.position.y]))
         x.angle = np.hstack((x.angle, my_load.angle))
 
-    if pause:
-        ForceAttachments, arrows = Forces(my_load, pause=pause, **kwargs)
-    return arrows
+    return
 
 
-def Forces(my_load, pause=False, **kwargs):
+def forces(my_load, pause=False, display=None, **kwargs):
     my_load.linearVelocity = 0 * my_load.linearVelocity
     my_load.angularVelocity = 0 * my_load.angularVelocity
 
-    ForceAttachments = list()  # in which coordinate system is this?
     gillespie = kwargs['gillespie']
 
     """ Magnitude of forces """
-    arrows = []
+    display.arrows = []
 
     for i in range(len(gillespie.n_p)):
-        ForceAttachments.append(gillespie.attachment_site_world_coord(my_load, i))
-        start = ForceAttachments[-1]
+        start = gillespie.attachment_site_world_coord(my_load, i)
         end = None
 
         if gillespie.n_p[i]:
             f_x, f_y = gillespie.ant_force(my_load, i, pause=pause)
-            ForceAttachments.append(gillespie.attachment_site_world_coord(my_load, i))
 
-            start = ForceAttachments[-1]
-            end = ForceAttachments[-1] + [10 * f_x, 10 * f_y]
-            arrows.append((start, end, 'puller'))
+            start = start
+            end = start + [10 * f_x, 10 * f_y]
+            display.arrows.append((start, end, 'puller'))
 
         elif gillespie.n_l[i]:
-            arrows.append((start, end, 'lifter'))
+            display.arrows.append((start, end, 'lifter'))
 
         else:
-            arrows.append((start, end, 'empty'))
-    return ForceAttachments, arrows
+            display.arrows.append((start, end, 'empty'))
 
 
-def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True, free=False):
+def mazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True, free=False):
     # init_angle = np.array([rd.uniform(0, 1) * (2 * np.pi)])
-    from PhysicsEngine.Box2D_GameLoops import MainGameLoop
+    from PhysicsEngine.mainGame import mainGame
     from trajectory import Trajectory
     from Setup.Maze import Maze
     from Setup.Load import Load
@@ -91,8 +86,8 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True
     x.angle = init_angle  # array to store the position and angle of the load
 
     gillespie = Gillespie(my_load, x=x)
-    wait = 20  # number of ms the system waits between every step. This slows down the simulation!
-    x = MainGameLoop(x, display=display, gillespie=gillespie, free=free, wait=wait)
+    wait = 0  # number of ms the system waits between every step. This slows down the simulation!
+    x = mainGame(x, display=display, gillespie=gillespie, free=free, wait=wait)
     return x
 
 
@@ -103,7 +98,7 @@ if __name__ == '__main__':
     # size only relevant for 'I': (XS, S, M, SL, L, XL) and 'SPT' (S, M, L, XL)
 
     shape = 'I'
-    my_trajectory = MazeSimulation(size='L', shape='SPT', frames=frames, display=True, free=False)
+    my_trajectory = mazeSimulation(size='L', shape='SPT', frames=frames, display=True, free=False)
 
     # Save(my_trajectory)
     # my_trajectory.play()

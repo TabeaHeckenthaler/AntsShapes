@@ -1,7 +1,6 @@
 from trajectory import Get
 from Setup.Maze import Maze
 from Setup.Load import Load, Loops
-from PhysicsEngine.Display_Pygame import Display_screen, Display_end, Display_renew, Display_loop
 import numpy as np
 from matplotlib import pyplot as plt
 from PhysicsEngine.Contact import find_contact

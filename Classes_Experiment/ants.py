@@ -67,7 +67,7 @@ class Ants:
                         if x.shape == 'RASH':
                             x.angle_error = [-2 * np.pi * 0.11 + self.angle_error[
                                 0]]  # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
-                            # error in the end... )
+                            # error in the end_screen... )
 
                         if x.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
                             # crooked, which messes up the contact tracking

@@ -1,10 +1,9 @@
 """self written functions"""
 from Setup.Maze import Maze
 from Setup.Load import Load
-from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew
 
 
-def MainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, free=False, **kwargs):
+def mainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, free=False, **kwargs):
     """
     Start instantiating the World and the load...
     """
@@ -35,9 +34,10 @@ def MainGameLoop(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure
             i += interval  # we start a new iteration
 
         if i >= len(x.frames) - 1 - interval and not pause:
-            running = False  # break the loop, if we are at the end of the experimental data.
+            running = False  # break the loop, if we are at the end_screen of the experimental data.
             if display:
                 if len(x.frames) < 4:  # just to check the error.
                     running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=True)
-                running = Display_end()
+                Display_end()
+                break
     return x

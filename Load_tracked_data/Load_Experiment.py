@@ -4,7 +4,7 @@ Created on Sun May  3 10:35:01 2020
 
 @author: tabea
 """
-from PhysicsEngine.Box2D_GameLoops import MainGameLoop
+from PhysicsEngine.Box2D_GameLoops import mainGameLoop
 
 
 def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_error, angle_error, fps, free, *args,
@@ -30,7 +30,7 @@ def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_erro
 
     if 'L_I_425' in x.filename:
         args = args + ('L_I1', )
-    x = MainGameLoop(x, *args, **kwargs)
+    x = mainGameLoop(x, *args, **kwargs)
     return x
 
 

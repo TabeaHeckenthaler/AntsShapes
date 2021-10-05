@@ -39,7 +39,7 @@ def RotateAndShiftSystem(position, offset, rotate):
 
     if rotate:
         hyp = np.sqrt(((position[0, 0]) ** 2 + (
-            position[0, 1]) ** 2))  # this is the length of the direct route from beginning to end
+            position[0, 1]) ** 2))  # this is the length of the direct route from beginning to end_screen
         alpha = - np.arccos(abs(position[0, 0]) / hyp)  # angle at which we want to rotate the system
         if position[1, 0] - position[-1, 0] < 0 and position[0, 1] < 0:
             alpha = alpha - np.pi
@@ -101,19 +101,6 @@ def ClosestCorner(vertices, gravCenter):
     Distances = np.sqrt(np.power((corners - gravCenter), 2).sum(axis=1))
     closestCorner = corners[np.argmin(Distances), :]
     return closestCorner
-
-
-def DrawGrid(window, width, height, PPM, SCREEN_HEIGHT):
-    from PhysicsEngine.Display_Pygame import colors
-    block = 2
-    block_size = block * PPM
-    # for y in range(round(height / 2)):
-    #     for x in range(round(width / 2)):
-    for y in range(np.int(np.ceil(height / block) + 1)):
-        for x in range(np.int(np.ceil(width / block))):
-            rect = pygame.Rect(x * block_size, SCREEN_HEIGHT -
-                               y * block_size, block_size, block_size)
-            pygame.draw.rect(window, colors['grid'], rect, 1)
 
 
 class myContactListener(b2ContactListener):
@@ -246,7 +233,7 @@ def extend(x, start_or_end, x_distance, *args):
 
     buffer = 0.2
 
-    if start_or_end == 'end':
+    if start_or_end == 'end_screen':
         docker, order = -1, 1
         add_x_pos = np.arange(x.position[docker, 0],
                               x.position[docker, 0] + x_distance + buffer,
@@ -269,7 +256,7 @@ def extend(x, start_or_end, x_distance, *args):
     x.angle = np.hstack([x.angle,
                          np.ones([add_frames]) * x.angle[docker]][::order])
 
-    if start_or_end == 'end':
+    if start_or_end == 'end_screen':
         if 'contact' in args:
             x.contact = x.contact + [[] for i in range(add_frames)]
         x.frames = np.hstack([x.frames,

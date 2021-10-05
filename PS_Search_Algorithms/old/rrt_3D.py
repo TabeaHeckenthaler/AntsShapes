@@ -59,7 +59,7 @@ class RRT:
         Setting Parameter
 
         start:Start Position [x,y]
-        end:Goal Position [x,y]
+        end_screen:Goal Position [x,y]
         conf_space:Configuration Space [[x,y,size],...]
         randArea:Random Sampling Area [min,max]
 
@@ -73,13 +73,13 @@ class RRT:
         self.node_list = []
         self.average_radius = average_radius
 
-        # check whether start and end are in conf_space
+        # check whether start and end_screen are in conf_space
         self.start = Node(*start)
         if self.collision(self.start.x, self.start.y, self.start.theta):
             print('Your start is not in conf_space!')
         self.end = Node(*end)
         if self.collision(self.end.x, self.end.y, self.end.theta):
-            print('Your end is not in conf_space!')
+            print('Your end_screen is not in conf_space!')
 
     def planning(self, animation=True, fig=None):
         """

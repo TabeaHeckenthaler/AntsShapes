@@ -4,7 +4,6 @@ import numpy as np
 from Setup.Maze import Maze, maze_corners
 from Analysis_Functions.Velocity import velocity_x
 from Setup.Load import Loops
-from PhysicsEngine.Display_Pygame import Display_screen, Pygame_EventManager, Display_end, Display_renew, Display_loop
 from Setup.Load import Load
 from Analysis_Functions.usefull_stuff import flatten
 
@@ -24,7 +23,7 @@ def find_contact(x, display=False):
 
     i = 0
     while i < len(x.frames):
-        x.step(my_load, i)  # update the position of the load (very simple function, take a look)
+        x.step(my_load, i)  # update_screen the position of the load (very simple function, take a look)
 
         if not pause:
             contact.append(Contact_loop(my_load, my_maze))

@@ -38,7 +38,7 @@ class D_star_lite:
         Setting Parameter
 
         start:Start Position [x,y] (current node will be set to this)
-        end:Goal Position [x,y] (I only take into account the x coordinate in my mazes... its more like a finish line)
+        end_screen:Goal Position [x,y] (I only take into account the x coordinate in my mazes... its more like a finish line)
         conf_space:Configuration Space [PhaseSpace]
         known_conf_space:configuration space according to which the solver plans his path before taking his first step
 
@@ -67,7 +67,7 @@ class D_star_lite:
             raise Exception('Your start is not in configuration space')
         self.end = Node_ind(*ending_point, self.conf_space.space.shape, av_radius)
         if self.collision(self.end):
-            raise Exception('Your end is not in configuration space')
+            raise Exception('Your end_screen is not in configuration space')
 
         self.current = self.start
         self.winner = False
@@ -75,10 +75,10 @@ class D_star_lite:
     def planning(self, sensing_radius=7):
         r"""
         d star path planning
-        While the current node is not the end node, and we have iterated more than max_iter
-        compute the distances to the end node (of adjacent nodes).
-        If distance to the end node is inf, break the loop (there is no solution).
-        If distance to end node is finite, find node connected to the
+        While the current node is not the end_screen node, and we have iterated more than max_iter
+        compute the distances to the end_screen node (of adjacent nodes).
+        If distance to the end_screen node is inf, break the loop (there is no solution).
+        If distance to end_screen node is finite, find node connected to the
         current node with the minimal distance (+cost) (next_node).
         If you are able to walk to next_node is, make next_node your current_node.
         Else, recompute your distances.
@@ -138,7 +138,7 @@ class D_star_lite:
                 np.array(known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], dtype=bool),
                 np.array(labeled == labeled[sr, sr, sr])).astype(int)
 
-        # update known_conf_space by using known_conf_space_rolled and rolling back
+        # update_screen known_conf_space by using known_conf_space_rolled and rolling back
         self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
     def compute_distances(self, conf_space):

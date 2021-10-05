@@ -11,7 +11,6 @@ from Setup.Maze import Maze
 from progressbar import progressbar
 from Directories import home, PhaseSpaceDirectory, data_home
 from Analysis_Functions.Pathlength import resolution
-from PhysicsEngine.Display_Pygame import Pygame_EventManager, Display_renew
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
