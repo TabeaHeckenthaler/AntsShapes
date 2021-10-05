@@ -54,8 +54,7 @@ def participants_force_arrows(x, my_load, i):
 
     frame = x.participants.frames[i]
     for name in x.participants.occupied:
-        # force = (frame.forces[name]) * force_scaling_factor_DISPLAY # TODO: change back
-        force = 1
+        force = (frame.forces[name]) * force_scaling_factor_DISPLAY
         force_meter_coor = force_attachment_positions(my_load, x)[name]
         if abs(force) > 0.2:
             arrows.append((force_meter_coor,

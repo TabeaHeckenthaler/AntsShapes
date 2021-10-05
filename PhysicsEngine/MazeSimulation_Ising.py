@@ -3,13 +3,9 @@
 Created on Thu Jun 11 12:55:29 2020
 @author: tabea
 """
-import random as rd  # import (gauss, uniform)
-
 import numpy as np
 from Box2D import b2Vec2
 
-from Setup.Load import Loops
-from Setup.MazeFunctions import ClosestCorner
 from trajectory import NewFileName, Save
 from PhysicsEngine.Gillespie import Gillespie
 
@@ -25,7 +21,7 @@ def step(my_load, x, my_maze, pause, **kwargs):
         gillespie.time_until_next_event = gillespie.whatsNext(my_load)
 
     if not pause:
-        ForceAttachments, arrows = Forces(my_load, my_maze, **kwargs)
+        ForceAttachments, arrows = Forces(my_load, **kwargs)
         gillespie.time_until_next_event -= time_step
         my_maze.Step(time_step, 10, 10)
 
@@ -33,42 +29,11 @@ def step(my_load, x, my_maze, pause, **kwargs):
         x.angle = np.hstack((x.angle, my_load.angle))
 
     if pause:
-        ForceAttachments, arrows = Forces(my_load, my_maze, pause=pause, **kwargs)
+        ForceAttachments, arrows = Forces(my_load, pause=pause, **kwargs)
     return arrows
 
 
-def Forces_old(my_load, my_maze, **kwargs):
-    grC = 1
-    gravCenter = np.array([my_maze.arena_length * grC, my_maze.arena_height / 2])  # this is the 'far away point', to which the load gravitates
-
-    load_vertices = Loops(my_load)
-
-    """ Where Force attaches """
-    ForceAttachments = [ClosestCorner(load_vertices, gravCenter)]
-
-    """ Magnitude of forces """
-    arrows = []
-    for ForceAttachment in ForceAttachments:
-        # f_x = -rd.gauss(x.xForce * (ForceAttachment[0] - my_maze.arena_length * grC) / my_maze.arena_length * grC,
-        #                 x.xDev)
-        # f_y = -rd.gauss(x.yForce * (my_load.position.y - my_maze.arena_height / 2) / my_maze.arena_height / 2, x.yDev)
-
-        f_x = 1
-        f_y = 0
-
-        my_load.ApplyForce(b2Vec2([f_x, f_y]),
-                           # b2Vec2(ForceAttachment),
-                           my_load.position,
-                           True)
-
-        start = ForceAttachment
-        end = ForceAttachment + [f_x, f_y]
-        arrows.append((start, end, ''))
-
-    return ForceAttachments, arrows
-
-
-def Forces(my_load, my_maze, pause=False, **kwargs):
+def Forces(my_load, pause=False, **kwargs):
     my_load.linearVelocity = 0 * my_load.linearVelocity
     my_load.angularVelocity = 0 * my_load.angularVelocity
 
@@ -113,11 +78,6 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True
     """
     Here are all the parameters: 
     """
-    # x.xForce, x.xDev, x.yForce, x.yDev = 1, 10, 0, 5  # These numbers give a magnitude to the force acting towards
-    #
-    # # the gravitational center at distance grC*MazeLength
-    # x.linearDamping, x.angularDamping = 0.1, 0.1  # Damping coefficient
-    # x.friction, x.restitution = 0, 0.5
     x.frames = np.linspace(1, frames, frames)
     x.contact = [[] for _ in range(frames)]
 
@@ -131,17 +91,20 @@ def MazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True
     x.angle = init_angle  # array to store the position and angle of the load
 
     gillespie = Gillespie(my_load, x=x)
-    # gillespie.populate(my_load)
-    x = MainGameLoop(x, display=display, gillespie=gillespie, free=free, wait=20)
+    wait = 20  # number of ms the system waits between every step. This slows down the simulation!
+    x = MainGameLoop(x, display=display, gillespie=gillespie, free=free, wait=wait)
     return x
 
 
 if __name__ == '__main__':
     frames = 6000
-    # my_trajectory = MazeSimulation(size='XL', shape='H', frames=frames, display=True)
-    my_trajectory = MazeSimulation(size='L', shape='SPT', frames=frames,
-                                   display=True, free=False)
+    # possible shapes: 'I', 'circle', 'SPT' (here, Gillespie is implemented)
+    # free is either False or True
+    # size only relevant for 'I': (XS, S, M, SL, L, XL) and 'SPT' (S, M, L, XL)
+
     shape = 'I'
+    my_trajectory = MazeSimulation(size='L', shape='SPT', frames=frames, display=True, free=False)
+
     # Save(my_trajectory)
     # my_trajectory.play()
 

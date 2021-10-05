@@ -124,6 +124,8 @@ def Pygame_EventManager(x, i, my_load, my_maze, screen, points=None, arrows=None
     global Delta_total, DeltaAngle_total
     pause = False
 
+    # TODO: install a better pause!!!
+
     if 'pause' in kwargs:
         pause = kwargs['pause']
 

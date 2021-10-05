@@ -61,6 +61,8 @@ def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
                        'I': [5.5, 1.75, 1.75],
                        'T': [5.4, 5.6, 1.6]
                        }
+        if short_edge:
+            shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85*SPT_ratio]
         # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
         dimensions = [i * resize_factor for i in shape_sizes[shape]]
 
@@ -203,7 +205,6 @@ def AddLoadFixtures(load, size, shape, solver):
 
     if shape == 'SPT':  # This is the Special T
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(solver, shape, size, short_edge=True)
-        print(str(getLoadDim(solver, shape, size)))
 
         # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the long middle
         h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle

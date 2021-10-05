@@ -25,7 +25,6 @@ k_on = 0.0017
 # Radius of the object
 radius = 0.57
 # Number of available sites
-# N_max = 20 # TODO
 N_max = 20
 #
 k_c = 0.7
@@ -175,7 +174,7 @@ class Gillespie:
 
         # equations (4) and (5) from the SI
         if not pause:
-            vectors = (self.attachment_site_world_coord(my_load, i),
+            vectors = (self.attachment_site_world_coord(my_load, i) - my_load.position,
                        self.ant_vector(my_load.angle, i))
             my_load.linearVelocity = my_load.linearVelocity + f_0 / gamma * np.inner(*vectors)
             my_load.angularVelocity = my_load.angularVelocity + f_0 / gamma_rot * np.cross(*vectors)
