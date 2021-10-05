@@ -22,7 +22,7 @@ colors = {'my_maze': (0, 0, 0),
 
 class Display:
 
-    def __init__(self, my_maze, filename, PhaseSpace=None, ps_figure=None, wait=0):
+    def __init__(self, my_maze, filename, wait=0):
         self.my_maze = my_maze
         self.filename = filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter

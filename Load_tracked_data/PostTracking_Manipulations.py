@@ -1,6 +1,6 @@
 import trajectory
 import numpy as np
-from PhysicsEngine.Box2D_GameLoops import mainGameLoop
+from PhysicsEngine.mainGame import mainGame
 from scipy.ndimage import gaussian_filter
 
 

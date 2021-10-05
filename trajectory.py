@@ -28,10 +28,7 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'humanhand': ''}
 solvers = ['ant', 'human', 'humanhand', 'dstar']
 
-length_unit = {'ant': 'cm',
-               'human': 'm',
-               'humanhand': 'cm',
-               'dstar': 'cm'}
+length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'dstar': 'cm'}
 
 
 def length_unit_func(solver):
@@ -213,9 +210,6 @@ class Trajectory:
         self.winner = winner  # whether the shape crossed the exit
         self.state = np.empty((1, 1), int)
 
-    # def __copy__(self):
-    #     return type(self)()
-
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}
         from Setup.Load import periodicity
@@ -263,6 +257,9 @@ class Trajectory:
         return string
 
     def old_filenames(self, i):
+        if self.solver == 'sim':
+            return self.filename
+
         if i >= len(self.VideoChain):
             return 'No video found (maybe because I extended)'
 
@@ -280,10 +277,6 @@ class Trajectory:
         else:
             old = self.VideoChain[i].replace(self.size + '_' + self.shape, self.size + self.shape) + '.mat'
 
-            # if not('_sim_' in self.filename) and not(old in listdir(MatlabFolder(self.solver, self.size,
-            # self.shape, self.free))) and 'CONNECTOR' not in self.VideoChain[i]:
-        #     print('we didn't find the old filename')
-        #     breakpoint()
         return old
 
     # Find the size and shape from the filename
@@ -457,298 +450,6 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def ZonedAngle(self, index, my_maze, angle_passed):
-        angle_zoned = angle_passed
-        if not (self.InsideZone(index, my_maze)) and self.position[-1][0] < self.zone[2][0]:
-            angle_zoned = self.angle_zoned[index]
-        return angle_zoned
-
-    def ZonedPosition(self, index, my_maze):
-        # first we check whether load is inside zone, then we check, whether the load has passed the first slit
-        if self.position.size < 3:
-            if not (self.InsideZone(index, my_maze)) and self.position[0] < self.zone[2][0]:
-                zone = cKDTree(BoxIt(self.zone, 0.01))  # to read the data, type zone.data
-                position_zoned = zone.data[zone.query(self.position)[1]]
-            else:
-                position_zoned = self.position
-            if position_zoned[1] > 14.9:
-                breakpoint()
-        else:
-            if not (self.InsideZone(index, my_maze)) and self.position[index][0] < self.zone[2][0]:
-                zone = cKDTree(BoxIt(self.zone, 0.01))  # to read the data, type zone.data
-                position_zoned = zone.data[zone.query(self.position[index])[1]]
-            else:
-                position_zoned = self.position[index]
-            if position_zoned[1] > 14.9:
-                breakpoint()
-        return position_zoned
-
-    def InsideZone(self, index, Maze):
-        if self.position.size < 3:
-            x = (Maze.zone[2][0] > self.position[0] > Maze.zone[0][0])
-            y = (Maze.zone[1][1] > self.position[1] > Maze.zone[0][1])
-        else:
-            x = (Maze.zone[2][0] > self.position[index][0] > Maze.zone[0][0])
-            y = (Maze.zone[1][1] > self.position[index][1] > Maze.zone[0][1])
-        return x and y
-
-    def first_nonZero_State(self):
-        for i in range(1, len(self.state[1:] - 1)):
-            if self.state[i] != 0:
-                return i
-        print('I did not find a non-Zero state')
-
-    def first_Contact(self):
-        contact = self.play(1, 'contact')[1]
-        for i in range(1, len(self.state[1:] - 1)):
-            if contact[i].size != 0 or self.state[i] != 0:
-                return i
-
-        print('I did not find a Contact state or a non-Zero state')
-
-    # def last_Contact(self):
-    #     for i in reversed(range(1,len(self.frames)-1)):
-    #         if self.contact[i].size != 0 or self.state[i] != self.statenames[-1]:
-    #             return i
-
-    # print('Where is the last contact frame?')
-
-    def plot(self, *vargs, **kwargs):
-        from Setup.Maze import Maze
-        from Setup.Load import AddLoadFixtures
-        import matplotlib.cm as cm
-        # here we plot the zone:
-        plt.figure()
-
-        ''' Plot the collision points on the shape & the point at which the load collides with the maze'''
-        pos, con = np.array([0, 0]), np.array([0, 0])
-
-        # if pos.size > 2:
-        #     plt.plot(pos[:,0], pos[:,1], 'ro', markersize=3)
-        #     plt.plot(con[:,0], con[:,1], 'ro', markersize=3)
-
-        # Set the size of the figure... it should have the same ratio of the two axis so that it doenst look warped....
-        fig = plt.gcf()
-        ax = fig.gca()
-        plt.grid()
-
-        # Set the size of the figure... it should have the same ratio of the two axis so that it doenst look warped....
-        fig.set_dpi(200)
-        my_maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
-        if 'attempt' in vargs:
-            from Setup.Attempts import AddAttemptZone
-            my_maze, my_attempts_zone = AddAttemptZone(my_maze, self)
-
-        ''' get the beginning and end_screen position of load'''
-        if 'frames' in kwargs:
-            frames = kwargs['frames']
-        else:
-            frames = [0, -1]
-
-        ''' Plot the path of the centroid of the load and if existent, the zoned path of the centroid '''
-        plt.plot(self.position[frames[0]:frames[-1], 0], self.position[frames[0]:frames[-1], 1], 'b.',
-                 markersize=3)  # draw the actual path
-
-        for frame in frames:
-            my_load_beginning = my_maze.CreateBody(
-                b2BodyDef(position=(self.position[frame, 0], self.position[frame, 1]),
-                          angle=self.angle[frame]))
-            AddLoadFixtures(my_load_beginning, self)
-            PlotPolygon(my_maze.bodies[len(my_maze.bodies) - 1], my_maze.arena_height,
-                        cm.rainbow((np.linspace(0, 1, 5)))[4], 'fill')
-
-        if not self.free:
-            contact = self.play(1, 'contact')[1]
-            breakpoint()
-            # plt.plot(self.position_zoned[:,0], self.position_zoned[:,1], 'g.', markersize=3) #draw the zoned path
-            fig.set_size_inches(my_maze.arena_length / 2, my_maze.arena_height / 2)
-            plt.axis([0, my_maze.arena_length, 0, my_maze.arena_height])
-            for i in range(len(contact) - 1):
-                # if len(self.contact[i]) > 1 and self.contact[i].ndim == 1:
-                if len(contact[i]) > 1:
-                    con = np.vstack((con, np.array([contact[i][0], contact[i][1]])))
-                    pos = np.vstack((pos, np.array([self.position[i][0], self.position[i][1]])))
-
-            # Plot the slits
-            breakpoint()
-            for i in range(1, len(my_maze.bodies) - len(frames)):
-                breakpoint()
-                PlotPolygon(my_maze.bodies[i], my_maze.arena_height, 'k', 'fill')
-
-            ''' adding strings... '''
-            if kwargs.get('x_error') is not None:
-                x_error = kwargs.get('x_error')
-                y_error = kwargs.get('y_error')
-                plt.text(1, my_maze.arena_height + 0.5, ("x_error = " + str("{:.2f}".format(x_error[0]))
-                                                         + "cm   y_error = " + str(
-                            "{:.2f}".format(y_error[0])) + "cm     " + self.filename
-                                                         + "     " + str(int(self.timer())) + "s   "
-                                                         + 'Frame:    ' + str(self.frames[0] + self.position.shape[0])),
-                         fontsize=12
-                         )
-            else:
-                plt.text(1, my_maze.arena_height + 0.5,
-                         ("     " + self.filename),
-                         fontsize=12,
-                         )
-            if kwargs.get('addstring') is not None:
-                plt.text(my_maze.arena_length - 5, my_maze.arena_height + 0.5,
-                         kwargs['addstring'],
-                         fontsize=12,
-                         )
-
-            # plt.plot(np.append(mymaze.zone[:, 0],mymaze.zone[0,0]),
-            #          np.append((mymaze.zone[:, 1]),(mymaze.zone[0, 1])),
-            #           'y' + '-', markersize=3)
-            ax.set_xticks(np.arange(0, my_maze.arena_length, 1))
-            ax.set_yticks(np.arange(0, my_maze.arena_height, 1))
-        else:
-            ''' this is only for free motion '''
-            plt.text(1, my_maze.arena_height + 0.5,
-                     ("     " + self.filename) +
-                     "     " + str(self.timer()) + "s",
-                     fontsize=12,
-                     )
-            fig.set_size_inches(30, 15)
-            plt.axis([0, 60, 0, 30])
-        plt.show()  # show the plot....
-        # if saver:
-        #     from os import getcwd
-        #     c = getcwd()
-        #     fig.savefig(c + path.sep + 'Trajectory_Images' + path.sep + self.filename+'.pdf', format='pdf')
-
-        # def Pdf2Png(pdf_name):
-        #     pages = convert_from_path(pdf_name + '.pdf', 72)
-        #     for page in pages:
-        #         page.save(pdf_name + '.png', 'PNG')
-        # Pdf2Png(self.filename)
-
-    def Inspect(self, **kwargs):
-        from Analysis_Functions.Velocity import velocity_x, max_Vel_angle, max_Vel_trans
-
-        complaints = []
-        if not (self.shape in ['RASH', 'LASH', 'H', 'I', 'T', 'SPT']):
-            complaints = complaints + ['Your shape is not a real shape!']
-            print(complaints[-1])
-            breakpoint()
-
-        # from bundle import sizes
-        # if not (self.shape in ['H', 'I', 'T'] and self.size in sizes['ant'])\
-        #     and not (self.shape in ['RASH', 'LASH', 'SPT'] and self.size in sizes['ant'].remove('XS'))\
-        #     and not self.size in sizes['human']:
-        #     print(str(self.size))
-        #     complaints = complaints + ['This shape does not have a valid size']
-        #     print(complaints[-1])
-        #     breakpoint()
-
-        if not (hasattr(self, 'free')):
-            self.free = False
-            complaints = complaints + ['added free']
-
-        # print('VideoChain' + str(self.VideoChain))
-
-        if self.filename.endswith('(part 1)') and len(self.VideoChain) < 2:
-            print('You need to connect this!!')
-
-        if not (self.solver == 'ant' or self.solver == 'human'):
-            complaints = complaints + ['who is your solver ?']
-
-        for i in range(len(self.VideoChain)):
-            if not (self.old_filenames(i) in listdir(
-                    MatlabFolder(self.solver, self.size, self.shape, self.free))) and not (
-                    'CONNECTOR' in self.old_filenames(i)) and not ('_sim_' in self.old_filenames(i)):
-                complaints = complaints + ['Why is ' + self.old_filenames(i) + ' not in original files? ']
-
-        if not (hasattr(self, 'falseTracking')):
-            self.falseTracking = [[]]
-            complaints = complaints + ['added false tracking']
-            if self.falseTracking == []:
-                self.falseTracking = [[]]
-
-            if len(self.falseTracking) != len(self.VideoChain) or type(self.falseTracking[0][0] == int):
-                complaints = complaints + ['Your false tracking is not an adequate list!!']
-                print(complaints[-1])
-                breakpoint()
-
-        if not self.free and not isinstance(self.x_error, list):
-            complaints = complaints + ['Your error is not a list!!']
-            print(complaints[-1])
-            breakpoint()
-
-        elif len(self.x_error) != len(self.VideoChain):
-            complaints = complaints + ['Your error list does not have the right length']
-            breakpoint()
-            print(complaints[-1])
-
-            # print('fps = ' + str(self.fps))
-        if not (self.fps in [25, 50, 30]):
-            self.fps = int(input('fps = '))
-            complaints = complaints + ['fps where weird']
-            breakpoint()
-        # print('x_error = ' + str(self.x_error) + ', y_error = ' + str(self.y_error)+ ', angle_error = ' + str(
-        # self.angle_error))
-
-        if self.position.shape[0] != self.frames.shape[0]:
-            breakpoint()
-            if self.position.shape[0] - 1 == self.frames.shape[0]:
-                self.frames = np.hstack((self.frames, [self.frames[-1] + 1]))
-                complaints = complaints + ['Added 1 frame...']
-            else:
-                complaints = complaints + ['Check the dimensions of your position and your frames...']
-                breakpoint()
-
-            print(complaints[-1])
-
-        if np.isnan(np.sum(self.position)):
-            print('You have NaN values in your position')
-            breakpoint()
-
-        """Here, we correct wrong tracking... """
-        if self.solver == 'ant':
-            max_xy_vel = np.max(abs(velocity_x(self, 0.2, 'x', 'y')))
-            if max_xy_vel > max_Vel_trans[self.size]:
-                complaints = complaints + ['You have velocity ' + str(max_xy_vel) + 'cm/s at frame ' +
-                                           str(self.frames[np.argmax(velocity_x(self, 0.2, 'x', 'y')[0])])]
-                print(complaints[-1])
-
-            if self.angle.shape != self.frames.shape:
-                complaints = complaints + ['Check the dimensions of your angle and your frames...']
-                print(complaints[-1])
-                breakpoint()
-
-            max_angle_vel = np.max(abs(velocity_x(self, 0.2, 'angle')))
-            if max_angle_vel > max_Vel_angle[self.size]:
-                complaints = complaints + ['You have angular velocity ' + str(max_angle_vel) + 'rad/s at frame ' +
-                                           str(self.frames[np.argmax(velocity_x(self, 0.2, 'angle')[0])]) +
-                                           ' or ConnectAngle(self.angle[:,0])']
-                where = np.argmax(abs(velocity_x(self, 0.2, 'angle')))
-                plt.plot(np.arange(where - 100, where + 100), self.angle[where - 100: where + 100])
-                plt.show()
-                print(complaints[-1])
-                breakpoint()
-
-        if not self.winner and not (self.shape == 'SPT'):
-            complaints = complaints + ['I lost, even though I was not a Special T?']
-            print(complaints[-1])
-
-        if not (hasattr(self, 'free')):
-            complaints = complaints + ['We added attribute free']
-            self.free = False
-
-        if self.solver == 'ants' and not (hasattr(self, 'tracked_frames')) and len(self.tracked_frames) != 2:
-            if len(self.tracked_frames) != len(self.VideoChain):
-                complaints = complaints + ['Your tracked_frames has the wrong dimensions!']
-                breakpoint()
-
-            for trac in self.tracked_frames:
-                if len(trac) != 2 or trac[0] > trac[1]:
-                    breakpoint()
-                    complaints = complaints + ['Which frames where tracked?']
-
-        if 'saver' in kwargs and kwargs['saver']:
-            Save(self)
-        return self, complaints
-
     def step(self, my_load, i, my_maze=None, pause=None, display=None, **kwargs):
         from PhysicsEngine.MazeSimulation_Ising import step
 
@@ -793,11 +494,6 @@ class Trajectory:
             f1, f2 = int(indices[0]), int(indices[1]) + 1
             x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
             x.frames = x.frames[int(f1):int(f2)]
-
-        # if 'attempt' in args:
-        #     if not ('moreBodies' in kwargs.keys()):
-        #         from Setup.Attempts import AddAttemptZone
-        #         kwargs['moreBodies'] = AddAttemptZone
 
         if 'L_I_425' in x.filename:
             args = args + ('L_I1',)

@@ -2,48 +2,13 @@
 # titled 'Ants optimally amplify... '
 import numpy as np
 from Setup.Load import Gillespie_sites_angels
+from Box2D import b2Vec2
+from PhysicsEngine.Gillespie_constants import *
 
 
 def rot(angle: float):
     return np.array([[np.cos(angle), -np.sin(angle)],
                      [np.sin(angle), np.cos(angle)]])
-
-
-"""
-Parameters not yet confirmed
-"""
-# ant force [N]
-f_0 = 1
-
-"""
-Parameters from the paper
-"""
-# detachment rate from a moving cargo, detachment from a non moving cargo [1/s]
-k1_off, k2_off = 0.035, 0.01  # TODO: If its still in one points, its still in all points?
-# attachment independent of cargo velocity [1/s]
-k_on = 0.0017
-# Radius of the object
-radius = 0.57
-# Number of available sites
-N_max = 20
-#
-k_c = 0.7
-# beta, I am not sure, what this is
-beta = 1.65
-# connected to the ants decision making process
-f_ind = 10 * f_0
-# kinetic friction linear coefficient [N * sec/cm]
-gamma = 25 * f_0
-# kinetic rotational friction coefficient [N * sec/c]
-gamma_rot = 0.4 * gamma
-
-f_kinx, f_kiny = 0, 0
-n_av = 100  # number of available ants
-phi_max = 0.9075712110370514  # rad in either direction from the normal
-
-"""
-Parameters I chose
-"""
 
 
 class Gillespie:
@@ -188,12 +153,11 @@ class Gillespie:
         if not pause:
             vectors = (self.attachment_site_world_coord(my_load, i) - my_load.position,
                        self.ant_vector(my_load.angle, i))
-            my_load.linearVelocity = my_load.linearVelocity + f_0 / gamma * np.inner(*vectors)
+            my_load.linearVelocity = my_load.linearVelocity + f_0 / gamma * b2Vec2(np.inner(*vectors), 0)
             my_load.angularVelocity = my_load.angularVelocity + f_0 / gamma_rot * np.cross(*vectors)
-        # TODO: update_screen angular velocity
+        # TODO: this is not correct
         return force
 
-    # TODO: Check the code from here onward.
     def whatsNext(self, my_load):
         """
         Decides the new change in the ant configuration. Randomly according to calculated probabilities one of the

@@ -4,7 +4,7 @@ Created on Sun May  3 10:35:01 2020
 
 @author: tabea
 """
-from PhysicsEngine.Box2D_GameLoops import mainGameLoop
+from PhysicsEngine.mainGame import mainGame
 
 
 def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_error, angle_error, fps, free, *args,
