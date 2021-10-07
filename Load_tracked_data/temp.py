@@ -2,7 +2,7 @@ from Load_tracked_data.Load_Experiment import Load_Experiment
 from Directories import MatlabFolder
 from os import listdir
 
-# StartedScripts: You still have to load the SL Asymmetric H. Its difficult, because the maze is twisted.
+# TODO: You still have to load the SL Asymmetric H. Its difficult, because the maze is twisted.
 #  I have to untwist the data
 # StartedScripts: Load the new human and ant movies
 

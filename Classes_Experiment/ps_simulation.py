@@ -23,7 +23,7 @@ def filename_dstar(size, shape, dil_radius, sensing_radius):
     return size + '_' + shape + '_' + 'dil' + str(dil_radius) + '_sensing' + str(sensing_radius)
 
 
-class Mr_dstar:
+class PS_simulation:
     def __init__(self, filename):
         self.filename = filename
         self.sensing_radius = sensing_radius(filename)

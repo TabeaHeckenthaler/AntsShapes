@@ -186,7 +186,7 @@ Human Maze: Path length SPT divided by communication and non-communication
 
 
 def dstar_figure(shape='SPT'):
-    from Classes_Experiment.mr_dstar import sensing_radius, dil_radius
+    from Classes_Experiment.ps_simulation import sensing_radius, dil_radius
     intersection = df.groupby(by='solver').groups['ps_simulation'].intersection(
         df.groupby(by='shape').groups[shape])
 
@@ -217,7 +217,7 @@ for shape in ['I', 'T', 'H', 'SPT']:
 
 
 def difficulty(df, shapes, dil_radius=10, sensing_radius=5, measure='path length/exit size []'):
-    from Classes_Experiment.mr_dstar import filename_dstar
+    from Classes_Experiment.ps_simulation import filename_dstar
     """ open figure and set colours """
     ax = plt.axes(projection='3d')
 

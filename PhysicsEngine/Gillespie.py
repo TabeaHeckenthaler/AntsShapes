@@ -4,11 +4,7 @@ import numpy as np
 from Setup.Load import Gillespie_sites_angels
 from Box2D import b2Vec2
 from PhysicsEngine.Gillespie_constants import *
-
-
-def rot(angle: float):
-    return np.array([[np.cos(angle), -np.sin(angle)],
-                     [np.sin(angle), np.cos(angle)]])
+from Analysis_Functions.GeneralFunctions import rot
 
 
 class Gillespie:
@@ -106,6 +102,9 @@ class Gillespie:
         return np.sum(self.is_occupied())
 
     def number_empty(self):
+        """
+        :return: number of empty sites
+        """
         return N_max - np.sum(self.is_occupied())
 
     def attachment_site_world_coord(self, my_load, i: int):
@@ -248,7 +247,8 @@ class Gillespie:
 
     def update_rates(self, my_load):
         """
-
+        update rates of attachment, detachment, conversion, orientation, and the total (which is the sum of all
+        aforementioned)
         :param my_load: Box2D body
         :return:
         """

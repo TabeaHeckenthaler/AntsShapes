@@ -5,7 +5,7 @@ from Setup.Maze import Maze, maze_corners
 from Analysis_Functions.Velocity import velocity_x
 from Setup.Load import Loops
 from Setup.Load import Load
-from Analysis_Functions.usefull_stuff import flatten
+from Analysis_Functions.GeneralFunctions import flatten
 
 # maximum distance between fixtures to have a contact (in cm)
 distance_upper_bound = 0.04

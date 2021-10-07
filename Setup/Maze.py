@@ -280,7 +280,7 @@ class Maze(b2World):
 
     def minimal_path_length(self):
         from DataFrame.create_dataframe import df
-        from Classes_Experiment.mr_dstar import filename_dstar
+        from Classes_Experiment.ps_simulation import filename_dstar
         p = df.loc[df['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
         return p.values[0][0]
 

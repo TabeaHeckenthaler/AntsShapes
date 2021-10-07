@@ -5,6 +5,13 @@ from matplotlib import pyplot as plt
 from Directories import home
 
 
+def rot(angle: float):
+    return np.array([[np.cos(angle), -np.sin(angle)],
+                     [np.sin(angle), np.cos(angle)]])
+
+def flatten(t):
+    return [item for sublist in t for item in sublist]
+
 def gauss(x, a, x0, sigma):
     return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
 

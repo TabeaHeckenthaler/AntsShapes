@@ -11,7 +11,7 @@ import os
 import numpy as np
 from Analysis_Functions.GeneralFunctions import graph_dir
 from skfmm import travel_time  # use this! https://pythonhosted.org/scikit-fmm/
-from Classes_Experiment.mr_dstar import filename_dstar
+from Classes_Experiment.ps_simulation import filename_dstar
 from PS_Search_Algorithms.Dstar_functions import voxel
 from scipy.ndimage.measurements import label
 from Directories import ps_path
