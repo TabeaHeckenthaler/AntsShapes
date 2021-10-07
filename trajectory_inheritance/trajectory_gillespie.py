@@ -79,14 +79,3 @@ class Trajectory_gillespie(Trajectory):
     def averageCarrierNumber(self):
         return N_max  # TODO: this is maximum, not average...
 
-
-if __name__ == '__main__':
-    # possible shapes: 'I', 'circle', 'SPT' (only here, Gillespie is implemented)
-    # free is either False or True
-    # size only relevant for 'I': (XS, S, M, SL, L, XL) and 'SPT' (S, M, L, XL)
-
-    x = Trajectory_gillespie(size='L', shape='SPT', filename='gillespie_trajectory1')
-    x.run_simulation(frameNumber=500)
-
-    x.play()  # you can play the trajectory again!
-    x.save()

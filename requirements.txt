@@ -10,3 +10,4 @@ mayavi
 joblib
 openpyxl
 scikit-fmm
+progressbar

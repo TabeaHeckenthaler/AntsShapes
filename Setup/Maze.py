@@ -5,6 +5,8 @@ from scipy.spatial import cKDTree
 from pandas import read_excel
 from Directories import home
 
+ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Load.py
+
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'T': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -24,8 +26,9 @@ ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, '
                  'ps_simulation': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 1, 'Small Far': 1, 'S': 1, 'M': 1, 'Medium': 1, 'Large': 1, 'L': 1},
                  'humanhand': {'': 1}}
-ResizeFactors['sim'] = ResizeFactors['ant']
-ResizeFactors['gillespie'] = ResizeFactors['ant']
+
+for solver in ant_dimensions:
+    ResizeFactors[solver] = ResizeFactors['ant']
 
 # there are a few I mazes, which have a different exit size,
 

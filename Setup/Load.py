@@ -2,6 +2,8 @@ import numpy as np
 from Box2D import b2BodyDef, b2_dynamicBody, b2Vec2, b2CircleShape, b2FixtureDef
 from Setup.Maze import ResizeFactors
 
+ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
+
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 assymetric_h_shift = 1.22 * 2
 
@@ -52,7 +54,7 @@ def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
     """
 
     """
-    if solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # TODO: I use this list a lot, I should make it a constant
+    if solver in ant_dimensions:
         resize_factor = ResizeFactors[solver][size]
         shape_sizes = {'H': [5.6, 7.2, 1.6],
                        'SPT': [4.85, 9.65, 0.85],
@@ -127,11 +129,21 @@ def AddLoadFixtures(load, size, shape, solver):
             density=1, friction=0, restitution=0,
         )
 
-        # TODO: implement corners and phis (the way that Gillespie needs it)
-        load.corners = np.array([[shape_width / 2, -shape_height / 2],
+        load.corners = np.array([[-shape_width / 2 + shape_thickness, -shape_thickness / 2],
+                                 [-shape_width / 2 + shape_thickness, -shape_height / 2],
                                  [-shape_width / 2, -shape_height / 2],
+                                 [-shape_width / 2, shape_height / 2],
+                                 [-shape_width / 2 + shape_thickness, shape_height / 2],
+                                 [-shape_width / 2 + shape_thickness, shape_thickness / 2],
+                                 [shape_width / 2 - shape_thickness, shape_thickness / 2],
+                                 [shape_width / 2 - shape_thickness, shape_height / 2],
                                  [shape_width / 2, shape_height / 2],
-                                 [-shape_width / 2, shape_height / 2]])
+                                 [shape_width / 2, -shape_height / 2],
+                                 [shape_width / 2 - shape_thickness, -shape_height / 2],
+                                 [shape_width / 2 - shape_thickness, -shape_thickness / 2]])
+
+        load.phis = np.array([0, -np.pi / 2, np.pi, np.pi / 2, 0, np.pi/2,
+                              np.pi, np.pi/2, 0, -np.pi/2, np.pi, -np.pi/2])
 
     if shape == 'I':
         [shape_height, _, shape_thickness] = getLoadDim(solver, shape, size)
@@ -189,19 +201,19 @@ def AddLoadFixtures(load, size, shape, solver):
         # the corners  in my_load.corners must be ordered like this: finding the intersection of the negative y-axis,
         # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
         # TODO: implement corners and phis
-        load.corners = np.array([[],  # left
-                                 [],
-                                 [],
-                                 [],
-                                 [],
-                                 [],
-                                 [],
-                                 []])
+        load.corners = np.array([[(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2],
+                                 [(-shape_height + shape_thickness) / 2 + h, -shape_thickness / 2],
+                                 [(-shape_height + shape_thickness) / 2 + h, -shape_width / 2],
+                                 [(-shape_height - shape_thickness) / 2 + h, -shape_width / 2],
+                                 [(-shape_height - shape_thickness) / 2 + h, shape_width / 2],
+                                 [(-shape_height + shape_thickness) / 2 + h, shape_width / 2],
+                                 [(-shape_height + shape_thickness) / 2 + h, shape_thickness / 2],
+                                 [(shape_height - shape_thickness) / 2 + h, shape_thickness / 2]])
 
         # phis describe the angles of the normal between the corners to the x axis of the world coordinates.
         # Starting at first corner of load.corners, and going clockwise
         # load.phis = np.array([np.pi, np.pi / 2, 0, -np.pi / 2])
-        load.phis = np.array([])
+        load.phis = np.array([np.pi, -np.pi / 2, np.pi, np.pi/2, 0, -np.pi/2, 0, -np.pi/2])
 
     if shape == 'SPT':  # This is the Special T
         [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(solver, shape, size, short_edge=True)
