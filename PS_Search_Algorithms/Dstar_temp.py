@@ -10,7 +10,7 @@ solver = 'ant'
 
 data_dir = 'PhaseSpace\\' + solver
 
-x = Get('Dlite_prior_knowledge_of_walls', 'dstar')
+x = Get('Dlite_prior_knowledge_of_walls', 'ps_simulation')
 # x.play(1, 'Display', wait=20)
 
 ps = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)

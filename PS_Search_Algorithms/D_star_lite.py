@@ -194,7 +194,7 @@ class D_star_lite:
             return True  # collision
         return False  # no collision
 
-    def into_trajectory(self, size='XL', shape='SPT', solver='dstar', filename='Dlite'):
+    def into_trajectory(self, size='XL', shape='SPT', solver='ps_simulation', filename='Dlite'):
         path = self.generate_path()
         x = Trajectory(size=size,
                        shape=shape,
@@ -274,7 +274,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
         known_conf_space=known_conf_space,
     )
 
-    # ====Calculate the trajectory the solver takes====
+    # ====Calculate the trajectory_inheritance the solver takes====
     d_star_lite_finished = d_star_lite.planning(sensing_radius=sensing_radius)
     path = d_star_lite_finished.generate_path()
 
@@ -287,8 +287,8 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     if show_animation:
         d_star_lite_finished.show_animation(save=save)
 
-    # ====Turn this into trajectory object====
-    x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='dstar', filename=filename)
+    # ====Turn this into trajectory_inheritance object====
+    x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='ps_simulation', filename=filename)
     x.play(1, 'Display', wait=200)
     if save:
         Save(x)
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)
 
-        if filename in os.listdir(SaverDirectories['dstar']):
+        if filename in os.listdir(SaverDirectories['ps_simulation']):
             pass
         else:
             main(size=size,

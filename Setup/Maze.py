@@ -21,10 +21,11 @@ StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3
               'circle': [0]}
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'dstar': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+                 'ps_simulation': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 1, 'Small Far': 1, 'S': 1, 'M': 1, 'Medium': 1, 'Large': 1, 'L': 1},
                  'humanhand': {'': 1}}
 ResizeFactors['sim'] = ResizeFactors['ant']
+ResizeFactors['gillespie'] = ResizeFactors['ant']
 
 # there are a few I mazes, which have a different exit size,
 
@@ -50,12 +51,14 @@ class Maze(b2World):
         self.shape = shape  # loadshape (maybe this will become name of the maze...)
         self.size = size  # size
         self.solver = solver
+        self.free = free
+
         self.statenames = StateNames[shape]
         self.getMazeDim(free, *args)
         self.body = self.CreateMaze(free)
         self.get_zone(free)
 
-    def getMazeDim(self, free, *args):
+    def getMazeDim(self, free):
         if free:
             self.arena_height = 10
             self.arena_length = 10
@@ -64,15 +67,15 @@ class Maze(b2World):
         else:
             dir = home + '\\Setup'
 
-            if self.solver == 'sim':
+            if self.solver in ['sim', 'gillespie']:
                 df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
             else:
                 df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
 
-            if self.solver in ['ant', 'dstar', 'sim']:  # all measurements in cm
+            if self.solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # all measurements in cm
                 d = df.loc[df['Name'] == self.size + '_' + self.shape]
-                if 'L_I1' in args:
-                    d = df.loc[df['Name'] == 'L_I1'] # these are special maze dimensions
+                if hasattr(self, 'different_dimensions') and self.different_dimensions:
+                    d = df.loc[df['Name'] == 'L_I1']  # these are special maze dimensions
 
                 self.arena_length = d['arena_length'].values[0]
                 self.arena_height = d['arena_height'].values[0]

@@ -32,7 +32,7 @@ def average_radius(size, shape, solver):
     r = ResizeFactors[solver][size]
     SPT_radius = 0.76791  # you have to multiply this with the shape width to get the average radius
     radii = dict()
-    if solver in ['ant', 'dstar']:
+    if solver in ['ant', 'ps_simulation']:
         radii = {'H': 2.9939 * r,
                  'I': 2.3292 * r,
                  'T': 2.9547 * r,
@@ -52,7 +52,7 @@ def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
     """
 
     """
-    if solver in ['ant', 'dstar', 'sim']:
+    if solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # TODO: I use this list a lot, I should make it a constant
         resize_factor = ResizeFactors[solver][size]
         shape_sizes = {'H': [5.6, 7.2, 1.6],
                        'SPT': [4.85, 9.65, 0.85],
@@ -75,9 +75,9 @@ def getLoadDim(solver: str, shape: str, size: str, short_edge=False):
     elif solver == 'human':
         # [shape_height, shape_width, shape_thickness, short_edge]
         if short_edge:
-            SPT_Human_sizes = {'S': [0.805, 1.61, 0.125, 0.805 / 0.405],
-                               'M': [1.59, 3.18, 0.240, 1.59 / 0.795],
-                               'L': [3.2, 6.38, 0.51, 3.2 / 1.585]}
+            SPT_Human_sizes = {'S': [0.805, 1.61, 0.125, 0.405],
+                               'M': [1.59, 3.18, 0.240, 0.795],
+                               'L': [3.2, 6.38, 0.51, 1.585]}
         else:
             SPT_Human_sizes = {'S': [0.805, 1.61, 0.125],
                                'M': [1.59, 3.18, 0.240],
@@ -339,11 +339,11 @@ def AddLoadFixtures(load, size, shape, solver):
     return load
 
 
-def circumference(x):
+def circumference(solver, shape, size):
     from Setup.Maze import ResizeFactors
-    shape_height, shape_width, shape_thickness = getLoadDim(x.solver, x.shape, x.size)
+    shape_height, shape_width, shape_thickness = getLoadDim(solver, shape, size)
 
-    if x.shape.endswith('ASH'):
+    if shape.endswith('ASH'):
         print('I dont know circumference of ASH!!!')
         breakpoint()
     cir = {'H': 4 * shape_height - 2 * shape_thickness + 2 * shape_width,
@@ -357,12 +357,12 @@ def circumference(x):
                   2 * shape_height -
                   2 * shape_thickness +
                   2 * shape_width,
-           'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
+           'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[solver][size]
                    - 2 * shape_thickness,
-           'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[x.solver][x.size]
+           'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[solver][size]
                    - 2 * shape_thickness
            }
-    return cir[x.shape]
+    return cir[shape]
 
 
 def Load(my_maze, position=None, angle=0, point_particle=False):
@@ -379,6 +379,10 @@ def Load(my_maze, position=None, angle=0, point_particle=False):
                                  )
 
     my_load.userData = 'my_load'
+    my_load.size = my_maze.size
+    my_load.shape = my_maze.shape
+    my_load.solver = my_maze.solver
+
     if not point_particle:
         my_load = AddLoadFixtures(my_load, my_maze.size, my_maze.shape, my_maze.solver)
     return my_load
@@ -389,7 +393,7 @@ def Gillespie_sites_angels(my_load, n: int, x=None):
 
     :param my_load: b2Body
     :param n: number of attachment sites
-    :param x: trajectory object, if we need to know about size, etc.
+    :param x: trajectory_inheritance object, if we need to know about size, etc.
     :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the my_load coordinate system 
     and n numpy matrix, with angles of normals of attachment sites, measured against the load coordinate system
     """
@@ -411,7 +415,7 @@ def Gillespie_sites_angels(my_load, n: int, x=None):
 
         # walk around the shape
         i = 1
-        delta = circumference(x) / n
+        delta = circumference(my_load.solver, my_load.shape, my_load.size) / n
         step_size = delta
         sites = np.array([linear_combination(0.5, my_load.corners[0], my_load.corners[1])])
         phi_default = np.array([my_load.phis[0]])

@@ -28,8 +28,6 @@ def Load_Experiment(solver, old_filename, falseTracking, winner, x_error, y_erro
     f1, f2 = int(frames[0]) - int(x.frames[0]), int(frames[1]) - int(x.frames[0]) + 1
     x.position, x.angle, x.frames = x.position[f1:f2, :], x.angle[f1:f2], x.frames[f1:f2]
 
-    if 'L_I_425' in x.filename:
-        args = args + ('L_I1', )
     x = mainGameLoop(x, *args, **kwargs)
     return x
 

@@ -9,8 +9,6 @@ from Box2D import b2Vec2
 from trajectory import NewFileName, Save
 from PhysicsEngine.Gillespie import Gillespie
 
-# TARGET_FPS = 100  # Frames per second
-# TIME_STEP = 1 / TARGET_FPS  # time step in simulation (seconds)
 time_step = 0.01
 
 

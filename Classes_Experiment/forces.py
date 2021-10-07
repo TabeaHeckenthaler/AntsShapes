@@ -28,7 +28,7 @@ force_scaling_factor_DISPLAY = 1 / 5
 
 def force_in_frame(x, i):
     """
-    param x: trajectory
+    param x: trajectory_inheritance
     param i: frame number
     return 2x1 numpy array with x and y component of the normalized force vector
     """
@@ -38,7 +38,7 @@ def force_in_frame(x, i):
 
 def norm_force_vector(x, i, name):
     """
-    param x: trajectory
+    param x: trajectory_inheritance
     param i: frame number
     param name: integer, which describes the position of a participant, where A is index 0, ... and Z is index 26
     return 2x1 numpy array with x and y component of the normalized force vector

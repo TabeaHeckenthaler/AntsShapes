@@ -6,7 +6,7 @@ from DataFrame.create_dataframe import get_filenames
 
 df_dir = data_home + 'DataFrame\\data_frame'
 
-solver = 'dstar'
+solver = 'ps_simulation'
 df = pd.read_json(df_dir + '.json')
 
 df_dstar = df[df['solver'] == solver].copy()

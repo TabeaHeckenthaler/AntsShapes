@@ -43,7 +43,7 @@ def velocity(position, angle, fps, size, shape, second_smooth, solver, *args, **
                                gaussian_filter(position[:, 1], sigma=smoother),
                                gaussian_filter(ang_connected, sigma=smoother)
                                ])
-    '''trajectory smoothed with Gaussian (over ' + str(second_smooth) + ' seconds)'''
+    '''trajectory_inheritance smoothed with Gaussian (over ' + str(second_smooth) + ' seconds)'''
     '''addition = addition + '\n only took component of velocity ' + str(args) + 'into account'''
 
     if 'x' in args:

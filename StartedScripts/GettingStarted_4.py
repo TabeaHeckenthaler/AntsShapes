@@ -18,7 +18,7 @@ fig = ps.visualize_space(ps.name)
 
 print(ps.name)
 
-x = Get('XL_SPT_dil2_sensing15', 'dstar', )
+x = Get('XL_SPT_dil2_sensing15', 'ps_simulation', )
 print(x.play.__doc__)  # this will print for you, how to use the .play method!
 x.play(1, PhaseSpace=ps, ps_figure=fig, wait=200, interval=10)
 

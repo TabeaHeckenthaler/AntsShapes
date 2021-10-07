@@ -88,7 +88,7 @@ def drop_non_existent(df):
 df = pd.read_json(df_dir + '.json')
 #
 # for solver in solvers:
-# for solver in ['dstar']:
+# for solver in ['ps_simulation']:
 #     df = df.append(new_experiments_df(df, solver=solver), ignore_index=True)
 #
 #

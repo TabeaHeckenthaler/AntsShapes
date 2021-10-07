@@ -4,21 +4,15 @@ Created on Wed May  6 11:24:09 2020
 
 @author: tabea
 """
-from scipy.spatial import cKDTree
 import numpy as np
 import glob
-from Box2D import b2BodyDef
-import matplotlib.pyplot as plt
 import scipy.io as sio
-from os import (listdir, getcwd, path)
+from os import getcwd, path
 import pickle
 import shutil
 from copy import deepcopy
-from Setup.MazeFunctions import BoxIt, PlotPolygon
 from PhysicsEngine.mainGame import mainGame
-from Directories import SaverDirectories
-
-# import handheld
+from Directories import SaverDirectories_new
 
 """ Making Directory Structure """
 shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
@@ -26,9 +20,9 @@ shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'human': ['S', 'M', 'L'],
          'humanhand': ''}
-solvers = ['ant', 'human', 'humanhand', 'dstar']
+solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
-length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'dstar': 'cm'}
+length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'ps_simulation': 'cm'}
 
 
 def length_unit_func(solver):
@@ -279,24 +273,6 @@ class Trajectory:
 
         return old
 
-    # Find the size and shape from the filename
-    def shape_and_size(self, old_filename):
-        if self.size == str('') and self.solver != 'humanhand':
-            if len(old_filename.split('_')[0]) == 2:
-                self.size = old_filename.split('_')[0][0:1]
-                self.shape = old_filename.split('_')[0][1]
-            if len(old_filename.split('_')[0]) == 3:
-                self.size = old_filename.split('_')[0][0:2]
-                self.shape = old_filename.split('_')[0][2]
-            if len(old_filename.split('_')[0]) == 4:
-                self.size = old_filename.split('_')[0][0:1]
-                self.shape = old_filename.split('_')[0][1:4]  # currently this is only for size L and shape SPT
-            if len(old_filename.split('_')[0]) == 5:
-                self.size = old_filename.split('_')[0][0:2]
-                self.shape = old_filename.split('_')[0][2:5]
-        # now we figure out, what the zone is, if the arena size were equally scaled as the load and exit size.
-        # arena_length, arena_height, x.exit_size, wallthick, slits, resize_factor = getMazeDim(x.shape, x.size)
-
     def matlab_loading(self, old_filename):
         if self.solver == 'ant':
             if not (old_filename == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
@@ -419,7 +395,7 @@ class Trajectory:
         dc = {'ant': Ants,
               'human': Humans,
               'humanhand': Humanhand,
-              'dstar': Mr_dstar
+              'ps_simulation': Mr_dstar
               }
         return dc[self.solver](self)
 
@@ -451,16 +427,16 @@ class Trajectory:
         return (len(self.frames) - 1) / self.fps
 
     def step(self, my_load, i, my_maze=None, pause=None, display=None, **kwargs):
-        from PhysicsEngine.MazeSimulation_Ising import step
-
+        # pass
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
 
         if self.solver == 'sim':
+            from PhysicsEngine.MazeSimulation_Ising import step
             step(my_load, self, my_maze, pause, display=display, **kwargs)
         return
 
     def play(self, *args, interval=1, PhaseSpace=None, ps_figure=None, wait=0, indices=None, **kwargs):
-        r"""Displays a given trajectory (self)
+        r"""Displays a given trajectory_inheritance (self)
 
         :Non-key-worded Arguments:
             * *attempt* --
@@ -472,11 +448,11 @@ class Trajectory:
             * *PhaseSpace* (``PhaseSpace``) --
               PhaseSpace in which the shape is moving
             * *ps_figure* (``mayavi figure``) --
-              figure in which the PhaseSpace is displayed and the trajectory shall be drawn
+              figure in which the PhaseSpace is displayed and the trajectory_inheritance shall be drawn
             * *wait* (``int``) --
               milliseconds between the display of consecutive frames
             * *indices* (``[int, int]``) --
-              starting and ending frame of trajectory, which you would like to display
+              starting and ending frame of trajectory_inheritance, which you would like to display
             * *attempt* (``bool``) --
               milliseconds between the display of consecutive frames
         """
@@ -494,9 +470,6 @@ class Trajectory:
             f1, f2 = int(indices[0]), int(indices[1]) + 1
             x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
             x.frames = x.frames[int(f1):int(f2)]
-
-        if 'L_I_425' in x.filename:
-            args = args + ('L_I1',)
 
         return mainGame(x, *args, display=True, interval=interval,
                         PhaseSpace=PhaseSpace, ps_figure=ps_figure, wait=wait, **kwargs)

@@ -134,7 +134,7 @@ def PlayAttempts(x, speed, *args, **kwargs):
 
 def AttemptNumber(x, *args, **kwargs):
     a = Attempts(x, 'extend', *args, **kwargs)
-    return len(a), [['Number of Attempts per trajectory', 'NumAttempts []']]
+    return len(a), [['Number of Attempts per trajectory_inheritance', 'NumAttempts []']]
 
 
 def AttemptDuration(x, *args, **kwargs):

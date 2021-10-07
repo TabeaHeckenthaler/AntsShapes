@@ -20,7 +20,7 @@ colors = {'H': 'k', 'I': 'b', 'T': 'c', 'SPT': 'r',
           'RASH': 'm', 'LASH': 'm', 'ASH': 'm',
           'Small': 'k', 'Medium': 'b', 'Large': 'r',
           'XS': 'c', 'S': 'm', 'M': 'g', 'L': 'y', 'SL': 'tab:orange', 'XL': 'tab:pink',
-          'human': 'blue', 'ant': 'red', 'dstar': 'black', 'humanhand': 'green',
+          'human': 'blue', 'ant': 'red', 'ps_simulation': 'black', 'humanhand': 'green',
           False: 'r', True: 'k'}
 
 

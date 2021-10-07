@@ -142,7 +142,7 @@ class Humans:
         self.gender_string = self.gender()
 
     def matlab_human_loading(self, x):
-        file = sio.loadmat(MatlabFolder('human', x.size, x.shape, x.free) + path.sep + self.VideoChain[0])
+        file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape, False) + path.sep + self.VideoChain[0])
         matlab_cell = file['hats']
 
         Medium_id_correction_dict = {1: 1, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2}

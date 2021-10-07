@@ -4,11 +4,11 @@ from Setup.Load import Load
 from PhysicsEngine.Display import Display
 
 
-def mainGame(x, *args, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, free=False, **kwargs):
+def mainGame(x, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, free=False, **kwargs):
     """
     Start instantiating the World and the load...
     """
-    my_maze = Maze(*args, size=x.size, shape=x.shape, solver=x.solver, free=free)
+    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver, free=free)
     my_load = Load(my_maze)
     if display:
         display = Display(my_maze, x.filename, wait=wait)

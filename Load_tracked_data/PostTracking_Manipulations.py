@@ -92,7 +92,7 @@ def PostTracking_Manipulations_shell(filename):
 
     print('0 = no corrections')
     print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
-    print('3 = Smooth out the trajectory')
+    print('3 = Smooth out the trajectory_inheritance')
     print('Connecting to another movie requieres x + y')
     manipulation = int(input('Want to correct something??  '))
     while manipulation != 0:
@@ -104,6 +104,6 @@ def PostTracking_Manipulations_shell(filename):
 
         print('\n 0 = no corrections')
         print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
-        print('3 = Smooth out the trajectory')
+        print('3 = Smooth out the trajectory_inheritance')
         print('Connecting to another movie requires x + y')
         manipulation = int(input('Want to correct something else??'))

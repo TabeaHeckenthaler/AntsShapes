@@ -39,7 +39,7 @@ class Display:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
 
-        if free:  # screen size dependent on trajectory
+        if free:  # screen size dependent on trajectory_inheritance
             print('free, I have a problem')
             # TODO: fix the screen size of free trajectories
             # PPM = int(1000 / (np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10))  # pixels per meter
@@ -56,15 +56,15 @@ class Display:
         return screen
 
     def update_screen(self, my_load, x, i, points=None, PhaseSpace=None, ps_figure=None, wait=0):
-        self.renew_screen(i=i, frame=x.frames[i], movie_name=x.old_filenames(0))
+        if self.wait > 0:
+            pygame.time.wait(int(self.wait))
+
+        self.renew_screen(frame=x.frames[i], movie_name=x.filename)
         self.draw(my_load, x=x, i=i, points=points, PhaseSpace=PhaseSpace, ps_figure=ps_figure)
         end = self.keyboard_events()
         return end
 
-    def renew_screen(self, frame=0, movie_name=None, **kwargs):
-        if self.wait > 0:
-            pygame.time.wait(int(self.wait))
-
+    def renew_screen(self, frame=0, movie_name=None):
         self.screen.fill(colors['background'])
 
         self.drawGrid()
