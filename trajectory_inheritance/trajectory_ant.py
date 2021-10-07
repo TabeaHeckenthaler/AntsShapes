@@ -202,8 +202,11 @@ class Trajectory_ant(Trajectory):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
     def participants(self):
-        from Classes_Experiment.ants import Ants
+        from trajectory_inheritance.ants import Ants
         return Ants(self)
+
+    def averageCarrierNumber(self):
+        self.participants().averageCarrierNumber()
 
     def step(self, my_load, i, my_maze=None, display=None):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]

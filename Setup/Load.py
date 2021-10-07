@@ -96,7 +96,7 @@ def AddLoadFixtures(load, size, shape, solver):
     assymetric_h_shift = 1.22 * 2
 
     if shape == 'circle':
-        from PhysicsEngine.Gillespie import radius
+        from trajectory_inheritance.gillespie import radius
         load.CreateFixture(b2FixtureDef(shape=b2CircleShape(pos=(0, 0), radius=radius)),
                            density=1, friction=0, restitution=0,
                            )
@@ -388,7 +388,7 @@ def Load(my_maze, position=None, angle=0, point_particle=False):
     return my_load
 
 
-def Gillespie_sites_angels(my_load, n: int, x=None):
+def Gillespie_sites_angels(my_load, n: int):
     """
 
     :param my_load: b2Body
@@ -397,8 +397,8 @@ def Gillespie_sites_angels(my_load, n: int, x=None):
     :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the my_load coordinate system 
     and n numpy matrix, with angles of normals of attachment sites, measured against the load coordinate system
     """
-    if isinstance(my_load.fixtures[0].shape, b2CircleShape):
-        from PhysicsEngine.Gillespie import radius
+    if my_load.shape == 'circle':
+        from trajectory_inheritance.gillespie import radius
         theta = -np.linspace(0, 2 * np.pi, n)
         sites = radius * np.transpose(np.vstack([np.cos(theta), np.sin(theta)]))
         phi_default = theta
@@ -434,14 +434,11 @@ def Gillespie_sites_angels(my_load, n: int, x=None):
                 i = i + 1
                 start = my_load.corners[(i-1) % my_load.corners.shape[0]]
                 aim = my_load.corners[i % my_load.corners.shape[0]]
-
-        if x.shape == 'SPT':
-            pass
         return sites, phi_default
 
 
 def force_attachment_positions(my_load, x):
-    from Classes_Experiment.humans import participant_number
+    from trajectory_inheritance.humans import participant_number
     if x.solver == 'human' and x.size == 'Medium' and x.shape == 'SPT':
 
         # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict

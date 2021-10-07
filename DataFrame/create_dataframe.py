@@ -1,6 +1,6 @@
 import pandas as pd
 from os import listdir
-from trajectory_inheritance.trajectory import solvers, maze_size
+from trajectory_inheritance.trajectory import solvers
 from Directories import data_home, SaverDirectories_new
 from trajectory_inheritance.trajectory import get
 from Analysis_Functions.Pathlength import path_length_per_experiment, path_length_during_attempts
@@ -9,6 +9,17 @@ from Setup.Maze import Maze
 from Setup.Attempts import Attempts
 
 df_dir = data_home + 'DataFrame\\data_frame'
+
+
+def maze_size(size):
+    maze_s = {'Large': 'L',
+              'Medium': 'M',
+              'Small Far': 'S',
+              'Small Near': 'S'}
+    if size in maze_s.keys():
+        return maze_s[size]
+    else:
+        return size
 
 
 def get_filenames(solver):
@@ -50,7 +61,7 @@ def add_information(df):
     df['path length/exit size []'] = df.apply(
         lambda x: x['path length [length unit]'] / x['exit size [length unit]'], axis=1)
     df['average Carrier Number'] = df[['filename', 'solver']].progress_apply(
-        lambda x: get(*x).participants().averageCarrierNumber(), axis=1)
+        lambda x: get(*x).averageCarrierNumber(), axis=1)
     df['Attempts'] = df[['filename', 'solver']].progress_apply(
         lambda x: Attempts(get(*x), 'extend'), axis=1)
 

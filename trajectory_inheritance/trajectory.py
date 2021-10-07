@@ -21,17 +21,6 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
 
-def maze_size(size):
-    maze_s = {'Large': 'L',
-              'Medium': 'M',
-              'Small Far': 'S',
-              'Small Near': 'S'}
-    if size in maze_s.keys():
-        return maze_s[size]
-    else:
-        return size
-
-
 def get(filename, solver, address=None):
     if solver == 'ant':
         from trajectory_inheritance.trajectory_ant import ant_address
@@ -143,3 +132,9 @@ class Trajectory:
             except pickle.PicklingError as e:
                 print(e)
         return
+
+    def participants(self):
+        pass
+
+    def averageCarrierNumber(self):
+        pass

@@ -2,12 +2,13 @@ from trajectory_inheritance.trajectory import Trajectory
 import numpy as np
 from os import path
 import scipy.io as sio
-
+from trajectory_inheritance.humans import Humans
 
 trackedHumanMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}Output'.format(path.sep, path.sep,
                                                                                                      path.sep, path.sep,
                                                                                                      path.sep, path.sep)
 length_unit = 'm'
+
 
 class Trajectory_human(Trajectory):
     def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, x_error=None,
@@ -45,10 +46,11 @@ class Trajectory_human(Trajectory):
         self.interpolate_over_NaN()
 
     def participants(self):
-        from Classes_Experiment.humans import Humans
         return Humans(self)
 
     def step(self, my_load, i, **kwargs):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
 
+    def averageCarrierNumber(self):
+        self.participants().averageCarrierNumber()
 

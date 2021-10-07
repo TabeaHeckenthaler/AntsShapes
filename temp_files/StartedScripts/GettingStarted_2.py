@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from Classes_Experiment.forces import force_in_frame
-from Classes_Experiment.humans import force_from_text
+from trajectory_inheritance.humans import force_from_text
 from PhysicsEngine.Contact import find_contact
 from Setup.Load import getLoadDim
 from Setup.Load import centerOfMass_shift
@@ -195,7 +195,7 @@ def vector_rotation(vec_A, radian_angle):
 
 
 def force_vector_positions_In_LOAD_FRAME(my_load, x):
-    from Classes_Experiment.humans import participant_number
+    from trajectory_inheritance.humans import participant_number
     if x.solver == 'human' and x.size == 'Medium' and x.shape == 'SPT':
 
         # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict

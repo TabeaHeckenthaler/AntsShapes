@@ -1,7 +1,6 @@
 from trajectory_inheritance.trajectory import Trajectory
-import glob
 import numpy as np
-from PhysicsEngine.Gillespie import Gillespie
+from trajectory_inheritance.gillespie import Gillespie, N_max
 from Setup.Load import Load
 from PhysicsEngine.mainGame import mainGame
 from Setup.Maze import Maze
@@ -25,7 +24,7 @@ class Trajectory_gillespie(Trajectory):
         my_maze = Maze(size=size, shape=shape, solver=solver, free=free)
         my_load = Load(my_maze)
 
-        self.gillespie = Gillespie(my_load, x=self)
+        self.gillespie = Gillespie(my_load)
 
     def step(self, my_load, i, my_maze, display):
 
@@ -74,6 +73,12 @@ class Trajectory_gillespie(Trajectory):
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         mainGame(self, display=display, free=free, wait=wait)
 
+    def participants(self):
+        return self.gillespie
+
+    def averageCarrierNumber(self):
+        return N_max  # TODO: this is maximum, not average...
+
 
 if __name__ == '__main__':
     # possible shapes: 'I', 'circle', 'SPT' (only here, Gillespie is implemented)
@@ -81,7 +86,7 @@ if __name__ == '__main__':
     # size only relevant for 'I': (XS, S, M, SL, L, XL) and 'SPT' (S, M, L, XL)
 
     x = Trajectory_gillespie(size='L', shape='SPT', filename='gillespie_trajectory1')
-    x.run_simulation(frameNumber=6000)
+    x.run_simulation(frameNumber=500)
 
-    x.play()
+    x.play()  # you can play the trajectory again!
     x.save()

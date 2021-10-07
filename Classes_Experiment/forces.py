@@ -1,8 +1,11 @@
 import numpy as np
 from Analysis_Functions.Velocity import crappy_velocity
 from trajectory_inheritance.trajectory import get
-from Classes_Experiment.humans import Humans
+from trajectory_inheritance.humans import Humans
 from Setup.Load import force_attachment_positions
+
+# TODO: Make this part of the class Human in trajectory_inheritance.trajectory_human
+
 
 angle_shift = {# the number keys describe the names, zero based (Avirams numbering is 1 based)
                'Medium': {0: 0,

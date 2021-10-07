@@ -16,19 +16,16 @@ def mainGame(x, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait
     """
     --- main game loop ---
     """
-    end = False
-    i = 0  # This tells us which movie the experiment is part of, 'i' is loop counter
-
-    # Loop that runs the simulation...
-    while True:
+    i = 0
+    while i < len(x.frames) - 1 - interval:
         x.step(my_load, i, my_maze=my_maze, display=display, **kwargs)
         i += interval
 
-        if i >= len(x.frames) - 1 - interval or end:
-            display.end_screen()
-            break
-
-        """ Display the frame """
         if display:
             end = display.update_screen(my_load, x, i)
+            if end:
+                display.end_screen()
+                x.frames = x.frames[:i]
+                break
+
     return x

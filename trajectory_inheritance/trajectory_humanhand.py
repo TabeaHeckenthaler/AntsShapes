@@ -7,6 +7,7 @@ import numpy as np
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'
 length_unit = 'cm'
 
+
 class Trajectory_humanhand(Trajectory):
     def __init__(self, size=None, shape=None, solver=None, filename=None, free=False, fps=50, winner=bool,
                  x_error=None, y_error=None, angle_error=None, falseTracking=None):
@@ -37,8 +38,16 @@ class Trajectory_humanhand(Trajectory):
         self.interpolate_over_NaN()
 
     def participants(self):
-        from Classes_Experiment.humanhand import Humanhand
         return Humanhand(self)
 
     def step(self, my_load, i):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
+
+    def averageCarrierNumber(self):
+        return 1
+
+
+class Humanhand:
+    def __init__(self, filename):
+        self.filename = filename
+        return
