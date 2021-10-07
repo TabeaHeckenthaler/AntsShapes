@@ -1,6 +1,6 @@
 from PhaseSpaces import PhaseSpace, PS_transformations
 from trajectory_inheritance.trajectory import Trajectory
-from Directories import SaverDirectories_new
+from Directories import SaverDirectories
 from Setup.Load import average_radius
 from Setup.Maze import start, end
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)
 
-        if filename in os.listdir(SaverDirectories_new['ps_simulation']):
+        if filename in os.listdir(SaverDirectories['ps_simulation']):
             pass
         else:
             main(size=size,

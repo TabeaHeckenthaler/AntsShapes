@@ -4,34 +4,34 @@ from os import path, mkdir
 home = path.abspath(__file__).split('\\')[0] + path.sep + path.join(*path.abspath(__file__).split(path.sep)[1:-1])
 data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
 
-work_dir_new = data_home + 'Pickled_Trajectories_new\\'
+work_dir = data_home + 'Pickled_Trajectories\\'
 
-SaverDirectories_new = {'ant': work_dir_new + 'Ant_Trajectories',
-                        'human': work_dir_new + 'Human_Trajectories',
-                        'humanhand': work_dir_new + 'HumanHand_Trajectories',
-                        'gillespie': work_dir_new + 'Gillespie_Trajectories',
-                        'ps_simulation': work_dir_new + 'PS_simulation_Trajectories'}
+SaverDirectories = {'ant': work_dir + 'Ant_Trajectories',
+                    'human': work_dir + 'Human_Trajectories',
+                    'humanhand': work_dir + 'HumanHand_Trajectories',
+                    'gillespie': work_dir + 'Gillespie_Trajectories',
+                    'ps_simulation': work_dir + 'PS_simulation_Trajectories'}
 
-PhaseSpaceDirectory_new = path.join(data_home, 'PhaseSpaces')
+PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
 
 def ps_path(size, shape, solver, point_particle=False):
     if point_particle:
-        return path.join(PhaseSpaceDirectory_new, solver, size + '_' + shape + '_pp.pkl')
-    return path.join(PhaseSpaceDirectory_new, solver, size + '_' + shape + '.pkl')
+        return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
+    return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '.pkl')
 
 
 def SetupDirectories():
-    if not (path.isdir(SaverDirectories_new['ant'])):
-        if not path.isdir('\\\\' + SaverDirectories_new['ant'].split('\\')[2]):
+    if not (path.isdir(SaverDirectories['ant'])):
+        if not path.isdir('\\\\' + SaverDirectories['ant'].split('\\')[2]):
             return
-        mkdir(SaverDirectories_new['ant'])
-    if not (path.isdir(SaverDirectories_new['human'])):
-        mkdir(SaverDirectories_new['human'])
-    if not (path.isdir(SaverDirectories_new['humanhand'])):
-        mkdir(SaverDirectories_new['humanhand'])
-    if not (path.isdir(SaverDirectories_new['ps_simulation'])):
-        mkdir(SaverDirectories_new['ps_simulation'])
+        mkdir(SaverDirectories['ant'])
+    if not (path.isdir(SaverDirectories['human'])):
+        mkdir(SaverDirectories['human'])
+    if not (path.isdir(SaverDirectories['humanhand'])):
+        mkdir(SaverDirectories['humanhand'])
+    if not (path.isdir(SaverDirectories['ps_simulation'])):
+        mkdir(SaverDirectories['ps_simulation'])
     return
 
 

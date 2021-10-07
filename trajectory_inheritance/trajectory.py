@@ -9,7 +9,7 @@ import numpy as np
 from os import path
 import pickle
 from PhysicsEngine.mainGame import mainGame
-from Directories import SaverDirectories_new
+from Directories import SaverDirectories
 from copy import deepcopy
 
 """ Making Directory Structure """
@@ -26,8 +26,8 @@ def get(filename, solver, address=None):
         from trajectory_inheritance.trajectory_ant import ant_address
         address = ant_address(filename, solver)
 
-    if path.isfile(SaverDirectories_new[solver] + path.sep + filename):
-        address = SaverDirectories_new[solver] + path.sep + filename
+    if path.isfile(SaverDirectories[solver] + path.sep + filename):
+        address = SaverDirectories[solver] + path.sep + filename
     else:
         print('cannot find file!')
     with open(address, 'rb') as f:
@@ -123,7 +123,7 @@ class Trajectory:
 
     def save(self, address=None):
         if address is None:
-            address = SaverDirectories_new[self.solver] + path.sep + self.filename
+            address = SaverDirectories[self.solver] + path.sep + self.filename
 
         with open(address, 'wb') as f:
             try:

@@ -4,12 +4,12 @@ import numpy as np
 from Setup.Maze import Maze
 from os import listdir, path, walk
 from Analysis_Functions.GeneralFunctions import read_text_file
-from Directories import AntSaverDirectory_new, trackedAntMovieDirectory, NewFileName
+from Directories import SaverDirectories, trackedAntMovieDirectory, NewFileName
 from trajectory_inheritance.trajectory import get
 from Load_tracked_data.Load_Experiment import Load_Experiment
 
 c = getcwd()
-TextFileDirectory = path.join(AntSaverDirectory_new, 'Classes_Experiment', 'AssymetricH_Series')
+TextFileDirectory = path.join(SaverDirectories['ant'], 'Classes_Experiment', 'AssymetricH_Series')
 
 
 def Zipper(lines):
@@ -35,7 +35,7 @@ def get_sec(time_str, **kwargs):
 
 
 def firstMovies():
-    return [name[:-4] for name in listdir(path.join(AntSaverDirectory_new, 'AssymetricH_Series'))]
+    return [name[:-4] for name in listdir(path.join(SaverDirectories['ant'], 'AssymetricH_Series'))]
 
 
 class Series():
@@ -161,7 +161,7 @@ def series_plot(function, *args, **kwargs):
 
 
 def Loader():
-    firstMovies = [x[:-4] for x in listdir(AntSaverDirectory_new + path.sep + 'AssymetricH_Series')]
+    firstMovies = [x[:-4] for x in listdir(SaverDirectories['ant'] + path.sep + 'AssymetricH_Series')]
 
     for firstMovie in firstMovies:
         solver = 'ant'
@@ -190,9 +190,9 @@ def Loader():
         i = -1
         for (tr, size, shape) in zip(trajectories, sizes, shapes):
             i += 1
-            if not (NewFileName(tr, size, shape, 'exp') in listdir(AntSaverDirectory_new) + listdir(
-                    AntSaverDirectory_new + path.sep + 'OnceConnected')) and not (
-                    tr in read_text_file(AntSaverDirectory_new, 'DontLoad.txt')):
+            if not (NewFileName(tr, size, shape, 'exp') in listdir(SaverDirectories['ant']) + listdir(
+                    SaverDirectories['ant'] + path.sep + 'OnceConnected')) and not (
+                    tr in read_text_file(SaverDirectories['ant'], 'DontLoad.txt')):
                 print(tr)
 
                 if 'failed' in NewFileName(tr, size, shape, 'exp'):

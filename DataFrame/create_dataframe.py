@@ -1,7 +1,7 @@
 import pandas as pd
 from os import listdir
 from trajectory_inheritance.trajectory import solvers
-from Directories import data_home, SaverDirectories_new
+from Directories import data_home, SaverDirectories
 from trajectory_inheritance.trajectory import get
 from Analysis_Functions.Pathlength import path_length_per_experiment, path_length_during_attempts
 from tqdm import tqdm
@@ -24,11 +24,11 @@ def maze_size(size):
 
 def get_filenames(solver):
     if solver == 'ant':
-        return [filename for filename in listdir(SaverDirectories_new[solver]) if 'ant' in filename]
+        return [filename for filename in listdir(SaverDirectories[solver]) if 'ant' in filename]
     elif solver == 'human':
-        return [filename for filename in listdir(SaverDirectories_new[solver]) if '_' in filename]
+        return [filename for filename in listdir(SaverDirectories[solver]) if '_' in filename]
     else:
-        return [filename for filename in listdir(SaverDirectories_new[solver])]
+        return [filename for filename in listdir(SaverDirectories[solver])]
 
 
 def new_experiments_df(df, solver='ant'):

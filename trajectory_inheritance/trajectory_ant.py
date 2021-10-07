@@ -1,5 +1,5 @@
 from trajectory_inheritance.trajectory import Trajectory
-from Directories import SaverDirectories_new, NewFileName
+from Directories import SaverDirectories, NewFileName
 from copy import deepcopy
 import numpy as np
 import scipy.io as sio
@@ -9,8 +9,8 @@ length_unit = 'cm'
 
 
 def ant_address(filename, solver):
-    if path.isfile(SaverDirectories_new[solver] + path.sep + filename):
-        return SaverDirectories_new[solver] + path.sep + filename
+    if path.isfile(SaverDirectories[solver] + path.sep + filename):
+        return SaverDirectories[solver] + path.sep + filename
     print('Cannot find the file')
 
 
