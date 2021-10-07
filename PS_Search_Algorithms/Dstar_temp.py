@@ -1,5 +1,5 @@
 from PhaseSpaces import PhaseSpace
-from trajectory import Get
+from trajectory_inheritance.trajectory import get
 
 import os
 import numpy as np

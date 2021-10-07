@@ -1,6 +1,5 @@
 from Load_tracked_data.Load_Experiment import Load_Experiment
-from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
-from trajectory import Save, MatlabFolder
+from Directories import MatlabFolder
 from os import listdir
 
 # StartedScripts: You still have to load the SL Asymmetric H. Its difficult, because the maze is twisted.
@@ -23,4 +22,4 @@ for mat_filename in listdir(MatlabFolder('ant', 'SL', 'RASH', False)):
 
         x1.play(4, 'Display')
         k = 2
-        Save(x1)
+        x1.save()

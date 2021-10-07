@@ -1,6 +1,5 @@
 from trajectory_inheritance.trajectory import Trajectory
-from trajectory import NewFileName
-from Directories import SaverDirectories
+from Directories import SaverDirectories_new, NewFileName
 from copy import deepcopy
 import numpy as np
 import scipy.io as sio
@@ -8,21 +7,24 @@ from os import path
 
 length_unit = 'cm'
 
+
 def ant_address(filename, solver):
-    if path.isfile(SaverDirectories[solver] + path.sep + filename):
-        return SaverDirectories[solver] + path.sep + filename
+    if path.isfile(SaverDirectories_new[solver] + path.sep + filename):
+        return SaverDirectories_new[solver] + path.sep + filename
     print('Cannot find the file')
+
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
 
+
 class Trajectory_ant(Trajectory):
-    def __init__(self, size=None, shape=None, solver=None, old_filename=None, free=False, fps=50, winner=bool,
+    def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool,
                  x_error=None, y_error=None, angle_error=None, falseTracking=None):
 
         filename = NewFileName(old_filename, size, shape, 'exp')
 
-        super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
+        super().__init__(size=size, shape=shape, solver='ant', filename=filename, fps=fps, winner=winner)
         self.x_error = x_error
         self.y_error = y_error
         self.angle_error = angle_error
@@ -31,6 +33,9 @@ class Trajectory_ant(Trajectory):
         self.free = free
         self.state = np.empty((1, 1), int)
         self.different_dimensions = 'L_I_425' in self.filename
+
+    def __del__(self):
+        pass  # TODO: when you connect experiments, you should delete the part you added...
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}

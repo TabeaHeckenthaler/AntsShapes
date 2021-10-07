@@ -1,22 +1,23 @@
 import pandas as pd
 from os import listdir
-from trajectory import data_home, solvers, SaverDirectories, Get, communication, length_unit, length_unit_func, maze_size
+from trajectory_inheritance.trajectory import solvers, maze_size
+from Directories import data_home, SaverDirectories_new
+from trajectory_inheritance.trajectory import get
 from Analysis_Functions.Pathlength import path_length_per_experiment, path_length_during_attempts
 from tqdm import tqdm
 from Setup.Maze import Maze
 from Setup.Attempts import Attempts
-import numpy as np
 
 df_dir = data_home + 'DataFrame\\data_frame'
 
 
 def get_filenames(solver):
     if solver == 'ant':
-        return [filename for filename in listdir(SaverDirectories[solver]) if 'ant' in filename]
+        return [filename for filename in listdir(SaverDirectories_new[solver]) if 'ant' in filename]
     elif solver == 'human':
-        return [filename for filename in listdir(SaverDirectories[solver]) if '_' in filename]
+        return [filename for filename in listdir(SaverDirectories_new[solver]) if '_' in filename]
     else:
-        return [filename for filename in listdir(SaverDirectories[solver])]
+        return [filename for filename in listdir(SaverDirectories_new[solver])]
 
 
 def new_experiments_df(df, solver='ant'):
@@ -35,11 +36,11 @@ def save_df(df):
 
 
 def add_information(df):
-    df['size'] = df[['filename', 'solver']].apply(lambda x: Get(*x).size, axis=1)
-    df['shape'] = df[['filename', 'solver']].apply(lambda x: Get(*x).shape, axis=1)
-    df['winner'] = df[['filename', 'solver']].apply(lambda x: Get(*x).winner, axis=1)
-    df['communication'] = df[['filename', 'solver']].apply(lambda x: communication(*x), axis=1)
-    df['length unit'] = df[['solver']].apply(lambda x: length_unit_func(*x), axis=1)
+    df['size'] = df[['filename', 'solver']].apply(lambda x: get(*x).size, axis=1)
+    df['shape'] = df[['filename', 'solver']].apply(lambda x: get(*x).shape, axis=1)
+    df['winner'] = df[['filename', 'solver']].apply(lambda x: get(*x).winner, axis=1)
+    df['communication'] = df[['filename', 'solver']].apply(lambda x: x.communication, axis=1)
+    # df['length unit'] = df[['solver']].apply(lambda x: length_unit_func(*x), axis=1) # TODO: install
     df['exit size [length unit]'] = df[['size', 'shape', 'solver']].apply(lambda x: Maze(*x).exit_size, axis=1)
     df['maze size'] = df[['size']].apply(lambda x: maze_size(*x), axis=1)
 
@@ -49,9 +50,9 @@ def add_information(df):
     df['path length/exit size []'] = df.apply(
         lambda x: x['path length [length unit]'] / x['exit size [length unit]'], axis=1)
     df['average Carrier Number'] = df[['filename', 'solver']].progress_apply(
-        lambda x: Get(*x).participants().averageCarrierNumber(), axis=1)
+        lambda x: get(*x).participants().averageCarrierNumber(), axis=1)
     df['Attempts'] = df[['filename', 'solver']].progress_apply(
-        lambda x: Attempts(Get(*x), 'extend'), axis=1)
+        lambda x: Attempts(get(*x), 'extend'), axis=1)
 
     df = df[['filename', 'solver', 'size', 'maze size', 'shape',
              'winner', 'communication', 'average Carrier Number',
@@ -65,7 +66,7 @@ def add_information(df):
 def apply_func(df, func, column_name):
     tqdm.pandas()
     print('Calculating ' + column_name + ' with ' + func.__name__)
-    df[column_name] = df[['filename', 'solver']].progress_apply(lambda x: func(Get(*x)), axis=1)
+    df[column_name] = df[['filename', 'solver']].progress_apply(lambda x: func(get(*x)), axis=1)
     return df
 
 

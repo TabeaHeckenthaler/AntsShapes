@@ -1,7 +1,8 @@
-import trajectory
+from trajectory_inheritance.trajectory_ant import Trajectory_ant
+from trajectory_inheritance.trajectory import get
 import numpy as np
-from PhysicsEngine.mainGame import mainGame
 from scipy.ndimage import gaussian_filter
+from PhysicsEngine.mainGame import mainGame
 
 
 def SmoothConnector(file1, file2):
@@ -16,11 +17,11 @@ def SmoothConnector(file1, file2):
     # connector velocity in distance (cm) per frame
 
     # Instantiate a new load which has the right starting position
-    connector_load = trajectory.Trajectory(size=file1.size, shape=file1.shape, solver=file1.solver,
-                                           filename=file1.VideoChain[-1] + '_CONNECTOR_' + file2.VideoChain[0],
-                                           free=file1.free, fps=file1.fps,
-                                           winner=False,
-                                           )
+    connector_load = Trajectory_ant(size=file1.size, shape=file1.shape,
+                                    old_filename=file1.VideoChain[-1] + '_CONNECTOR_' + file2.VideoChain[0],
+                                    free=file1.free, fps=file1.fps,
+                                    winner=False,
+                                    )
     # Find the end_screen position
     dx = file1.position[-1][0] - file2.position[1][0]
     dy = file1.position[-1][1] - file2.position[1][1]
@@ -40,17 +41,17 @@ def SmoothConnector(file1, file2):
     # all the other stuff
     connector_load.frames = np.int0(np.linspace(1, con_frames, num=con_frames))
     # connector_load.contact = [[] for i in range(len(connector_load.frames))]
-    connector_load = mainGameLoop(connector_load)
+    connector_load = mainGame(connector_load)
     return connector_load
 
 
 def PostTracking_Manipulations_shell(filename):
     def FalseTracking_Smooth():
-        x = trajectory.Get(filename)
+        x = get(filename)
         if not (hasattr(x, 'falseTracking')):
             x.falseTracking = []
 
-        trajectory.Save(x)
+        x.save()
 
         x.position = np.transpose(
             np.vstack([gaussian_filter(x.position[:, 0], sigma=51), gaussian_filter(x.position[:, 1], sigma=51)]))
@@ -58,10 +59,10 @@ def PostTracking_Manipulations_shell(filename):
         # FinalAngle = np.floor(x.angle[index1]/per)*per + np.mod(x.angle[index2], per)
         x.angle = gaussian_filter(x.angle, sigma=51)
         # all the other stuff
-        trajectory.Save(x)
+        x.save()
 
     def CutFalseTracking_Free():
-        x = trajectory.Get(filename)
+        x = get(filename)
         breakpoint()
         if not (hasattr(x, 'falseTracking')):
             x.falseTracking = []
@@ -72,7 +73,7 @@ def PostTracking_Manipulations_shell(filename):
         if bool(int(input('Cut off the start '))):
             frame1 = int(input('StartFrame '))
             frame2 = x.frames[-1]
-        trajectory.Save(x)
+        x.save()
 
         if not (hasattr(x, 'free')):
             print('Why no free attribute?')
@@ -87,7 +88,7 @@ def PostTracking_Manipulations_shell(filename):
         x.contact = x.contact[index1:index2]
         breakpoint()
         # all the other stuff
-        trajectory.Save(x)
+        x.save()
         print(x)
 
     print('0 = no corrections')

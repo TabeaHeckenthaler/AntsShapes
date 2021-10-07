@@ -1,4 +1,4 @@
-from trajectory import MatlabFolder
+from Directories import MatlabFolder
 import scipy.io as sio
 import numpy as np
 from os import path, listdir

@@ -1,22 +1,20 @@
 from PhaseSpaces import PhaseSpace, PS_transformations
-from trajectory import SaverDirectories, Trajectory, Save
+from trajectory_inheritance.trajectory import Trajectory
+from Directories import SaverDirectories_new
 from Setup.Load import average_radius
 from Setup.Maze import start, end
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
-from PS_Search_Algorithms.Dstar_functions import plot_distances
 from copy import copy
 from progressbar import progressbar
 from mayavi import mlab
 import os
 import numpy as np
 from Analysis_Functions.GeneralFunctions import graph_dir
-from skfmm import distance, travel_time  # use this! https://pythonhosted.org/scikit-fmm/
-import itertools
-from joblib import Parallel, delayed
+from skfmm import travel_time  # use this! https://pythonhosted.org/scikit-fmm/
 from Classes_Experiment.mr_dstar import filename_dstar
 from PS_Search_Algorithms.Dstar_functions import voxel
 from scipy.ndimage.measurements import label
-from Directories import PhaseSpaceDirectory, ps_path
+from Directories import ps_path
 
 structure = np.ones((3, 3, 3), dtype=int)
 
@@ -291,7 +289,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='ps_simulation', filename=filename)
     x.play(1, 'Display', wait=200)
     if save:
-        Save(x)
+        x.save()
     return
 
 
@@ -303,7 +301,7 @@ if __name__ == '__main__':
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)
 
-        if filename in os.listdir(SaverDirectories['ps_simulation']):
+        if filename in os.listdir(SaverDirectories_new['ps_simulation']):
             pass
         else:
             main(size=size,

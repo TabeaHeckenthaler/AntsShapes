@@ -1,6 +1,6 @@
 import pandas as pd
-from os import listdir
-from trajectory import data_home, solvers, SaverDirectories, Get, Save
+from Directories import data_home
+from trajectory_inheritance.trajectory import get
 import numpy as np
 from DataFrame.create_dataframe import get_filenames
 
@@ -13,8 +13,8 @@ df_dstar = df[df['solver'] == solver].copy()
 
 for filename in get_filenames(solver):
 
-    x = Get(filename, solver)
+    x = get(filename, solver)
     if not hasattr(x, 'frames') or x.frames.size == 0:
         x.frames = np.array([i for i in range(x.position.shape[0])])
-        Save(x)
+        x.save()
         print(x.filename)

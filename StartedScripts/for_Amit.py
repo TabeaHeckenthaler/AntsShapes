@@ -1,4 +1,4 @@
-from trajectory import Get
+from trajectory_inheritance.trajectory import get
 from Box2D import b2Vec2
 from Setup.Load import Load, Loops
 from Setup.Maze import Maze
@@ -7,7 +7,7 @@ from scipy.spatial import cKDTree
 from Setup.MazeFunctions import BoxIt
 
 # # Get a specific experiment
-x = Get('S_SPT_4350023_SSpecialT_1_ants', 'ant')
+x = get('S_SPT_4350023_SSpecialT_1_ants', 'ant')
 #
 # # Display the experiment
 # x, contact = x.play(1, 'Display', 'contact')

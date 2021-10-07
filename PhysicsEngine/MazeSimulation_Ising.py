@@ -4,9 +4,8 @@ Created on Thu Jun 11 12:55:29 2020
 @author: tabea
 """
 import numpy as np
-from Box2D import b2Vec2
 
-from trajectory import NewFileName, Save
+from Directories import NewFileName
 from PhysicsEngine.Gillespie import Gillespie
 
 time_step = 0.01
@@ -60,7 +59,7 @@ def forces(my_load, pause=False, display=None, **kwargs):
 def mazeSimulation(size, shape, frames, init_angle=np.array([0.0]), display=True, free=False):
     # init_angle = np.array([rd.uniform(0, 1) * (2 * np.pi)])
     from PhysicsEngine.mainGame import mainGame
-    from trajectory import Trajectory
+    from trajectory_inheritance.trajectory import Trajectory
     from Setup.Maze import Maze
     from Setup.Load import Load
     """

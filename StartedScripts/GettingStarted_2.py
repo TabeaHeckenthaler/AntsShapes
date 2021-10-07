@@ -1,17 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from trajectory import Get
-from Classes_Experiment.humans import Humans
-from Classes_Experiment.forces import participants_force_arrows
 from Classes_Experiment.forces import force_in_frame
-from Setup.Maze import Maze
-from Setup.Load import Load
-from PhysicsEngine.Contact import Contact_loop
 from Classes_Experiment.humans import force_from_text
 from PhysicsEngine.Contact import find_contact
 from Setup.Load import getLoadDim
-from Setup.Load import periodicity, centerOfMass_shift, assymetric_h_shift
+from Setup.Load import centerOfMass_shift
 
 # x.play()
 

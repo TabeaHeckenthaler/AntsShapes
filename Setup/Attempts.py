@@ -4,7 +4,7 @@ import numpy as np
 from Setup.MazeFunctions import extend
 from Setup.Maze import Maze
 from Setup.Load import getLoadDim, Loops, Load
-from trajectory import Get
+from trajectory_inheritance.trajectory import get
 
 smoothing_window = 6
 
@@ -147,7 +147,7 @@ def AttemptDuration(x, *args, **kwargs):
 
 if __name__ == '__main__':
     solver = 'human'
-    x = Get('medium_20201221135753_20201221140218', solver)
+    x = get('medium_20201221135753_20201221140218', solver)
     attempts = [False]
     my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
     my_attempt_zone = AddAttemptZone(my_maze, x)

@@ -1,7 +1,6 @@
 import numpy as np
 from Setup.MazeFunctions import MeasureDistance, ConnectAngle
 from Setup.Attempts import Attempts
-from Setup.Maze import Maze, ResizeFactors
 from Setup.Load import average_radius
 from Analysis_Functions.resolution import resolution
 from matplotlib import pyplot as plt
@@ -109,9 +108,9 @@ def mean_path_length_per_attempt(x, *args, attempts=None, **kwargs):
 
 
 if __name__ == '__main__':
-    from trajectory import Get, sizes
+    from trajectory_inheritance.trajectory import get, sizes
     p = [resolution(size, 'ant') for size in sizes['ant']]
-    x = Get('M_H_4180002_1_ants', 'ant')
+    x = get('M_H_4180002_1_ants', 'ant')
     # x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
     calculate_path_length(x.position, x.angle, average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver,
                           rot=True, plot=True)

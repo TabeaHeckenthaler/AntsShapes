@@ -1,4 +1,4 @@
-from trajectory import Get
+from trajectory_inheritance.trajectory import get
 from PhysicsEngine.Contact import Contact_analyzer
 from classes.bundle import Bundle
 
@@ -15,6 +15,6 @@ for x in list(my_bundle):
 
 
 ''' Example of how you can '''
-x = Get('XL_I_4190003_50fpsXL_I_12_ants', 'ant')
+x = get('XL_I_4190003_50fpsXL_I_12_ants', 'ant')
 x.play(2, 'Display', 'contact')
 omega, torque, first_contact = Contact_analyzer(x)

@@ -1,14 +1,12 @@
-from trajectory import Get
 from Setup.Maze import Maze
 from Setup.Load import Load, Loops
 import numpy as np
 from matplotlib import pyplot as plt
 from PhysicsEngine.Contact import find_contact
-from trajectory import Get
-from Classes_Experiment.humans import Humans
+from trajectory_inheritance.trajectory import get
 
 solver = 'human'
-x = Get('large_20210419100024_20210419100547', solver)
+x = get('large_20210419100024_20210419100547', solver)
 # x.play()
 
 ''' find vertices '''
@@ -30,11 +28,12 @@ plt.scatter(load_vertices.reshape(4*len(load_vertices), 2)[:, 0],
 
 ''' find contact points '''
 contact = find_contact(x, display=False)
+
 # [i for i, l in enumerate(contact) if len(l)>0]
-'''to display single frame'''
-screen = Display_screen(my_maze=my_maze, caption=x.filename)
-Display_renew(screen)
-Display_loop(my_load, my_maze, screen)
-Display_end()
+# '''to display single frame'''
+# screen = Display_screen(my_maze=my_maze, caption=x.filename)
+# Display_renew(screen)
+# Display_loop(my_load, my_maze, screen)
+# Display_end()
 
 x.play()

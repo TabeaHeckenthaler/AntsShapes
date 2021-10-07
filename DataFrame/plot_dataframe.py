@@ -5,9 +5,8 @@ from Analysis_Functions.GeneralFunctions import graph_dir, non_duplicate_legend,
 from os import path
 import numpy as np
 from matplotlib.transforms import Affine2D
-from trajectory import solvers, Get
+from trajectory_inheritance.trajectory import solvers
 import matplotlib.pylab as pl
-from mpl_toolkits.mplot3d import Axes3D
 
 df = pd.read_json(df_dir + '.json')
 df_gr_solver = df.groupby(by='solver')

@@ -1,6 +1,6 @@
 import numpy as np
 from Analysis_Functions.Velocity import crappy_velocity
-from trajectory import Get
+from trajectory_inheritance.trajectory import get
 from Classes_Experiment.humans import Humans
 from Setup.Load import force_attachment_positions
 
@@ -91,6 +91,6 @@ def correlation_force_velocity(x, i):
 
 """ Look at single experiments"""
 if __name__ == '__main__':
-    x = Get('large_20210419100024_20210419100547', 'human')
+    x = get('large_20210419100024_20210419100547', 'human')
     x.participants = Humans(x)
     x.play(forces=[participants_force_arrows])

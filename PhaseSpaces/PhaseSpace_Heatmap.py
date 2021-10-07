@@ -4,7 +4,7 @@ import numpy as np
 from mayavi import mlab
 from Analysis_Functions.GeneralFunctions import graph_dir
 from DataFrame.create_dataframe import df
-from trajectory import Get
+from trajectory_inheritance import get
 from Directories import data_home
 
 filenames_group = df[['filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
