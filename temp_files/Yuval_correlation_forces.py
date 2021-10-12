@@ -66,7 +66,7 @@ HEIGHT, WIDTH, DISTANCE, PROMINENCE = 0, 0, 0, 1
 
 colors = ['#0000FF', '#000000', '#8A2BE2', '#9C661F', '#A52A2A', '#FF4040', '#5F9EA0', '#FF6103', '#ED9121'
     , '#808A87', '#FF7256', '#E50000', '#FFC0CB', '#006400', '#FFD700', '#7FFF00', '#FF7F50', '#13EAC9', '#808000'
-          , '#800000', '#E6E6FA', '#D2691E', '#A52A2A', '#C0C0C0', '#029386', '#BBF90F', '#00FFFF', '#6E750E']
+    , '#800000', '#E6E6FA', '#D2691E', '#A52A2A', '#C0C0C0', '#029386', '#BBF90F', '#00FFFF', '#6E750E']
 
 ABC_effective_dict = {
     'A': 20, 'B': 21, 'C': 22, 'D': 23, 'E': 24,
@@ -80,11 +80,10 @@ medium_sensors_dict = {
 }
 
 
-
-def get_key(my_dict,val):
+def get_key(my_dict, val):
     for key, value in my_dict.items():
-         if val == value:
-             return key
+        if val == value:
+            return key
 
 
 def plot_embeddings(x, y, words, marker='x', color='red', label=None):
@@ -179,8 +178,6 @@ def correlation_dataframes(x):
     cross_correlation3 = np.array([[np.nan] * len(raw_forces[0])] * len(raw_forces[0]))
     sum_of_corrs_ABSu = 0
 
-
-
     for i in x.participants.occupied:
         for j in x.participants.occupied:
             force_prod = [raw_forces_around_mean[k][i] * raw_forces_around_mean[k][j] for k in range(len(human_forces))]
@@ -222,7 +219,6 @@ def plot_a_color_matrix_from_df(x, df, min_color=-1, max_color=1):
     filename2 = x.filename + '-' + x.participants.condition + '-' + 'withOUT_directions_matrix_pickle'
     plt.title(filename2, fontsize=16)
     plt.show
-
 
 
 def single_force_check_func(SOURCE, ADDRESS, sensor, x, action='save', size='M', measured_forces=None, ratio=1):
@@ -286,8 +282,8 @@ def single_force_check_experiment(ADDRESS, sensor, x, action='save', size='M', f
         plt.plot(peaks, peaks_val, 'o', color='red')
         plt.hlines(*results_half[1:], color=colors[sensor], label=str(medium_sensors_dict[sensor + 1]))
         plt.plot(frames, filtered_values, '+', c=colors[sensor], label=str(medium_sensors_dict[sensor + 1]))
-        plt.plot(peaks2, peaks_val2, 'o', c=colors[sensor+2], label=str(medium_sensors_dict[sensor + 1]))
-    elif filter == 'OFERS_FILTER': # last version
+        plt.plot(peaks2, peaks_val2, 'o', c=colors[sensor + 2], label=str(medium_sensors_dict[sensor + 1]))
+    elif filter == 'OFERS_FILTER':  # last version
         x_points = np.concatenate((peaks, bases))
         ind = np.argsort(x_points)
         y_vals = [values[i] for i in x_points]
@@ -296,7 +292,7 @@ def single_force_check_experiment(ADDRESS, sensor, x, action='save', size='M', f
         plt.plot(frames, filtered_values, '+', c=colors[sensor], label=str(medium_sensors_dict[sensor + 1]))
         plt.plot(x_points, y_points, '--')
         plt.plot(peaks, peaks_val, 'o', color='red')
-        
+
     if size == 'L':
         plt.title(sensor + '-' + filter)
     elif size == 'M':
@@ -304,7 +300,6 @@ def single_force_check_experiment(ADDRESS, sensor, x, action='save', size='M', f
 
     plt.xlabel('frame number')
     plt.ylabel('Force[]')
-
 
     if action == 'save':
         plt.savefig(ADDRESS)
@@ -336,7 +331,6 @@ def all_forces_toghether_exp(SOURCE, ADDRESS, x, action='save', size='M', filter
                 values = [(values[i] + factor) for i in range(len(values))]
         else:
             print("single_force_check_func: Unknown size")
-
 
         Frames = np.linspace(frames.min(), frames.max(), 40000)
         X_Y_Spline = interpolate.interp1d(frames, values)
@@ -408,8 +402,8 @@ def all_forces_toghether_exp(SOURCE, ADDRESS, x, action='save', size='M', filter
 
     plt.close
 
-def ofers_filter(x_array, y_array, def_gap=15):
 
+def ofers_filter(x_array, y_array, def_gap=15):
     """
     signal below 5% of maximum excluded
     tries to find the peaks (if two or more are too close it unifies them
@@ -417,7 +411,7 @@ def ofers_filter(x_array, y_array, def_gap=15):
     threshold = (max(y_array) - min(y_array)) * 0.05 + min(y_array)
     filtered = [None] * len(y_array)
     for i in range(len(x_array)):
-        if y_array[i]>threshold:
+        if y_array[i] > threshold:
             filtered[i] = y_array[i]
         else:
             filtered[i] = np.nan
@@ -427,22 +421,22 @@ def ofers_filter(x_array, y_array, def_gap=15):
     Y_array = X_Y_Spline(X_array)
 
     peaks, _ = find_peaks(filtered, height=0.6, width=WIDTH)
-    mid_calc = [peaks[i] for i in range(len(peaks)) if peaks[i]>threshold]
+    mid_calc = [peaks[i] for i in range(len(peaks)) if peaks[i] > threshold]
     peaks_val = [y_array[i] for i in peaks]
     prominences, left_bases, right_bases = peak_prominences(filtered, peaks, wlen=300)
-    
+
     bases = list()
 
     if (len(left_bases) and len(right_bases)):
         bases.append(left_bases[0])
 
         for i in range(len(left_bases) - 1):
-            if i<=len(left_bases) - 2:
-                if left_bases[i]==left_bases[i+1]:
+            if i <= len(left_bases) - 2:
+                if left_bases[i] == left_bases[i + 1]:
                     continue
-            if (left_bases[i+1]-right_bases[i])>def_gap:
+            if (left_bases[i + 1] - right_bases[i]) > def_gap:
                 bases.append(right_bases[i])
-                bases.append(left_bases[i+1])
+                bases.append(left_bases[i + 1])
 
         bases.append(right_bases[-1])
 
@@ -482,7 +476,7 @@ def all_forces_toghether_check(SOURCE, ADDRESS, x, action='save', size='M', meas
     plt.close()
 
 
-def theta_trajectory(twoD_vec, unit = 'RADIAN'):
+def theta_trajectory(twoD_vec, unit='RADIAN'):
     # TODO: Yuval: to go over all the functions that use this one (I changed the output to degrees)
     '''
     :param
@@ -490,7 +484,7 @@ def theta_trajectory(twoD_vec, unit = 'RADIAN'):
     '''
     angle = np.arctan2(twoD_vec[1], twoD_vec[0])
     if angle < 0:
-        angle += (2* np.pi)
+        angle += (2 * np.pi)
     degrees = angle * 180 / np.pi
     if unit == 'RADIAN':
         return angle
@@ -525,7 +519,8 @@ def cart_started_to_move_frames(obj):
     power = [np.linalg.norm(velocity[i]) for i in range(len(velocity))]
     not_moving = [i for i in range(len(velocity)) if power[i] < 0.015]
     move_fast = [i for i in range(len(velocity)) if power[i] > 0.28]
-    start_movement = [(not_moving[i]+1) for i in range(len(not_moving)-1) if (not_moving[i + 1] - not_moving[i]) > 30]
+    start_movement = [(not_moving[i] + 1) for i in range(len(not_moving) - 1) if
+                      (not_moving[i + 1] - not_moving[i]) > 30]
 
     return start_movement, move_fast
 

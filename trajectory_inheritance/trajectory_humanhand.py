@@ -37,8 +37,8 @@ class Trajectory_humanhand(Trajectory):
             self.angle = np.array(shape_orientation)
         self.interpolate_over_NaN()
 
-    def participants(self):
-        return Humanhand(self)
+    def load_participants(self):
+        self.participants = Humanhand(self)
 
     def step(self, my_load, i):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]

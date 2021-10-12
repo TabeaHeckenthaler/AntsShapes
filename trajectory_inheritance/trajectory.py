@@ -47,6 +47,7 @@ class Trajectory:
         self.angle = np.empty((1, 1), float)  # np.array of angles while the shape is moving
         self.frames = np.empty(0, float)
         self.winner = winner  # whether the shape crossed the exit
+        self.participants = None
 
     def __bool__(self):
         return self.winner
@@ -127,13 +128,15 @@ class Trajectory:
 
         with open(address, 'wb') as f:
             try:
-                pickle.dump(self, f)
-                print('Saving ' + self.filename + ' in ' + address)
+                self_copy = deepcopy(self)
+                delattr(self_copy, 'participants')
+                pickle.dump(self_copy, f)
+                print('Saving ' + self_copy.filename + ' in ' + address)
             except pickle.PicklingError as e:
                 print(e)
         return
 
-    def participants(self):
+    def load_participants(self):
         pass
 
     def averageCarrierNumber(self):

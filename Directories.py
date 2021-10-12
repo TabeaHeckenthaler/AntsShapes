@@ -14,6 +14,9 @@ SaverDirectories = {'ant': work_dir + 'Ant_Trajectories',
 
 PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
+excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.format(path.sep, path.sep,
+                                                                                       path.sep,
+                                                                                       path.sep, path.sep)
 
 def ps_path(size, shape, solver, point_particle=False):
     if point_particle:

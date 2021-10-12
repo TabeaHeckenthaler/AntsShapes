@@ -11,7 +11,7 @@ def mainGame(x, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait
     my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver, free=free)
     my_load = Load(my_maze)
     if display:
-        display = Display(my_maze, x.filename, wait=wait)
+        display = Display(x, my_maze, wait=wait)
 
     """
     --- main game loop ---

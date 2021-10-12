@@ -200,7 +200,6 @@ def AddLoadFixtures(load, size, shape, solver):
 
         # the corners  in my_load.corners must be ordered like this: finding the intersection of the negative y-axis,
         # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
-        # TODO: implement corners and phis
         load.corners = np.array([[(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2],
                                  [(-shape_height + shape_thickness) / 2 + h, -shape_thickness / 2],
                                  [(-shape_height + shape_thickness) / 2 + h, -shape_width / 2],
@@ -454,7 +453,7 @@ def force_attachment_positions(my_load, x):
     if x.solver == 'human' and x.size == 'Medium' and x.shape == 'SPT':
 
         # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict
-        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size)
+        [shape_height, shape_width, shape_thickness, short_edge] = getLoadDim(x.solver, x.shape, x.size, short_edge=True)
         x29, x38, x47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
 
         # (0, 0) is the middle of the shape

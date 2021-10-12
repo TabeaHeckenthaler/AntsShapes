@@ -12,8 +12,8 @@ class Trajectory_ps_simulation(Trajectory):
         self.sensing = int()
         self.dilation = int()
 
-    def participants(self):
-        return PS_simulation(self)
+    def load_participants(self):
+        self.participants = PS_simulation(self)
 
     def step(self, my_load, i, **kwargs):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]

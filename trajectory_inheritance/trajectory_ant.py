@@ -201,9 +201,9 @@ class Trajectory_ant(Trajectory):
             for index in range(index1, index2):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
-    def participants(self):
+    def load_participants(self):
         from trajectory_inheritance.ants import Ants
-        return Ants(self)
+        self.participants = Ants(self)
 
     def averageCarrierNumber(self):
         self.participants().averageCarrierNumber()

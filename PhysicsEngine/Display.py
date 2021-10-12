@@ -3,6 +3,7 @@ import numpy as np
 from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP,
                            K_RIGHT, K_LEFT, K_r, K_l, K_d, K_a, K_KP4, K_KP6)
 import math
+from Setup.Load import force_attachment_positions
 
 # printable colors
 colors = {'my_maze': (0, 0, 0),
@@ -22,9 +23,9 @@ colors = {'my_maze': (0, 0, 0),
 
 class Display:
 
-    def __init__(self, my_maze, filename, wait=0):
+    def __init__(self, x, my_maze, wait=0, forces_angles=None):
         self.my_maze = my_maze
-        self.filename = filename
+        self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
         self.width = 1500
@@ -34,6 +35,10 @@ class Display:
         self.screen = self.create_screen()
         self.arrows = []
         self.wait = wait
+        self.i = 0
+        if hasattr(x, 'participants'):
+            self.forces = x.participants.forces
+            self.part_angles = x.participants.angles
 
     def create_screen(self, free=False, caption=str()):
         pygame.font.init()  # display and fonts
@@ -55,12 +60,14 @@ class Display:
         # what to print on top of the game window
         return screen
 
-    def update_screen(self, my_load, x, i, points=None, PhaseSpace=None, ps_figure=None, wait=0):
+    def update_screen(self, my_load, x, i, points=None, PhaseSpace=None, ps_figure=None):
+        self.i = i
         if self.wait > 0:
             pygame.time.wait(int(self.wait))
 
-        self.renew_screen(frame=x.frames[i], movie_name=x.filename)
-        self.draw(my_load, x=x, i=i, points=points, PhaseSpace=PhaseSpace, ps_figure=ps_figure)
+        self.renew_screen(frame=x.frames[self.i], movie_name=x.filename)
+        self.draw(my_load, x=x, points=points, PhaseSpace=PhaseSpace, ps_figure=ps_figure)
+
         end = self.keyboard_events()
         return end
 
@@ -68,6 +75,7 @@ class Display:
         self.screen.fill(colors['background'])
 
         self.drawGrid()
+        self.arrows = []
 
         if frame is not None:
             text = self.font.render(movie_name, True, colors['text'])
@@ -106,12 +114,12 @@ class Display:
                                        )
 
         self.draw_bodies(my_load)
-        self.draw_arrows()
+        self.draw_arrows(x, my_load)
 
-        if 'participants' in kwargs:
-            for part in kwargs['participants'](x, my_load):
-                pygame.draw.circle(self.screen, colors['participants'],
-                                   [int(part[0] * self.ppm), self.height - int(part[1] * self.ppm)], 5)
+        # if 'participants' in kwargs:
+        #     for part in kwargs['participants'](x, my_load):
+        #         pygame.draw.circle(self.screen, colors['participants'],
+        #                            [int(part[0] * self.ppm), self.height - int(part[1] * self.ppm)], 5)
 
         pygame.display.flip()
         return
@@ -144,7 +152,12 @@ class Display:
                                10,
                                )
 
-    def draw_arrows(self):
+    def draw_arrows(self, x, my_load):
+        if hasattr(self, 'forces'):
+            force_attachments = force_attachment_positions(my_load, x)
+            for name in x.participants.occupied:
+                self.arrows.append(self.forces.arrow(self.i, force_attachments[name], name))
+
         for a_i in self.arrows:
             start, end, name = a_i
             start = [int(start[0] * self.ppm), self.height - int(start[1] * self.ppm)]

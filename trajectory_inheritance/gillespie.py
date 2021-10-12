@@ -48,7 +48,6 @@ class Gillespie:
         # vector to ith attachment site in load coordinates
         # angle of normal vector from ith attachment site to the x axis of the world, when my_load.angle = 0
 
-        # TODO: I misunderstood until now. At every step, the phi to the world coordinates stays the same.
         self.phi = np.empty(N_max)  # angle of the ant to world coordinates!
         self.phi[:] = np.nan  # (NaN if not occupied)
 

@@ -73,8 +73,8 @@ class Trajectory_gillespie(Trajectory):
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         mainGame(self, display=display, free=free, wait=wait)
 
-    def participants(self):
-        return self.gillespie
+    def load_participants(self):
+        self.participants = self.gillespie
 
     def averageCarrierNumber(self):
         return N_max  # TODO: this is maximum, not average...

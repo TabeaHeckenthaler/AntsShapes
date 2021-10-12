@@ -45,12 +45,12 @@ class Trajectory_human(Trajectory):
             self.angle = np.array(shape_orientation)
         self.interpolate_over_NaN()
 
-    def participants(self):
-        return Humans(self)
+    def load_participants(self):
+        if not hasattr(self, 'participants'):
+            self.participants = Humans(self)
 
     def step(self, my_load, i, **kwargs):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
 
     def averageCarrierNumber(self):
-        self.participants().averageCarrierNumber()
-
+        self.participants.averageCarrierNumber()
