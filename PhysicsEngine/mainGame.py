@@ -1,15 +1,13 @@
 """self written functions"""
-from Setup.Maze import Maze
-from Setup.Load import Load
 from PhysicsEngine.Display import Display
 
 
-def mainGame(x, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait=0, free=False, **kwargs):
+def mainGame(x, my_maze, interval=1, display=False, wait=0):
     """
     Start instantiating the World and the load...
     """
-    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver, free=free)
-    my_load = Load(my_maze)
+    my_load = my_maze.bodies[-1]
+
     if display:
         display = Display(x, my_maze, wait=wait)
 
@@ -18,14 +16,14 @@ def mainGame(x, interval=1, display=False, PhaseSpace=None, ps_figure=None, wait
     """
     i = 0
     while i < len(x.frames) - 1 - interval:
-        x.step(my_load, i, my_maze=my_maze, display=display, **kwargs)
+        display.renew_screen(frame=x.frames[i], movie_name=x.filename)
+        x.step(my_load, i, my_maze=my_maze, display=display)
         i += interval
 
         if display:
-            end = display.update_screen(my_load, x, i)
+            end = display.update_screen(x, i)
             if end:
                 display.end_screen()
                 x.frames = x.frames[:i]
                 break
-
     return x

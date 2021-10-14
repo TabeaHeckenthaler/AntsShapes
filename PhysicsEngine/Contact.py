@@ -62,6 +62,13 @@ def ccw(A, B, C):
 def intersect(A, B, C, D):
     return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
 
+def maze_corners(maze):
+    corners = [[0, 0],
+               [0, maze.arena_height],
+               [maze.slits[-1] + 20, maze.arena_height],
+               [maze.slits[-1] + 20, 0],
+               ]
+    return corners + list(np.resize(maze.slitpoints, (16, 2)))
 
 def Contact_loop2(load, maze):
     # this function takes a list of corners (lists have to list rectangles in sets of 4 corners)

@@ -16,6 +16,7 @@ traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
 
+
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
 
@@ -261,7 +262,21 @@ class PhaseSpace(object):
                      max(0, int(y_min / self.pos_resolution)):
                      min(int(y_max / self.pos_resolution) + 1, self.space.shape[1]),
                      ]
-        return
+
+    # TODO: implement this method!
+    def draw(self, ps_figure, x, i, my_load, interval) -> None:
+        if i < interval:
+            ps_figure = self.draw_trajectory(ps_figure,
+                                             np.array([my_load.position]),
+                                             np.array([my_load.angle]),
+                                             scale_factor=1,
+                                             color=(0, 0, 0))
+        else:
+            ps_figure = self.draw_trajectory(ps_figure,
+                                             x.position[i:i + interval],
+                                             x.angle[i:i + interval],
+                                             scale_factor=1,
+                                             color=(1, 0, 0))
 
 
 if __name__ == '__main__':

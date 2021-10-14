@@ -5,6 +5,8 @@ import numpy as np
 import csv
 import pandas as pd
 from scipy import stats
+from Setup.Maze import Maze
+from PhysicsEngine.drawables import Arrow
 
 
 def get_sheet():
@@ -24,10 +26,15 @@ class Forces:
         self.directory = self.force_directory()
         self.synchronization_offset(x.fps)
         self.filename = self.get_force_filename()
-        self.array = None
         self.occupied = humans.occupied
-        self.array = self.forces_loading(humans.frames, x.fps)
+        self.abs_values = self.forces_loading(humans.frames, x.fps)
         self.angles = self.get_angles(humans, x)
+        self.angles_load = self.angles - x.angle[:, np.newaxis]
+        self.meters_load = self.get_meters_load(x)
+
+    @staticmethod
+    def get_meters_load(x):
+        return Maze(x).force_attachment_positions()
 
     @staticmethod
     def get_angles(humans, x):
@@ -119,11 +126,11 @@ class Forces:
         # find the offset of the first frame of the movie to the start of the force meter measurement
         synch_offset = self.synchronization_offset(fps)
 
-        array = []
+        abs_values = []
         # write the force into the self.frame[:].forces variable
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
-            array.append(forces_all_frames[force_index])
-        return self.remove_force_outliers(np.array(array))
+            abs_values.append(forces_all_frames[force_index])
+        return self.remove_force_outliers(np.array(abs_values))
 
     @staticmethod
     def remove_force_outliers(array):
@@ -139,14 +146,34 @@ class Forces:
 
         return np.squeeze(np.apply_along_axis(remove_force_outliers_single_forcemeter, 0, array))
 
-    def arrow(self, i, force_meter_coor, name):
+    def draw(self, display, x):
+        force_attachments = display.my_maze.force_attachment_positions()
+        for name in x.participants.occupied:
+            self.arrow(display.i, force_attachments[name], name).draw(display)
+
+    def arrow(self, i, force_meter_coor, name) -> Arrow:
         """
         :return: start, end and string for the display of the force as a triplet
         """
         start = force_meter_coor
         end = force_meter_coor + \
-              self.array[i, name] * np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])]) * 1 / 5
-        return np.array(start), np.array(end), str(name + 1)
+              self.abs_values[i, name] * np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])]) * 1 / 5
+        return Arrow(np.array(start), np.array(end), str(name + 1))
+
+    def part(self, name: int, reference_frame='maze') -> np.ndarray:
+        """
+        :param name: index of the participant
+        :param reference_frame: 'maze' or 'load', dependent on desired reference frame
+        :return: len(x.frames)x2 numpy.array with x and y components of the force vectors
+        """
+        if reference_frame == 'maze':
+            a = self.angles[:, name]
+        elif reference_frame == 'load':
+            a = self.angles_load[:, name]
+        else:
+            raise ValueError('What frame of reference?')
+
+        return np.array([np.cos(a), np.sin(a)]) * self.abs_values[:, name]
 
     # def debugger(human, forces_all_frames, x):
     #     if np.isnan(np.sum([human.frames[i].forces[1] for i in range(0, len(human.frames))])):

@@ -1,9 +1,13 @@
+from abc import ABC
+
 from Directories import MatlabFolder
 import scipy.io as sio
 import numpy as np
 from os import path
 from trajectory_inheritance.forces import Forces, sheet
-
+from trajectory_inheritance.participants import Participants
+import pygame
+from PhysicsEngine.drawables import colors
 
 participant_number = {'Small Near': 1, 'Small Far': 1, 'Medium': 9, 'Large': 26}
 
@@ -38,24 +42,23 @@ class Humans_Frame:
         # self.forces = list()
 
 
-class Humans:
-    def __init__(self, x):
-        self.filename = x.filename
+class Humans(Participants, ABC):
+    def __init__(self, x, color=''):
+        super().__init__(x, color='')
+
         self.excel_index = self.get_excel_worksheet_index()
-        self.VideoChain = [x.filename]
-        self.frames = list()
-        self.size = x.size
         self.number = len(self.gender())
 
-        # contains list of occupied sites, where site A carries index 0 and Z carries index 25.
+        # contains list of occupied sites, where site A carries index 0 and Z carries index 25 (for size 'large').
         self.occupied = list(self.gender().keys())
 
-        self.matlab_human_loading(x)
+        self.matlab_loading(x)
         self.angles = self.get_angles()
+        self.positions = self.get_positions()
         self.forces = Forces(self, x)
         self.gender_string = self.gender()
 
-    def get_excel_worksheet_index(self):
+    def get_excel_worksheet_index(self) -> int:
         number_exp = [i for i in range(1, int(sheet.dimensions.split(':')[1][1:]))
                       if sheet.cell(row=i, column=1).value is not None][-1]
 
@@ -76,7 +79,7 @@ class Humans:
         elif len(indices) == 0:
             print('cant find your movie')
 
-    def matlab_human_loading(self, x):
+    def matlab_loading(self, x) -> None:
         file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape, False) + path.sep + self.VideoChain[0])
         matlab_cell = file['hats']
 
@@ -118,13 +121,16 @@ class Humans:
             self.frames.append(humans_frame)
         return
 
-    def get_angles(self):
+    def get_angles(self) -> np.ndarray:
         return np.array([fr.angle for fr in self.frames])
 
-    def averageCarrierNumber(self):
+    def get_positions(self) -> np.ndarray:
+        return np.array([fr.position for fr in self.frames])
+
+    def averageCarrierNumber(self) -> int:
         return self.number
 
-    def correlation(self, players=None, frames=None):
+    def correlation(self, players=None, frames=None) -> np.ndarray:
         """
         :param frames: forces in what frames are you interested in finding their correlation
         :param players: list of players that you want to find correlation for
@@ -137,12 +143,12 @@ class Humans:
             players = self.occupied
 
         forces_in_x_direction = [
-            self.forces.array[:, player][slice(*frames, 1)] * np.cos(angle_shift[self.size][player])
+            self.forces.abs_values[:, player][slice(*frames, 1)] * np.cos(angle_shift[self.size][player])
             for player in players]
         correlation_matrix = np.corrcoef(np.stack(forces_in_x_direction))
         return correlation_matrix
 
-    def gender(self):
+    def gender(self) -> dict:
         """
         return dict which gives the gender of every participant. The keys of the dictionary are indices of participants,
         where participant A has index 0, B has index 1, ... and Z has index 25. This is different from the counting in
@@ -155,3 +161,7 @@ class Humans:
             print('you have an incorrect gender string in ' + str(self.excel_index))
         return {i: letter for i, letter in enumerate(gender_string) if letter != '0'}
 
+    def draw(self, display) -> None:
+        for part in self.occupied:
+            pygame.draw.circle(display.screen, colors['participants'],
+                               display.m_to_pixel(self.positions[display.i, part]), 7.)

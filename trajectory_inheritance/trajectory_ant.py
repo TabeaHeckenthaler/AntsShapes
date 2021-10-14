@@ -206,7 +206,7 @@ class Trajectory_ant(Trajectory):
         self.participants = Ants(self)
 
     def averageCarrierNumber(self):
-        self.participants().averageCarrierNumber()
+        self.participants.averageCarrierNumber()
 
-    def step(self, my_load, i, my_maze=None, display=None):
+    def step(self, my_load, i, my_maze=None):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]

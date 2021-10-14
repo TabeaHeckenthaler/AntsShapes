@@ -3,6 +3,7 @@ import scipy.io as sio
 import numpy as np
 from copy import deepcopy
 from os import path
+from trajectory_inheritance.participants import Participants
 
 
 class Ants_Frame:
@@ -16,14 +17,13 @@ class Ants_Frame:
         return len([pos for [pos, car] in zip(self.position, self.carrying) if car])
 
 
-class Ants:
+class Ants(Participants):
     def __init__(self, x):
-        self.filename = x.filename
-        self.VideoChain = [x.old_filenames(0)]
-        self.frames = []
+        super().__init__(x)
         self.pix2cm = np.NaN
-
-        self.matlab_ant_loading(x)
+        self.matlab_loading(x)
+        self.angles = self.get_angles()
+        self.positions = self.get_positions()
 
     def __add__(self, other):
         if self.filename != other.filename:
@@ -39,7 +39,7 @@ class Ants:
         else:
             return None
 
-    def matlab_ant_loading(self, x):
+    def matlab_loading(self, x):
         if not (self.VideoChain[0] == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
             if not path.isfile(MatlabFolder('ant', x.size, x.shape, x.free) + path.sep + self.VideoChain[0]):
                 breakpoint()
@@ -63,17 +63,17 @@ class Ants:
 
                     if x.angle_error[0] == 0:
                         if x.shape == 'LASH':
-                            x.angle_error = [2 * np.pi * 0.11 + self.angle_error[0]]
+                            x.angle_error = [2 * np.pi * 0.11 + x.angle_error[0]]
                         if x.shape == 'RASH':
-                            x.angle_error = [-2 * np.pi * 0.11 + self.angle_error[
+                            x.angle_error = [-2 * np.pi * 0.11 + x.angle_error[
                                 0]]  # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
                             # error in the end_screen... )
 
                         if x.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
                             # crooked, which messes up the contact tracking
-                            x.angle_error = [2 * np.pi * 0.115 + self.angle_error[0]]
+                            x.angle_error = [2 * np.pi * 0.115 + x.angle_error[0]]
                         if x.shape == 'RASH' and self.size == 'XL':
-                            x.angle_error = [-2 * np.pi * 0.115 + self.angle_error[0]]
+                            x.angle_error = [-2 * np.pi * 0.115 + x.angle_error[0]]
 
             self.pix2cm = file['pix2cm']
             matlab_cell = file['ants']
@@ -92,8 +92,14 @@ class Ants:
         else:
             import h5py
             with h5py.File(
-                    MatlabFolder(self.solver, self.size, self.shape, self.free) + path.sep + self.old_filename,
+                    MatlabFolder(x.solver, x.size, x.shape, x.free) + path.sep + x.old_filename,
                     'r') as f:
                 load_center = np.matrix.transpose(f['load_center'][:, :])
 
         return self
+
+    def get_angles(self) -> np.ndarray:
+        return np.array([fr.angle for fr in self.frames])
+
+    def get_positions(self) -> np.ndarray:
+        return np.array([fr.position for fr in self.frames])

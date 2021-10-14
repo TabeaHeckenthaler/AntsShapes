@@ -38,7 +38,7 @@ def Load_Experiment(solver, filename, falseTracking, winner, x_error, y_error, a
     f1, f2 = int(frames[0]) - int(x.frames[0]), int(frames[1]) - int(x.frames[0]) + 1
     x.position, x.angle, x.frames = x.position[f1:f2, :], x.angle[f1:f2], x.frames[f1:f2]
 
-    x = mainGame(x, *args, **kwargs)
+    x = mainGame(x, *args)
     return x
 
 

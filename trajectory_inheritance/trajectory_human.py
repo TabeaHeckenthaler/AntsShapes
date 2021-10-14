@@ -51,6 +51,7 @@ class Trajectory_human(Trajectory):
 
     def step(self, my_load, i, **kwargs):
         my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
+        pass
 
     def averageCarrierNumber(self):
         self.participants.averageCarrierNumber()

@@ -11,6 +11,7 @@ import pickle
 from PhysicsEngine.mainGame import mainGame
 from Directories import SaverDirectories
 from copy import deepcopy
+from Setup.Maze import Maze
 
 """ Making Directory Structure """
 shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
@@ -119,10 +120,11 @@ class Trajectory:
             x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
             x.frames = x.frames[int(f1):int(f2)]
 
-        return mainGame(x, display=True, interval=interval, PhaseSpace=PhaseSpace, ps_figure=ps_figure, wait=wait,
-                        **kwargs)
+        my_maze = Maze(x)
 
-    def save(self, address=None):
+        return mainGame(x, my_maze, display=True, interval=interval, wait=wait)
+
+    def save(self, address=None) -> None:
         if address is None:
             address = SaverDirectories[self.solver] + path.sep + self.filename
 
@@ -134,7 +136,6 @@ class Trajectory:
                 print('Saving ' + self_copy.filename + ' in ' + address)
             except pickle.PicklingError as e:
                 print(e)
-        return
 
     def load_participants(self):
         pass
