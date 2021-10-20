@@ -19,8 +19,8 @@ trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'
 
 
 class Trajectory_ant(Trajectory):
-    def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool,
-                 x_error=None, y_error=None, angle_error=None, falseTracking=None):
+    def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
+                 angle_error=0, falseTracking=None):
 
         filename = NewFileName(old_filename, size, shape, 'exp')
 
@@ -170,7 +170,7 @@ class Trajectory_ant(Trajectory):
             self.position = np.array(load_center)  # array to store the position and angle of the load
             self.angle = np.array(shape_orientation)
 
-        from Analysis_Functions.Velocity import check_for_false_tracking
+        from Analysis.Velocity import check_for_false_tracking
         self.falseTracking = [check_for_false_tracking(self)]
         self.falseTracker()
         self.interpolate_over_NaN()
@@ -207,6 +207,3 @@ class Trajectory_ant(Trajectory):
 
     def averageCarrierNumber(self):
         self.participants.averageCarrierNumber()
-
-    def step(self, my_load, i, my_maze=None):
-        my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]

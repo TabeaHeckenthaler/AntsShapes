@@ -9,7 +9,7 @@ from progressbar import progressbar
 from mayavi import mlab
 import os
 import numpy as np
-from Analysis_Functions.GeneralFunctions import graph_dir
+from Analysis.GeneralFunctions import graph_dir
 from skfmm import travel_time  # use this! https://pythonhosted.org/scikit-fmm/
 from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
 from PS_Search_Algorithms.Dstar_functions import voxel

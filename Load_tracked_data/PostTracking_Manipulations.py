@@ -8,7 +8,7 @@ from PhysicsEngine.mainGame import mainGame
 def SmoothConnector(file1, file2):
     # We use this function, when we want to smoothly connect two datasets, where there was an pause between the tracking
     # Find the velocity at which the shape moved before the pause
-    from Analysis_Functions.Velocity import velocity
+    from Analysis.Velocity import velocity
     from Setup.Load import periodicity
     velocity1 = velocity(file1.position, file1.angle, file1.fps, file1.size, file1.shape, 1, 'x', 'y')
     velocity2 = velocity(file2.position, file2.angle, file2.fps, file2.size, file2.shape, 1, 'x', 'y')

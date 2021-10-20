@@ -21,6 +21,7 @@ class Display:
         self.points = []
         self.wait = wait
         self.i = 0
+        self.renew_screen()
 
     def create_screen(self, free=False, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
@@ -41,11 +42,11 @@ class Display:
     def m_to_pixel(self, r):
         return [int(r[0] * self.ppm), self.height - int(r[1] * self.ppm)]
 
-    def update_screen(self, x, i, PhaseSpace=None, ps_figure=None):
+    def update_screen(self, x, i):
         self.i = i
         if self.wait > 0:
             pygame.time.wait(int(self.wait))
-        self.draw(x=x)
+        self.draw(x)
         end = self.keyboard_events()
         return end
 
@@ -80,14 +81,16 @@ class Display:
 
     def draw(self, x):
         self.my_maze.draw(self)
-
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)
             if hasattr(x.participants, 'positions'):
                 x.participants.draw(self)
-        pygame.display.flip()
+        self.display()
         return
+
+    def display(self):
+        pygame.display.flip()
 
     def draw_contacts(self, contact):
         for contacts in contact:
@@ -96,15 +99,6 @@ class Display:
                                 int(self.height - contacts[1] * self.ppm)],
                                10,
                                )
-
-    def draw_part(self, x):
-        for part in x.participants.occupied:
-            pygame.draw.circle(self.screen, colors['puller'],
-                               [int(x.participants.positions[self.i, part, 0] * self.ppm),
-                                self.height - int(x.participants.positions[self.i, part, 1] * self.ppm)],
-                               7.,
-                               )
-            # TODO force_attachment_positions
 
     def drawGrid(self):
         block = 2

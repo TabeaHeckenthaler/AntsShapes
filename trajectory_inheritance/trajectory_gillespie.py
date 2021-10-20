@@ -24,20 +24,20 @@ class Trajectory_gillespie(Trajectory):
         my_maze = Maze(size=size, shape=shape, solver=solver, free=free)
         self.gillespie = Gillespie(my_maze)
 
-    def step(self, my_load, i, my_maze, display):
+    def step(self, my_maze, i, display):
 
-        my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
+        my_maze.set_configuration(self.position[i], self.angle[i])
 
         if self.gillespie.time_until_next_event < time_step:
-            self.gillespie.time_until_next_event = self.gillespie.whatsNext(my_load)
+            self.gillespie.time_until_next_event = self.gillespie.whatsNext(my_maze.bodies[-1])
 
-        self.forces(my_load, display=display)
+        self.forces(my_maze.bodies[-1], display=display)
 
         self.gillespie.time_until_next_event -= time_step
         my_maze.Step(time_step, 10, 10)
 
-        self.position = np.vstack((self.position, [my_load.position.x, my_load.position.y]))
-        self.angle = np.hstack((self.angle, my_load.angle))
+        self.position = np.vstack((self.position, [my_maze.bodies[-1].position.x, my_maze.bodies[-1].position.y]))
+        self.angle = np.hstack((self.angle, my_maze.bodies[-1].angle))
         return
 
     def forces(self, my_load, pause=False, display=None):

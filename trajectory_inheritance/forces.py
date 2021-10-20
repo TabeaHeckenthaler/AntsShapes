@@ -21,16 +21,17 @@ sheet = get_sheet()
 class Forces:
     def __init__(self, humans, x):
         self.excel_index = humans.excel_index
-        self.date = self.get_date()
-        self.size = humans.size
-        self.directory = self.force_directory()
-        self.synchronization_offset(x.fps)
-        self.filename = self.get_force_filename()
-        self.occupied = humans.occupied
-        self.abs_values = self.forces_loading(humans.frames, x.fps)
-        self.angles = self.get_angles(humans, x)
-        self.angles_load = self.angles - x.angle[:, np.newaxis]
-        self.meters_load = self.get_meters_load(x)
+        if self.get_force_filename() is not None:
+            self.date = self.get_date()
+            self.size = humans.size
+            self.directory = self.force_directory()
+            self.occupied = humans.occupied
+            self.synchronization_offset(x.fps)
+            self.filename = self.get_force_filename()
+            self.abs_values = self.forces_loading(humans.frames, x.fps)
+            self.angles = self.get_angles(humans, x)
+            self.angles_load = self.angles - x.angle[:, np.newaxis]
+            self.meters_load = self.get_meters_load(x)
 
     @staticmethod
     def get_meters_load(x):
@@ -38,6 +39,11 @@ class Forces:
 
     @staticmethod
     def get_angles(humans, x):
+        """
+        :param humans: object of the class Humans
+        :param x: object of the class trajectory_inheritance.trajectory
+        :return: angles of the forces in world coordinates
+        """
         from trajectory_inheritance.humans import angle_shift
         return humans.angles + \
                x.angle[:, np.newaxis] + \
@@ -55,8 +61,15 @@ class Forces:
                                                                               path.sep, path.sep, path.sep, path.sep,
                                                                               path.sep, path.sep)
 
-    def synchronization_offset(self, fps):
-        """ frame of turning on force meter relative to start of the raw movie """
+    def synchronization_offset(self, fps: int):
+        """
+        :param fps: frames per second
+        If there is no force meter measurement return None.
+        :return: frame of turning on force meter relative to start of the raw movie
+        """
+        if sheet.cell(row=self.excel_index, column=16).value == '/':
+            return None
+
         [minute, second] = [int(number) for number in
                             sheet.cell(row=self.excel_index, column=16).value.strip()[:-3].split(':')]
         frame_force_meter = (second + minute * 60) * fps
@@ -74,7 +87,7 @@ class Forces:
         if txt_name.endswith('.txt'):
             return txt_name
         elif txt_name == '/':
-            return ''
+            return None
         else:
             print('You still have to add the name of the force file in line ' + str(self.excel_index))
         return txt_name

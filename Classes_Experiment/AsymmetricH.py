@@ -3,7 +3,7 @@ from os import getcwd
 import numpy as np
 from Setup.Maze import Maze
 from os import listdir, path, walk
-from Analysis_Functions.GeneralFunctions import read_text_file
+from Analysis.GeneralFunctions import read_text_file
 from Directories import SaverDirectories, trackedAntMovieDirectory, NewFileName
 from trajectory_inheritance.trajectory import get
 from Load_tracked_data.Load_Experiment import Load_Experiment
@@ -79,7 +79,7 @@ class Series():
         return [x - StartingTimes[0] for x in StartingTimes]
 
     def plot(self, valueList, function_name, *args, **kwargs):
-        from Analysis_Functions.GeneralFunctions import graph_dir
+        from Analysis.GeneralFunctions import graph_dir
 
         plt.close()
         fig = plt.gcf()

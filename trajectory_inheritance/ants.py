@@ -41,9 +41,9 @@ class Ants(Participants):
 
     def matlab_loading(self, x):
         if not (self.VideoChain[0] == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
-            if not path.isfile(MatlabFolder('ant', x.size, x.shape, x.free) + path.sep + self.VideoChain[0]):
+            if not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + self.VideoChain[0]):
                 breakpoint()
-            file = sio.loadmat(MatlabFolder('ant', x.size, x.shape, x.free) + path.sep + self.VideoChain[0])
+            file = sio.loadmat(MatlabFolder('ant', x.size, x.shape) + path.sep + self.VideoChain[0])
 
             if 'Direction' not in file.keys() and x.shape.endswith('ASH'):
                 # file['Direction'] = input('L2R or R2L  ')
@@ -92,7 +92,7 @@ class Ants(Participants):
         else:
             import h5py
             with h5py.File(
-                    MatlabFolder(x.solver, x.size, x.shape, x.free) + path.sep + x.old_filename,
+                    MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.old_filename,
                     'r') as f:
                 load_center = np.matrix.transpose(f['load_center'][:, :])
 

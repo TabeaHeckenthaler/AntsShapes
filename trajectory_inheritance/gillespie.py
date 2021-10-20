@@ -2,7 +2,7 @@
 # titled 'Ants optimally amplify... '
 import numpy as np
 from Box2D import b2Vec2
-from Analysis_Functions.GeneralFunctions import rot
+from Analysis.GeneralFunctions import rot
 from Setup.Load import Corners_Phis
 
 """

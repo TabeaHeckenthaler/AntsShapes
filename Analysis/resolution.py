@@ -12,7 +12,7 @@ from Setup.Maze import ResizeFactors
 
 if __name__ == '__main__':
     df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
-    df_dir = home + 'Analysis_Functions\\resolution_noise_exp'
+    df_dir = home + 'Analysis\\resolution_noise_exp'
 # StartedScripts: resolution dependent on object size
 
 # x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')

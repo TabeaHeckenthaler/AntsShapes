@@ -3,7 +3,7 @@ from scipy.ndimage import median_filter
 import numpy as np
 from Setup.MazeFunctions import extend
 from Setup.Maze import Maze
-from Setup.Load import getLoadDim, Loops, Load
+from Setup.Load import Loops
 from trajectory_inheritance.trajectory import get
 
 smoothing_window = 6
@@ -149,17 +149,14 @@ if __name__ == '__main__':
     solver = 'human'
     x = get('medium_20201221135753_20201221140218', solver)
     attempts = [False]
-    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
+    my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver, position=x.position[0], angle=x.angle[0])
     my_attempt_zone = AddAttemptZone(my_maze, x)
-    my_load = Load(my_maze)
-    my_load.position = x.position[0]
-    my_load.angle = x.angle[0]
 
     starting_line = -AttemptZoneDim(x.solver, x.shape, x.size, my_maze)[0] + my_maze.slits[0]
     finish_line = my_maze.slits[-1] + my_maze.wallthick
 
-    for i in range(10):
-        attempts = attempts + Attempt_loop(finish_line, my_attempt_zone, my_load, **kwargs)
-        kwargs['attempt'] = attempts[-1]
+    # for i in range(10):
+    #     attempts = attempts + Attempt_loop(finish_line, my_attempt_zone, my_load, **kwargs)
+    #     kwargs['attempt'] = attempts[-1]
 
-    x = Attempt_setup(x, my_load, my_attempt_zone, starting_line)
+    x = Attempt_setup(x, my_maze.bodies[-1], my_attempt_zone, starting_line)

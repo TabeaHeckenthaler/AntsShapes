@@ -1,7 +1,7 @@
 from PhysicsEngine.Contact import Contact_analyzer_2
 from Classes_Experiment.bundle import Bundle
 from progressbar import progressbar
-from Analysis_Functions.GeneralFunctions import graph_dir
+from Analysis.GeneralFunctions import graph_dir
 from os import path
 import plotly.express as px
 import datetime

@@ -2,10 +2,10 @@ from scipy.spatial import cKDTree
 from Setup.MazeFunctions import BoxIt
 import numpy as np
 from Setup.Maze import Maze, maze_corners
-from Analysis_Functions.Velocity import velocity_x
+from Analysis.Velocity import velocity_x
 from Setup.Load import Loops
 from Setup.Load import Load
-from Analysis_Functions.GeneralFunctions import flatten
+from Analysis.GeneralFunctions import flatten
 
 # maximum distance between fixtures to have a contact (in cm)
 distance_upper_bound = 0.04
@@ -23,7 +23,7 @@ def find_contact(x, display=False):
 
     i = 0
     while i < len(x.frames):
-        x.step(my_load, i)  # update_screen the position of the load (very simple function, take a look)
+        x.step(my_maze, i)  # update_screen the position of the load (very simple function, take a look)
 
         if not pause:
             contact.append(Contact_loop(my_load, my_maze))

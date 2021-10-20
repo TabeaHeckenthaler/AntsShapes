@@ -34,7 +34,7 @@ from PS_Search_Algorithms.classes.Node import Node
 from mayavi import mlab
 import os
 import numpy as np
-from Analysis_Functions.GeneralFunctions import graph_dir
+from Analysis.GeneralFunctions import graph_dir
 
 show_animation = True
 

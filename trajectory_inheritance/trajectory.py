@@ -12,12 +12,13 @@ from PhysicsEngine.mainGame import mainGame
 from Directories import SaverDirectories
 from copy import deepcopy
 from Setup.Maze import Maze
+from PhysicsEngine.Display import Display
 
 """ Making Directory Structure """
 shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
           'human': ['SPT']}
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
-         'human': ['S', 'M', 'L'],
+         'human': ['Small Far', 'Small Near', 'Medium', 'Large'],
          'humanhand': ''}
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
@@ -57,8 +58,8 @@ class Trajectory:
         string = '\n' + self.filename
         return string
 
-    def step(self, *args):
-        pass
+    def step(self, my_maze, i, *args):
+        my_maze.set_configuration(self.position[i], self.angle[i])
 
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
@@ -122,7 +123,7 @@ class Trajectory:
 
         my_maze = Maze(x)
 
-        return mainGame(x, my_maze, display=True, interval=interval, wait=wait)
+        return mainGame(x, my_maze, display=Display(x, my_maze))
 
     def save(self, address=None) -> None:
         if address is None:

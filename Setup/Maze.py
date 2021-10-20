@@ -5,6 +5,7 @@ from scipy.spatial import cKDTree
 from pandas import read_excel
 from Directories import home
 from PhysicsEngine.drawables import Polygon, Point, Circle, colors
+from copy import copy
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
@@ -66,6 +67,10 @@ class Maze(b2World):
             self.shape = args[0].shape  # loadshape (maybe this will become name of the maze...)
             self.size = args[0].size  # size
             self.solver = args[0].solver
+            if position is None:
+                position = args[0].position[0]
+            if position is None:
+                position = args[0].angle[0]
 
         else:
             self.shape = shape  # loadshape (maybe this will become name of the maze...)
@@ -74,13 +79,14 @@ class Maze(b2World):
 
         self.free = free
         self.statenames = StateNames[shape]
-        self.getMazeDim(free)
-        self.body = self.CreateMaze(free)
-        self.get_zone(free)
+        self.getMazeDim()
+        self.body = self.CreateMaze()
+        self.get_zone()
+
         self.create_Load(position=position, angle=angle, point_particle=point_particle)
 
-    def getMazeDim(self, free):
-        if free:
+    def getMazeDim(self):
+        if self.free:
             self.arena_height = 10
             self.arena_length = 10
             return
@@ -134,13 +140,15 @@ class Maze(b2World):
 
             self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
 
-    def CreateMaze(self, free):
+    def CreateMaze(self):
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='my_maze'))
-        if free:
+
+        if self.free:
             my_maze.CreateLoopFixture(
                 vertices=[(0, 0), (0, self.arena_height * 3), (self.arena_length * 3, self.arena_height * 3),
                           (self.arena_length * 3, 0)])
         else:
+
             my_maze.CreateLoopFixture(
                 vertices=[(0, 0),
                           (0, self.arena_height),
@@ -259,8 +267,8 @@ class Maze(b2World):
 
         self.slitTree = cKDTree(self.slitTree)
 
-    def get_zone(self, free=False):
-        if free:
+    def get_zone(self):
+        if self.free:
             self.zone = np.empty([0, 2])
             return
         if self.shape == 'SPT':
@@ -300,16 +308,18 @@ class Maze(b2World):
     #         transitions[s[6]] = [s[6], s[5]]
     #         return transitions[self.states[From]].count(To) > 0
 
+    def set_configuration(self, position, angle):
+        self.bodies[-1].position.x, self.bodies[-1].position.y, self.bodies[-1].angle = position[0], position[1], angle
+
     def minimal_path_length(self):
-        from DataFrame.create_dataframe import df
+        from DataFrame.dataFrame import myDataFrame
         from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-        p = df.loc[df['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
+        p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
         return p.values[0][0]
 
     def create_Load(self, position=None, angle=0, point_particle=False):
         if position is None:
             position = [0, 0]
-
         self.CreateBody(b2BodyDef(position=(float(position[0]), float(position[1])),
                                   angle=float(angle),
                                   type=b2_dynamicBody,
@@ -530,6 +540,15 @@ class Maze(b2World):
             if not short_edge:
                 SPT_Human_sizes = SPT_Human_sizes[:3]
             return SPT_Human_sizes
+
+    def force_attachment_positions_in_trajectory(self, x):
+        initial_pos, initial_angle = copy(self.bodies[-1].position), copy(self.bodies[-1].angle)
+        force_attachment_positions_in_trajectory = []
+        for i in range(len(x.frames)):
+            self.set_configuration(x.position[i], x.angle[i])
+            force_attachment_positions_in_trajectory.append(self.force_attachment_positions())
+        self.set_configuration(initial_pos, initial_angle)
+        return np.array(force_attachment_positions_in_trajectory)
 
     def force_attachment_positions(self):
         from trajectory_inheritance.humans import participant_number

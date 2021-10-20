@@ -1,7 +1,7 @@
 import pandas as pd
-from DataFrame.create_dataframe import df_dir
+from Directories import df_dir
 from matplotlib import pyplot as plt
-from Analysis_Functions.GeneralFunctions import graph_dir, non_duplicate_legend, three_D_plotting, colors
+from Analysis.GeneralFunctions import graph_dir, non_duplicate_legend, three_D_plotting, colors
 from os import path
 import numpy as np
 from matplotlib.transforms import Affine2D
@@ -159,11 +159,10 @@ def SPT_figure(measure='path length/exit size []'):
 Human Maze: Path length SPT divided by communication and non-communication
 """
 
-
 def human_figure():
     sizes_order = ['S', 'M', 'L']
     # df_human = df.iloc[df_gr_solver.groups['human']][['maze size', 'communication', 'path length/exit size []']]
-    df_human = df.groupby('solver').getgroup('human')[['maze size', 'communication', 'path length/exit size []']]
+    df_human = df.groupby('solver').get_group('human')[['maze size', 'communication', 'path length/exit size []']]
     group = df_human.groupby(by=['maze size', 'communication'])
     means = group.mean().unstack().reindex(sizes_order)
     sem = group.sem().unstack().reindex(sizes_order)
@@ -180,9 +179,13 @@ def human_figure():
                 format='svg', pad_inches=1, bbox_inches='tight')
 
 
+human_figure()
+
 """
 Human Maze: Path length SPT divided by communication and non-communication
 """
+# for shape in ['I', 'T', 'H', 'SPT']:
+#     dstar_figure(shape=shape)
 
 
 def dstar_figure(shape='SPT'):
@@ -209,10 +212,6 @@ def dstar_figure(shape='SPT'):
                 format='pdf', pad_inches=1, bbox_inches='tight')
     fig.savefig(graph_dir() + path.sep + 'dstar_' + shape + '.svg',
                 format='svg', pad_inches=1, bbox_inches='tight')
-
-
-for shape in ['I', 'T', 'H', 'SPT']:
-    dstar_figure(shape=shape)
 
 
 def difficulty(df, shapes, dil_radius=10, sensing_radius=5, measure='path length/exit size []'):

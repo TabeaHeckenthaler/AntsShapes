@@ -6,7 +6,7 @@ colors = {'my_maze': (0, 0, 0),
           'my_attempt_zone': (0, 128, 255),
           'text': (0, 0, 0),
           'background': (250, 250, 250),
-          'contact': (51, 255, 51),
+          'hats': (51, 255, 51),
           'grid': (220, 220, 220),
           'arrow': (135, 206, 250),
           'participants': (0, 0, 0),
@@ -86,3 +86,14 @@ class Circle(Drawables):
         if self.hollow:
             pygame.draw.circle(display.screen, colors['background'],
                                display.m_to_pixel(self.center), int(self.radius * display.ppm) - 3)
+
+
+class Line(Drawables):
+    def __init__(self, start, end, color=colors['text']):
+        super().__init__(color)
+        self.start = start
+        self.end = end
+
+    def draw(self, display) -> None:
+        pygame.draw.line(display.screen, self.color, display.m_to_pixel(self.start),
+                         display.m_to_pixel(self.end), width=4)

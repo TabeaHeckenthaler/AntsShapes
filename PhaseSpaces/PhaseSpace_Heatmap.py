@@ -2,18 +2,18 @@ from PhaseSpaces import PhaseSpace
 import os
 import numpy as np
 from mayavi import mlab
-from Analysis_Functions.GeneralFunctions import graph_dir
-from DataFrame.create_dataframe import df
-from trajectory_inheritance import get
+from Analysis.GeneralFunctions import graph_dir
+from DataFrame.dataFrame import myDataFrame
+from trajectory_inheritance.trajectory import get
 from Directories import data_home
 
-filenames_group = df[['filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
+filenames_group = myDataFrame[['filename', 'solver', 'maze size', 'shape']].groupby(['solver', 'maze size', 'shape'])
 
 for (solver, size, shape), df1 in filenames_group:
     for index in df1.index[::4]:
         if solver != 'humanhand':
             filename = df1['filename'].loc[index]
-            x = Get(filename, solver)
+            x = get(filename, solver)
 
             position = np.vstack([position, x.position])
             angle = np.hstack([angle, x.angle])

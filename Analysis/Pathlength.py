@@ -1,10 +1,10 @@
 import numpy as np
 from Setup.MazeFunctions import MeasureDistance, ConnectAngle
 from Setup.Attempts import Attempts
-from Setup.Load import average_radius
-from Analysis_Functions.resolution import resolution
+from Analysis.resolution import resolution
 from matplotlib import pyplot as plt
 from progressbar import progressbar
+from Setup.Maze import Maze
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
@@ -61,7 +61,7 @@ def path_length_per_experiment(x, **kwargs):
 
     return calculate_path_length(x.position[0: end],
                                  x.angle[0: end],
-                                 average_radius(x.size, x.shape, x.solver),
+                                 Maze(x).average_radius(),
                                  x.shape,
                                  x.size,
                                  x.solver,
@@ -81,7 +81,7 @@ def path_length_during_attempts(x, *args, attempts=None, **kwargs):
     for attempt in attempts:
         total += calculate_path_length(x.position[attempt[0]: attempt[1]],
                                        x.angle[attempt[0]: attempt[1]],
-                                       average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver, rot=True)
+                                       Maze(x).average_radius(), x.shape, x.size, x.solver, rot=True)
     #
     # if total < Maze(size=x.size, shape=x.shape, solver=x.solver).minimal_path_length:
     #     print(x)
@@ -100,7 +100,7 @@ def mean_path_length_per_attempt(x, *args, attempts=None, **kwargs):
     for attempt in attempts:
         path_per_att.append(calculate_path_length(x.position[attempt[0]: attempt[1]],
                                                   x.angle[attempt[0]: attempt[1]],
-                                                  average_radius(x.size, x.shape, x.solver),
+                                                  Maze(x).average_radius(),
                                                   x.shape, x.size, x.solver, rot=True,
                                                   )
                             )
@@ -112,5 +112,5 @@ if __name__ == '__main__':
     p = [resolution(size, 'ant') for size in sizes['ant']]
     x = get('M_H_4180002_1_ants', 'ant')
     # x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
-    calculate_path_length(x.position, x.angle, average_radius(x.size, x.shape, x.solver), x.shape, x.size, x.solver,
+    calculate_path_length(x.position, x.angle, Maze(x).average_radius(), x.shape, x.size, x.solver,
                           rot=True, plot=True)

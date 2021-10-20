@@ -40,9 +40,6 @@ class Trajectory_humanhand(Trajectory):
     def load_participants(self):
         self.participants = Humanhand(self)
 
-    def step(self, my_load, i):
-        my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
-
     def averageCarrierNumber(self):
         return 1
 

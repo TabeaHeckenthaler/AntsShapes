@@ -8,7 +8,7 @@ Created on Sun Apr 26 18:41:04 2020
 from Box2D import b2ContactListener
 import numpy as np
 import pygame
-from Analysis_Functions.GeneralFunctions import flatten
+from Analysis.GeneralFunctions import flatten
 from matplotlib import pyplot as plt
 
 
@@ -225,7 +225,7 @@ def ConnectAngle(angle, shape):
 
 
 def extend(x, start_or_end, x_distance, *args):
-    from Analysis_Functions.Velocity import velocity_x
+    from Analysis.Velocity import velocity_x
     # print('I am extending ' + x.filename + ' at the ' + start_or_end)
 
     vel = np.sqrt(

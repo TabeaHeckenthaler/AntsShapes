@@ -18,6 +18,9 @@ excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.
                                                                                        path.sep,
                                                                                        path.sep, path.sep)
 
+df_dir = data_home + 'DataFrame\\data_frame'
+
+
 def ps_path(size, shape, solver, point_particle=False):
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
@@ -46,22 +49,17 @@ trackedHumanMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experime
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'
 
 
-def MatlabFolder(solver, size, shape, free):
+def MatlabFolder(solver, size, shape):
     if solver == 'ant':
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
                                'SPT': 'Special T', 'T': 'T'}
-        if not free:
-            return trackedAntMovieDirectory + path.sep + 'Slitted' + path.sep + shape_folder_naming[
-                shape] + path.sep + size + path.sep + 'Output Data'
-        if free:
-            return trackedAntMovieDirectory + path.sep + 'Free' + path.sep + 'Output Data' + path.sep + \
-                   shape_folder_naming[shape]
+        return trackedAntMovieDirectory + path.sep + 'Slitted' + path.sep + shape_folder_naming[
+            shape] + path.sep + size + path.sep + 'Output Data'
+
     if solver == 'human':
-        if not free:
-            return trackedHumanMovieDirectory + path.sep + size + path.sep + 'Data'
-        if free:
-            return trackedHumanMovieDirectory + path.sep + size + path.sep + 'Data'
+        return trackedHumanMovieDirectory + path.sep + size + path.sep + 'Data'
+
     if solver == 'humanhand':
         return trackedHumanHandMovieDirectory
 

@@ -2,7 +2,7 @@ import numpy as np
 from Setup.MazeFunctions import ConnectAngle
 from scipy.ndimage import gaussian_filter
 from scipy.optimize import curve_fit
-from Analysis_Functions.GeneralFunctions import ranges, gauss
+from Analysis.GeneralFunctions import ranges, gauss
 from matplotlib import pyplot as plt
 
 max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
