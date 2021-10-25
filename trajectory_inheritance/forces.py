@@ -26,7 +26,6 @@ class Forces:
             self.size = humans.size
             self.directory = self.force_directory()
             self.occupied = humans.occupied
-            self.synchronization_offset(x.fps)
             self.filename = self.get_force_filename()
             self.abs_values = self.forces_loading(humans.frames, x.fps)
             self.angles = self.get_angles(humans, x)
@@ -70,6 +69,9 @@ class Forces:
         if sheet.cell(row=self.excel_index, column=16).value == '/':
             return None
 
+        if sheet.cell(row=self.excel_index, column=16).value is None:
+            raise Exception('Fill in the Force synchronization time in line ' + str(self.excel_index))
+
         [minute, second] = [int(number) for number in
                             sheet.cell(row=self.excel_index, column=16).value.strip()[:-3].split(':')]
         frame_force_meter = (second + minute * 60) * fps
@@ -79,18 +81,21 @@ class Forces:
             frame_force_meter = - frame_force_meter
 
         """ time of tracking relative to start of the raw movie """
-        frame_tracking = int(sheet.cell(row=self.excel_index, column=8).value)
+        raw_string = sheet.cell(row=self.excel_index, column=8).value
+        if ', ' in raw_string:
+            frame_tracking = int(raw_string.split(', ')[0])
+        else:
+            frame_tracking = int(raw_string.split('\n')[0])
         return frame_tracking - frame_force_meter
 
     def get_force_filename(self):
         txt_name = sheet.cell(row=self.excel_index, column=19).value
-        if txt_name.endswith('.txt'):
+        if txt_name.endswith('.txt') or txt_name.endswith('.TXT'):
             return txt_name
         elif txt_name == '/':
             return None
         else:
-            print('You still have to add the name of the force file in line ' + str(self.excel_index))
-        return txt_name
+            raise ValueError('You still have to add the name of the force file in line ' + str(self.excel_index))
 
     def forces_loading(self, frames, fps):
         from trajectory_inheritance.humans import participant_number
@@ -141,6 +146,13 @@ class Forces:
 
         abs_values = []
         # write the force into the self.frame[:].forces variable
+        if len(forces_all_frames) < len(frames) + synch_offset:
+            if 'battery' in sheet.cell(row=self.excel_index, column=18).value:
+                print('Battery empty')
+                empty = [0.0 for _ in range(len(forces_all_frames[0]))]
+                missing_frames = range(len(forces_all_frames) - len(frames)+1)
+                [forces_all_frames.append(empty) for _ in missing_frames]
+
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
             abs_values.append(forces_all_frames[force_index])
         return self.remove_force_outliers(np.array(abs_values))
@@ -202,3 +214,4 @@ class Forces:
     #             f.write('missing frames: ' +
     #                     str(len([i for i in range(len(human.frames))
     #                              if np.isnan(human.frames[i].forces[0])])) + '\n')
+

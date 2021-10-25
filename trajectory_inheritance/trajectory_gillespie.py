@@ -46,7 +46,6 @@ class Trajectory_gillespie(Trajectory):
         my_load.angularVelocity = 0 * my_load.angularVelocity
 
         """ Magnitude of forces """
-        display.arrows = []
 
         for i in range(len(self.gillespie.n_p)):
             start = self.gillespie.attachment_site_world_coord(my_load, i)
@@ -62,12 +61,13 @@ class Trajectory_gillespie(Trajectory):
             else:
                 Point(start, end).draw(display)
 
-    def run_simulation(self, frameNumber, display=True, free=False, wait=0):
+    def run_simulation(self, frameNumber, free=False):
         my_maze = Maze(size=self.size, shape=self.shape, solver='sim', free=free)
         self.frames = np.linspace(1, frameNumber, frameNumber)
         self.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
-        mainGame(self, my_maze, display=display, wait=wait)
+        from PhysicsEngine.Display import Display
+        mainGame(self, my_maze, display=Display(self, my_maze, wait=10))
 
     def load_participants(self):
         self.participants = self.gillespie

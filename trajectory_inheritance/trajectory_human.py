@@ -12,9 +12,9 @@ length_unit = 'm'
 
 
 class Trajectory_human(Trajectory):
-    # TODO: Check the fps of the human pickles (that they are all 30 fr/s)!
-    def __init__(self, size=None, shape=None, filename=None, fps=30, winner=bool, x_error=None,
-                 y_error=None, angle_error=None, falseTracking=None, VideoChain=str(), forcemeter=bool()):
+    def __init__(self, size=None, shape=None, filename=None, fps=30, winner=bool, x_error: float = 0,
+                 y_error: float = 0, angle_error: float = 0, falseTracking: list = [], VideoChain=str(),
+                 forcemeter=bool()):
 
         super().__init__(size=size, shape=shape, solver='human', filename=filename, fps=fps, winner=winner)
 
@@ -24,7 +24,7 @@ class Trajectory_human(Trajectory):
         self.falseTracking = falseTracking
         self.tracked_frames = []
         self.state = np.empty((1, 1), int)
-        self.VideoChain = VideoChain
+        self.VideoChain = VideoChain  # this is an evil artifact. I don't want to have this attribute
         self.communication = self.communication()
         self.forcemeter = forcemeter
 
@@ -49,6 +49,13 @@ class Trajectory_human(Trajectory):
         else:
             self.position = np.array(load_center)  # array to store the position and angle of the load
             self.angle = np.array(shape_orientation)
+
+        for frames in self.falseTracking:
+            self.position[frames[0]: frames[1]] = np.linspace(self.position[frames[0]], self.position[frames[1]],
+                                                              num=frames[1]-frames[0])
+            self.angle[frames[0]: frames[1]] = np.linspace(self.angle[frames[0]], self.angle[frames[1]],
+                                                           num=frames[1]-frames[0])
+
         self.interpolate_over_NaN()
 
     def communication(self):
@@ -62,4 +69,7 @@ class Trajectory_human(Trajectory):
             self.participants = Humans(self)
 
     def averageCarrierNumber(self):
+        if not hasattr(self, 'participants'):
+            self.load_participants()
         self.participants.averageCarrierNumber()
+        return self.participants.number

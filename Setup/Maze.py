@@ -641,14 +641,11 @@ class Maze(b2World):
                 Point(np.array(body.position)).draw(display)
 
     def average_radius(self):
-        # TODO: Check this function!
-        print('check the average_radius function!')
         r = ResizeFactors[self.solver][self.size]
-        SPT_radius = 0.76791  # you have to multiply this with the shape width to get the average radius
         radii = {'H': 2.9939 * r,
                  'I': 2.3292 * r,
                  'T': 2.9547 * r,
-                 'SPT': SPT_radius * self.getLoadDim()[1],
+                 'SPT': 0.76791 * self.getLoadDim()[1],
                  'RASH': 2 * 1.6671 * r,
                  'LASH': 2 * 1.6671 * r}
         return radii[self.shape]

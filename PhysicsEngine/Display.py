@@ -14,7 +14,7 @@ class Display:
 
         pygame.font.init()  # display and fonts
         self.font = pygame.font.Font('freesansbold.ttf', 25)
-        self.screen = self.create_screen()
+        self.screen = self.create_screen(x)
         self.arrows = []
         self.circles = []
         self.polygons = []
@@ -23,16 +23,15 @@ class Display:
         self.i = 0
         self.renew_screen()
 
-    def create_screen(self, free=False, caption=str()) -> pygame.surface:
+    def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
 
-        if free:  # screen size dependent on trajectory_inheritance
+        if x.free:  # screen size dependent on trajectory_inheritance
             print('free, I have a problem')
-            # TODO: fix the screen size of free trajectories
-            # PPM = int(1000 / (np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10))  # pixels per meter
-            # SCREEN_WIDTH = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * PPM)
-            # SCREEN_HEIGHT = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * PPM)
+            self.ppm = int(1000 / (np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10))  # pixels per meter
+            self.width = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * self.ppm)
+            self.height = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * self.ppm)
 
         screen = pygame.display.set_mode((self.width, self.height), 0, 32)
         if self.my_maze is not None:

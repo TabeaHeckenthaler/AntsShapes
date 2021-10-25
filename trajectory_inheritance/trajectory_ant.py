@@ -3,14 +3,14 @@ from Directories import SaverDirectories, NewFileName
 from copy import deepcopy
 import numpy as np
 import scipy.io as sio
-from os import path
+from os import path, remove
 
 length_unit = 'cm'
 
 
-def ant_address(filename, solver):
-    if path.isfile(SaverDirectories[solver] + path.sep + filename):
-        return SaverDirectories[solver] + path.sep + filename
+def ant_address(filename):
+    if path.isfile(SaverDirectories['ant'] + path.sep + filename):
+        return SaverDirectories['ant'] + path.sep + filename
     print('Cannot find the file')
 
 
@@ -35,7 +35,7 @@ class Trajectory_ant(Trajectory):
         self.different_dimensions = 'L_I_425' in self.filename
 
     def __del__(self):
-        pass  # TODO: when you connect experiments, you should delete the part you added...
+        remove(ant_address(self.filename))
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}

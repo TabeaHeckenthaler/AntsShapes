@@ -51,6 +51,11 @@ def get_excel_worksheet_index(filename) -> int:
                 if in_filled_lines and times_list[ii] in old_filename_times]) > 1:
             indices.append(i)
 
+    if filename == 'medium_20201220103118_20201220110157_2':
+        return 4
+    if filename == 'medium_20201220103118_20201220110157':
+        return 5
+
     if len(indices) == 1:
         return indices[0]
     elif len(times_list[-1]) > 1:  # has to be the first run
@@ -88,18 +93,59 @@ class Humans(Participants, ABC):
         if sheet.cell(row=self.excel_index, column=19).value != '/':
             self.forces = Forces(self, x)
 
+    def interpolate_falling_hats(self, matlab_cell):
+        hats_initial = set(np.array(matlab_cell[0][:, 4], dtype=int))
+        if len(hats_initial) != len(self.occupied):
+            raise ValueError('Your list of participants in Testable.xlxs line ' + str(self.excel_index) +
+                             ' is not the same as the tracking.')
+
+        def ranges(nums):
+            nums = sorted(set(nums))
+            gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s + 1 < e]
+            edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
+            edges = list(zip(edges, edges))
+            return [(a, b+1) for (a, b) in edges]
+
+        def add_interpolation(missing_ID):
+            start = matlab_cell[frame1 - 1][:, :-1][matlab_cell[frame1 - 1][:, 4] == missing_ID][0]
+
+            if len(matlab_cell) == frame2:
+                end = start  # lost frame in the last frame, so we assume the hat didn't move in the end
+            else:
+                end = matlab_cell[frame2][:, :-1][matlab_cell[frame2][:, 4] == missing_ID][0]
+
+            interpolated = np.linspace(start, end, frame2 - frame1)
+            for i, frame in enumerate(range(frame1, frame2)):
+                matlab_cell[frame] = np.vstack([matlab_cell[frame][:missing_ID - 1],
+                                                np.array([*interpolated[i], missing_ID]),
+                                                matlab_cell[frame][missing_ID - 1:]])
+
+        def delete(hat):
+            matlab_cell[frame] = np.delete(matlab_cell[frame],
+                                           np.where(matlab_cell[frame][:, 4] == hat)[0],
+                                           0)
+        for hat in hats_initial:
+            interpolate_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
+            for frame1, frame2 in ranges(interpolate_frames):
+                add_interpolation(hat)
+
+        new_hats_frames = [i for i, frame in enumerate(matlab_cell) if frame.shape != (len(self.occupied), 5)]
+        for frame in new_hats_frames:
+            additional_hats = set(np.array(matlab_cell[frame][:, 4], dtype=int)) - hats_initial
+            for hat in additional_hats:
+                delete(hat)
+        return matlab_cell
+
     def matlab_loading(self, x) -> None:
-        file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape) + path.sep + self.VideoChain[0])
-        matlab_cell = file['hats']
+        file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.filename)
+        matlab_cell = np.squeeze(file['hats'])
 
         Medium_id_correction_dict = {1: 1, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2}
 
-        # # for falsely tracked angles
-        # if x.filename in ['medium_20201223130749_20201223131147', 'medium_20201223125622_20201223130532']:
-        #     my_maze = Maze(x)
-
+        self.interpolate_falling_hats(matlab_cell)
+        my_maze = Maze(x)
         for i, Frame in enumerate(matlab_cell):
-            data = Frame[0]
+            data = Frame
 
             # to sort the data
             humans_frame = Humans_Frame(self.size)
@@ -109,7 +155,6 @@ class Humans(Participants, ABC):
                 data = data[data[:, 4].argsort()]
 
             if x.size in ['Medium', 'Large']:
-
                 if x.filename == 'large_20210419100024_20210419100547':
                     for false_reckog in [8., 9.]:
                         index = np.where(data[:, 4] == false_reckog)
@@ -122,14 +167,7 @@ class Humans(Participants, ABC):
                 if x.size == 'Large':
                     pass
 
-                data = data[data[:, 4].argsort()]
-
-                # tracked participants have a carrying boolean, and an angle to their force meter
-                if data[:, 2:4].shape[0] != len(self.occupied):
-                    data = self.add_missed_hat(matlab_cell[i-1][0], data)
-                    matlab_cell[i][0] = data
-
-                humans_frame.position[self.occupied] = data[:, 2:4] + np.array([x.x_error[0], x.y_error[0]])
+                humans_frame.position[self.occupied] = data[:, 2:4] + np.array([x.x_error, x.y_error])
 
                 # if force meters were installed, then only carrying boolean and angle were included in .mat file
                 if data.shape[1] > 5:
@@ -139,19 +177,15 @@ class Humans(Participants, ABC):
                     if x.filename not in ['medium_20201223130749_20201223131147',
                                           'medium_20201223125622_20201223130532']:
                         # here, the identities were given wrong in the tracking
-                        humans_frame.angle[self.occupied] = data[:, 6] * np.pi / 180 + x.angle_error[0]
+                        humans_frame.angle[self.occupied] = data[:, 6] * np.pi / 180 + x.angle_error
                     else:
-                        humans_frame.angle[self.occupied] = data[:, 6] * np.pi / 180 + x.angle_error[0]
-                        my_maze = Maze(x)
+                        humans_frame.angle[self.occupied] = data[:, 6] * np.pi / 180 + x.angle_error
                         my_maze.set_configuration(x.position[i], x.angle[i])
                         humans_frame.angle[self.occupied] = self.angle_to_forcemeter(humans_frame.position, my_maze,
                                                                                      x.angle[i], x.size)
 
             self.frames.append(humans_frame)
         return
-
-    def add_missed_hat(self, data_full, data_missing):
-        return data_full
 
     def angle_to_forcemeter(self, positions, my_maze, angle, size) -> np.ndarray:
         r = positions[self.occupied] - self.force_attachment_positions(my_maze)[self.occupied]

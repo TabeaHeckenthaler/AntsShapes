@@ -23,10 +23,17 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
 
+length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'ps_simulation': 'cm'}
+
+
+def length_unit_func(solver):
+    return length_unit[solver]
+
+
 def get(filename, solver, address=None):
     if solver == 'ant':
         from trajectory_inheritance.trajectory_ant import ant_address
-        address = ant_address(filename, solver)
+        address = ant_address(filename)
 
     if path.isfile(SaverDirectories[solver] + path.sep + filename):
         address = SaverDirectories[solver] + path.sep + filename
@@ -90,26 +97,11 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, interval=1, PhaseSpace=None, ps_figure=None, wait=0, indices=None, **kwargs):
+    def play(self, indices=None):
         r"""Displays a given trajectory_inheritance (self)
-
-        :Non-key-worded Arguments:
-            * *attempt* --
-              when passed, an attempt zone is installed and a parameter
-
         :Keyword Arguments:
-            * *interval* (``int``) --
-              Display only every nth frame
-            * *PhaseSpace* (``PhaseSpace``) --
-              PhaseSpace in which the shape is moving
-            * *ps_figure* (``mayavi figure``) --
-              figure in which the PhaseSpace is displayed and the trajectory_inheritance shall be drawn
-            * *wait* (``int``) --
-              milliseconds between the display of consecutive frames
             * *indices* (``[int, int]``) --
               starting and ending frame of trajectory_inheritance, which you would like to display
-            * *attempt* (``bool``) --
-              milliseconds between the display of consecutive frames
         """
         x = deepcopy(self)
 
@@ -132,7 +124,8 @@ class Trajectory:
         with open(address, 'wb') as f:
             try:
                 self_copy = deepcopy(self)
-                delattr(self_copy, 'participants')
+                if hasattr(self_copy, 'participants'):
+                    delattr(self_copy, 'participants')
                 pickle.dump(self_copy, f)
                 print('Saving ' + self_copy.filename + ' in ' + address)
             except pickle.PicklingError as e:

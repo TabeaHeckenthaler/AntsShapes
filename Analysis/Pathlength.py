@@ -3,7 +3,7 @@ from Setup.MazeFunctions import MeasureDistance, ConnectAngle
 from Setup.Attempts import Attempts
 from Analysis.resolution import resolution
 from matplotlib import pyplot as plt
-from progressbar import progressbar
+
 from Setup.Maze import Maze
 
 # --- from experimental data--- #
@@ -32,19 +32,19 @@ def calculate_path_length(position, angle, aver_radius, shape, size, solver, rot
         return 0
     pos, ang = position[0], unwrapped_angle[0]
     path_length = 0
-    for i in progressbar(range(len(unwrapped_angle))):
+    for i in range(len(unwrapped_angle)):
         d = MeasureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
         if d < resolution(size, solver):
             pass
         else:
             path_length += MeasureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
             pos, ang = position[i], unwrapped_angle[i]
-            if plot:
-                pos_list.append(pos)
-                ang_list.append(ang)
-    plt.plot(position[:, 0], position[:, 1], color='blue')
-    plt.plot(np.array(pos_list)[:, 0], np.array(pos_list)[:, 1], color='k')
-    plt.show()
+            # if plot:
+            #     pos_list.append(pos)
+            #     ang_list.append(ang)
+    # plt.plot(position[:, 0], position[:, 1], color='blue')
+    # plt.plot(np.array(pos_list)[:, 0], np.array(pos_list)[:, 1], color='k')
+    # plt.show()
 
     return path_length
 

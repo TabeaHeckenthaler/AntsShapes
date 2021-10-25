@@ -159,6 +159,7 @@ def SPT_figure(measure='path length/exit size []'):
 Human Maze: Path length SPT divided by communication and non-communication
 """
 
+
 def human_figure():
     sizes_order = ['S', 'M', 'L']
     # df_human = df.iloc[df_gr_solver.groups['human']][['maze size', 'communication', 'path length/exit size []']]
@@ -179,11 +180,11 @@ def human_figure():
                 format='svg', pad_inches=1, bbox_inches='tight')
 
 
-human_figure()
-
 """
 Human Maze: Path length SPT divided by communication and non-communication
 """
+
+
 # for shape in ['I', 'T', 'H', 'SPT']:
 #     dstar_figure(shape=shape)
 
@@ -282,8 +283,10 @@ def difficulty(df, shapes, dil_radius=10, sensing_radius=5, measure='path length
                 format='svg', pad_inches=1, bbox_inches='tight')
 
 
-# difficulty(df, ['H', 'I', 'T'], dil_radius=0, sensing_radius=5)
-difficulty(df, ['SPT', 'H', 'I', 'T'], dil_radius=0, sensing_radius=5)
-# SPT_figure()
+if __name__ == '__main__':
+    human_figure()
+    # difficulty(df, ['H', 'I', 'T'], dil_radius=0, sensing_radius=5)
+    difficulty(df, ['SPT', 'H', 'I', 'T'], dil_radius=0, sensing_radius=5)
+    # SPT_figure()
 
-# ant_HIT_figure_path_length()
+    # ant_HIT_figure_path_length()

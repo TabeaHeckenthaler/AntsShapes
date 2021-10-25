@@ -3,7 +3,6 @@ import itertools
 import pickle
 from mayavi import mlab
 from PhysicsEngine.Contact import Contact_loop2
-from Setup.Load import Load
 from copy import copy
 import os
 from Setup.Load import average_radius, getLoadDim

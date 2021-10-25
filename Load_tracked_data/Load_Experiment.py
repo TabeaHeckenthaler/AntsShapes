@@ -20,8 +20,9 @@ def find_unpickled(solver, size, shape):
     return list(set(mat_files) - set(pickled))
 
 
-def Load_Experiment(solver, filename, falseTracking, winner, fps, x_error=0, y_error=0, angle_error=0, size=None,
-                    shape=None, free=False, **kwargs):
+def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: bool, fps: int,
+                    x_error=0, y_error=0, angle_error=0, size: str = None, shape: str = None, free: bool = False,
+                    **kwargs):
     if solver == 'ant':
         from trajectory_inheritance.trajectory_ant import Trajectory_ant
         x = Trajectory_ant(size=size, shape=shape, old_filename=filename, free=free, winner=winner,
@@ -31,10 +32,11 @@ def Load_Experiment(solver, filename, falseTracking, winner, fps, x_error=0, y_e
             x.RunNum = int(input('What is the RunNumber?'))
 
     if solver == 'human':
+        shape = 'SPT'
         from trajectory_inheritance.trajectory_human import Trajectory_human
         x = Trajectory_human(size=size, shape=shape, filename=filename, winner=winner,
                              fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
-                             falseTracking=[falseTracking])
+                             falseTracking=falseTracking)
 
     else:
         raise Exception('Not a valid solver')
