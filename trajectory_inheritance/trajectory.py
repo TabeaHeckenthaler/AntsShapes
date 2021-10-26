@@ -8,7 +8,6 @@ Created on Wed May  6 11:24:09 2020
 import numpy as np
 from os import path
 import pickle
-from PhysicsEngine.mainGame import mainGame
 from Directories import SaverDirectories
 from copy import deepcopy
 from Setup.Maze import Maze
@@ -114,8 +113,7 @@ class Trajectory:
             x.frames = x.frames[int(f1):int(f2)]
 
         my_maze = Maze(x)
-
-        return mainGame(x, my_maze, display=Display(x, my_maze))
+        return x.run_trj(my_maze, display=Display(x, my_maze))
 
     def save(self, address=None) -> None:
         if address is None:
@@ -136,3 +134,16 @@ class Trajectory:
 
     def averageCarrierNumber(self):
         pass
+
+    def run_trj(self, my_maze, interval=1, display=None):
+        i = 0
+        while i < len(self.frames) - 1 - interval:
+            self.step(my_maze, i, display)
+            i += interval
+            if display is not None:
+                end = display.update_screen(self, i)
+                if end:
+                    display.end_screen()
+                    self.frames = self.frames[:i]
+                    break
+                display.renew_screen(frame=self.frames[i], movie_name=self.filename)

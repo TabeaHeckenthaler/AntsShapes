@@ -94,6 +94,9 @@ class Humans(Participants, ABC):
             self.forces = Forces(self, x)
 
     def interpolate_falling_hats(self, matlab_cell):
+        """
+        Check if I noticed any switch:
+        """
         hats_initial = set(np.array(matlab_cell[0][:, 4], dtype=int))
         if len(hats_initial) != len(self.occupied):
             raise ValueError('Your list of participants in Testable.xlxs line ' + str(self.excel_index) +
@@ -106,9 +109,13 @@ class Humans(Participants, ABC):
             edges = list(zip(edges, edges))
             return [(a, b+1) for (a, b) in edges]
 
+        def switching(receiver, donor):
+            frames_switch = [fr for fr in range(len(matlab_cell)) if len(np.where(matlab_cell[fr] == donor)[0]) != 0]
+            for fr in frames_switch:
+                matlab_cell[fr][matlab_cell[fr] == donor] = receiver
+
         def add_interpolation(missing_ID):
             start = matlab_cell[frame1 - 1][:, :-1][matlab_cell[frame1 - 1][:, 4] == missing_ID][0]
-
             if len(matlab_cell) == frame2:
                 end = start  # lost frame in the last frame, so we assume the hat didn't move in the end
             else:
@@ -127,7 +134,12 @@ class Humans(Participants, ABC):
         for hat in hats_initial:
             interpolate_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
             for frame1, frame2 in ranges(interpolate_frames):
-                add_interpolation(hat)
+                flying_hats = sheet.cell(row=self.excel_index, column=20).value
+                if flying_hats is not None and int(flying_hats.split(':')[0]) == hat:
+                    for new_hat in flying_hats.split(':')[1].split(', '):
+                        switching(hat, int(new_hat))
+                else:
+                    add_interpolation(hat)
 
         new_hats_frames = [i for i, frame in enumerate(matlab_cell) if frame.shape != (len(self.occupied), 5)]
         for frame in new_hats_frames:
@@ -140,10 +152,11 @@ class Humans(Participants, ABC):
         file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.filename)
         matlab_cell = np.squeeze(file['hats'])
 
-        Medium_id_correction_dict = {1: 1, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2}
-
         self.interpolate_falling_hats(matlab_cell)
         my_maze = Maze(x)
+
+        Medium_id_correction_dict = {1: 1, 2: 9, 3: 8, 4: 7, 5: 6, 6: 5, 7: 4, 8: 3, 9: 2}
+
         for i, Frame in enumerate(matlab_cell):
             data = Frame
 

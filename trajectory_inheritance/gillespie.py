@@ -3,7 +3,7 @@
 import numpy as np
 from Box2D import b2Vec2
 from Analysis.GeneralFunctions import rot
-from Setup.Load import Corners_Phis
+from Setup.Load import init_sites
 
 """
 Parameters I chose
@@ -44,7 +44,7 @@ class Gillespie:
         self.n_p = [0 for _ in range(N_max)]  # array with 0 and 1 depending on whether is puller or not
         self.n_l = [0 for _ in range(N_max)]  # array with 0 and 1 depending on whether is lifter of not
 
-        self._attachment_sites, self._phi_default_load_coord = self.sites_angels(my_maze, N_max)
+        self._attachment_sites, self._phi_default_load_coord = init_sites(my_maze, N_max)
         # vector to ith attachment site in load coordinates
         # angle of normal vector from ith attachment site to the x axis of the world, when my_load.angle = 0
 
@@ -297,54 +297,4 @@ class Gillespie:
 
     def dt(self):
         return -1 / self.r_tot * np.log(np.random.uniform(0, 1))
-
-    @staticmethod
-    def sites_angels(my_maze, n: int):
-        """
-
-        :param my_load: b2Body
-        :param n: number of attachment sites
-        :param x: trajectory_inheritance object, if we need to know about size, etc.
-        :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the my_load coordinate system
-        and n numpy matrix, with angles of normals of attachment sites, measured against the load coordinate system
-        """
-        if my_maze.shape == 'circle':
-            theta = -np.linspace(0, 2 * np.pi, n)
-            sites = radius * np.transpose(np.vstack([np.cos(theta), np.sin(theta)]))
-            phi_default = theta
-            return sites, phi_default
-
-        else:
-            corners, phis = Corners_Phis(my_maze)
-            # the corners  in corners must be ordered like this: finding the intersection of the negative y-axis,
-            # and the shape, and going clockwise find the first corner. Then go clockwise in order of the corners.
-            # corners = np.vstack([[0, corners[0, 1]], corners])
-            # phis = np.append(phis, phis[0])
-
-            def linear_combination(step_size, start, end):
-                return start + step_size * (end - start) / np.linalg.norm(start - end)
-
-            # walk around the shape
-            i = 1
-            delta = my_maze.circumference() / n
-            step_size = delta
-            my_load = my_maze.bodies[-1]
-            sites = np.array([linear_combination(0.5, corners[0], corners[1])])
-            phi_default = np.array([phis[0]])
-            start = sites[-1]
-            aim = corners[1]
-
-            while sites.shape[0] < n:
-                if np.linalg.norm(start - aim) > step_size:
-                    sites = np.vstack([sites, linear_combination(step_size, start, aim)])
-                    start = sites[-1]
-                    phi_default = np.append(phi_default, phis[(i - 1) % corners.shape[0]])
-                    step_size = delta
-
-                else:
-                    step_size = step_size - np.linalg.norm(start - aim)
-                    i = i + 1
-                    start = corners[(i - 1) % corners.shape[0]]
-                    aim = corners[i % corners.shape[0]]
-            return sites, phi_default
 

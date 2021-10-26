@@ -27,8 +27,7 @@ class Display:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
 
-        if x.free:  # screen size dependent on trajectory_inheritance
-            print('free, I have a problem')
+        if hasattr(x, 'free') and x.free:  # screen size dependent on trajectory_inheritance
             self.ppm = int(1000 / (np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10))  # pixels per meter
             self.width = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * self.ppm)
             self.height = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * self.ppm)

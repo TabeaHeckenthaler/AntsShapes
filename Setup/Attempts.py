@@ -3,14 +3,14 @@ from scipy.ndimage import median_filter
 import numpy as np
 from Setup.MazeFunctions import extend
 from Setup.Maze import Maze
-from Setup.Load import Loops
+from Setup.Load import loops
 from trajectory_inheritance.trajectory import get
 
 smoothing_window = 6
 
 
 def Attempt_setup(x, my_load, my_attempt_zone, starting_line, *args):
-    load_vertices = Loops(my_load)  # [0]
+    load_vertices = loops(my_load)  # [0]
 
     inside = False
     for zone_fixture in my_attempt_zone.fixtures:
@@ -23,7 +23,7 @@ def Attempt_setup(x, my_load, my_attempt_zone, starting_line, *args):
 
 
 def Attempt_loop(finish_line, my_attempt_zone, my_load, interval=1, **kwargs):
-    load_vertices = Loops(my_load)
+    load_vertices = loops(my_load)
     inside = False
     for zone_fixture in my_attempt_zone.fixtures:
         for vertices in load_vertices:

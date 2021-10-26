@@ -3,7 +3,7 @@ from Setup.MazeFunctions import BoxIt
 import numpy as np
 from Setup.Maze import Maze, maze_corners
 from Analysis.Velocity import velocity_x
-from Setup.Load import Loops
+from Setup.Load import loops
 from Setup.Load import Load
 from Analysis.GeneralFunctions import flatten
 
@@ -85,7 +85,7 @@ def Contact_loop2(load, maze):
     #     return False
 
     # if we are close enough to a boundary then we have to calculate all the vertices.
-    load_corners = flatten(Loops(load))
+    load_corners = flatten(loops(load))
     maze_corners1 = maze_corners(maze)
     for load_NumFixture in range(int(len(load_corners) / 4)):
         load_vertices_list = load_corners[load_NumFixture * 4:(load_NumFixture + 1) * 4] \
@@ -106,7 +106,7 @@ def Contact_loop2(load, maze):
 def Contact_loop(my_load, my_maze):
     contact = []
     edge_points = []
-    load_vertices = Loops(my_load)
+    load_vertices = loops(my_load)
 
     for load_vertice in load_vertices:
         edge_points = edge_points + BoxIt(load_vertice, distance_upper_bound).tolist()

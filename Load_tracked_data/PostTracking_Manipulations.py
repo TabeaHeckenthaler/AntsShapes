@@ -2,7 +2,6 @@ from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from trajectory_inheritance.trajectory import get
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from PhysicsEngine.mainGame import mainGame
 
 
 def SmoothConnector(file1, file2):
@@ -41,7 +40,7 @@ def SmoothConnector(file1, file2):
     # all the other stuff
     connector_load.frames = np.int0(np.linspace(1, con_frames, num=con_frames))
     # connector_load.contact = [[] for i in range(len(connector_load.frames))]
-    connector_load = mainGame(connector_load)
+    connector_load.run_trj()
     return connector_load
 
 

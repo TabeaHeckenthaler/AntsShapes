@@ -1,7 +1,6 @@
 from trajectory_inheritance.trajectory import Trajectory
 import numpy as np
 from trajectory_inheritance.gillespie import Gillespie, N_max
-from PhysicsEngine.mainGame import mainGame
 from Setup.Maze import Maze
 from PhysicsEngine.drawables import Arrow, Point
 
@@ -67,7 +66,7 @@ class Trajectory_gillespie(Trajectory):
         self.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         from PhysicsEngine.Display import Display
-        mainGame(self, my_maze, display=Display(self, my_maze, wait=10))
+        self.run_trj(my_maze, display=Display(self, my_maze, wait=10))
 
     def load_participants(self):
         self.participants = self.gillespie

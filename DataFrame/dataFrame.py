@@ -124,8 +124,24 @@ class DataFrame(pd.DataFrame):
             raise ValueError('You already loaded all experiments!')
         return DataFrame(singleExperiments_list, columns=columns)
 
+# human_couples = myDataFrame[(myDataFrame['average Carrier Number'] == 2) & (myDataFrame['solver'] == 'human')]
+
 
 if __name__ == '__main__':
+    from Load_tracked_data.Load_Experiment import Load_Experiment, find_unpickled
+    from trajectory_inheritance.trajectory import sizes
+    solver = 'human'
+    shape = 'SPT'
+    for size in sizes[solver]:
+        for filename in find_unpickled(solver, size, shape):
+            x = Load_Experiment(solver, filename, [], True, 30, size=size, shape='SPT')
+            x.play()
+            x.save()
+
     myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
-    myDataFrame = myDataFrame + myDataFrame.new_experiments(solver='human')
+
+    # TODO: Check in the data frame the path length of
+    #  'medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433'
+
+    myDataFrame = myDataFrame + myDataFrame.new_experiments(solver=solver)
     myDataFrame.save()
