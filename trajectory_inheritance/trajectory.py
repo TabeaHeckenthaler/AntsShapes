@@ -6,9 +6,9 @@ Created on Wed May  6 11:24:09 2020
 @author: tabea
 """
 import numpy as np
-from os import path
+from os import path, walk
 import pickle
-from Directories import SaverDirectories
+from Directories import SaverDirectories, work_dir
 from copy import deepcopy
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
@@ -29,18 +29,21 @@ def length_unit_func(solver):
     return length_unit[solver]
 
 
-def get(filename, solver, address=None):
-    if solver == 'ant':
-        from trajectory_inheritance.trajectory_ant import ant_address
-        address = ant_address(filename)
+def get(filename):
+    import os
+    from glob import glob
 
-    if path.isfile(SaverDirectories[solver] + path.sep + filename):
-        address = SaverDirectories[solver] + path.sep + filename
+    pattern = filename
+
+    for root, dirs, files in os.walk(work_dir):
+        for dir in dirs:
+            if pattern in os.listdir(work_dir+dir):
+                address = glob(os.path.join(dir, pattern))
+                with open(address, 'rb') as f:
+                    x = pickle.load(f)
+                return x
     else:
-        print('cannot find file!')
-    with open(address, 'rb') as f:
-        x = pickle.load(f)
-    return x
+        raise ValueError('I cannot find ' + filename)
 
 
 class Trajectory:
@@ -96,7 +99,7 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, indices=None):
+    def play(self, indices=None, wait=0):
         r"""Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
             * *indices* (``[int, int]``) --
@@ -113,7 +116,7 @@ class Trajectory:
             x.frames = x.frames[int(f1):int(f2)]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x, my_maze))
+        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))
 
     def save(self, address=None) -> None:
         if address is None:
@@ -138,7 +141,7 @@ class Trajectory:
     def run_trj(self, my_maze, interval=1, display=None):
         i = 0
         while i < len(self.frames) - 1 - interval:
-            self.step(my_maze, i, display)
+            self.step(my_maze, i)
             i += interval
             if display is not None:
                 end = display.update_screen(self, i)
@@ -147,3 +150,4 @@ class Trajectory:
                     self.frames = self.frames[:i]
                     break
                 display.renew_screen(frame=self.frames[i], movie_name=self.filename)
+

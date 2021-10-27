@@ -13,7 +13,7 @@ for (solver, size, shape), df1 in filenames_group:
     for index in df1.index[::4]:
         if solver != 'humanhand':
             filename = df1['filename'].loc[index]
-            x = get(filename, solver)
+            x = get(filename)
 
             position = np.vstack([position, x.position])
             angle = np.hstack([angle, x.angle])

@@ -21,7 +21,7 @@ class Participant_Correlation:
 
 
 if __name__ == '__main__':
-    x = get('medium_20201223125622_20201223130532', 'human')
+    x = get('medium_20201223125622_20201223130532')
     cor = Participant_Correlation(x)
     cor.torque([0, 5], 0)
 

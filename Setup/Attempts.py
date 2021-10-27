@@ -147,7 +147,7 @@ def AttemptDuration(x, *args, **kwargs):
 
 if __name__ == '__main__':
     solver = 'human'
-    x = get('medium_20201221135753_20201221140218', solver)
+    x = get('medium_20201221135753_20201221140218')
     attempts = [False]
     my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver, position=x.position[0], angle=x.angle[0])
     my_attempt_zone = AddAttemptZone(my_maze, x)

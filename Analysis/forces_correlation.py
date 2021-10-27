@@ -21,7 +21,7 @@ def plot_correlation(x, frames=None) -> None:
 # plot_correlation(x, frames=[2100, 2300])
 
 if __name__ == '__main__':
-    x = get('large_20201220135801_20201220140247', 'human')
+    x = get('large_20201220135801_20201220140247')
     x.load_participants()
     x.play()
 

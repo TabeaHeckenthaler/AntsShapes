@@ -48,7 +48,7 @@ class Series():
         for originalMovie in [x.replace('S', '') for x in self.originalMovies]:
             for exp in listdir(getcwd() + path.sep + 'Ant_Trajectories'):
                 if originalMovie in exp and ('ASH' in exp):
-                    self.trajectories.append(get(exp, 'ant'))
+                    self.trajectories.append(get(exp))
 
     def __str__(self):
         return str([x.filename for x in self.trajectories])

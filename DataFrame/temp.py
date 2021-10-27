@@ -13,7 +13,7 @@ df_dstar = df[df['solver'] == solver].copy()
 
 for filename in get_filenames(solver):
 
-    x = get(filename, solver)
+    x = get(filename)
     if not hasattr(x, 'frames') or x.frames.size == 0:
         x.frames = np.array([i for i in range(x.position.shape[0])])
         x.save()

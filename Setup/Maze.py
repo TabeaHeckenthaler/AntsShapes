@@ -63,7 +63,9 @@ class Maze(b2World):
                  point_particle=False):
         super().__init__(gravity=(0, 0), doSleep=True)
 
-        if len(args) > 0 and 'trajectory_inheritance.trajectory_human' in str(args[0].__class__):
+        if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
+                                                         'Trajectory_ant', 'Trajectory_gillespie']:
+
             self.shape = args[0].shape  # loadshape (maybe this will become name of the maze...)
             self.size = args[0].size  # size
             self.solver = args[0].solver
