@@ -38,7 +38,7 @@ def get(filename):
     for root, dirs, files in os.walk(work_dir):
         for dir in dirs:
             if pattern in os.listdir(work_dir+dir):
-                address = glob(os.path.join(dir, pattern))
+                address = work_dir + os.path.join(dir, pattern)
                 with open(address, 'rb') as f:
                     x = pickle.load(f)
                 return x

@@ -3,9 +3,7 @@ from Box2D import b2CircleShape, b2FixtureDef
 from Setup.Maze import ResizeFactors
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
-
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
-assymetric_h_shift = 1.22 * 2
 
 # somehow these contain the same information
 SPT_ratio = 2.44 / 4.82

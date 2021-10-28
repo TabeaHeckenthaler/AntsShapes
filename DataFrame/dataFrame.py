@@ -1,12 +1,13 @@
 import pandas as pd
 from os import listdir
-from trajectory_inheritance.trajectory import solvers
 from Directories import SaverDirectories, df_dir
 from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Maze import Maze
 from Setup.Attempts import Attempts
 from tqdm import tqdm
+
+tqdm.pandas()
 
 
 # TODO: add minimal path length!
@@ -17,12 +18,12 @@ def get_filenames(solver, size='', shape=''):
                                'Medium': 'medium',
                                'Small Near': 'small',
                                'Small Far': 'small2',
-                               None: ''}
+                               '': ''}
         return [filename for filename in listdir(SaverDirectories[solver])
                 if ('_' in filename and shape_folder_naming[size] in filename)]
     else:
         return [filename for filename in listdir(SaverDirectories[solver])
-                if solver in filename and size in filename and shape in filename]
+                if size in filename and shape in filename]
 
 
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
@@ -41,10 +42,10 @@ class SingleExperiment(pd.DataFrame):
             super().__init__(df)
 
     def add_information(self):
-        self['size'] = self[['filename', 'solver']].apply(lambda x: get(*x).size, axis=1)
-        self['shape'] = self[['filename', 'solver']].apply(lambda x: get(*x).shape, axis=1)
-        self['winner'] = self[['filename', 'solver']].apply(lambda x: get(*x).winner, axis=1)
-        self['communication'] = self[['filename', 'solver']].apply(lambda x: get(*x).communication, axis=1)
+        self['size'] = self['filename'].apply(lambda x: get(x).size, axis=1)
+        self['shape'] = self['filename'].apply(lambda x: get(x).shape, axis=1)
+        self['winner'] = self['filename'].apply(lambda x: get(x).winner, axis=1)
+        self['communication'] = self['filename'].apply(lambda x: get(x).communication, axis=1)
         self['length unit'] = self[['solver']].apply(lambda x: length_unit_func(*x), axis=1)
         self['exit size [length unit]'] = self[['size', 'shape', 'solver']].apply(lambda x: Maze(*x).exit_size, axis=1)
 
@@ -63,10 +64,10 @@ class SingleExperiment(pd.DataFrame):
 
         self['path length/exit size []'] = self.apply(
             lambda x: x['path length [length unit]'] / x['exit size [length unit]'], axis=1)
-        self['average Carrier Number'] = self[['filename', 'solver']].apply(
-            lambda x: get(*x).averageCarrierNumber(), axis=1)
-        self['Attempts'] = self[['filename', 'solver']].apply(
-            lambda x: Attempts(get(*x), 'extend'), axis=1)
+        self['average Carrier Number'] = self[['filename']].apply(
+            lambda x: get(x).averageCarrierNumber(), axis=1)
+        self['Attempts'] = self[['filename']].apply(
+            lambda x: Attempts(get(x), 'extend'), axis=1)
 
         # self = self[list_of_columns]
 
@@ -83,16 +84,20 @@ class DataFrame(pd.DataFrame):
         return DataFrame(pd.concat([self, df_2], ignore_index=True))
 
     def drop_non_existent(self):
-        self.drop_duplicates(subset=['filename'], inplace=True).reset_index()
-        for solver in solvers:
-            to_drop = []
+        self.drop_duplicates(subset=['filename'], ignore_index=True)
+        self.reset_index(inplace=True, drop=True)
+
+        to_drop = []
+        for solver in self.groupby(by='solver').groups.keys():
+            filenames = get_filenames(solver)
             df_solver = self.iloc[self.groupby(by='solver').groups[solver]]
             for i in df_solver.index:
-                if self.iloc[i]['filename'] not in get_filenames(solver):
+                if self.iloc[i]['filename'] not in filenames:
                     print('Dropped ' + str(self.iloc[i]['filename']))
                     to_drop.append(i)
-            self.drop(index=to_drop, inplace=True)
-        self.reset_index(drop=True).drop(columns=['index'], inplace=True)
+
+        self.drop(index=to_drop, inplace=True)
+        self.reset_index(drop=True, inplace=True)
 
     def save(self, name=df_dir + '.json'):
         # self.to_json(df_dir + ' - backup.json')
@@ -118,25 +123,19 @@ class DataFrame(pd.DataFrame):
 
 
 if __name__ == '__main__':
-
-    human_filename = 'medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433'
-    human = get(human_filename, 'human')
-
     myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
+    myDataFrame.drop_non_existent()
+    myDataFrame.save()
 
-    myDataFrame['path length [length unit]'] = myDataFrame[['filename', 'solver']].applymap(
-        lambda x: PathLength(get(*x)).per_experiment())
+    # TODO: large_20201220135801_20201220140247, large_20201220142642_20201220143110 still in myDataFrame?
 
+    myDataFrame['path length [length unit]'] = myDataFrame['filename'].progress_apply(
+        lambda x: PathLength(get(x)).per_experiment())
 
-    # human_filename = 'medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433'
-    # human = get(human_filename, 'human')
-    # # human.play()
-    # # a = myDataFrame.single_experiment(human_filename)
-    #
-    # ideal_filename = 'XL_SPT_dil0_sensing1'
-    # ideal = get(ideal_filename, 'ps_simulation')
-    #
-    # print(PathLength(human).per_experiment()/PathLength(human).minimal())
+    myDataFrame['path length/minimal_path length[]'] = myDataFrame.progress_apply(
+        lambda x: x['path length [length unit]']/PathLength(get(x['filename'])).minimal(), axis=1)
+
+    o = 1
     #
     # # TODO: Check in the data frame the path length of
     # #  'medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433'

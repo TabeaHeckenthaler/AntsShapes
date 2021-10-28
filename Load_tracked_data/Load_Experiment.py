@@ -8,6 +8,8 @@ from DataFrame.dataFrame import get_filenames
 from os import listdir
 from Directories import MatlabFolder
 from trajectory_inheritance.trajectory import sizes
+from Directories import NewFileName
+from tqdm import tqdm
 
 
 def find_unpickled(solver, size, shape):
@@ -16,8 +18,14 @@ def find_unpickled(solver, size, shape):
     :return: list of un-pickled .mat file names (without .mat extension)
     """
     pickled = get_filenames(solver, size=size)
-    mat_files = [with_mat[:-4] for with_mat in listdir(MatlabFolder(solver, size, shape))]
-    return list(set(mat_files) - set(pickled))
+    if solver in ['ant', 'human']:
+        expORsim = 'exp'
+    else:
+        expORsim = 'sim'
+    mat_files = listdir(MatlabFolder(solver, size, shape))
+    return [mat_file for mat_file in mat_files if NewFileName(mat_file, size, shape, expORsim) not in set(pickled)]
+
+    # TODO: Look also in the loaded movies, that were glued to one another.
 
 
 def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: bool, fps: int,
@@ -31,7 +39,7 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
         if x.free:
             x.RunNum = int(input('What is the RunNumber?'))
 
-    if solver == 'human':
+    elif solver == 'human':
         shape = 'SPT'
         from trajectory_inheritance.trajectory_human import Trajectory_human
         x = Trajectory_human(size=size, shape=shape, filename=filename, winner=winner,
@@ -55,9 +63,12 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
 
 
 if __name__ == '__main__':
-    solver, shape = 'human', 'SPT'
-    for size in sizes[solver]:
-        for filename in find_unpickled(solver, size, shape):
-            x = Load_Experiment(solver, filename, [], True, 30, size=size, shape='SPT')
+    solver, shape = 'ant', 'H'
+    # for size in sizes[solver]:
+    for size in 'L':
+        for filename in tqdm(find_unpickled(solver, size, shape)):
+
+            x = Load_Experiment(solver, filename, [], True, int(input('\nfps of ' + filename)), size=size, shape=shape)
             x.play()
-            x.save()
+            save = 1
+            # x.save()

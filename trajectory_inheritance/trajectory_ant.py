@@ -8,10 +8,10 @@ from os import path, remove
 length_unit = 'cm'
 
 
-def ant_address(filename):
-    if path.isfile(SaverDirectories['ant'] + path.sep + filename):
-        return SaverDirectories['ant'] + path.sep + filename
-    print('Cannot find the file')
+# def ant_address(filename):
+#     if path.isfile(SaverDirectories['ant'] + path.sep + filename):
+#         return SaverDirectories['ant'] + path.sep + filename
+#     print('Cannot find the file')
 
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
@@ -34,8 +34,8 @@ class Trajectory_ant(Trajectory):
         self.state = np.empty((1, 1), int)
         self.different_dimensions = 'L_I_425' in self.filename
 
-    def __del__(self):
-        remove(ant_address(self.filename))
+    # def __del__(self):
+    #     remove(ant_address(self.filename))
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}
@@ -100,7 +100,7 @@ class Trajectory_ant(Trajectory):
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
                                'SPT': 'Special T', 'T': 'T'}
-        if self.free:
+        if not self.free:
             return trackedAntMovieDirectory + path.sep + 'Slitted' + path.sep + shape_folder_naming[
                 self.shape] + path.sep + self.size + path.sep + 'Output Data'
         if self.free:
@@ -148,8 +148,7 @@ class Trajectory_ant(Trajectory):
             self.tracked_frames = [file['frames'][0][0], file['frames'][0][-1]]
             # # Angle accounts for shifts in the angle of the shape.... (manually, by watching the movies)
             shape_orientation = \
-                np.matrix.transpose(file['shape_orientation'][:] * np.pi / 180 + self.angle_error[0])[
-                    0]
+                np.matrix.transpose(file['shape_orientation'][:] * np.pi / 180 + self.angle_error)[0]
 
         else:
             import h5py

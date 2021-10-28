@@ -71,15 +71,16 @@ def NewFileName(old_filename, size, shape, expORsim):
     import glob
     if expORsim == 'sim':
         counter = int(len(glob.glob(size + '_' + shape + '*_' + expORsim + '_*')) / 2 + 1)
-        # findall(r'[\d.]+', 'TXL1_sim_255')[1] #this is a function able to read the last digit of the string
-        filename = size + '_' + shape + '_sim_' + str(counter)
+        return size + '_' + shape + '_sim_' + str(counter)
     if expORsim == 'exp':
         filename = old_filename.replace('.mat', '')
         if shape.endswith('ASH'):
-            filename = filename.replace(old_filename.split('_')[0], size + '_' + shape)
+            return filename.replace(old_filename.split('_')[0], size + '_' + shape)
         else:
-            filename = filename.replace(size + shape, size + '_' + shape)
-    return filename
+            if size + shape in filename or size + '_' + shape in filename :
+                return filename.replace(size + shape, size + '_' + shape)
+            else:
+                raise ValueError('Your filename does not seem to be right.')
 
 
 SetupDirectories()

@@ -10,11 +10,9 @@ from copy import copy
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
-assymetric_h_shift = 1.22 * 2
-
-# somehow these contain the same information
-SPT_ratio = 2.44 / 4.82
-centerOfMass_shift = - 0.10880829015544041
+ASSYMETRIC_H_SHIFT = 1.22 * 2
+SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
+centerOfMass_shift = - 0.10880829015544041  # shift of the center of mass away from the center of the load.
 
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -442,7 +440,7 @@ class Maze(b2World):
 
         if self.shape == 'RASH':  # This is the ASymmetrical H
             [shape_height, shape_width, shape_thickness] = self.getLoadDim()
-            assymetric_h_shift = assymetric_h_shift * ResizeFactors[self.solver][self.size]
+            assymetric_h_shift = ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][self.size]
             # I multiply all these values with 2, because I got them in L, but want to state
             # them in XL.
             my_load.CreatePolygonFixture(vertices=[
@@ -473,7 +471,7 @@ class Maze(b2World):
 
         if self.shape == 'LASH':  # This is the ASymmetrical H
             [shape_height, shape_width, shape_thickness] = self.getLoadDim()
-            assymetric_h_shift = assymetric_h_shift * ResizeFactors[self.solver][self.size]
+            assymetric_h_shift = ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][self.size]
             # I multiply all these values with 2, because I got them in L, but want to state
             # them in XL.
             my_load.CreatePolygonFixture(vertices=[
@@ -514,7 +512,7 @@ class Maze(b2World):
                            'T': [5.4, 5.6, 1.6]
                            }
             if short_edge:
-                shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85 * SPT_ratio]
+                shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85 * SPT_RATIO]
             # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
             dimensions = [i * resize_factor for i in shape_sizes[self.shape]]
 
@@ -661,14 +659,14 @@ class Maze(b2World):
         cir = {'H': 4 * shape_height - 2 * shape_thickness + 2 * shape_width,
                'I': 2 * shape_height + 2 * shape_width,
                'T': 2 * shape_height + 2 * shape_width,
-               'SPT': 2 * shape_height * SPT_ratio +
+               'SPT': 2 * shape_height * SPT_RATIO +
                       2 * shape_height -
                       2 * shape_thickness +
                       2 * shape_width,
-               'RASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[self.solver][
+               'RASH': 2 * shape_width + 4 * shape_height - 4 * ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][
                    self.size]
                        - 2 * shape_thickness,
-               'LASH': 2 * shape_width + 4 * shape_height - 4 * assymetric_h_shift * ResizeFactors[self.solver][
+               'LASH': 2 * shape_width + 4 * shape_height - 4 * ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][
                    self.size]
                        - 2 * shape_thickness
                }

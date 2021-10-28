@@ -5,7 +5,6 @@ from mayavi import mlab
 from PhysicsEngine.Contact import Contact_loop2
 from copy import copy
 import os
-from Setup.Load import average_radius, getLoadDim
 from Setup.Maze import Maze
 from progressbar import progressbar
 from Directories import home, PhaseSpaceDirectory, data_home

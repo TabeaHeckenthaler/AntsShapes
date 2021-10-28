@@ -4,6 +4,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.optimize import curve_fit
 from Analysis.GeneralFunctions import ranges, gauss
 from matplotlib import pyplot as plt
+from Setup.Maze import Maze
 
 max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
                                {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
@@ -23,8 +24,7 @@ def velocity_arrow(x, my_load, i):
     return [(start, end, string)]
 
 
-def velocity(position, angle, fps, size, shape, second_smooth, solver, *args, **kwargs):
-    from Setup.Load import average_radius
+def velocity(position, angle, fps, size, shape, second_smooth, solver, *args):
     """ If I add specifications to args, I only return these specific velocities,
     otherwise, I return x, y and angular velocity"""
 
@@ -74,7 +74,7 @@ def velocity(position, angle, fps, size, shape, second_smooth, solver, *args, **
 
     if 'abs' in args:
         for ang_index in np.where(['radian/s' in unit for unit in units])[0]:
-            velocities[ang_index] = velocities[ang_index] * average_radius(size, shape, solver)
+            velocities[ang_index] = velocities[ang_index] * Maze(size, shape, solver).average_radius()
         return [abs(np.linalg.norm(velocities[:, ii])) for ii in range(len(velocities[0]))]
 
     return velocities
