@@ -159,25 +159,54 @@ def SPT_figure(measure='path length/exit size []'):
 Human Maze: Path length SPT divided by communication and non-communication
 """
 
+# colors = {0: 'red', 1: 'blue'}
 
-def human_figure():
-    sizes_order = ['S', 'M', 'L']
-    # df_human = df.iloc[df_gr_solver.groups['human']][['maze size', 'communication', 'path length/exit size []']]
-    df_human = df.groupby('solver').get_group('human')[['maze size', 'communication', 'path length/exit size []']]
-    group = df_human.groupby(by=['maze size', 'communication'])
-    means = group.mean().unstack().reindex(sizes_order)
-    sem = group.sem().unstack().reindex(sizes_order)
 
-    fig, ax = plt.subplots()
-    means.plot(kind='bar', rot=0, ax=ax, yerr=sem)
+def path_length(solver, shape, ax, marker='.'):
+    colors = {0: 'red', 1: 'blue'}
+    df_shape = df[df['shape'] == shape]
+    df_solver = df_shape.groupby('solver').get_group(solver)[
+        ['maze size', 'communication', 'path length/minimal_path length[]', 'average Carrier Number']]
 
-    legend = ['comm: ' + str(bo) for bo in means.columns.get_level_values('communication').values]
-    ax.legend(legend)
-    ax.set_ylabel(means.columns[0][0])
-    fig.savefig(graph_dir() + path.sep + 'humans_path_length' + '.pdf',
-                format='pdf', pad_inches=1, bbox_inches='tight')
-    fig.savefig(graph_dir() + path.sep + 'humans_path_length' + '.svg',
-                format='svg', pad_inches=1, bbox_inches='tight')
+    for communication in [0, 1]:
+
+        df_solver_comm = df_solver[df_solver['communication'] == communication]
+
+        if solver == 'ant':
+            colors[communication] = 'black'
+            seperate_group = 1
+        if solver == 'human':
+            seperate_group = 2
+        pairs = df_solver_comm[df_solver_comm['average Carrier Number'] == seperate_group]
+        without_pairs = df_solver_comm[df_solver_comm['average Carrier Number'] != seperate_group]
+
+        for group in [pairs, without_pairs]:
+            group = group.groupby(by=['maze size', 'communication'])
+            means = group.mean()
+            sem = group.sem()
+
+            means.plot.scatter(x='average Carrier Number',
+                               y='path length/minimal_path length[]',
+                               label='comm: ' + str(communication),
+                               xerr=sem['average Carrier Number'],
+                               yerr=sem['path length/minimal_path length[]'],
+                               c=colors[communication],
+                               ax=ax,
+                               marker=marker,
+                               s=150)
+
+    reduce_legend()
+
+
+def reduce_legend():
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+
+def save_fig(fig, name):
+    fig.savefig(graph_dir() + path.sep + name + '.pdf', format='pdf', pad_inches=1, bbox_inches='tight')
+    fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=1, bbox_inches='tight')
 
 
 """
@@ -284,9 +313,17 @@ def difficulty(df, shapes, dil_radius=10, sensing_radius=5, measure='path length
 
 
 if __name__ == '__main__':
-    human_figure()
+    df = df[df['winner'] is True]
+    fig, ax = plt.subplots()
+    plt.show(block=False)
+    path_length('ant', 'SPT', ax, marker='*')
+    path_length('human', 'SPT', ax, marker='.')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    save_fig(fig, 'ant_human_path_length')
+
     # difficulty(df, ['H', 'I', 'T'], dil_radius=0, sensing_radius=5)
-    difficulty(df, ['SPT', 'H', 'I', 'T'], dil_radius=0, sensing_radius=5)
+    # difficulty(df, ['SPT', 'H', 'I', 'T'], dil_radius=0, sensing_radius=5)
     # SPT_figure()
 
     # ant_HIT_figure_path_length()

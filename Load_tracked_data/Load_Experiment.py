@@ -29,7 +29,8 @@ def find_unpickled(solver, size, shape):
 
 
 def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: bool, fps: int,
-                    x_error=0, y_error=0, angle_error=0, size: str = None, shape: str = None, free: bool = False,
+                    x_error: float = 0.0, y_error: float = 0.0, angle_error: float = 0.0,
+                    size: str = None, shape: str = None, free: bool = False,
                     **kwargs):
     if solver == 'ant':
         from trajectory_inheritance.trajectory_ant import Trajectory_ant
@@ -62,13 +63,16 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
     return x
 
 
-if __name__ == '__main__':
-    solver, shape = 'ant', 'H'
-    # for size in sizes[solver]:
-    for size in 'L':
-        for filename in tqdm(find_unpickled(solver, size, shape)):
+new_starting_conditions = ['48000', '47900']
+import numpy as np
 
-            x = Load_Experiment(solver, filename, [], True, int(input('\nfps of ' + filename)), size=size, shape=shape)
-            x.play()
-            save = 1
-            # x.save()
+if __name__ == '__main__':
+    solver, shape = 'ant', 'SPT'
+    # for size in sizes[solver]:
+    for size in 'S':
+        for filename in tqdm(find_unpickled(solver, size, shape)):
+            if '48000' in filename:
+                x = Load_Experiment(solver, filename, [], True, 50, size=size, shape=shape)
+                x.play()
+                save = 1
+                # x.save()

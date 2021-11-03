@@ -14,6 +14,8 @@ traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
 
+# TODO: fix the display in this module
+# TODO: fix the x.winner attribute
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
@@ -70,7 +72,7 @@ class PhaseSpace(object):
 
     def calculate_space(self, point_particle=False, screen=None, parallel=False):
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
-        load = Load(maze, point_particle=point_particle)
+        load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
         self.space = np.ones((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),

@@ -1,18 +1,13 @@
 from trajectory_inheritance.trajectory import Trajectory
-from Directories import SaverDirectories, NewFileName
+from Directories import NewFileName
 from copy import deepcopy
 import numpy as np
 import scipy.io as sio
-from os import path, remove
+from os import path
+from Setup.Maze import Maze
+from PhysicsEngine.Display import Display
 
 length_unit = 'cm'
-
-
-# def ant_address(filename):
-#     if path.isfile(SaverDirectories['ant'] + path.sep + filename):
-#         return SaverDirectories['ant'] + path.sep + filename
-#     print('Cannot find the file')
-
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
@@ -36,6 +31,16 @@ class Trajectory_ant(Trajectory):
 
     # def __del__(self):
     #     remove(ant_address(self.filename))
+
+    def new2021(self):
+        """
+        I restarted experiments and altered the maze dimensions for the small SPT.
+        I am keeping track of the movies, that have these altered maze dimensions.
+        :return: bool.
+        """
+        new_starting_conditions = ['48000', '47900']
+        return np.any([new_starting_condition in self.filename
+                       for new_starting_condition in new_starting_conditions])
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}
@@ -109,12 +114,12 @@ class Trajectory_ant(Trajectory):
 
     def matlab_loading(self, old_filename):
         if not (old_filename == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
-            file = sio.loadmat(
-                self.matlabFolder() + path.sep + old_filename)
+            file = sio.loadmat(self.matlabFolder() + path.sep + old_filename)
 
-            if 'Direction' not in file.keys() and self.shape.endswith('ASH'):
-                # file['Direction'] = input('L2R or R2L  ')
-                file['Direction'] = None
+            # if 'Direction' not in file.keys():
+            #     file['Direction'] = 'R2L'
+            #     print('Direction = R2L')
+                # file['Direction'] = None
 
             if self.shape.endswith('ASH') and 'R2L' == file['Direction']:
                 if self.shape == 'LASH':
@@ -149,6 +154,9 @@ class Trajectory_ant(Trajectory):
             # # Angle accounts for shifts in the angle of the shape.... (manually, by watching the movies)
             shape_orientation = \
                 np.matrix.transpose(file['shape_orientation'][:] * np.pi / 180 + self.angle_error)[0]
+            #
+            # if file['Direction'] == 'R2L':
+            #     shape_orientation = (shape_orientation + np.pi) % np.pi
 
         else:
             import h5py
@@ -206,3 +214,23 @@ class Trajectory_ant(Trajectory):
 
     def averageCarrierNumber(self):
         self.participants.averageCarrierNumber()
+
+    def play(self, indices=None, wait=0):
+        """
+        Displays a given trajectory_inheritance (self)
+        :Keyword Arguments:
+            * *indices* (``[int, int]``) --
+              starting and ending frame of trajectory_inheritance, which you would like to display
+        """
+        x = deepcopy(self)
+
+        if x.frames.size == 0:
+            x.frames = np.array([fr for fr in range(x.angle.size)])
+
+        if indices is not None:
+            f1, f2 = int(indices[0]), int(indices[1]) + 1
+            x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
+            x.frames = x.frames[int(f1):int(f2)]
+
+        my_maze = Maze(x, new2021=self.new2021())
+        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))

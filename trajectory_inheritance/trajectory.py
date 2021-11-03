@@ -67,7 +67,7 @@ class Trajectory:
         string = '\n' + self.filename
         return string
 
-    def step(self, my_maze, i, *args):
+    def step(self, my_maze, i, display=None):
         my_maze.set_configuration(self.position[i], self.angle[i])
 
     def interpolate_over_NaN(self):
@@ -100,7 +100,8 @@ class Trajectory:
         return (len(self.frames) - 1) / self.fps
 
     def play(self, indices=None, wait=0):
-        r"""Displays a given trajectory_inheritance (self)
+        """
+        Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
             * *indices* (``[int, int]``) --
               starting and ending frame of trajectory_inheritance, which you would like to display
@@ -141,7 +142,7 @@ class Trajectory:
     def run_trj(self, my_maze, interval=1, display=None):
         i = 0
         while i < len(self.frames) - 1 - interval:
-            self.step(my_maze, i)
+            self.step(my_maze, i, display=display)
             i += interval
             if display is not None:
                 end = display.update_screen(self, i)

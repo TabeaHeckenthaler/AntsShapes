@@ -58,7 +58,7 @@ def end(size, shape, solver):
 
 class Maze(b2World):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', free=False, position=None, angle=0,
-                 point_particle=False):
+                 point_particle=False, new2021=False):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
@@ -78,6 +78,7 @@ class Maze(b2World):
             self.solver = solver
 
         self.free = free
+        self.new2021 = new2021
         self.statenames = StateNames[shape]
         self.getMazeDim()
         self.body = self.CreateMaze()
@@ -94,8 +95,10 @@ class Maze(b2World):
         else:
             dir = home + '\\Setup'
 
-            if self.solver in ['sim', 'gillespie']:
-                df = read_excel(dir + '\\MazeDimensions_' + 'ant' + '.xlsx', engine='openpyxl')
+            if self.solver == 'ant' and self.new2021:
+                df = read_excel(dir + '\\MazeDimensions_new2021_ant.xlsx', engine='openpyxl')
+            elif self.solver in ['sim', 'gillespie']:
+                df = read_excel(dir + '\\MazeDimensions_ant.xlsx', engine='openpyxl')
             else:
                 df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
 
@@ -113,7 +116,7 @@ class Maze(b2World):
                 else:
                     self.slits = [d['slits'].values[0]]
 
-            elif self.solver == 'human':  # all measurements in meters
+            elif self.solver == 'human' and not self.new2021:  # all measurements in meters
                 # StartedScripts: measure the slits again...
                 # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
                 # Experiments\ExperimentalSetup

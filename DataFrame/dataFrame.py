@@ -10,8 +10,6 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-# TODO: add minimal path length!
-
 def get_filenames(solver, size='', shape=''):
     if solver == 'human':
         shape_folder_naming = {'Large': 'large',
@@ -62,8 +60,10 @@ class SingleExperiment(pd.DataFrame):
         self.applymap(lambda x: PathLength(x).per_experiment(), 'path length [length unit]')
         self.applymap(lambda x: PathLength(x).during_attempts(), 'path_length_during_attempts [length unit]')
 
-        self['path length/exit size []'] = self.apply(
-            lambda x: x['path length [length unit]'] / x['exit size [length unit]'], axis=1)
+        self['path length [length unit]'] = self['filename'].progress_apply(
+            lambda x: PathLength(get(x)).per_experiment())
+        self['path length/minimal_path length[]'] = self.progress_apply(
+            lambda x: x['path length [length unit]'] / PathLength(get(x['filename'])).minimal(), axis=1)
         self['average Carrier Number'] = self[['filename']].apply(
             lambda x: get(x).averageCarrierNumber(), axis=1)
         self['Attempts'] = self[['filename']].apply(
@@ -103,7 +103,7 @@ class DataFrame(pd.DataFrame):
         # self.to_json(df_dir + ' - backup.json')
         self.to_json(name)
 
-    def new_experiments(self, solver: str = 'ant', size: str = None):
+    def new_experiments(self, solver: str = 'ant', size: str = ''):
         singleExperiments_list = []
         to_load = set(get_filenames(solver, size=size)) - set(self['filename'].unique())
         for filename in tqdm(to_load):
@@ -118,6 +118,13 @@ class DataFrame(pd.DataFrame):
         df = self[(self['filename'] == filename)]
         return SingleExperiment(filename, df['solver'].values[0], df=df)
 
+    def sanity_check(self):
+        problematic = self[ (self['path length/minimal_path length[]'] < 1)
+                            & (self['solver'] != 'ps_simulation') # TODO: Still have to fix this
+                            & (self['winner'] is True)]
+        if len(problematic) > 0:
+            raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
+
 
 # human_couples = myDataFrame[(myDataFrame['average Carrier Number'] == 2) & (myDataFrame['solver'] == 'human')]
 
@@ -125,20 +132,8 @@ class DataFrame(pd.DataFrame):
 if __name__ == '__main__':
     myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
     myDataFrame.drop_non_existent()
-    myDataFrame.save()
 
-    # TODO: large_20201220135801_20201220140247, large_20201220142642_20201220143110 still in myDataFrame?
-
-    myDataFrame['path length [length unit]'] = myDataFrame['filename'].progress_apply(
-        lambda x: PathLength(get(x)).per_experiment())
-
-    myDataFrame['path length/minimal_path length[]'] = myDataFrame.progress_apply(
-        lambda x: x['path length [length unit]']/PathLength(get(x['filename'])).minimal(), axis=1)
-
+    solver = 'human'
+    myDataFrame = myDataFrame + myDataFrame.new_experiments(solver=solver)
     o = 1
-    #
-    # # TODO: Check in the data frame the path length of
-    # #  'medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433'
-    # #
-    # # myDataFrame = myDataFrame + myDataFrame.new_experiments(solver=solver)
     # # myDataFrame.save()

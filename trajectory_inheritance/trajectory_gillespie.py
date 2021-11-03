@@ -23,7 +23,7 @@ class Trajectory_gillespie(Trajectory):
         my_maze = Maze(size=size, shape=shape, solver=solver, free=free)
         self.gillespie = Gillespie(my_maze)
 
-    def step(self, my_maze, i, display):
+    def step(self, my_maze, i, display=None):
 
         my_maze.set_configuration(self.position[i], self.angle[i])
 

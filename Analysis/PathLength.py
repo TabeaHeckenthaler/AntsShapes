@@ -42,7 +42,7 @@ class PathLength:
         #     print(x.filename + ' was smaller than the minimal path length... ')
         return total
 
-    def per_experiment(self, **kwargs):
+    def per_experiment(self, plot=False, **kwargs):
         """
         Path length is calculated from beginning to end_screen.
         End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
@@ -51,7 +51,7 @@ class PathLength:
             end = min(self.x.fps * kwargs['minutes'] * 60, x.frames.shape[0])
             self.x.position, self.x.angle = self.x.position[0: end], self.x.angle[0: end]
 
-        return self.calculate_path_length()
+        return self.calculate_path_length(plot=plot)
 
     def calculate_path_length(self, start=0, end=-1, rot=True, plot=False):
         """
@@ -88,9 +88,12 @@ class PathLength:
         return path_length
 
     def minimal(self):
-        ideal_filename = 'XL_' + self.x.shape + '_dil0_sensing1'
-        ideal = get(ideal_filename)
-        return PathLength(ideal).per_experiment() * Maze(self.x).exit_size/Maze(ideal).exit_size
+        if self.x.shape not in ['RASH', 'LASH']:
+            ideal_filename = 'XL_' + self.x.shape + '_dil0_sensing1'
+            ideal = get(ideal_filename)
+            return PathLength(ideal).per_experiment() * Maze(self.x).exit_size/Maze(ideal).exit_size
+        else:
+            return np.nan
 
 
 if __name__ == '__main__':
@@ -99,4 +102,4 @@ if __name__ == '__main__':
     # p = [resolution(size, 'ant') for size in sizes['ant']]
     x = get('medium_20210901010920_20210901011020_20210901011020_20210901011022_20210901011022_20210901011433')
     # x = Get('XL_SPT_4290008_XLSpecialT_1_ants', 'ant')
-    print(PathLength(x).per_experiment())
+    print(PathLength(x).per_experiment(plot=True))
