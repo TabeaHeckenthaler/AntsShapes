@@ -92,8 +92,9 @@ class Gillespie:
                    + 0.7 * \
                    np.cross(np.hstack([self.attachment_site_world_coord(my_load, i), [0]]),
                             np.array([0, 0, my_load.angularVelocity]))[:2]
-        # return my_load.GetLinearVelocityFromLocalPoint(self.attachment_position(my_load, i))
+        # my_load.GetLinearVelocityFromLocalPoint(self.attachment_position(my_load, i))
         # my_load.ApplyForce
+        # TODO: Amir, this is the updated version (03.11.2021)
         return f_x, f_y
 
     def attachment(self, i: int, my_load, ant_type: str):
