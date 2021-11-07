@@ -7,7 +7,7 @@ from copy import copy
 import os
 from Setup.Maze import Maze
 from progressbar import progressbar
-from Directories import home, PhaseSpaceDirectory, data_home
+from Directories import PhaseSpaceDirectory
 from Analysis.PathLength import resolution
 
 traj_color = (1.0, 0.0, 0.0)
@@ -38,12 +38,13 @@ class PhaseSpace(object):
         self.shape = shape
         self.size = size
 
-        x_range = (0, maze.slits[-1] + max(getLoadDim(maze.solver, maze.shape, maze.size)) + 1)
+        x_range = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
         y_range = (0, maze.arena_height)
 
         self.extent = {'x': x_range,
                        'y': y_range,
                        'theta': (0, np.pi * 2)}
+        self.average_radius = maze.average_radius()
 
         self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
         self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
@@ -56,8 +57,7 @@ class PhaseSpace(object):
         # x_num = np.ceil(self.extent['x'][1]/resolution)
         y_num = np.ceil(self.extent['y'][1] / resolution(self.size, self.solver))
         theta_num = np.ceil(
-            self.extent['theta'][1] * average_radius(self.size, self.shape, self.solver) / resolution(self.size,
-                                                                                                      self.solver))
+            self.extent['theta'][1] * self.average_radius / resolution(self.size, self.solver))
         return {'x': None, 'y': y_num, 'theta': theta_num}
 
     def initialize_maze_edges(self):
@@ -70,7 +70,8 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, point_particle=False, screen=None, parallel=False):
+    def calculate_space(self, point_particle=False, screen=None):
+        # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
         load = maze.bodies[-1]
 
@@ -87,10 +88,6 @@ class PhaseSpace(object):
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
                 space[self.coords_to_indexes(x, y, theta)] = np.any(Contact_loop2(load, maze))
-                if screen is not None:
-                    if not self.space[self.coords_to_indexes(x, y, theta)]:
-                        Display_renew(0, maze)
-                        _, _, _ = Pygame_EventManager(0, maze, load, [], copy(lines_stat), circles, pause=False)
             return space
 
         # iterate using parallel processing
@@ -111,17 +108,10 @@ class PhaseSpace(object):
         #     # results = Parallel(n_jobs=5)(delayed(ps_calc)(x0, x1) for x0, x1 in split_list)
         #     self.space = np.concatenate(results, axis=0)
 
-        # iterate without parallel processing
-        # else:
-        if screen is not None:
-            lines_stat, circles = screen(maze, [], [])
-        else:
-            lines_stat, circles = None, None
-
         self.space = ps_calc(0, self.space.shape[0])
         return
 
-    def visualize_space(self, name):
+    def visualize_space(self, name, average_radius):
         vis_space = copy(self.space)
 
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
@@ -140,7 +130,7 @@ class PhaseSpace(object):
                               figure=fig,
                               colormap='gray')
 
-        cont.actor.actor.scale = [1, 1, average_radius(self.size, self.shape, self.solver)]
+        cont.actor.actor.scale = [1, 1, average_radius]
 
         """ to get theta """
         ax = mlab.axes(xlabel="x",
@@ -159,7 +149,7 @@ class PhaseSpace(object):
 
     def iterate_coordinates(self, x0=0, x1=-1):
         x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
-        for x in progressbar(x_iter):
+        for x in x_iter:
             for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
                 for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
                     yield x, y, theta
@@ -186,14 +176,14 @@ class PhaseSpace(object):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
-    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False, parallel=False):
+    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False):
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
         else:
-            self.calculate_boundary(point_particle=point_particle, parallel=parallel)
+            self.calculate_boundary(point_particle=point_particle)
             self.save_space(path=path)
         return
 
@@ -233,9 +223,9 @@ class PhaseSpace(object):
                 for itheta in range(self.space.shape[2]):
                     yield ix, iy, itheta
 
-    def calculate_boundary(self, point_particle=False, parallel=False):
+    def calculate_boundary(self, point_particle=False):
         if self.space is None:
-            self.calculate_space(point_particle=point_particle, parallel=parallel)
+            self.calculate_space(point_particle=point_particle)
         self.space_boundary = np.zeros(
             (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
@@ -245,7 +235,7 @@ class PhaseSpace(object):
                 self.space_boundary[ix, iy, itheta] = 1
 
     def draw_trajectory(self, fig, positions, angles, scale_factor=0.02, **kwargs):
-        angle = angles * average_radius(self.size, self.shape, self.solver)
+        angle = angles * self.average_radius
         mlab.points3d(positions[:, 0], positions[:, 1], angle,
                       figure=fig,
                       scale_factor=scale_factor,

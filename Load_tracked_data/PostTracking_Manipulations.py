@@ -4,43 +4,54 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 
-def SmoothConnector(file1, file2):
-    # We use this function, when we want to smoothly connect two datasets, where there was an pause between the tracking
-    # Find the velocity at which the shape moved before the pause
-    from Analysis.Velocity import velocity
-    from Setup.Load import periodicity
-    velocity1 = velocity(file1.position, file1.angle, file1.fps, file1.size, file1.shape, 1, 'x', 'y')
-    velocity2 = velocity(file2.position, file2.angle, file2.fps, file2.size, file2.shape, 1, 'x', 'y')
-
-    con_vel = max(0.01, np.mean(np.hstack([velocity1[:, -200:-1], velocity2[:, 1:200]])))
-    # connector velocity in distance (cm) per frame
-
+def SmoothConnector(file1, file2, con_frames: int =None):
+    """
+    We use this function, when we want to smoothly connect two datasets, where there was an pause between the tracking
+    file1: trajectory1
+    file2: trajectory2
+    con_frames: Number of frames to interpolate over
+    """
     # Instantiate a new load which has the right starting position
     connector_load = Trajectory_ant(size=file1.size, shape=file1.shape,
                                     old_filename=file1.VideoChain[-1] + '_CONNECTOR_' + file2.VideoChain[0],
                                     free=file1.free, fps=file1.fps,
                                     winner=False,
                                     )
+
     # Find the end_screen position
-    dx = file1.position[-1][0] - file2.position[1][0]
-    dy = file1.position[-1][1] - file2.position[1][1]
+    from Setup.Load import periodicity
+    discont = np.pi / periodicity[file1.shape]
+    file2.angle = np.unwrap(np.hstack([file1.angle[-1], file2.angle]), discont=discont)[1:]
 
-    per = 2 * np.pi / periodicity[file1.shape]
-    con_frames = int(np.sqrt(dx ** 2 + dy ** 2) / con_vel)
+    if con_frames is None:
+        from Analysis.Velocity import velocity
+        velocity1 = velocity(file1.position, file1.angle, file1.fps, file1.size, file1.shape, 1, 'x', 'y')
+        velocity2 = velocity(file2.position, file2.angle, file2.fps, file2.size, file2.shape, 1, 'x', 'y')
+        dx = file1.position[-1][0] - file2.position[1][0]
+        dy = file1.position[-1][1] - file2.position[1][1]
+        con_vel = max(0.01, np.mean(np.hstack([velocity1[:, -200:-1], velocity2[:, 1:200]])))
+        con_frames = int(np.sqrt(dx ** 2 + dy ** 2) / con_vel)
 
-    connector_load.position, connector_load.angle, connector_load.frames = np.ndarray([con_frames, 2]), np.ndarray(
-        [con_frames]), np.ndarray([con_frames])
+    from PS_Search_Algorithms.D_star_lite import main
+    shortest_path = main(size=file1.size,
+                         shape=file1.shape,
+                         solver=file1.solver,
+                         sensing_radius=10,
+                         dil_radius=0,
+                         filename='shortest_path',
+                         starting_point=[file1.position[-1][0], file1.position[-1][1], file1.angle[-1]],
+                         ending_point=[file2.position[-1][0], file2.position[-1][1], file2.angle[-1]],
+                         )
+
+    connector_load.angle = connector_load.frames = np.ndarray([con_frames])
+    connector_load.angle = np.linspace(file1.angle[-1], file2.angle[0], num=con_frames)
+
+    connector_load.position = np.ndarray([con_frames, 2])
     connector_load.position[:, 0] = np.linspace(file1.position[-1][0], file2.position[1][0], num=con_frames)
     connector_load.position[:, 1] = np.linspace(file1.position[-1][1], file2.position[1][1], num=con_frames)
 
-    # find the right angle to connect to
-    final_angle = np.floor(file1.angle[-1] / per) * per + np.mod(file2.angle[1], per)
-    connector_load.angle = np.linspace(file1.angle[-1], final_angle, num=con_frames)
-
     # all the other stuff
     connector_load.frames = np.int0(np.linspace(1, con_frames, num=con_frames))
-    # connector_load.contact = [[] for i in range(len(connector_load.frames))]
-    connector_load.run_trj()
     return connector_load
 
 

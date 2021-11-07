@@ -1,8 +1,7 @@
 from PhaseSpaces import PhaseSpace, PS_transformations
 from trajectory_inheritance.trajectory import Trajectory
 from Directories import SaverDirectories
-from Setup.Load import average_radius
-from Setup.Maze import start, end
+from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
 from copy import copy
 from progressbar import progressbar
@@ -25,12 +24,12 @@ class D_star_lite:
     """
 
     def __init__(self,
-                 starting_point,
-                 ending_point,
+                 starting_node,
+                 ending_node,
                  conf_space,
                  known_conf_space,
                  max_iter=100000,
-                 av_radius=None,
+                 average_radius=None,
                  ):
         r"""
         Setting Parameter
@@ -43,27 +42,26 @@ class D_star_lite:
         Keyword Arguments:
             * *max_inter* [int] --
               after how many iterations does the solver stop?
-            * *av_radius* [int] --
-              average radius of the load (you can find it by executing average_radius(size, shape, solver))
+            * *average_radius* [int] --
+              average radius of the load
         """
         self.max_iter = max_iter
 
         self.conf_space = conf_space  # 1, if there is a collision, otherwise 0
         self.known_conf_space = known_conf_space
         self.known_conf_space.initialize_maze_edges()
-
-        self.average_radius = av_radius
         self.distance = None
+        self.average_radius = average_radius
 
         # this is just an example for a speed
         self.speed = np.ones_like(conf_space.space)
         self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
         # Set current node as the start node.
-        self.start = Node_ind(*starting_point, self.conf_space.space.shape, av_radius)
+        self.start = Node_ind(*starting_node, self.conf_space.space.shape, average_radius)
         if self.collision(self.start):
             raise Exception('Your start is not in configuration space')
-        self.end = Node_ind(*ending_point, self.conf_space.space.shape, av_radius)
+        self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
         if self.collision(self.end):
             raise Exception('Your end_screen is not in configuration space')
 
@@ -97,7 +95,7 @@ class D_star_lite:
         # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
         # _ = self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
 
-        for ii, _ in progressbar(enumerate(range(self.max_iter))):
+        for ii, _ in enumerate(range(self.max_iter)):
             if self.current.xi < self.end.xi:
                 if self.current.distance == np.inf:
                     return None  # cannot find path
@@ -206,7 +204,7 @@ class D_star_lite:
         return x
 
     def draw_conf_space_and_path(self, conf_space, fig_name):
-        fig = conf_space.visualize_space(fig_name)
+        fig = conf_space.visualize_space(fig_name, self.average_radius)
         self.start.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
         self.end.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
 
@@ -246,12 +244,17 @@ class D_star_lite:
 
 
 def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False, filename='test',
-         save=False):
+         save=False, starting_point=None, ending_point=None):
     print('Calculating: ' + filename)
 
     # ====Search Path with RRT====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
     conf_space.load_space(path=ps_path(size, shape, solver, point_particle=False))
+
+    if starting_point is None:
+        starting_point = start(size, shape, solver)
+    if ending_point is None:
+        ending_point = end(size, shape, solver)
 
     # ====Set known_conf_space ====
     # 1) known_conf_space are just the maze walls
@@ -265,9 +268,9 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # ====Set Initial parameters====
     d_star_lite = D_star_lite(
-        starting_point=conf_space.coords_to_indexes(*start(size, shape, solver)),
-        ending_point=conf_space.coords_to_indexes(*end(size, shape, solver)),
-        av_radius=average_radius(size, shape, solver),
+        starting_node=conf_space.coords_to_indexes(*starting_point),
+        ending_node=conf_space.coords_to_indexes(*ending_point),
+        average_radius=Maze(size, shape, solver).average_radius(),
         conf_space=conf_space,
         known_conf_space=known_conf_space,
     )
@@ -287,14 +290,15 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # ====Turn this into trajectory_inheritance object====
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='ps_simulation', filename=filename)
-    x.play(1, 'Display', wait=200)
+    x.play(wait=200)
     if save:
         x.save()
-    return
+        return
+    return x
 
 
 if __name__ == '__main__':
-    size = 'XL'
+    size = 'S'
     solver = 'ant'
 
 
@@ -309,7 +313,9 @@ if __name__ == '__main__':
                  solver=solver,
                  sensing_radius=sensing_radius,
                  dil_radius=dil_radius,
-                 filename=filename
+                 filename=filename,
+                 starting_point=None,
+                 ending_point=None,
                  )
 
     # === For parallel processing multiple trajectories on multiple cores of your computer ===

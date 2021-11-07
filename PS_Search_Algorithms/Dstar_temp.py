@@ -1,5 +1,7 @@
 from PhaseSpaces import PhaseSpace
 from trajectory_inheritance.trajectory import get
+from Setup.Maze import Maze
+from Directories import ps_path
 
 import os
 import numpy as np
@@ -10,12 +12,13 @@ solver = 'ant'
 
 data_dir = 'PhaseSpace\\' + solver
 
-x = Get('Dlite_prior_knowledge_of_walls', 'ps_simulation')
-# x.play(1, 'Display', wait=20)
+x = get('Dlite_prior_knowledge_of_walls')
+# x.play(wait=20)
 
 ps = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
-ps.load_space(path=os.path.join(PhaseSpace.ps_dir, solver, ps.name + ".pkl"))
-fig = ps.visualize_space(ps.name)
+ps.load_space(path=os.path.join(ps_path(size, shape, solver), solver, ps.name + ".pkl"))
+
+fig = ps.visualize_space(ps.name, Maze())
 # x.play(1,
 #        'Display',
 #        PhaseSpace=ps,

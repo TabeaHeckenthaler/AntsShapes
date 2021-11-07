@@ -58,6 +58,7 @@ class Gillespie:
         self.r_tot = None
 
         self.time_until_next_event = 0
+        self.populate(my_maze.bodies[-1])
 
     @property
     def attachment_sites(self):
@@ -76,6 +77,7 @@ class Gillespie:
         raise AttributeError('Dont change default phis!')
 
     def is_occupied(self, *i):
+
         if len(i) > 0:
             return self.n_p[i[0]] or self.n_l[i[0]]
         else:
@@ -97,16 +99,21 @@ class Gillespie:
         # TODO: Amir, this is the updated version (03.11.2021)
         return f_x, f_y
 
-    def attachment(self, i: int, my_load, ant_type: str):
+    def attachment(self, i: int, my_load, ant_type: str, normal: bool = False):
         """
         :param i: site index on which to attach
         :param my_load: b2Body
+        :param normal: ant attaches normal to the load
         :return:
         """
         if ant_type == 'puller':
             self.n_p[i] = 1
             f_x, f_y = self.f_loc(my_load, i)
-            self.phi[i] = np.arctan2(f_y, f_x)
+            if normal:
+                self.phi[i] = self.phi_default_load_coord[i] + my_load.angle
+            else:
+                self.phi[i] = np.arctan2(f_y, f_x)
+
             # When a puller ant is attached to the cargo she contributes
             # to the cargo’s velocity by applying a force,
             # and gets aligned as much as possible with the
@@ -250,17 +257,17 @@ class Gillespie:
         """
         populating my_load with ants
         """
-        self.new_attachment(0, my_load, ant_type='puller')
-        self.new_attachment(2, my_load, ant_type='puller')
-        self.new_attachment(4, my_load, ant_type='lifter')
+        for i in range(len(self.n_p)):
+            self.new_attachment(i, my_load, ant_type='puller', normal=False)
 
-    def new_attachment(self, i: int, my_load, ant_type=None):
+    def new_attachment(self, i: int, my_load, ant_type=None, normal: bool = False):
         """
         A new ant attaches, and becomes either puller or lifter
 
         :param i: ith attachment position
         :param my_load: Box2D body
         :param ant_type: str, 'puller' or 'lifter' or None
+        :param normal: ant attaches normal to the load
         :return:
         """
         if self.is_occupied(i):
@@ -275,7 +282,7 @@ class Gillespie:
             else:
                 ant_type = 'lifter'
 
-        self.attachment(i, my_load, ant_type)
+        self.attachment(i, my_load, ant_type, normal=normal)
         return
 
     def update_rates(self, my_load):
@@ -299,4 +306,3 @@ class Gillespie:
 
     def dt(self):
         return -1 / self.r_tot * np.log(np.random.uniform(0, 1))
-

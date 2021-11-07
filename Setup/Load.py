@@ -100,7 +100,7 @@ def corners_phis(my_maze):
                             [shape_width / 2 - shape_thickness - h, -shape_thickness / 2]])
 
         phis = np.array([0, -np.pi / 2, np.pi, np.pi / 2, 0, np.pi / 2,
-                         np.pi, np.pi / 2, 0, -np.pi / 2, np.pi, np.pi / 2])
+                         np.pi, np.pi / 2, 0, -np.pi / 2, np.pi, -np.pi / 2])
     #
     # if my_maze.shape == 'RASH':  # This is the ASymmetrical H
     #     [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()

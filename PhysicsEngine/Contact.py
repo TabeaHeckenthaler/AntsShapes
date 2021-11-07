@@ -1,10 +1,9 @@
 from scipy.spatial import cKDTree
 from Setup.MazeFunctions import BoxIt
 import numpy as np
-from Setup.Maze import Maze, maze_corners
+from Setup.Maze import Maze
 from Analysis.Velocity import velocity_x
 from Setup.Load import loops
-from Setup.Load import Load
 from Analysis.GeneralFunctions import flatten
 
 # maximum distance between fixtures to have a contact (in cm)
@@ -62,6 +61,7 @@ def ccw(A, B, C):
 def intersect(A, B, C, D):
     return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
 
+
 def maze_corners(maze):
     corners = [[0, 0],
                [0, maze.arena_height],
@@ -69,6 +69,7 @@ def maze_corners(maze):
                [maze.slits[-1] + 20, 0],
                ]
     return corners + list(np.resize(maze.slitpoints, (16, 2)))
+
 
 def Contact_loop2(load, maze):
     # this function takes a list of corners (lists have to list rectangles in sets of 4 corners)

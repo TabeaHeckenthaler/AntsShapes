@@ -7,12 +7,13 @@ Created on Sun May  3 10:35:01 2020
 from DataFrame.dataFrame import get_filenames
 from os import listdir
 from Directories import MatlabFolder
-from trajectory_inheritance.trajectory import sizes
 from Directories import NewFileName
 from tqdm import tqdm
+from copy import copy
+from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 
 
-def find_unpickled(solver, size, shape):
+def find_unpickled(solver, size, shape, no_part2=True):
     """
     find the .mat files, which are not pickled yet.
     :return: list of un-pickled .mat file names (without .mat extension)
@@ -23,7 +24,9 @@ def find_unpickled(solver, size, shape):
     else:
         expORsim = 'sim'
     mat_files = listdir(MatlabFolder(solver, size, shape))
-    return [mat_file for mat_file in mat_files if NewFileName(mat_file, size, shape, expORsim) not in set(pickled)]
+
+    return [mat_file for mat_file in mat_files if (NewFileName(mat_file, size, shape, expORsim) not in set(pickled)
+                                                   and ('part 2' not in mat_file or not no_part2))]
 
     # TODO: Look also in the loaded movies, that were glued to one another.
 
@@ -64,15 +67,28 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
 
 
 new_starting_conditions = ['48000', '47900']
-import numpy as np
+
+
+def part2_filename(part1_filename):
+    l = part1_filename.split("_")
+    return ''.join(l[:1]) + '_' + str(int(l[1]) + 1) + '_' + '_'.join(l[2:-1]) + "_" + l[-1].replace('1', '2')
+
 
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     # for size in sizes[solver]:
     for size in 'S':
         for filename in tqdm(find_unpickled(solver, size, shape)):
-            if '48000' in filename:
-                x = Load_Experiment(solver, filename, [], True, 50, size=size, shape=shape)
+            if '480' in filename:
+                print('\n' + filename)
+                winner = bool(input('winner? '))
+                x = Load_Experiment(solver, filename, [], winner, 50, size=size, shape=shape)
+                if 'part 1' in filename:
+                    part1 = copy(x)
+                    print('\n' + part2_filename(filename))
+                    part2 = Load_Experiment(solver, part2_filename(filename), [], winner, 50, size=size, shape=shape)
+                    con = SmoothConnector(part1, part2, con_frames=1000)
+                    x = part1 + con + part2
                 x.play()
                 save = 1
                 # x.save()

@@ -15,7 +15,7 @@ trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'
 
 class Trajectory_ant(Trajectory):
     def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
-                 angle_error=0, falseTracking=None):
+                 angle_error=0, falseTracking=[]):
 
         filename = NewFileName(old_filename, size, shape, 'exp')
 
@@ -230,7 +230,7 @@ class Trajectory_ant(Trajectory):
         if indices is not None:
             f1, f2 = int(indices[0]), int(indices[1]) + 1
             x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
-            x.frames = x.frames[int(f1):int(f2)]
+            x.frames = x.frames[f1:f2]
 
         my_maze = Maze(x, new2021=self.new2021())
         return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))
