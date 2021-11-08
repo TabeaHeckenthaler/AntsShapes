@@ -40,10 +40,10 @@ class Ants(Participants):
             return None
 
     def matlab_loading(self, x):
-        if not (self.VideoChain[0] == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
-            if not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + self.VideoChain[0]):
+        if not (x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
+            if not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + x.old_filenames(0)):
                 breakpoint()
-            file = sio.loadmat(MatlabFolder('ant', x.size, x.shape) + path.sep + self.VideoChain[0])
+            file = sio.loadmat(MatlabFolder('ant', x.size, x.shape) + path.sep + x.old_filenames(0))
 
             if 'Direction' not in file.keys() and x.shape.endswith('ASH'):
                 # file['Direction'] = input('L2R or R2L  ')
@@ -63,17 +63,17 @@ class Ants(Participants):
 
                     if x.angle_error[0] == 0:
                         if x.shape == 'LASH':
-                            x.angle_error = [2 * np.pi * 0.11 + x.angle_error[0]]
+                            x.angle_error = 2 * np.pi * 0.11 + x.angle_error
                         if x.shape == 'RASH':
-                            x.angle_error = [-2 * np.pi * 0.11 + x.angle_error[
-                                0]]  # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
+                            x.angle_error = -2 * np.pi * 0.11 + x.angle_error
+                            # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
                             # error in the end_screen... )
 
                         if x.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
                             # crooked, which messes up the contact tracking
-                            x.angle_error = [2 * np.pi * 0.115 + x.angle_error[0]]
+                            x.angle_error = 2 * np.pi * 0.115 + x.angle_error
                         if x.shape == 'RASH' and self.size == 'XL':
-                            x.angle_error = [-2 * np.pi * 0.115 + x.angle_error[0]]
+                            x.angle_error = -2 * np.pi * 0.115 + x.angle_error
 
             self.pix2cm = file['pix2cm']
             matlab_cell = file['ants']
@@ -81,7 +81,7 @@ class Ants(Participants):
                 data = Frame[0]
                 if data.size != 0:
                     position = data[:, 2:4]
-                    angle = data[:, 5] * np.pi / 180 + x.angle_error[0]
+                    angle = data[:, 5] * np.pi / 180 + x.angle_error
                     carrying = data[:, 4]
                     major_axis_length = data[:, 6]
                     ants_frame = Ants_Frame(position, angle, carrying, major_axis_length)

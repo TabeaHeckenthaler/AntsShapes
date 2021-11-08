@@ -93,6 +93,8 @@ def AddAttemptZone(my_maze, x, **kwargs):
 
 
 def Attempts(x, *args, **kwargs):
+    return None
+    # TODO
     window = x.fps * smoothing_window
     speed = 1
     # interval = 10
@@ -100,7 +102,7 @@ def Attempts(x, *args, **kwargs):
     if x.shape == 'SPT':
         x, attempts = x, [True for i in range(len(x.frames))]
     else:
-        x, attempts = x.play(speed, 'attempt', *args, **kwargs)[:len(x.frames)]
+        x, attempts = x.play('attempt', *args, **kwargs)[:len(x.frames)]
 
     attempts_smoothed = median_filter(attempts, size=window)
     if 'Caption' in kwargs:

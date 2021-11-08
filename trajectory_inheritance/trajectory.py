@@ -31,14 +31,10 @@ def length_unit_func(solver):
 
 def get(filename):
     import os
-    from glob import glob
-
-    pattern = filename
-
     for root, dirs, files in os.walk(work_dir):
         for dir in dirs:
-            if pattern in os.listdir(work_dir+dir):
-                address = work_dir + os.path.join(dir, pattern)
+            if filename in os.listdir(work_dir+dir):
+                address = work_dir + os.path.join(dir, filename)
                 with open(address, 'rb') as f:
                     x = pickle.load(f)
                 return x
@@ -151,4 +147,20 @@ class Trajectory:
                     self.frames = self.frames[:i]
                     break
                 display.renew_screen(frame=self.frames[i], movie_name=self.filename)
+
+    def initial_cond(self):
+        """
+        We changed the initial condition. First, we had the SPT start between the two slits.
+        Later we made it start in the back of the room.
+        :return: str 'back' or 'front' depending on where the shape started
+        """
+        if self.shape != 'SPT':
+            return None
+        elif self.position[0, 0] < Maze(self).slits[0]:
+            return 'back'
+        return 'front'
+
+    def communication(self):
+        return None
+
 

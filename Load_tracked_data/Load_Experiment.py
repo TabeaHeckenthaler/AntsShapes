@@ -89,4 +89,5 @@ if __name__ == '__main__':
                     x = part1 + con + part2
                 x.play()
                 save = 1
+                # TODO: Check that the winner is correctly saved!!
                 # x.save()

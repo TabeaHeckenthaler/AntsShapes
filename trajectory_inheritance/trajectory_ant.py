@@ -213,6 +213,7 @@ class Trajectory_ant(Trajectory):
         self.participants = Ants(self)
 
     def averageCarrierNumber(self):
+        self.load_participants()
         self.participants.averageCarrierNumber()
 
     def play(self, indices=None, wait=0):

@@ -29,10 +29,12 @@ class PathLength:
         Path length is calculated during attempts.
         End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
         """
+        return None
+        # TODO
         total = 0
 
         if attempts is None:
-            attempts = Attempts(x, 'extend', *args, **kwargs)
+            attempts = Attempts(self.x, 'extend', *args, **kwargs)
 
         for attempt in attempts:
             total += self.calculate_path_length(start=attempt[0], end=attempt[1])
