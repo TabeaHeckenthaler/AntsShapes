@@ -10,36 +10,16 @@ from Analysis.GeneralFunctions import flatten
 distance_upper_bound = 0.04
 
 
-def find_contact(x, display=False):
+def find_contact(x):
     my_maze = Maze(size=x.size, shape=x.shape, solver=x.solver)
-    my_load = Load(my_maze, position=x.position[0])
+    my_load = my_maze.bodies[-1]
     contact = []
-    running, pause = True, False
-
-    # to find contact in entire experiment
-    if display:
-        screen = Display_screen(my_maze=my_maze, caption=x.filename)
 
     i = 0
     while i < len(x.frames):
         x.step(my_maze, i)  # update_screen the position of the load (very simple function, take a look)
-
-        if not pause:
-            contact.append(Contact_loop(my_load, my_maze))
-            i += 1
-
-        if display:
-            """Option 1"""
-            # more simplistic, you are just renewing the screen, and displaying the objects
-            Display_renew(screen)
-            Display_loop(my_load, my_maze, screen, points=contact[-1])
-
-            """Option 2"""
-            # if you want to be able to pause the display, use this command:
-            # running, i, pause = Pygame_EventManager(x, i, my_load, my_maze, screen, pause=pause, points=contact[-1])
-
-    if display:
-        Display_end()
+        contact.append(Contact_loop(my_load, my_maze))
+        i += 1
     return contact
 
 
@@ -72,9 +52,11 @@ def maze_corners(maze):
 
 
 def Contact_loop2(load, maze):
-    # this function takes a list of corners (lists have to list rectangles in sets of 4 corners)
-    # and checks, whether a rectangle from the load overlaps with a rectangle from the
+    """
+    this function takes a list of corners (lists have to list rectangles in sets of 4 corners)
+    and checks, whether a rectangle from the load overlaps with a rectangle from the maze boundary
 
+    """
     # first check, whether we are in the middle of the maze, where there is no need for heavy calculations
     # approximate_extent = np.max([2 * np.max(np.abs(np.array(list(fix.shape)))) for fix in load.fixtures])
     #

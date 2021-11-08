@@ -84,6 +84,10 @@ class PhaseSpace(object):
 
         # how to iterate over phase space
         def ps_calc(x0, x1):
+            """
+            param x0: index of x array to start with
+            param x1: index of x array to end with
+            :return: iterator"""
             space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
@@ -147,7 +151,12 @@ class PhaseSpace(object):
         ax.label_text_property.font_family = 'times'
         return fig
 
-    def iterate_coordinates(self, x0=0, x1=-1):
+    def iterate_coordinates(self, x0: int = 0, x1: int = -1):
+        r"""
+        param x0: indice to start with
+        param x1: indice to end with
+        :return: iterator
+        """
         x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
         for x in x_iter:
             for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):

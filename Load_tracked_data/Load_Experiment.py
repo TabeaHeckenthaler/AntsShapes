@@ -28,8 +28,6 @@ def find_unpickled(solver, size, shape, no_part2=True):
     return [mat_file for mat_file in mat_files if (NewFileName(mat_file, size, shape, expORsim) not in set(pickled)
                                                    and ('part 2' not in mat_file or not no_part2))]
 
-    # TODO: Look also in the loaded movies, that were glued to one another.
-
 
 def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: bool, fps: int,
                     x_error: float = 0.0, y_error: float = 0.0, angle_error: float = 0.0,
@@ -66,7 +64,7 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
     return x
 
 
-new_starting_conditions = ['48000', '47900']
+new_starting_conditions = ['48000', '47900', '47800', '47700']
 
 
 def part2_filename(part1_filename):

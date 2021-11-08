@@ -101,7 +101,7 @@ def collision_with_maze_plot(x):
     """
     plot when there is a collision in red and not in blue
     """
-    contact = find_contact(x, display=False)
+    contact = find_contact(x)
     is_frame_in_contact = [int(len(contact[i]) != 0) for i in range(len(contact))]
     start_to_move, move_fast = cart_started_to_move_frames(x)
     colormap = np.array(['b', 'r'])
