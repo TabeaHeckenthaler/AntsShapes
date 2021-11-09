@@ -62,7 +62,7 @@ class Trajectory_human(Trajectory):
         from trajectory_inheritance.humans import get_excel_worksheet_index
         from trajectory_inheritance.forces import get_sheet
         index = get_excel_worksheet_index(self.filename)
-        return get_sheet().cell(row=index, column=5).value == 'C'
+        return bool(get_sheet().cell(row=index, column=5).value == 'C')
 
     def load_participants(self):
         if not hasattr(self, 'participants'):

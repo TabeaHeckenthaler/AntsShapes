@@ -120,5 +120,8 @@ class DataFrame(pd.DataFrame):
 
 if __name__ == '__main__':
     myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
-    myDataFrame = myDataFrame + myDataFrame.new_experiments(solver='ant', shape='SPT')
+    from DataFrame.plot_dataframe import how_many_experiments
+    how_many_experiments(myDataFrame)
+
+    # myDataFrame = myDataFrame + myDataFrame.new_experiments(solver='ant', shape='SPT')
     # myDataFrame.save()

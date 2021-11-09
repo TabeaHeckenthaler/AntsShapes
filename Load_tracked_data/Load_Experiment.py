@@ -4,7 +4,7 @@ Created on Sun May  3 10:35:01 2020
 
 @author: tabea
 """
-from DataFrame.dataFrame import get_filenames
+from dataframe.dataFrame import get_filenames
 from os import listdir
 from Directories import MatlabFolder
 from Directories import NewFileName

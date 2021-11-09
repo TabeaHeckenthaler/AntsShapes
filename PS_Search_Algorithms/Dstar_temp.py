@@ -18,7 +18,7 @@ x = get('Dlite_prior_knowledge_of_walls')
 ps = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
 ps.load_space(path=os.path.join(ps_path(size, shape, solver), solver, ps.name + ".pkl"))
 
-fig = ps.visualize_space(ps.name, Maze())
+fig = ps.visualize_space()
 # x.play(1,
 #        'Display',
 #        PhaseSpace=ps,

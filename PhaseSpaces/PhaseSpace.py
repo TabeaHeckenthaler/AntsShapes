@@ -22,7 +22,7 @@ scale = 5
 
 class PhaseSpace(object):
 
-    def __init__(self, solver, size, shape, name="", ):
+    def __init__(self, solver, size, shape, name="", new2021=False):
         """
         :param board_coords:
         :param load_coords:
@@ -30,8 +30,9 @@ class PhaseSpace(object):
         # :param theta_resolution: theta replace
         # :param x_range: tuple of the x-space range, in the coords units
         # :param y_range: tuple of the y-space range, in the coords units
+        # :param new2021: whether these are new dimensions for SSPT maze after we made it smaller in 2021
         """
-        maze = Maze(size=size, shape=shape, solver=solver)
+        maze = Maze(size=size, shape=shape, solver=solver, new2021=new2021)
 
         self.name = name
         self.solver = solver
@@ -70,9 +71,9 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, point_particle=False, screen=None):
+    def calculate_space(self, new2021=False, point_particle=False, screen=None):
         # TODO: implement point particles
-        maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
+        maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
@@ -115,7 +116,10 @@ class PhaseSpace(object):
         self.space = ps_calc(0, self.space.shape[0])
         return
 
-    def visualize_space(self, name, average_radius):
+    def visualize_space(self, name=None):
+        if name is None:
+            name = self.name
+
         vis_space = copy(self.space)
 
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
@@ -134,7 +138,7 @@ class PhaseSpace(object):
                               figure=fig,
                               colormap='gray')
 
-        cont.actor.actor.scale = [1, 1, average_radius]
+        cont.actor.actor.scale = [1, 1, self.average_radius]
 
         """ to get theta """
         ax = mlab.axes(xlabel="x",
@@ -192,7 +196,7 @@ class PhaseSpace(object):
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
         else:
-            self.calculate_boundary(point_particle=point_particle)
+            self.calculate_boundary(point_particle=point_particle, new2021=new2021)
             self.save_space(path=path)
         return
 
@@ -232,9 +236,9 @@ class PhaseSpace(object):
                 for itheta in range(self.space.shape[2]):
                     yield ix, iy, itheta
 
-    def calculate_boundary(self, point_particle=False):
+    def calculate_boundary(self, new2021=False, point_particle=False):
         if self.space is None:
-            self.calculate_space(point_particle=point_particle)
+            self.calculate_space(point_particle=point_particle, new2021=new2021)
         self.space_boundary = np.zeros(
             (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
@@ -280,8 +284,8 @@ class PhaseSpace(object):
 
 if __name__ == '__main__':
     shape = 'SPT'
-    size = 'XL'
-    point_particle = True
+    size = 'S'
+    point_particle = False
     solver = 'ant'
 
     name = size + '_' + shape
@@ -292,6 +296,5 @@ if __name__ == '__main__':
     path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace(solver, size, shape, name=name)
     ps.load_space(path=path)
-
-    ps.visualize_space(ps.name)
+    ps.visualize_space()
     k = 1

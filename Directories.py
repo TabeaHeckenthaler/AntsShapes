@@ -5,12 +5,18 @@ home = path.abspath(__file__).split('\\')[0] + path.sep + path.join(*path.abspat
 data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
 
 work_dir = data_home + 'Pickled_Trajectories\\'
-
 SaverDirectories = {'ant': work_dir + 'Ant_Trajectories',
                     'human': work_dir + 'Human_Trajectories',
                     'humanhand': work_dir + 'HumanHand_Trajectories',
                     'gillespie': work_dir + 'Gillespie_Trajectories',
                     'ps_simulation': work_dir + 'PS_simulation_Trajectories'}
+
+mini_work_dir = data_home + 'mini_Pickled_Trajectories\\'
+mini_SaverDirectories = {'ant': mini_work_dir + 'Ant_Trajectories',
+                         'human': mini_work_dir + 'Human_Trajectories',
+                         'humanhand': mini_work_dir + 'HumanHand_Trajectories',
+                         'gillespie': mini_work_dir + 'Gillespie_Trajectories',
+                         'ps_simulation': mini_work_dir + 'PS_simulation_Trajectories'}
 
 PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
@@ -38,6 +44,17 @@ def SetupDirectories():
         mkdir(SaverDirectories['humanhand'])
     if not (path.isdir(SaverDirectories['ps_simulation'])):
         mkdir(SaverDirectories['ps_simulation'])
+
+    if not (path.isdir(mini_SaverDirectories['ant'])):
+        if not path.isdir('\\\\' + mini_SaverDirectories['ant'].split('\\')[2]):
+            return
+        mkdir(mini_SaverDirectories['ant'])
+    if not (path.isdir(mini_SaverDirectories['human'])):
+        mkdir(mini_SaverDirectories['human'])
+    if not (path.isdir(mini_SaverDirectories['humanhand'])):
+        mkdir(mini_SaverDirectories['humanhand'])
+    if not (path.isdir(mini_SaverDirectories['ps_simulation'])):
+        mkdir(mini_SaverDirectories['ps_simulation'])
     return
 
 
@@ -77,7 +94,7 @@ def NewFileName(old_filename, size, shape, expORsim):
         if shape.endswith('ASH'):
             return filename.replace(old_filename.split('_')[0], size + '_' + shape)
         else:
-            if size + shape in filename or size + '_' + shape in filename :
+            if size + shape in filename or size + '_' + shape in filename:
                 return filename.replace(size + shape, size + '_' + shape)
             else:
                 raise ValueError('Your filename does not seem to be right.')

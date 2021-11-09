@@ -3,7 +3,7 @@ import os
 import numpy as np
 from mayavi import mlab
 from Analysis.GeneralFunctions import graph_dir
-from DataFrame.dataFrame import myDataFrame
+from dataframe.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
 from Directories import data_home
 
@@ -36,7 +36,7 @@ for (solver, size, shape), df1 in filenames_group:
             # ps.trim([[np.min(position[:, 0]), np.max(position[:, 0])],
             #          [maze.arena_height/2 - y_range, maze.arena_height/2 + y_range]])
 
-            fig = ps.visualize_space(ps.name)
+            fig = ps.visualize_space()
 
             fig = ps.draw_trajectory(fig, position, angle,
                                      scale_factor=0.4,

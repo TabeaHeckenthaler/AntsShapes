@@ -204,7 +204,7 @@ class D_star_lite:
         return x
 
     def draw_conf_space_and_path(self, conf_space, fig_name):
-        fig = conf_space.visualize_space(fig_name, self.average_radius)
+        fig = conf_space.visualize_space(name=fig_name)
         self.start.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
         self.end.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
 

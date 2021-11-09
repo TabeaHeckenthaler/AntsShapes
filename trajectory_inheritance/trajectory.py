@@ -6,9 +6,9 @@ Created on Wed May  6 11:24:09 2020
 @author: tabea
 """
 import numpy as np
-from os import path, walk
+from os import path
 import pickle
-from Directories import SaverDirectories, work_dir
+from Directories import SaverDirectories, work_dir, mini_SaverDirectories
 from copy import deepcopy
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
@@ -116,6 +116,11 @@ class Trajectory:
         return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))
 
     def save(self, address=None) -> None:
+        """
+        1. save a pickle of the object
+        2. save a pickle of a tuple of attributes of the object, in case I make a mistake one day, and change attributes
+        in the class and then am incapable of unpickling my files.
+        """
         if address is None:
             address = SaverDirectories[self.solver] + path.sep + self.filename
 
@@ -128,6 +133,11 @@ class Trajectory:
                 print('Saving ' + self_copy.filename + ' in ' + address)
             except pickle.PicklingError as e:
                 print(e)
+
+        print('Saving minimal' + self.filename + ' in path: ' + mini_SaverDirectories[self.solver])
+        pickle.dump((self.shape, self.size, self.solver, self.filename, self.fps,
+                     self.position, self.angle, self.frames, self.winner),
+                    open(mini_SaverDirectories[self.solver] + path.sep + self.filename, 'wb'))
 
     def load_participants(self):
         pass
@@ -161,6 +171,6 @@ class Trajectory:
         return 'front'
 
     def communication(self):
-        return None
+        return False
 
 
