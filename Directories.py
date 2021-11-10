@@ -27,7 +27,10 @@ excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.
 df_dir = data_home + 'DataFrame\\data_frame'
 
 
-def ps_path(size, shape, solver, point_particle=False):
+def ps_path(size: str, shape: str, solver='ant', point_particle: bool = False):
+    """
+    where the phase space is saved
+    """
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
     return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '.pkl')

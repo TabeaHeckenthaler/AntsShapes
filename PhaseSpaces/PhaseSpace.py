@@ -190,7 +190,7 @@ class PhaseSpace(object):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
-    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False):
+    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False, new2021=False):
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()

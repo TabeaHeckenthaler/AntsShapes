@@ -95,7 +95,7 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, indices=None, wait=0, ps=None):
+    def play(self, indices=None, wait=0, ps=None, step=1):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -107,10 +107,12 @@ class Trajectory:
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if indices is not None:
-            f1, f2 = int(indices[0]), int(indices[1]) + 1
-            x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
-            x.frames = x.frames[int(f1):int(f2)]
+        if indices is None:
+            indices = [0, -2]
+
+        f1, f2 = int(indices[0]), int(indices[1]) + 1
+        x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
+        x.frames = x.frames[f1:f2:step]
 
         my_maze = Maze(x)
         return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps))
@@ -157,6 +159,7 @@ class Trajectory:
                     self.frames = self.frames[:i]
                     break
                 display.renew_screen(frame=self.frames[i], movie_name=self.filename)
+        display.end_screen()
 
     def initial_cond(self):
         """

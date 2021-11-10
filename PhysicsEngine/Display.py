@@ -81,7 +81,11 @@ class Display:
     def draw(self, x):
         self.my_maze.draw(self)
         if self.ps is not None:
-            self.ps.draw_trajectory(x.position[self.i:self.i+1], x.angle[self.i:self.i+1])
+            if self.i <= 1 or self.i >= len(x.angle)-1:
+                kwargs = {'color': (0, 0, 0), 'scale_factor': 2.}
+            else:
+                kwargs = {}
+            self.ps.draw_trajectory(x.position[self.i:self.i+1], x.angle[self.i:self.i+1], **kwargs)
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)
