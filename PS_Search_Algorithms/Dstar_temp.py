@@ -1,6 +1,5 @@
 from PhaseSpaces import PhaseSpace
 from trajectory_inheritance.trajectory import get
-from Setup.Maze import Maze
 from Directories import ps_path
 
 import os

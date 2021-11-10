@@ -5,7 +5,7 @@ from PhysicsEngine.drawables import colors
 
 
 class Display:
-    def __init__(self, x, my_maze, wait=0):
+    def __init__(self, x, my_maze, wait=0, ps=None):
         self.my_maze = my_maze
         self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
@@ -22,6 +22,7 @@ class Display:
         self.wait = wait
         self.i = 0
         self.renew_screen()
+        self.ps = ps
 
     def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
@@ -79,6 +80,8 @@ class Display:
 
     def draw(self, x):
         self.my_maze.draw(self)
+        if self.ps is not None:
+            self.ps.draw_trajectory(x.position[self.i:self.i+1], x.angle[self.i:self.i+1])
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)

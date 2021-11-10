@@ -25,9 +25,9 @@ def get_filenames(solver, size='', shape='', free=False):
 
 
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
-                    'communication', 'average Carrier Number', 'length unit',
-                    'path length [length unit]', 'path length/minimal_path length[]',
-                    'Attempts', 'path_length_during_attempts [length unit]', 'initial condition'],
+                    'communication', 'length unit', 'average Carrier Number', 'Attempts',
+                    'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
+                    'minimal path length [length unit]'],
                    dtype='object')
 
 
@@ -41,19 +41,19 @@ class SingleExperiment(pd.DataFrame):
 
     def add_information(self):
         x = get(self['filename'][0])
-        self['size'] = x.size
-        self['shape'] = x.shape
-        self['winner'] = x.winner
-        self['communication'] = x.communication()
-        self['length unit'] = length_unit_func(x.solver)
-        self['exit size [length unit]'] = Maze(x).exit_size  # TODO: I don't think I need this anymore
-        self['maze size'] = x.size[0]
-        self['path length [length unit]'] = PathLength(x).per_experiment()
-        self['path length/minimal_path length[]'] = self['path length [length unit]'] / PathLength(x).minimal()
-        self['path_length_during_attempts [length unit]'] = PathLength(x).during_attempts()
-        self['average Carrier Number'] = x.averageCarrierNumber()
+        self['size'] = str(x.size)
+        self['shape'] = str(x.shape)
+        self['winner'] = bool(x.winner)
+        self['communication'] = bool(x.communication())
+        self['length unit'] = str(length_unit_func(x.solver))
+        self['exit size [length unit]'] = float(Maze(x).exit_size)  # TODO: I don't think I need this anymore
+        self['maze size'] = float(x.size[0])
+        self['path length [length unit]'] = float(PathLength(x).per_experiment())
+        self['path length during attempts [length unit]'] = float(PathLength(x).during_attempts())
+        self['minimal path length [length unit]'] = float(PathLength(get(x)).minimal())
+        self['average Carrier Number'] = float(x.averageCarrierNumber())
         self['Attempts'] = Attempts(x, 'extend')
-        self['initial condition'] = x.initial_cond()
+        self['initial condition'] = str(x.initial_cond())
 
         # self = self[list_of_columns]
 
@@ -105,22 +105,22 @@ class DataFrame(pd.DataFrame):
         return SingleExperiment(filename, df['solver'].values[0], df=df)
 
     def sanity_check(self):
-        problematic = self[(self['path length/minimal_path length[]'] < 1)
+        problematic = self[(self['path length/minimal path length[]'] < 1)
                            & (self['solver'] != 'ps_simulation')  # TODO: Still have to fix this
                            & (self['winner'] is True)]
         if len(problematic) > 0:
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        pass
-        # self['initial condition'] = self['filename'].progress_apply(lambda row: get(row).initial_cond())
-
-# human_couples = myDataFrame[(myDataFrame['average Carrier Number'] == 2) & (myDataFrame['solver'] == 'human')]
+        self['minimal path length [length unit]'] = self['filename'].progress_apply(
+            lambda x: PathLength(get(x)).minimal())
 
 
+myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
 if __name__ == '__main__':
-    myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
+    myDataFrame.add_column()
     from DataFrame.plot_dataframe import how_many_experiments
+
     how_many_experiments(myDataFrame)
 
     # myDataFrame = myDataFrame + myDataFrame.new_experiments(solver='ant', shape='SPT')

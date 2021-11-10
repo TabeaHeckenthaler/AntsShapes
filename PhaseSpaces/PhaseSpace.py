@@ -14,6 +14,7 @@ traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
 
+
 # TODO: fix the display in this module
 # TODO: fix the x.winner attribute
 
@@ -52,6 +53,7 @@ class PhaseSpace(object):
 
         self.space = None  # True, if there is a collision with the wall
         self.space_boundary = None
+        self.fig = None
         # self._initialize_maze_edges()
 
     def number_of_points(self):
@@ -127,15 +129,15 @@ class PhaseSpace(object):
                       self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
                       ]
 
-        fig = mlab.figure(figure=name,
-                          bgcolor=(1, 1, 1,),
-                          fgcolor=(0, 0, 0,),
-                          size=(400, 400))
+        self.fig = mlab.figure(figure=name,
+                               bgcolor=(1, 1, 1,),
+                               fgcolor=(0, 0, 0,),
+                               size=(400, 400))
 
         cont = mlab.contour3d(x, y, theta,
                               vis_space[:x.shape[0], :x.shape[1], :x.shape[2]],
                               opacity=0.15,
-                              figure=fig,
+                              figure=self.fig,
                               colormap='gray')
 
         cont.actor.actor.scale = [1, 1, self.average_radius]
@@ -153,7 +155,6 @@ class PhaseSpace(object):
 
         ax.axes.label_format = '%.2f'
         ax.label_text_property.font_family = 'times'
-        return fig
 
     def iterate_coordinates(self, x0: int = 0, x1: int = -1):
         r"""
@@ -178,7 +179,7 @@ class PhaseSpace(object):
             yield _ix, _iy, _itheta
 
     @staticmethod
-    def plot_trajectory(self, traj, color=(0, 0, 0)):
+    def plot_trajectory(traj, color=(0, 0, 0)):
         mlab.plot3d(traj[0],
                     traj[1],
                     traj[2],
@@ -247,14 +248,13 @@ class PhaseSpace(object):
             if self._is_boundary_cell(ix, iy, itheta):
                 self.space_boundary[ix, iy, itheta] = 1
 
-    def draw_trajectory(self, fig, positions, angles, scale_factor=0.02, **kwargs):
+    def draw_trajectory(self, positions, angles, scale_factor=1, color=(1, 0, 0)):
         angle = angles * self.average_radius
         mlab.points3d(positions[:, 0], positions[:, 1], angle,
-                      figure=fig,
+                      figure=self.fig,
                       scale_factor=scale_factor,
-                      **kwargs
+                      color=color
                       )
-        return fig
 
     def trim(self, borders):
         [[x_min, x_max], [y_min, y_max]] = borders
@@ -267,24 +267,17 @@ class PhaseSpace(object):
                      ]
 
     # TODO: implement this method!
-    def draw(self, ps_figure, x, i, my_load, interval) -> None:
+    def draw(self, x, i, my_load, interval) -> None:
         if i < interval:
-            ps_figure = self.draw_trajectory(ps_figure,
-                                             np.array([my_load.position]),
-                                             np.array([my_load.angle]),
-                                             scale_factor=1,
-                                             color=(0, 0, 0))
+            self.draw_trajectory(np.array([my_load.position]), np.array([my_load.angle]), scale_factor=1,
+                                 color=(0, 0, 0))
         else:
-            ps_figure = self.draw_trajectory(ps_figure,
-                                             x.position[i:i + interval],
-                                             x.angle[i:i + interval],
-                                             scale_factor=1,
-                                             color=(1, 0, 0))
+            self.draw_trajectory(x.position[i:i + interval], x.angle[i:i + interval], scale_factor=1, color=(1, 0, 0))
 
 
 if __name__ == '__main__':
-    shape = 'SPT'
-    size = 'S'
+    shape = 'H'
+    size = 'XL'
     point_particle = False
     solver = 'ant'
 

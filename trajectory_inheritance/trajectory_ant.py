@@ -216,7 +216,7 @@ class Trajectory_ant(Trajectory):
         self.load_participants()
         self.participants.averageCarrierNumber()
 
-    def play(self, indices=None, wait=0):
+    def play(self, indices=None, wait=0, ps=None, step=1):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -228,10 +228,12 @@ class Trajectory_ant(Trajectory):
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if indices is not None:
-            f1, f2 = int(indices[0]), int(indices[1]) + 1
-            x.position, x.angle = x.position[f1:f2, :], x.angle[f1:f2]
-            x.frames = x.frames[f1:f2]
+        if indices is None:
+            indices = [0, -2]
+
+        f1, f2 = int(indices[0]), int(indices[1]) + 1
+        x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
+        x.frames = x.frames[f1:f2:step]
 
         my_maze = Maze(x, new2021=self.new2021())
-        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))
+        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps))

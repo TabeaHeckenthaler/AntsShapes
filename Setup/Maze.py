@@ -315,7 +315,7 @@ class Maze(b2World):
         self.bodies[-1].position.x, self.bodies[-1].position.y, self.bodies[-1].angle = position[0], position[1], angle
 
     def minimal_path_length(self):
-        from dataframe.dataFrame import myDataFrame
+        from DataFrame.dataFrame import myDataFrame
         from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
         p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
         return p.values[0][0]

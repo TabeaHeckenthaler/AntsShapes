@@ -95,7 +95,7 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, indices=None, wait=0):
+    def play(self, indices=None, wait=0, ps=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -113,7 +113,7 @@ class Trajectory:
             x.frames = x.frames[int(f1):int(f2)]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait))
+        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps))
 
     def save(self, address=None) -> None:
         """
