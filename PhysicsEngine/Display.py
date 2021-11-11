@@ -82,7 +82,7 @@ class Display:
         self.my_maze.draw(self)
         if self.ps is not None:
             if self.i <= 1 or self.i >= len(x.angle)-1:
-                kwargs = {'color': (0, 0, 0), 'scale_factor': 2.}
+                kwargs = {'color': (0, 0, 0), 'scale_factor': 1.}
             else:
                 kwargs = {}
             self.ps.draw_trajectory(x.position[self.i:self.i+1], x.angle[self.i:self.i+1], **kwargs)

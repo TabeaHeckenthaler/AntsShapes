@@ -248,7 +248,10 @@ class PhaseSpace(object):
             if self._is_boundary_cell(ix, iy, itheta):
                 self.space_boundary[ix, iy, itheta] = 1
 
-    def draw_trajectory(self, positions, angles, scale_factor=1, color=(1, 0, 0)):
+    def draw_trajectory(self, positions, angles, scale_factor: float = 0.5, color=(1, 0, 0)):
+        """
+        draw positions and angles in 3 dimensional phase space
+        """
         angle = angles * self.average_radius
         mlab.points3d(positions[:, 0], positions[:, 1], angle,
                       figure=self.fig,
