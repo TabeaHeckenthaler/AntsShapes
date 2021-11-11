@@ -7,7 +7,7 @@ import pandas as pd
 from scipy import stats
 from Setup.Maze import Maze
 from PhysicsEngine.drawables import Arrow
-
+from scipy.signal import find_peaks
 
 def get_sheet():
     workbook = load_workbook(filename=excel_sheet_directory + path.sep + "Testable.xlsx")
@@ -127,7 +127,6 @@ class Forces:
 
         sampled_frames = convert_to_frames(fps, text_file_content[1::2][1:-1])
 
-        # load forces and set them relative to the baseline
         forces_txt = [[float(fu) for fu in fo[0].split(' ') if len(fu) > 1] for fo in text_file_content[0::2][:-1]]
 
         # all unoccupied force meters should have zero force
@@ -145,7 +144,6 @@ class Forces:
         # find the offset of the first frame of the movie to the start of the force meter measurement
         synch_offset = self.synchronization_offset(fps)
 
-        abs_values = []
         # write the force into the self.frame[:].forces variable
         if len(forces_all_frames) < len(frames) + synch_offset:
             if 'battery' in sheet.cell(row=self.excel_index, column=18).value:
@@ -154,6 +152,7 @@ class Forces:
                 missing_frames = range(len(forces_all_frames) - len(frames) + 1)
                 [forces_all_frames.append(empty) for _ in missing_frames]
 
+        abs_values = []
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
             abs_values.append(forces_all_frames[force_index])
         return self.remove_force_outliers(np.array(abs_values))
@@ -167,10 +166,23 @@ class Forces:
             outlier_index = np.where((np.abs(stats.zscore(df_original, axis=0)) < 5) == False)[0]
             df_original.values[outlier_index] = np.NaN
             df_no_outliers = df_original.interpolate()
+            # df_to_baseline = np.array(df_no_outliers) - np.min(df_no_outliers)[0]
 
-            return np.array(df_no_outliers) - np.min(df_no_outliers)[0]
+            def plateau(y):
+                from matplotlib import pyplot as plt
+                plateaus = find_peaks(y, plateau_size=20)[0]
+                if len(plateaus) == 0:
+                    return y.min()
+                if len(np.where(y - y[plateaus].mean() < 0)[0])/len(y) > 0.4:
+                    return y.min()
+                return y[plateaus].mean()
+
+            df_to_baseline = np.array(df_no_outliers) - plateau(df_no_outliers[0])
+
+            return df_to_baseline
 
         return np.squeeze(np.apply_along_axis(remove_force_outliers_single_forcemeter, 0, array))
+
 
     def draw(self, display, x):
         force_attachments = display.my_maze.force_attachment_positions()

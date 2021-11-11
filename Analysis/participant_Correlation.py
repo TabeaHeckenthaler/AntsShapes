@@ -50,6 +50,8 @@ class Participant_Correlation:
 
 if __name__ == '__main__':
     x = get('medium_20201223125622_20201223130532')
+    x.load_participants()
+    plt.plot(x.participants.forces.abs_values)
     cor = Participant_Correlation(x)
     cor.torque([0, 5], 0)
 
