@@ -5,8 +5,9 @@ from PhysicsEngine.drawables import colors
 
 
 class Display:
-    def __init__(self, x, my_maze, wait=0, ps=None):
+    def __init__(self, x, my_maze, wait=0, ps=None, i=0):
         self.my_maze = my_maze
+        my_maze.set_configuration(x.position[i], x.angle[i])
         self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
@@ -20,7 +21,7 @@ class Display:
         self.polygons = []
         self.points = []
         self.wait = wait
-        self.i = 0
+        self.i = i
         self.renew_screen()
         self.ps = ps
 
@@ -58,7 +59,7 @@ class Display:
         if frame is not None:
             text = self.font.render(movie_name, True, colors['text'])
             text_rect = text.get_rect()
-            text2 = self.font.render('Frame: ' + str(frame), True, colors['text'])
+            text2 = self.font.render('Frame: ' + str(self.i), True, colors['text'])
             self.screen.blit(text2, [0, 25])
             self.screen.blit(text, text_rect)
 

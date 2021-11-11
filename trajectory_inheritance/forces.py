@@ -9,6 +9,7 @@ from Setup.Maze import Maze
 from PhysicsEngine.drawables import Arrow
 from scipy.signal import find_peaks
 
+
 def get_sheet():
     workbook = load_workbook(filename=excel_sheet_directory + path.sep + "Testable.xlsx")
     sheet = workbook.active
@@ -21,6 +22,7 @@ DISPLAY_CONSTANT = 0.2
 
 class Forces:
     def __init__(self, humans, x):
+        from trajectory_inheritance.humans import participant_number
         self.excel_index = humans.excel_index
         if self.get_force_filename() is not None:
             self.date = self.get_date()
@@ -31,11 +33,7 @@ class Forces:
             self.abs_values = self.forces_loading(humans.frames, x.fps)
             self.angles = self.get_angles(humans, x)
             self.angles_load = self.angles - x.angle[:, np.newaxis]
-            self.meters_load = self.get_meters_load(x)
-
-    @staticmethod
-    def get_meters_load(x):
-        return Maze(x).force_attachment_positions()
+            self.force_meters = Maze(x).force_attachment_positions_in_trajectory(x)
 
     @staticmethod
     def get_angles(humans, x):
@@ -155,7 +153,9 @@ class Forces:
         abs_values = []
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
             abs_values.append(forces_all_frames[force_index])
-        return self.remove_force_outliers(np.array(abs_values))
+        abs_values = self.remove_force_outliers(np.array(abs_values))
+        abs_values = abs_values - self.plateaus(abs_values)
+        return abs_values
 
     @staticmethod
     def remove_force_outliers(array):
@@ -166,28 +166,27 @@ class Forces:
             outlier_index = np.where((np.abs(stats.zscore(df_original, axis=0)) < 5) == False)[0]
             df_original.values[outlier_index] = np.NaN
             df_no_outliers = df_original.interpolate()
-            # df_to_baseline = np.array(df_no_outliers) - np.min(df_no_outliers)[0]
-
-            def plateau(y):
-                from matplotlib import pyplot as plt
-                plateaus = find_peaks(y, plateau_size=20)[0]
-                if len(plateaus) == 0:
-                    return y.min()
-                if len(np.where(y - y[plateaus].mean() < 0)[0])/len(y) > 0.4:
-                    return y.min()
-                return y[plateaus].mean()
-
-            df_to_baseline = np.array(df_no_outliers) - plateau(df_no_outliers[0])
-
-            return df_to_baseline
-
+            return df_no_outliers
         return np.squeeze(np.apply_along_axis(remove_force_outliers_single_forcemeter, 0, array))
 
+    @staticmethod
+    def plateaus(arrays):
+        def plateau(array):
+            plateaus = find_peaks(array, plateau_size=20)[0]
+            if len(plateaus) == 0:
+                return array.min()
+            if len(np.where(array - array[plateaus].mean() < 0)[0]) / len(array) > 0.4:
+                return array.min()
+            return array[plateaus].mean()
+        return [plateau(arrays[:, i]) for i in range(arrays.shape[1])]
 
     def draw(self, display, x):
         force_attachments = display.my_maze.force_attachment_positions()
         for name in x.participants.occupied:
             self.arrow(display.i, force_attachments[name], name).draw(display)
+
+    def torque(self, part):
+        return np.cross(self.force_vector(part), self.force_meters[:, part])
 
     def arrow(self, i, force_meter_coor, name) -> Arrow:
         """
@@ -200,7 +199,7 @@ class Forces:
               np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])])
         return Arrow(np.array(start), np.array(end), str(name + 1))
 
-    def part(self, name: int, reference_frame='maze') -> np.ndarray:
+    def force_vector(self, name: int, reference_frame='maze') -> np.ndarray:
         """
         :param name: index of the participant
         :param reference_frame: 'maze' or 'load', dependent on desired reference frame
@@ -213,7 +212,7 @@ class Forces:
         else:
             raise ValueError('What frame of reference?')
 
-        return np.array([np.cos(a), np.sin(a)]) * self.abs_values[:, name]
+        return np.transpose(np.array([np.cos(a), np.sin(a)]) * self.abs_values[:, name])
 
     # def debugger(human, forces_all_frames, x):
     #     if np.isnan(np.sum([human.frames[i].forces[1] for i in range(0, len(human.frames))])):

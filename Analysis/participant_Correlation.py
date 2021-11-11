@@ -17,15 +17,15 @@ from PhysicsEngine.Display import Display
 #     fig.colorbar(im)
 #     fig.show()
 
-# f0 = x.participants.forces.part(0, reference_frame='maze')
-# f1 = x.participants.forces.part(1, reference_frame='maze')
+# f0 = x.participants.forces.force_vector(0, reference_frame='maze')
+# f1 = x.participants.forces.force_vector(1, reference_frame='maze')
 
 # fig, ax = plt.subplots()
 #
 # frame = 1120
 #
 # for name in [0, 4]:
-#     f = x.participants.forces.part(name, reference_frame='load')
+#     f = x.participants.forces.force_vector(name, reference_frame='load')
 #     rot = np.cross(x.participants.forces.meters_load[name], f, axisa=0, axisb=0)
 #     ax.plot(rot)
 #     ax.plot(frame, rot[frame], '*')
@@ -36,24 +36,17 @@ from PhysicsEngine.Display import Display
 class Participant_Correlation:
     def __init__(self, x):
         self.x = x
-        self.maze = Maze(x, )
         if not hasattr(self.x, 'participants'):
             x.load_participants()
-        self.forcemeters = self.maze.force_attachment_positions_in_trajectory(x)[:, self.x.participants.occupied, :]
-        self.force_vectors = self.x.participants.forces.part(self.x.participants.occupied).reshape(self.forcemeters.shape)
 
-    def torque(self, participant_list, i):
-        for part in participant_list:
-            t = np.cross(self.force_vectors[i, part], self.forcemeters[i, part])
-            print(t)
+    def plot_abs_values(self):
+        plt.plot(self.x.frames / self.x.fps, x.participants.forces.abs_values)
+        plt.show()
 
 
 if __name__ == '__main__':
     x = get('medium_20201223125622_20201223130532')
-    x.load_participants()
-    plt.plot(x.participants.forces.abs_values)
     cor = Participant_Correlation(x)
-    cor.torque([0, 5], 0)
+    torques = np.hstack([[x.participants.forces.torque(part) for part in x.participants.occupied]])
 
-    Display(x, cor.maze).draw(x)
-    k = 1
+    Display(x, Maze(x), i=1000).draw(x)

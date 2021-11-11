@@ -71,7 +71,7 @@ def States(x, *vargs, **kwargs):
     #             state = maze.statenames[2]
     #         else: ('We did not find a state...?')
 
-    #     # The H has passed the slit with the center of mass, but still has to get the last part out of the slit
+    #     # The H has passed the slit with the center of mass, but still has to get the last force_vector out of the slit
     #     elif x_pos < maze.slits[0] + shape_height/2:
     #         if np.mod(ang/(2*pi)*4 - np.mod(ang/(2*pi)*4, 1), 2) == 1:
     #             state = maze.statenames[3]
@@ -97,7 +97,7 @@ def States(x, *vargs, **kwargs):
     #             state = maze.statenames[2]
     #         else: ('We did not find a state...?')
 
-    #     # The H has passed the slit with the center of mass, but still has to get the last part out of the slit
+    #     # The H has passed the slit with the center of mass, but still has to get the last force_vector out of the slit
     #     elif x_pos < maze.slits[0] + shape_height/2:
     #         if np.mod(ang/(2*pi)*4 - np.mod(ang/(2*pi)*4, 1), 2) == 1:
     #             state = maze.statenames[3]
@@ -123,7 +123,7 @@ def States(x, *vargs, **kwargs):
     #             state = maze.statenames[2]
     #         else: ('We did not find a state...?')
 
-    #     # The H has passed the slit with the center of mass, but still has to get the last part out of the slit
+    #     # The H has passed the slit with the center of mass, but still has to get the last force_vector out of the slit
     #     elif x_pos < maze.slits[0] + shape_height/2:
     #         if np.mod(ang/(2*pi)*4 - np.mod(ang/(2*pi)*4, 1), 2) == 1:
     #             state = maze.statenames[3]

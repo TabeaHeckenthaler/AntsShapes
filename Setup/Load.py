@@ -70,7 +70,7 @@ def corners_phis(my_maze):
     if my_maze.shape == 'T':
         [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()
         resize_factor = ResizeFactors[my_maze.solver][my_maze.size]
-        h = 1.35 * resize_factor  # distance of the centroid away from the center of the lower part of the T.
+        h = 1.35 * resize_factor  # distance of the centroid away from the center of the lower force_vector of the T.
 
         corners = np.array([[(shape_height - shape_thickness) / 2 + h, -shape_thickness / 2],
                             [(-shape_height + shape_thickness) / 2 + h, -shape_thickness / 2],

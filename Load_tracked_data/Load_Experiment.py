@@ -81,7 +81,7 @@ if __name__ == '__main__':
                 print('\n' + filename)
                 winner = bool(input('winner? '))
                 x = Load_Experiment(solver, filename, [], winner, 50, size=size, shape=shape)
-                if 'part 1' in filename:
+                if 'force_vector 1' in filename:
                     part1 = copy(x)
                     print('\n' + part2_filename(filename))
                     part2 = Load_Experiment(solver, part2_filename(filename), [], winner, 50, size=size, shape=shape)

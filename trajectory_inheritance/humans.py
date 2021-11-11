@@ -94,6 +94,9 @@ class Humans(Participants, ABC):
         if sheet.cell(row=self.excel_index, column=19).value != '/':
             self.forces = Forces(self, x)
 
+    def __len__(self):
+        return len(self.occupied)
+
     def interpolate_falling_hats(self, matlab_cell):
         """
         Check if I noticed any switch:
@@ -256,4 +259,4 @@ class Humans(Participants, ABC):
             if hasattr(self, 'forces'):
                 force_attachment = display.my_maze.force_attachment_positions()
                 Circle(force_attachment[part], 0.05, (0, 0, 0), hollow=False).draw(display)
-                # Line(self.positions[display.i, part], force_attachment[part], (0, 0, 0)).draw(display)
+                # Line(self.positions[display.i, force_vector], force_attachment[force_vector], (0, 0, 0)).draw(display)

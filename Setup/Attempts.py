@@ -75,7 +75,7 @@ def AddAttemptZone(my_maze, x, **kwargs):
     )
 
     # this is necessary because I don't want the left part of the shape to be
-    # before the zone, and the last part of the shape to be after the zone. So, I have to extend the zone. 
+    # before the zone, and the last part of the shape to be after the zone. So, I have to extend the zone.
 
     my_attempts_zone.CreateCircleFixture(radius=x_size - my_maze.wallthick / 2,
                                          pos=b2Vec2(-my_maze.wallthick / 2, -y_size / 2))

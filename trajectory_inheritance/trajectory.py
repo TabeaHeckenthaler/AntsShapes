@@ -64,6 +64,9 @@ class Trajectory:
         string = '\n' + self.filename
         return string
 
+    def __len__(self):
+        return len(self.frames)
+
     def step(self, my_maze, i, display=None):
         my_maze.set_configuration(self.position[i], self.angle[i])
 

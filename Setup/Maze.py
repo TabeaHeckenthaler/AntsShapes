@@ -58,19 +58,19 @@ def end(size, shape, solver):
 
 class Maze(b2World):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', free=False, position=None, angle=0,
-                 point_particle=False, new2021=False):
+                 point_particle=False, new2021=False, i=0):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
                                                          'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory']:
-
-            self.shape = args[0].shape  # loadshape (maybe this will become name of the maze...)
-            self.size = args[0].size  # size
-            self.solver = args[0].solver
+            x = args[0]
+            self.shape = x.shape  # loadshape (maybe this will become name of the maze...)
+            self.size = x.size  # size
+            self.solver = x.solver
             if position is None:
-                position = args[0].position[0]
-            if position is None:
-                position = args[0].angle[0]
+                position = x.position[i]
+            if angle is None:
+                angle = x.angle[i]
 
         else:
             self.shape = shape  # loadshape (maybe this will become name of the maze...)
@@ -386,9 +386,9 @@ class Maze(b2World):
         if self.shape == 'T':
             [shape_height, shape_width, shape_thickness] = self.getLoadDim()
             resize_factor = ResizeFactors[self.solver][self.size]
-            h = 1.35 * resize_factor  # distance of the centroid away from the center of the lower part of the T.
+            h = 1.35 * resize_factor  # distance of the centroid away from the center of the lower force_vector of the T.
 
-            #  Top horizontal T part
+            #  Top horizontal T force_vector
             my_load.CreatePolygonFixture(vertices=[
                 ((-shape_height + shape_thickness) / 2 + h, -shape_width / 2),
                 ((-shape_height - shape_thickness) / 2 + h, -shape_width / 2),
@@ -397,7 +397,7 @@ class Maze(b2World):
                 density=1, friction=0, restitution=0,
             )
 
-            #  Bottom vertical T part
+            #  Bottom vertical T force_vector
             my_load.CreatePolygonFixture(vertices=[
                 ((-shape_height + shape_thickness) / 2 + h, -shape_thickness / 2),
                 ((shape_height - shape_thickness) / 2 + h, -shape_thickness / 2),
@@ -410,7 +410,7 @@ class Maze(b2World):
             # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the
             # long middle
             h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle
-            # part of the T. (1.445 calculated)
+            # force_vector of the T. (1.445 calculated)
 
             # This is the connecting middle piece
             my_load.CreatePolygonFixture(vertices=[
@@ -545,6 +545,9 @@ class Maze(b2World):
             return SPT_Human_sizes
 
     def force_attachment_positions_in_trajectory(self, x):
+        """
+        force attachment in world coordinates
+        """
         initial_pos, initial_angle = copy(self.bodies[-1].position), copy(self.bodies[-1].angle)
         force_attachment_positions_in_trajectory = []
         for i in range(len(x.frames)):
