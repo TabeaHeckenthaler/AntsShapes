@@ -585,7 +585,7 @@ class Maze(b2World):
             yA_B = short_edge / 6
             yC_Z = short_edge / 2
             yDEFGHIJ_STUVWXY = shape_thickness / 2
-            yK_R = shape_height / 10 * 2
+            yK_R = shape_height / 10 * 3  # TODO: Tabea, you changed this
             yL_Q = shape_height / 2
             yM_P = shape_height / 10 * 3
             yN_O = shape_height / 10

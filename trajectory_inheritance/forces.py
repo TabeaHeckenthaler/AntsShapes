@@ -16,6 +16,7 @@ def get_sheet():
 
 
 sheet = get_sheet()
+DISPLAY_CONSTANT = 0.2
 
 
 class Forces:
@@ -44,9 +45,9 @@ class Forces:
         :return: angles of the forces in world coordinates
         """
         from trajectory_inheritance.humans import angle_shift
-        return humans.angles + \
-               x.angle[:, np.newaxis] + \
-               np.array(list(angle_shift[x.size].values()))[np.newaxis, :]
+        angle_shift = np.array([angle_shift[x.size][i]
+                                for i in range(len(angle_shift[x.size].keys()))])[np.newaxis, :]
+        return humans.angles + x.angle[:, np.newaxis] + angle_shift
 
     def get_date(self):
         day = sheet.cell(row=self.excel_index, column=2).value
@@ -150,7 +151,7 @@ class Forces:
             if 'battery' in sheet.cell(row=self.excel_index, column=18).value:
                 print('Battery empty')
                 empty = [0.0 for _ in range(len(forces_all_frames[0]))]
-                missing_frames = range(len(forces_all_frames) - len(frames)+1)
+                missing_frames = range(len(forces_all_frames) - len(frames) + 1)
                 [forces_all_frames.append(empty) for _ in missing_frames]
 
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
@@ -178,11 +179,13 @@ class Forces:
 
     def arrow(self, i, force_meter_coor, name) -> Arrow:
         """
+        :param i: index of the participant
+        :param force_meter_coor: where is the force_meter located in world coordinates
         :return: start, end and string for the display of the force as a triplet
         """
         start = force_meter_coor
-        end = force_meter_coor + \
-              self.abs_values[i, name] * np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])]) * 1 / 5
+        end = force_meter_coor + self.abs_values[i, name] * DISPLAY_CONSTANT * \
+              np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])])
         return Arrow(np.array(start), np.array(end), str(name + 1))
 
     def part(self, name: int, reference_frame='maze') -> np.ndarray:
@@ -214,4 +217,3 @@ class Forces:
     #             f.write('missing frames: ' +
     #                     str(len([i for i in range(len(human.frames))
     #                              if np.isnan(human.frames[i].forces[0])])) + '\n')
-

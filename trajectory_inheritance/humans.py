@@ -18,7 +18,9 @@ angle_shift = {  # the number keys describe the names, zero based (Avirams numbe
                6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
 
     # the number keys describe the names, based on 0=A, ..., 25=Z.
-    'Large': {3: np.pi / 2, 4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2, 7: np.pi / 2, 8: np.pi / 2, 9: np.pi / 2,
+    'Large': {0: 0, 1: 0,
+              2: np.pi / 2,
+              3: np.pi / 2, 4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2, 7: np.pi / 2, 8: np.pi / 2, 9: np.pi / 2,
               10: 0,
               11: np.pi / 2,
               12: np.pi, 13: np.pi, 14: np.pi, 15: np.pi,
@@ -27,8 +29,6 @@ angle_shift = {  # the number keys describe the names, zero based (Avirams numbe
               18: -np.pi / 2, 19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2,
               24: -np.pi / 2,
               25: -np.pi / 2,
-              0: 0, 1: 0,
-              2: np.pi / 2,
               },
 }
 
@@ -132,14 +132,17 @@ class Humans(Participants, ABC):
                                            np.where(matlab_cell[frame][:, 4] == hat)[0],
                                            0)
         for hat in hats_initial:
-            interpolate_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
-            for frame1, frame2 in ranges(interpolate_frames):
+
+            switch_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
+            for frame1, frame2 in ranges(switch_frames):
                 flying_hats = sheet.cell(row=self.excel_index, column=20).value
                 if flying_hats is not None and int(flying_hats.split(':')[0]) == hat:
                     for new_hat in flying_hats.split(':')[1].split(', '):
                         switching(hat, int(new_hat))
-                else:
-                    add_interpolation(hat)
+
+            interpolate_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
+            for frame1, frame2 in ranges(interpolate_frames):
+                add_interpolation(hat)
 
         new_hats_frames = [i for i, frame in enumerate(matlab_cell) if frame.shape != (len(self.occupied), 5)]
         for frame in new_hats_frames:
@@ -177,9 +180,9 @@ class Humans(Participants, ABC):
                 if x.size == 'Medium':
                     data = data[np.vectorize(Medium_id_correction_dict.get)(data[:, 4]).argsort()]
                     data[:, 4] = np.vectorize(Medium_id_correction_dict.get)(data[:, 4])
-                if x.size == 'Large':
-                    pass
 
+                if humans_frame.position[self.occupied].shape != data[:, 2:4].shape:
+                    k = 1
                 humans_frame.position[self.occupied] = data[:, 2:4] + np.array([x.x_error, x.y_error])
 
                 # if force meters were installed, then only carrying boolean and angle were included in .mat file
@@ -201,7 +204,7 @@ class Humans(Participants, ABC):
         return
 
     def angle_to_forcemeter(self, positions, my_maze, angle, size) -> np.ndarray:
-        r = positions[self.occupied] - self.force_attachment_positions(my_maze)[self.occupied]
+        r = positions[self.occupied] - my_maze.force_attachment_positions()[self.occupied]
         angles_to_normal = np.arctan2(r[:, -1], r[:, 0]) - \
                            np.array([angle_shift[size][occ] for occ in self.occupied]) - angle
         return angles_to_normal
@@ -250,77 +253,6 @@ class Humans(Participants, ABC):
         for part in self.occupied:
             Circle(self.positions[display.i, part], 0.1, colors['hats'], hollow=False).draw(display)
             if hasattr(self, 'forces'):
-                force_attachment = self.force_attachment_positions(display.my_maze)
+                force_attachment = display.my_maze.force_attachment_positions()
                 Circle(force_attachment[part], 0.05, (0, 0, 0), hollow=False).draw(display)
-                Line(self.positions[display.i, part], force_attachment[part], (0, 0, 0)).draw(display)
-
-    def force_attachment_positions(self, my_maze):
-        from Setup.Maze import centerOfMass_shift
-        if self.size == 'Medium':
-            # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict
-            [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()
-            x29, x38, x47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
-
-            # (0, 0) is the middle of the shape
-            positions = [[shape_width / 2, 0],
-                         [x29, shape_thickness / 2],
-                         [x38, shape_thickness / 2],
-                         [x47, shape_thickness / 2],
-                         [-shape_width / 2, shape_height / 4],
-                         [-shape_width / 2, -shape_height / 4],
-                         [x47, -shape_thickness / 2],
-                         [x38, -shape_thickness / 2],
-                         [x29, -shape_thickness / 2]]
-            h = centerOfMass_shift * shape_width
-
-        elif self.size == 'Large':
-            [shape_height, shape_width, shape_thickness, short_edge] = my_maze.getLoadDim(short_edge=True)
-
-            xMNOP = -shape_width / 2
-            xLQ = xMNOP + shape_thickness / 2
-            xAB = (-1) * xMNOP
-            xCZ = (-1) * xLQ
-            xKR = xMNOP + shape_thickness
-            xJS, xIT, xHU, xGV, xFW, xEX, xDY = [xKR + (shape_width - 2 * shape_thickness) / 8 * i for i in range(1, 8)]
-
-            yA_B = short_edge / 6
-            yC_Z = short_edge / 2
-            yDEFGHIJ_STUVWXY = shape_thickness / 2
-            yK_R = shape_height / 10 * 2
-            yL_Q = shape_height / 2
-            yM_P = shape_height / 10 * 3
-            yN_O = shape_height / 10
-
-            # indices in comment describe the index shown in Aviram's tracking movie
-            positions = [[xAB, -yA_B],  # 1, A
-                         [xAB, yA_B],  # 2, B
-                         [xCZ, yC_Z],  # 3, C
-                         [xDY, yDEFGHIJ_STUVWXY],  # 4, D
-                         [xEX, yDEFGHIJ_STUVWXY],  # 5, E
-                         [xFW, yDEFGHIJ_STUVWXY],  # 6, F
-                         [xGV, yDEFGHIJ_STUVWXY],  # 7, G
-                         [xHU, yDEFGHIJ_STUVWXY],  # 8, H
-                         [xIT, yDEFGHIJ_STUVWXY],  # 9, I
-                         [xJS, yDEFGHIJ_STUVWXY],  # 10, J
-                         [xKR, yK_R],  # 11, K
-                         [xLQ, yL_Q],  # 12, L
-                         [xMNOP, yM_P],  # 13, M
-                         [xMNOP, yN_O],  # 14, N
-                         [xMNOP, -yN_O],  # 15, O
-                         [xMNOP, -yM_P],  # 16, P
-                         [xLQ, -yL_Q],  # 17, Q
-                         [xKR, -yK_R],  # 18, R
-                         [xJS, -yDEFGHIJ_STUVWXY],  # 19, S
-                         [xIT, -yDEFGHIJ_STUVWXY],  # 20, T
-                         [xHU, -yDEFGHIJ_STUVWXY],  # 21, U
-                         [xGV, -yDEFGHIJ_STUVWXY],  # 22, V
-                         [xFW, -yDEFGHIJ_STUVWXY],  # 23, W
-                         [xEX, -yDEFGHIJ_STUVWXY],  # 24, X
-                         [xDY, -yDEFGHIJ_STUVWXY],  # 25, Y
-                         [xCZ, -yC_Z],  # 26, Z
-                         ]
-            h = centerOfMass_shift * shape_width
-        # centerOfMass_shift the shape...
-        positions = [[r[0] - h, r[1]] for r in positions]  # r vectors in the load frame
-        return np.array(
-            [np.array(my_maze.bodies[-1].GetWorldPoint(b2Vec2(r))) for r in positions])  # r vectors in the lab frame
+                # Line(self.positions[display.i, part], force_attachment[part], (0, 0, 0)).draw(display)

@@ -16,14 +16,14 @@ def plot_correlation(x, frames=None) -> None:
     fig.show()
 
 
-# x = get('medium_20210421115444_20210421115951', 'human')
-# x.load_participants()
-# plot_correlation(x, frames=[2100, 2300])
-
 if __name__ == '__main__':
-    x = get('large_20201220135801_20201220140247')
+    x = get('large_20210805171741_20210805172610')
     x.load_participants()
-    x.play()
+    x.smooth()
+    x.play(step=5)
+
+    # f0 = x.participants.forces.part(0, reference_frame='maze')
+    # f1 = x.participants.forces.part(1, reference_frame='maze')
 
     # fig, ax = plt.subplots()
     #

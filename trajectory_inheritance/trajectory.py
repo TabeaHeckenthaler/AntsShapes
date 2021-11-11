@@ -12,6 +12,7 @@ from Directories import SaverDirectories, work_dir, mini_SaverDirectories
 from copy import deepcopy
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
+from scipy.signal import savgol_filter
 
 """ Making Directory Structure """
 shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
@@ -66,6 +67,11 @@ class Trajectory:
     def step(self, my_maze, i, display=None):
         my_maze.set_configuration(self.position[i], self.angle[i])
 
+    def smooth(self):
+        self.position[:, 0] = savgol_filter(self.position[:, 0], self.fps+1, 3)
+        self.position[:, 1] = savgol_filter(self.position[:, 1], self.fps+1, 3)
+        self.angle = savgol_filter(np.unwrap(self.angle), self.fps+1, 3) % (2 * np.pi)
+
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
             nan_frames = np.unique(np.append(np.where(np.isnan(self.position))[0], np.where(np.isnan(self.angle))[0]))
@@ -95,7 +101,25 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, indices=None, wait=0, ps=None, step=1):
+    def shorten(self, indices=None, step=1):
+        """
+        :return: trajectory starting at indices[0], ending at indices[1] and taking steps of length steps
+        """
+        if indices is None:
+            indices = [0, -2]
+
+        f1, f2 = int(indices[0]), int(indices[1]) + 1
+        self.position, self.angle = self.position[f1:f2:step, :], self.angle[f1:f2:step]
+        self.frames = self.frames[f1:f2:step]
+
+        if hasattr(self, 'participants'):
+            self.participants.positions = self.participants.positions[f1:f2:step, :]
+            self.participants.angles = self.participants.angles[f1:f2:step]
+            if hasattr(self.participants, 'forces'):
+                self.participants.forces.abs_values = self.participants.forces.abs_values[f1:f2:step, :]
+                self.participants.forces.angles = self.participants.forces.angles[f1:f2:step, :]
+
+    def play(self, wait=0, ps=None, indices=None, step=1):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -107,12 +131,7 @@ class Trajectory:
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if indices is None:
-            indices = [0, -2]
-
-        f1, f2 = int(indices[0]), int(indices[1]) + 1
-        x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
-        x.frames = x.frames[f1:f2:step]
+        x.shorten(indices=indices, step=step)
 
         my_maze = Maze(x)
         return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps))
@@ -147,11 +166,11 @@ class Trajectory:
     def averageCarrierNumber(self):
         pass
 
-    def run_trj(self, my_maze, interval=1, display=None):
+    def run_trj(self, my_maze, display=None):
         i = 0
-        while i < len(self.frames) - 1 - interval:
+        while i < len(self.frames) - 1:
             self.step(my_maze, i, display=display)
-            i += interval
+            i += 1
             if display is not None:
                 end = display.update_screen(self, i)
                 if end:
