@@ -33,7 +33,7 @@ class Forces:
             self.abs_values = self.forces_loading(humans.frames, x.fps)
             self.angles = self.get_angles(humans, x)
             self.angles_load = self.angles - x.angle[:, np.newaxis]
-            self.force_meters = Maze(x).force_attachment_positions_in_trajectory(x)
+            self.force_meters = Maze(x).force_attachment_positions_in_trajectory(x, reference_frame='load')
 
     @staticmethod
     def get_angles(humans, x):
@@ -186,7 +186,7 @@ class Forces:
             self.arrow(display.i, force_attachments[name], name).draw(display)
 
     def torque(self, part):
-        return np.cross(self.force_vector(part), self.force_meters[:, part])
+        return np.cross(self.force_vector(part, reference_frame='load'), self.force_meters[:, part])
 
     def arrow(self, i, force_meter_coor, name) -> Arrow:
         """
@@ -197,7 +197,7 @@ class Forces:
         start = force_meter_coor
         end = force_meter_coor + self.abs_values[i, name] * DISPLAY_CONSTANT * \
               np.array([np.cos(self.angles[i, name]), np.sin(self.angles[i, name])])
-        return Arrow(np.array(start), np.array(end), str(name + 1))
+        return Arrow(np.array(start), np.array(end), str(name))
 
     def force_vector(self, name: int, reference_frame='maze') -> np.ndarray:
         """

@@ -7,7 +7,6 @@ from PhysicsEngine.drawables import colors
 class Display:
     def __init__(self, x, my_maze, wait=0, ps=None, i=0):
         self.my_maze = my_maze
-        my_maze.set_configuration(x.position[i], x.angle[i])
         self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
@@ -22,6 +21,7 @@ class Display:
         self.points = []
         self.wait = wait
         self.i = i
+        my_maze.set_configuration(x.position[i], x.angle[i])
         self.renew_screen()
         self.ps = ps
 

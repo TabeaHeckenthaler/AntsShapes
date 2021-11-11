@@ -17,7 +17,7 @@ def crappy_velocity(x, i):
     return x.position[min(i + 30, x.position.shape[0] - 1)] - x.position[i]
 
 
-def velocity_arrow(x, my_load, i):
+def velocity_arrow(x, i):
     start = x.position[i]
     end = x.position[i] + 10 * crappy_velocity(x, i)
     string = 'v'

@@ -544,17 +544,25 @@ class Maze(b2World):
                 SPT_Human_sizes = SPT_Human_sizes[:3]
             return SPT_Human_sizes
 
-    def force_attachment_positions_in_trajectory(self, x):
+    def force_attachment_positions_in_trajectory(self, x, reference_frame='maze'):
         """
         force attachment in world coordinates
         """
         initial_pos, initial_angle = copy(self.bodies[-1].position), copy(self.bodies[-1].angle)
-        force_attachment_positions_in_trajectory = []
-        for i in range(len(x.frames)):
-            self.set_configuration(x.position[i], x.angle[i])
-            force_attachment_positions_in_trajectory.append(self.force_attachment_positions())
-        self.set_configuration(initial_pos, initial_angle)
-        return np.array(force_attachment_positions_in_trajectory)
+        if reference_frame == 'maze':
+            force_attachment_positions_in_trajectory = []
+            for i in range(len(x.frames)):
+                self.set_configuration(x.position[i], x.angle[i])
+                force_attachment_positions_in_trajectory.append(self.force_attachment_positions())
+            self.set_configuration(initial_pos, initial_angle)
+            return np.array(force_attachment_positions_in_trajectory)
+        elif reference_frame == 'load':
+            self.set_configuration([0, 0], 0)
+            force_attachment = np.stack([self.force_attachment_positions() for _ in range(len(x.frames))])
+            self.set_configuration(initial_pos, initial_angle)
+            return np.array(force_attachment)
+        else:
+            raise ValueError('Unknown reference frame!')
 
     def force_attachment_positions(self):
         from trajectory_inheritance.humans import participant_number

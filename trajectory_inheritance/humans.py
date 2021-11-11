@@ -222,24 +222,6 @@ class Humans(Participants, ABC):
     def averageCarrierNumber(self) -> int:
         return self.number
 
-    def correlation(self, players=None, frames=None) -> np.ndarray:
-        """
-        :param frames: forces in what frames are you interested in finding their correlation
-        :param players: list of players that you want to find correlation for
-        :return: nxn correlation matrix, where n is either the length of the kwarg players or the number of forcemeters
-        on the shape
-        """
-        if frames is None:
-            frames = [0, len(self.frames)]
-        if players is None:
-            players = self.occupied
-
-        forces_in_x_direction = [
-            self.forces.abs_values[:, player][slice(*frames, 1)] * np.cos(angle_shift[self.size][player])
-            for player in players]
-        correlation_matrix = np.corrcoef(np.stack(forces_in_x_direction))
-        return correlation_matrix
-
     def gender(self) -> dict:
         """
         return dict which gives the gender of every participant. The keys of the dictionary are indices of participants,
@@ -256,6 +238,8 @@ class Humans(Participants, ABC):
     def draw(self, display) -> None:
         for part in self.occupied:
             Circle(self.positions[display.i, part], 0.1, colors['hats'], hollow=False).draw(display)
+            text = display.font.render(str(part), True, colors['text']) # TODO: Tabea, do this!
+            display.screen.blit(text, display.m_to_pixel(self.positions[display.i, part]))
             if hasattr(self, 'forces'):
                 force_attachment = display.my_maze.force_attachment_positions()
                 Circle(force_attachment[part], 0.05, (0, 0, 0), hollow=False).draw(display)
