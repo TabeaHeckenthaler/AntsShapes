@@ -9,6 +9,9 @@ from Setup.Maze import Maze
 from progressbar import progressbar
 from Directories import PhaseSpaceDirectory
 from Analysis.PathLength import resolution
+import cv2
+from mss import mss
+from PIL import Image
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -54,6 +57,10 @@ class PhaseSpace(object):
         self.space = None  # True, if there is a collision with the wall
         self.space_boundary = None
         self.fig = None
+
+        # self.monitor = {'left': 3800, 'top': 160, 'width': 800, 'height': 800}
+        # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
+        #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
 
     def number_of_points(self):
@@ -129,10 +136,11 @@ class PhaseSpace(object):
                       self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
                       ]
 
+        # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
         self.fig = mlab.figure(figure=name,
                                bgcolor=(1, 1, 1,),
                                fgcolor=(0, 0, 0,),
-                               size=(400, 400))
+                               size=(800, 800))
 
         cont = mlab.contour3d(x, y, theta,
                               vis_space[:x.shape[0], :x.shape[1], :x.shape[2]],
@@ -252,12 +260,21 @@ class PhaseSpace(object):
         """
         draw positions and angles in 3 dimensional phase space
         """
+        # if self.VideoWriter is None:
+        #     self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20, (354, 400))
         angle = angles * self.average_radius
         mlab.points3d(positions[:, 0], positions[:, 1], angle,
                       figure=self.fig,
                       scale_factor=scale_factor,
                       color=color
                       )
+
+    def write_to_Video(self):
+        with mss() as sct:
+            screenShot = sct.grab(self.monitor)
+            img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
+        self.VideoWriter.write(mlab.screenshot())
+        # self.VideoWriter.write(np.array(img))
 
     def trim(self, borders):
         [[x_min, x_max], [y_min, y_max]] = borders

@@ -6,10 +6,12 @@ import numpy as np
 import cv2
 from mss import mss
 from PIL import Image
+from tkinter import Tk
+import sys
 
 
 class Display:
-    def __init__(self, x, my_maze, wait=0, ps=None, i=0):
+    def __init__(self, x, my_maze, wait=0, ps=None, i=0, videowriter=False):
         self.my_maze = my_maze
         self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
@@ -18,6 +20,10 @@ class Display:
 
         pygame.font.init()  # display and fonts
         self.font = pygame.font.Font('freesansbold.ttf', 25)
+        # self.monitor = {'left': 0, 'top': 0,
+        #                 'width': int(Tk().winfo_screenwidth() * 0.9), 'height': int(Tk().winfo_screenheight() * 0.8)}
+        self.monitor = {'left': 0, 'top': 0,
+                        'width': self.width, 'height': self.height}
         self.screen = self.create_screen(x)
         self.arrows = []
         self.circles = []
@@ -28,8 +34,9 @@ class Display:
         my_maze.set_configuration(x.position[i], x.angle[i])
         self.renew_screen()
         self.ps = ps
-
-        self.writer = cv2.VideoWriter('pygame_Capture.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 20, (self.width, self.height))
+        if videowriter:
+            self.VideoWriter = cv2.VideoWriter(sys.argv[0][:-3] + '.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
+                                               (self.monitor['width'], self.monitor['height']))
 
     def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
@@ -40,7 +47,7 @@ class Display:
             self.width = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * self.ppm)
             self.height = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * self.ppm)
 
-        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (160, 160)
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (self.monitor['left'], self.monitor['top'])
         screen = pygame.display.set_mode((self.width, self.height), 0, 32)
         if self.my_maze is not None:
             pygame.display.set_caption(self.my_maze.shape + ' ' + self.my_maze.size + ' ' + self.my_maze.solver + ': ' + caption)
@@ -71,7 +78,10 @@ class Display:
             self.screen.blit(text, text_rect)
 
     def end_screen(self):
-        self.writer.release()
+        if hasattr(self, 'VideoWriter'):
+            self.VideoWriter.release()
+        # if self.ps is not None:
+        #     self.ps.VideoWriter.release()
         pygame.display.quit()
 
     def pause_me(self):
@@ -100,16 +110,21 @@ class Display:
             if hasattr(x.participants, 'positions'):
                 x.participants.draw(self)
         self.display()
+        self.write_to_Video()
         return
 
     def display(self):
         pygame.display.flip()
-        mon = {'left': 160, 'top': 160, 'width': self.width, 'height': self.height}
+
+    def write_to_Video(self):
         with mss() as sct:
-            screenShot = sct.grab(mon)
+            screenShot = sct.grab(self.monitor)
             img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
-        # self.writer.write(pygame.surfarray.pixels3d(self.screen))
-        self.writer.write(np.array(img))
+        # self.VideoWriter.write(pygame.surfarray.pixels3d(self.screen))
+        if hasattr(self, 'VideoWriter'):
+            self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
+        # if self.ps is not None:
+        #     self.ps.write_to_Video()
 
     def draw_contacts(self, contact):
         for contacts in contact:

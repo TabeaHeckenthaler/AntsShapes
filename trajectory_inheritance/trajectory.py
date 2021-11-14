@@ -101,7 +101,7 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def play(self, indices=None, wait=0, ps=None, step=1):
+    def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -128,7 +128,7 @@ class Trajectory:
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps))
+        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps, videowriter=videowriter))
 
     def save(self, address=None) -> None:
         """
