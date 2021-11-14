@@ -4,6 +4,7 @@ from Directories import ps_path
 
 # x = get('XL_SPT_dil0_sensing1')
 x = get('XL_SPT_dil9_sensing4')
+x.play()
 
 ps = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, name=x.size + '_' + x.shape)
 ps.load_space(path=ps_path(x.size, x.shape))
