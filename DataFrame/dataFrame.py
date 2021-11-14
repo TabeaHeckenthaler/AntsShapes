@@ -27,7 +27,7 @@ def get_filenames(solver, size='', shape='', free=False):
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]'],
+                    'minimal path length [length unit]', 'force meter'],
                    dtype='object')
 
 
@@ -54,6 +54,7 @@ class SingleExperiment(pd.DataFrame):
         self['average Carrier Number'] = float(x.averageCarrierNumber())
         self['Attempts'] = Attempts(x, 'extend')
         self['initial condition'] = str(x.initial_cond())
+        self['force meter'] = bool(x.has_forcemeter() if get(x).solver == 'human' else False)  # TODO
 
         # self = self[list_of_columns]
 
@@ -112,8 +113,8 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        self['minimal path length [length unit]'] = self['filename'].progress_apply(
-            lambda x: PathLength(get(x)).minimal())
+        self['force meter'] = self['filename'].progress_apply(lambda x: get(x).has_forcemeter()
+        if get(x).solver == 'human' else False)
 
 
 myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))

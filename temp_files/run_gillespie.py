@@ -1,6 +1,7 @@
 from trajectory_inheritance.trajectory_gillespie import Trajectory_gillespie
 
 x = Trajectory_gillespie(size='XL', shape='SPT', filename='gillespie_trajectory1')
+
 x.run_simulation(frameNumber=5000)
 
 # x.save()

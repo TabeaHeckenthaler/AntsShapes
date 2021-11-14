@@ -26,7 +26,16 @@ class Trajectory_human(Trajectory):
         self.state = np.empty((1, 1), int)
         self.VideoChain = VideoChain  # this is an evil artifact. I don't want to have this attribute
         self.communication = self.communication()
-        self.forcemeter = forcemeter
+        self.forcemeter = self.has_forcemeter() # TODO: this is always false currently...
+
+    def has_forcemeter(self) -> bool:
+        """
+        Checks whether experiment has force meters
+        """
+        from trajectory_inheritance.forces import get_sheet
+        from trajectory_inheritance.humans import get_excel_worksheet_index
+        sheet = get_sheet()
+        return sheet.cell(row=get_excel_worksheet_index(self.filename), column=19).value != '/'
 
     def matlab_loading(self, old_filename):
         folder = MatlabFolder(self.solver, self.size, self.shape)

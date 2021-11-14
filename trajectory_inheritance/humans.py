@@ -91,8 +91,10 @@ class Humans(Participants, ABC):
         self.angles = self.get_angles()
         self.positions = self.get_positions()
         self.gender_string = self.gender()
+
         if sheet.cell(row=self.excel_index, column=19).value != '/':
             self.forces = Forces(self, x)
+            Participants.forcemeter = True
 
     def __len__(self):
         return len(self.occupied)

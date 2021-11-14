@@ -153,6 +153,14 @@ class Forces:
         abs_values = []
         for i, force_index in enumerate(range(synch_offset, len(frames) + synch_offset)):
             abs_values.append(forces_all_frames[force_index])
+
+        abs_values = np.array(abs_values)
+
+        # in some cases, forces are suddenly negative
+        for i in range(abs_values.shape[1]):
+            if len(np.where(abs_values[:, i] < 0)[0]) / abs_values.shape[0] > 0.6:
+                abs_values[:, i] = -abs_values[:, i]
+
         abs_values = self.remove_force_outliers(np.array(abs_values))
         abs_values = abs_values - self.plateaus(abs_values)
         return abs_values
@@ -164,20 +172,22 @@ class Forces:
             df_original = pd.DataFrame(single)
 
             outlier_index = np.where((np.abs(stats.zscore(df_original, axis=0)) < 5) == False)[0]
-            df_original.values[outlier_index] = np.NaN
+            df_original.values[outlier_index] = 0 # TODO: this should be NaN, .. I think
             df_no_outliers = df_original.interpolate()
             return df_no_outliers
         return np.squeeze(np.apply_along_axis(remove_force_outliers_single_forcemeter, 0, array))
 
     @staticmethod
     def plateaus(arrays):
+
         def plateau(array):
             plateaus = find_peaks(array, plateau_size=20)[0]
             if len(plateaus) == 0:
                 return array.min()
             if len(np.where(array - array[plateaus].mean() < 0)[0]) / len(array) > 0.4:
-                return array.min()
+                return np.nanmin(array)
             return array[plateaus].mean()
+
         return [plateau(arrays[:, i]) for i in range(arrays.shape[1])]
 
     def draw(self, display, x):

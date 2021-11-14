@@ -48,10 +48,6 @@ class Arrow(Drawables):
         thickness, trirad = int(0.05 * display.ppm), int(0.2 * display.ppm)
         arrow_width = 150
 
-        if self.name not in ['puller', 'lifter', 'empty']:
-            text = display.font.render(str(self.name), True, colors['text'])
-            display.screen.blit(text, end)
-
         pygame.draw.line(display.screen, self.color, start, end, thickness)
         pygame.draw.circle(display.screen, self.color, start, 5)
 
@@ -62,6 +58,10 @@ class Arrow(Drawables):
                                                           end[1] + trirad * math.cos(rotation - arrow_width * rad)),
                                                          (end[0] + trirad * math.sin(rotation + arrow_width * rad),
                                                           end[1] + trirad * math.cos(rotation + arrow_width * rad))))
+
+        if self.name not in ['puller', 'lifter', 'empty']:
+            text = display.font.render(str(self.name), True, colors['text'])
+            display.screen.blit(text, end)
 
 
 class Point(Drawables):

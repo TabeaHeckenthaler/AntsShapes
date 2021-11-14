@@ -1,7 +1,11 @@
 import pygame
-import numpy as np
 from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP, K_RIGHT, K_LEFT, K_r, K_l, K_d, K_a, K_KP4, K_KP6)
 from PhysicsEngine.drawables import colors
+import os
+import numpy as np
+import cv2
+from mss import mss
+from PIL import Image
 
 
 class Display:
@@ -25,6 +29,8 @@ class Display:
         self.renew_screen()
         self.ps = ps
 
+        self.writer = cv2.VideoWriter('pygame_Capture.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 20, (self.width, self.height))
+
     def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
@@ -34,6 +40,7 @@ class Display:
             self.width = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * self.ppm)
             self.height = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * self.ppm)
 
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (160, 160)
         screen = pygame.display.set_mode((self.width, self.height), 0, 32)
         if self.my_maze is not None:
             pygame.display.set_caption(self.my_maze.shape + ' ' + self.my_maze.size + ' ' + self.my_maze.solver + ': ' + caption)
@@ -63,8 +70,8 @@ class Display:
             self.screen.blit(text2, [0, 25])
             self.screen.blit(text, text_rect)
 
-    @staticmethod
-    def end_screen():
+    def end_screen(self):
+        self.writer.release()
         pygame.display.quit()
 
     def pause_me(self):
@@ -97,6 +104,12 @@ class Display:
 
     def display(self):
         pygame.display.flip()
+        mon = {'left': 160, 'top': 160, 'width': self.width, 'height': self.height}
+        with mss() as sct:
+            screenShot = sct.grab(mon)
+            img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
+        # self.writer.write(pygame.surfarray.pixels3d(self.screen))
+        self.writer.write(np.array(img))
 
     def draw_contacts(self, contact):
         for contacts in contact:
@@ -142,8 +155,8 @@ class Display:
             # elif event.key == K_KP6:
             #     i += 30
 
-    def snapshot(self, surface, filename, *args):
-        pygame.image.save(surface, filename)
+    def snapshot(self, filename, *args):
+        pygame.image.save(self.screen, filename)
         if 'inlinePlotting' in args:
             import matplotlib.image as mpimg
             import matplotlib.pyplot as plt
@@ -152,3 +165,6 @@ class Display:
             img = mpimg.imread(filename)
             plt.imshow(img)
         return
+
+
+
