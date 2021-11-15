@@ -101,6 +101,19 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
+    def find_contact(self):
+        from PhysicsEngine.Contact import Contact_loop
+        my_maze = Maze(self)
+        my_load = my_maze.bodies[-1]
+        contact = []
+
+        i = 0
+        while i < len(self.frames):
+            self.step(my_maze, i)  # update_screen the position of the load (very simple function, take a look)
+            contact.append(Contact_loop(my_load, my_maze))
+            i += 1
+        return contact
+
     def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
         """
         Displays a given trajectory_inheritance (self)
