@@ -102,7 +102,7 @@ class Trajectory:
         return (len(self.frames) - 1) / self.fps
 
     def find_contact(self):
-        from PhysicsEngine.Contact import Contact_loop
+        from PhysicsEngine.Contact import contact_loop_experiment
         my_maze = Maze(self)
         my_load = my_maze.bodies[-1]
         contact = []
@@ -110,7 +110,7 @@ class Trajectory:
         i = 0
         while i < len(self.frames):
             self.step(my_maze, i)  # update_screen the position of the load (very simple function, take a look)
-            contact.append(Contact_loop(my_load, my_maze))
+            contact.append(contact_loop_experiment(my_load, my_maze))
             i += 1
         return contact
 

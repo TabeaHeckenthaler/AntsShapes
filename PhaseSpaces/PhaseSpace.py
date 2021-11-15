@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 import pickle
 from mayavi import mlab
-from PhysicsEngine.Contact import Contact_loop2
+from PhysicsEngine.Contact import contact_loop_phase_space
 from copy import copy
 import os
 from Setup.Maze import Maze
@@ -101,7 +101,7 @@ class PhaseSpace(object):
             space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
-                space[self.coords_to_indexes(x, y, theta)] = np.any(Contact_loop2(load, maze))
+                space[self.coords_to_indexes(x, y, theta)] = np.any(contact_loop_phase_space(load, maze))
             return space
 
         # iterate using parallel processing

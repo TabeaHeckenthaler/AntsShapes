@@ -144,7 +144,7 @@ class Maze(b2World):
             self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
 
     def CreateMaze(self):
-        my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='my_maze'))
+        my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
 
         if self.free:
             my_maze.CreateLoopFixture(
@@ -329,7 +329,7 @@ class Maze(b2World):
                                   fixedRotation=False,
                                   linearDamping=0,
                                   angularDamping=0,
-                                  userData='my_load'),
+                                  userData='load'),
                         restitution=0,
                         friction=0,
                         )
@@ -651,7 +651,7 @@ class Maze(b2World):
                     position = body.position + fixture.shape.pos
                     Circle(position, fixture.shape.radius, color=colors[body.userData]).draw(display)
 
-            if body.userData == 'my_load':
+            if body.userData == 'load':
                 Point(np.array(body.position)).draw(display)
 
     def average_radius(self):

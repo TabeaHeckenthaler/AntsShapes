@@ -102,14 +102,14 @@ def corners_phis(my_maze):
         phis = np.array([0, -np.pi / 2, np.pi, np.pi / 2, 0, np.pi / 2,
                          np.pi, np.pi / 2, 0, -np.pi / 2, np.pi, -np.pi / 2])
     #
-    # if my_maze.shape == 'RASH':  # This is the ASymmetrical H
-    #     [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()
-    #     assymetric_h_shift = assymetric_h_shift * ResizeFactors[my_maze.solver][my_maze.size]
+    # if maze.shape == 'RASH':  # This is the ASymmetrical H
+    #     [shape_height, shape_width, shape_thickness] = maze.getLoadDim()
+    #     assymetric_h_shift = assymetric_h_shift * ResizeFactors[maze.solver][maze.size]
     #     # TODO: implement corners and phis
     #
-    # if my_maze.shape == 'LASH':  # This is the ASymmetrical H
-    #     [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()
-    #     assymetric_h_shift = assymetric_h_shift * ResizeFactors[my_maze.solver][my_maze.size]
+    # if maze.shape == 'LASH':  # This is the ASymmetrical H
+    #     [shape_height, shape_width, shape_thickness] = maze.getLoadDim()
+    #     assymetric_h_shift = assymetric_h_shift * ResizeFactors[maze.solver][maze.size]
     #     # TODO: implement corners and phis
     return corners, phis
 
@@ -120,7 +120,7 @@ def init_sites(my_maze, n: int, radius=1):
     :param my_maze: b2World
     :param n: number of attachment sites
     :param radius: radius of circular object
-    :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the my_load coordinate system
+    :return: 2xn numpy matrix, with x and y coordinates of attachment sites, in the load coordinate system
     and n numpy matrix, with angles of normals of attachment sites, measured against the load coordinate system
     """
     if my_maze.shape == 'circle':

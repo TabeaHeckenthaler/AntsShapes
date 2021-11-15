@@ -17,7 +17,7 @@ class Trajectory_ps_simulation(Trajectory):
 
     def step(self, my_maze, i, **kwargs):
         my_maze.set_configuration(self.position[i], self.angle[i])
-        # my_load.position.x, my_load.position.y, my_load.angle = self.position[i][0], self.position[i][1], self.angle[i]
+        # load.position.x, load.position.y, load.angle = self.position[i][0], self.position[i][1], self.angle[i]
 
     def averageCarrierNumber(self):
         return 1

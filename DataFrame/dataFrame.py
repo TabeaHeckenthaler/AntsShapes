@@ -5,6 +5,7 @@ from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Maze import Maze
 from Setup.Attempts import Attempts
+import numpy as np
 from tqdm import tqdm
 
 tqdm.pandas()
@@ -27,7 +28,7 @@ def get_filenames(solver, size='', shape='', free=False):
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]', 'force meter'],
+                    'minimal path length [length unit]', 'force meter', 'fps'],
                    dtype='object')
 
 
@@ -44,6 +45,7 @@ class SingleExperiment(pd.DataFrame):
         self['size'] = str(x.size)
         self['shape'] = str(x.shape)
         self['winner'] = bool(x.winner)
+        self['fps'] = int(x.fps)
         self['communication'] = bool(x.communication())
         self['length unit'] = str(length_unit_func(x.solver))
         self['exit size [length unit]'] = float(Maze(x).exit_size)  # TODO: I don't think I need this anymore
@@ -113,16 +115,17 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        self['force meter'] = self['filename'].progress_apply(lambda x: get(x).has_forcemeter()
-        if get(x).solver == 'human' else False)
+        self['fps'] = self['filename'].progress_apply(lambda x: int(get(x).fps))
 
 
 myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
 if __name__ == '__main__':
     myDataFrame.add_column()
-    from DataFrame.plot_dataframe import how_many_experiments
+    myDataFrame.save()
+    k = 1
+    # from DataFrame.plot_dataframe import how_many_experiments
 
-    how_many_experiments(myDataFrame)
+    # how_many_experiments(myDataFrame)
 
     # myDataFrame = myDataFrame + myDataFrame.new_experiments(solver='ant', shape='SPT')
     # myDataFrame.save()

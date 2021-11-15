@@ -1,8 +1,6 @@
 from scipy.spatial import cKDTree
 from Setup.MazeFunctions import BoxIt
 import numpy as np
-from Setup.Maze import Maze
-from Analysis.Velocity import velocity_x
 from Setup.Load import loops
 from Analysis.GeneralFunctions import flatten
 
@@ -10,30 +8,28 @@ from Analysis.GeneralFunctions import flatten
 distance_upper_bound = 0.04
 
 
-def ccw(A, B, C):
-    return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
-
-
-# Return true if line segments AB and CD intersect
-def intersect(A, B, C, D):
-    return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
-
-
-def maze_corners(maze):
-    corners = [[0, 0],
-               [0, maze.arena_height],
-               [maze.slits[-1] + 20, maze.arena_height],
-               [maze.slits[-1] + 20, 0],
-               ]
-    return corners + list(np.resize(maze.slitpoints, (16, 2)))
-
-
-def Contact_loop2(load, maze):
+def contact_loop_phase_space(load, maze) -> np.array:
     """
     this function takes a list of corners (lists have to list rectangles in sets of 4 corners)
     and checks, whether a rectangle from the load overlaps with a rectangle from the maze boundary
-
+    :return: np.array listing the x and y world coordinates where the load intersects with the maze
     """
+
+    def ccw(A, B, C):
+        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+    # Return true if line segments AB and CD intersect
+    def intersect(A, B, C, D):
+        return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
+
+    def maze_corners(maze):
+        corners = [[0, 0],
+                   [0, maze.arena_height],
+                   [maze.slits[-1] + 20, maze.arena_height],
+                   [maze.slits[-1] + 20, 0],
+                   ]
+        return corners + list(np.resize(maze.slitpoints, (16, 2)))
+
     # first check, whether we are in the middle of the maze, where there is no need for heavy calculations
     # approximate_extent = np.max([2 * np.max(np.abs(np.array(list(fix.shape)))) for fix in load.fixtures])
     #
@@ -63,19 +59,20 @@ def Contact_loop2(load, maze):
     return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
 
 
-def Contact_loop(my_load, my_maze):
-    contact = []
-    edge_points = []
-    load_vertices = loops(my_load)
+def contact_loop_experiment(load, maze) -> list:
+    """
+    :return: list of all the points in world coordinates where the load is closer to the maze than distance_upper_bound.
+    """
+    edge_points = contact = []
+    load_vertices = loops(load)
 
     for load_vertice in load_vertices:
         edge_points = edge_points + BoxIt(load_vertice, distance_upper_bound).tolist()
 
     load_tree = cKDTree(edge_points)
-    in_contact = load_tree.query(my_maze.slitTree.data, distance_upper_bound=distance_upper_bound)[1] < \
-                 load_tree.data.shape[0]
+    in_contact = load_tree.query(maze.slitTree.data, distance_upper_bound=distance_upper_bound)[1] < load_tree.data.shape[0]
 
     if np.any(in_contact):
-        contact = contact + my_maze.slitTree.data[np.where(in_contact)].tolist()
+        contact = contact + maze.slitTree.data[np.where(in_contact)].tolist()
     return contact
 

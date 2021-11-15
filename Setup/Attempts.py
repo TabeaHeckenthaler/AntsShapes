@@ -158,7 +158,7 @@ if __name__ == '__main__':
     finish_line = my_maze.slits[-1] + my_maze.wallthick
 
     # for i in range(10):
-    #     attempts = attempts + Attempt_loop(finish_line, my_attempt_zone, my_load, **kwargs)
+    #     attempts = attempts + Attempt_loop(finish_line, my_attempt_zone, load, **kwargs)
     #     kwargs['attempt'] = attempts[-1]
 
     x = Attempt_setup(x, my_maze.bodies[-1], my_attempt_zone, starting_line)

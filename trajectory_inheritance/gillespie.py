@@ -46,7 +46,7 @@ class Gillespie:
 
         self._attachment_sites, self._phi_default_load_coord = init_sites(my_maze, N_max)
         # vector to ith attachment site in load coordinates
-        # angle of normal vector from ith attachment site to the x axis of the world, when my_load.angle = 0
+        # angle of normal vector from ith attachment site to the x axis of the world, when load.angle = 0
 
         self.phi = np.empty(N_max)  # angle of the ant to world coordinates!
         self.phi[:] = np.nan  # (NaN if not occupied)
@@ -87,15 +87,15 @@ class Gillespie:
         """
         :param my_load: b2Body, which is carried by ants
         :param i: ith attachment position
-        :return: Linear velocity of my_load at the attachment site (b2Vec) in world coordinates so that they will oppose
+        :return: Linear velocity of load at the attachment site (b2Vec) in world coordinates so that they will oppose
         rotations
         """
         f_x, f_y = gamma * np.array(my_load.linearVelocity) \
                    + 0.7 * \
                    np.cross(np.hstack([self.attachment_site_world_coord(my_load, i), [0]]),
                             np.array([0, 0, my_load.angularVelocity]))[:2]
-        # my_load.GetLinearVelocityFromLocalPoint(self.attachment_position(my_load, i))
-        # my_load.ApplyForce
+        # load.GetLinearVelocityFromLocalPoint(self.attachment_position(load, i))
+        # load.ApplyForce
         # TODO: Amir, this is the updated version (03.11.2021)
         return f_x, f_y
 
@@ -159,7 +159,7 @@ class Gillespie:
     def normal_site_vector(self, angle: float, i: int):
         """
         :param i: ith position, counted clockwise
-        :param angle: angle of the shape to the world coordinate system (my_load.angle)
+        :param angle: angle of the shape to the world coordinate system (load.angle)
         :return: ant vector pointing in the direction that the ant is pointing in world coordinate system
         """
         vector = np.array([np.cos(self.phi_default_load_coord[i]), np.sin(self.phi_default_load_coord[i])])
@@ -168,7 +168,7 @@ class Gillespie:
     def ant_vector(self, angle: float, i: int):
         """
         :param i: ith position, counted clockwise
-        :param angle: angle of the shape to the world coordinate system (my_load.angle)
+        :param angle: angle of the shape to the world coordinate system (load.angle)
         :return: ant vector pointing in the direction that the ant is pointing in world coordinates
         """
         vector = np.array([np.cos(self.phi[i]), np.sin(self.phi[i])])
@@ -255,7 +255,7 @@ class Gillespie:
 
     def populate(self, my_load):
         """
-        populating my_load with ants
+        populating load with ants
         """
         for i in range(len(self.n_p)):
             self.new_attachment(i, my_load, ant_type='puller', normal=False)

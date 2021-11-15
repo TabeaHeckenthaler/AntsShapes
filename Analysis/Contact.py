@@ -1,4 +1,4 @@
-from progressbar import progressbar
+from tqdm import tqdm
 from Analysis.GeneralFunctions import graph_dir
 from Analysis.Velocity import velocity_x
 from os import path
@@ -12,7 +12,7 @@ import pandas as pd
 
 DELTA_T = 2
 
-# TODO: I still want to restructure  the modules related to contact in the directories PhysicsEngine and Analysis.
+
 # TODO: Test this module. There are probably still many mistakes.
 
 def theta(r):
@@ -78,11 +78,14 @@ class Contact:
         return torque
 
     def theta_dot(self) -> float:
+        """
+        :return: first derivative of angle theta
+        """
         # Characterize rotation
         r_impact = self.x.position[self.impact_frame] - self.contact_points[0]
         r_end = self.x.position[self.end_frame] - self.contact_points[0]
 
-        theta_dot = (theta(r_end) - theta(r_impact))/DELTA_T
+        theta_dot = (theta(r_end) - theta(r_impact)) / DELTA_T
 
         # I want to flip the ones contacting the bottom corner...
         if self.contacts_bottom_slit():
@@ -95,22 +98,22 @@ class Contact_analyzer(pd.DataFrame):
     def __init__(self, filenames):
         super().__init__(filenames, columns=['filename'])
         self['delta_frames'] = df['fps'] * DELTA_T  # minimum time that a contact has to be apart from each other
-        self.contacts = self.find_contacts()
+        self.contacts = list()
 
-    def find_contacts(self) -> list:
+    def find_contacts(self):
         """
         Search in every trajectory for frames in which the shape has a contact with the wall, add to new dataframe
         start and end frame and position of contact (after reducing to the central point)
         :return: pd.DataFrame with the following columns = ['start frame', 'end frame', 'contact point']
         """
-
-        for filename in self['filename']:
-            x = get(filename[0])
-            contacts = x.find_contact()
+        list_contacts = []
+        for filename in tqdm(self['filename']):
+            x = get(filename)
+            traj_contacts = x.find_contact()
             wall_contacts = np.where([len(contact) > 0 and contact[0][0] > Maze(x).slits[0] - 1
-                                      #  and (abs(con[0][1] - my_maze.arena_height / 2 - my_maze.exit_size / 2) < 2
-                                      #       or abs(con[0][1] - my_maze.arena_height / 2 + my_maze.exit_size / 2) < 2)
-                                      for contact in contacts])[0]
+                                      #  and (abs(con[0][1] - maze.arena_height / 2 - maze.exit_size / 2) < 2
+                                      #       or abs(con[0][1] - maze.arena_height / 2 + maze.exit_size / 2) < 2)
+                                      for contact in traj_contacts])[0]
 
             # only if its not a to short contact!
             # wall_contacts = [c for i, c in enumerate(contact_frames) if abs(c - contact_frames[i - 1]) < 2
@@ -118,8 +121,8 @@ class Contact_analyzer(pd.DataFrame):
                                                         if c - wall_contacts[i - 1] > int(x.fps * 2)]
 
             for impact_frame in impact_frames:
-                contacts.append(Contact(filename, impact_frame, contacts[impact_frame], x))
-            return contacts
+                list_contacts.append(Contact(filename, impact_frame, traj_contacts[impact_frame], x))
+        self.contacts = list_contacts
 
     @staticmethod
     def plot(torques, theta_dots, information=''):
@@ -144,6 +147,7 @@ if __name__ == '__main__':
 
     for size in df.groupby('size').groups.keys():
         contact_analyzer = Contact_analyzer(df.loc[df.groupby('size').groups[size]]['filename'])
+        contact_analyzer.find_contacts()
         theta_dots = [contact.theta_dot() for contact in contact_analyzer.contacts]
         torques = [contact.torque() for contact in contact_analyzer.contacts]
         contact_analyzer.plot(torques, theta_dots)

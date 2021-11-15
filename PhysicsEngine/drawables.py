@@ -1,8 +1,8 @@
 import math
 import pygame
 
-colors = {'my_maze': (0, 0, 0),
-          'my_load': (250, 0, 0),
+colors = {'maze': (0, 0, 0),
+          'load': (250, 0, 0),
           'my_attempt_zone': (0, 128, 255),
           'text': (0, 0, 0),
           'background': (250, 250, 250),
