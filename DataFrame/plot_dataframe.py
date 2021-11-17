@@ -5,7 +5,7 @@ from os import path
 import numpy as np
 from matplotlib import pyplot as plt
 
-df = pd.read_json(df_dir + '.json')
+df = pd.read_json(df_dir)
 df_gr_solver = df.groupby(by='solver')
 df_gr_shape = df.groupby(by='shape')
 

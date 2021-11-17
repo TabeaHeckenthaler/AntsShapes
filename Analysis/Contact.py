@@ -1,21 +1,20 @@
 from tqdm import tqdm
-from Analysis.GeneralFunctions import graph_dir
 from Analysis.Velocity import velocity_x
-from os import path
-import plotly.express as px
-import datetime
 from DataFrame.dataFrame import myDataFrame
 from Setup.Maze import Maze
 import numpy as np
 from trajectory_inheritance.trajectory import get
 import pandas as pd
 import os
-from Directories import data_home
+from Directories import contacts_dir
+from Analysis.GeneralFunctions import graph_dir
+import plotly.express as px
+import datetime
 
 DELTA_T = 2
 
 
-# TODO: Test this module. There are probably still many mistakes.
+# TODO: Create the torque diagram.
 
 def theta(r):
     [x, y] = r
@@ -28,7 +27,6 @@ def theta(r):
 
 
 class Contact(pd.Series):
-
     def __init__(self, filename, impact_frame, contact_points):
         x = get(filename)
         my_maze = Maze(x)
@@ -110,8 +108,7 @@ class Contact_analyzer(pd.DataFrame):
         self.contacts = pd.DataFrame([])
 
     def address(self):
-        return data_home + 'Contacts' + path.sep + 'ant' + path.sep + \
-               self['size'].iloc[0] + '_' + self['shape'].iloc[0] + '_contact_list.json'
+        return contacts_dir + self['size'].iloc[0] + '_' + self['shape'].iloc[0] + '_contact_list.json'
 
     def find_contacts(self) -> pd.DataFrame:
         """

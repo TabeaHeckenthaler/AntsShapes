@@ -23,8 +23,8 @@ PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.format(path.sep, path.sep,
                                                                                        path.sep,
                                                                                        path.sep, path.sep)
-
-df_dir = data_home + 'DataFrame\\data_frame'
+contacts_dir = data_home + 'Contacts' + path.sep + 'ant' + path.sep
+df_dir = data_home + 'DataFrame' + path.sep + 'data_frame.json'
 
 
 def ps_path(size: str, shape: str, solver='ant', point_particle: bool = False):

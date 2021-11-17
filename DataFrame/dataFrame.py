@@ -88,7 +88,7 @@ class DataFrame(pd.DataFrame):
         self.drop(index=to_drop, inplace=True)
         self.reset_index(drop=True, inplace=True)
 
-    def save(self, name=df_dir + '.json'):
+    def save(self, name=df_dir):
         # self.to_json(df_dir + ' - backup.json')
         self.to_json(name)
 
@@ -118,11 +118,11 @@ class DataFrame(pd.DataFrame):
         self['fps'] = self['filename'].progress_apply(lambda x: int(get(x).fps))
 
 
-myDataFrame = DataFrame(pd.read_json(df_dir + '.json'))
+myDataFrame = DataFrame(pd.read_json(df_dir))
 if __name__ == '__main__':
     myDataFrame.add_column()
     myDataFrame.save()
-    k = 1
+    # TODO: add new contacts to contacs json file
     # from DataFrame.plot_dataframe import how_many_experiments
 
     # how_many_experiments(myDataFrame)

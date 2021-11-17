@@ -90,4 +90,5 @@ if __name__ == '__main__':
                 x.play()
                 save = 1
                 # TODO: Check that the winner is correctly saved!!
+                # TODO: add new file to contacs json file
                 # x.save()
