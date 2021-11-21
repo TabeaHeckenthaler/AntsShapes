@@ -27,7 +27,7 @@ contacts_dir = data_home + 'Contacts' + path.sep + 'ant' + path.sep
 df_dir = data_home + 'DataFrame' + path.sep + 'data_frame.json'
 
 
-def ps_path(size: str, shape: str, solver: str ='ant', point_particle: bool = False, new2021: bool = False):
+def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False):
     """
     where the phase space is saved
     """
@@ -61,8 +61,7 @@ def SetupDirectories():
     return
 
 
-video_directory ='C:\\Users\\tabea\\PycharmProjects\\AntShapes\\PhysicsEngine\\Video\\'
-
+video_directory = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Videos\\'
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)

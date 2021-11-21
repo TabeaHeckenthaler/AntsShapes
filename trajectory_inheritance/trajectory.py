@@ -121,6 +121,10 @@ class Trajectory:
     def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
         """
         Displays a given trajectory_inheritance (self)
+        :param indices: which slice of frames would you like to display
+        :param wait: how many milliseconds should we wait between displaying steps
+        :param ps: Configuration space
+        :param step: display only the ith frame
         :Keyword Arguments:
             * *indices* (``[int, int]``) --
               starting and ending frame of trajectory_inheritance, which you would like to display
