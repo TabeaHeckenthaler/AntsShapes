@@ -38,7 +38,6 @@ class Display:
             self.VideoWriter = cv2.VideoWriter(video_directory + sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v',
                                                cv2.VideoWriter_fourcc(*'DIVX'), 20,
                                                (self.monitor['width'], self.monitor['height']))
-        k = 1
 
     def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts

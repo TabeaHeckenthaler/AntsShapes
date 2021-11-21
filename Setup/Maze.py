@@ -9,6 +9,8 @@ from copy import copy
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
+# TODO: x = get(myDataFrame.loc[429].filename).play() displays a maze, that does not make any sense!
+
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 ASSYMETRIC_H_SHIFT = 1.22 * 2
 SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
@@ -112,7 +114,9 @@ class Maze(b2World):
                 self.exit_size = d['exit_size'].values[0]
                 self.wallthick = d['wallthick'].values[0]
                 if type(d['slits'].values[0]) == str:
-                    self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
+                    # self.slits = [float(s) for s in d['slits'].values[0].split(', ')] # TODO: correct this!!!
+                    self.slits = [[float(s) for s in d['slits'].values[0].split(', ')][0],
+                                  [float(s) for s in d['slits'].values[0].split(', ')][1] - 0.6]
                 else:
                     self.slits = [d['slits'].values[0]]
 

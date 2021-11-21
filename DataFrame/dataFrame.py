@@ -119,8 +119,9 @@ class DataFrame(pd.DataFrame):
 
 myDataFrame = DataFrame(pd.read_json(df_dir))
 if __name__ == '__main__':
-    myDataFrame.add_column()
-    myDataFrame.save()
+    pass
+    # myDataFrame.add_column()
+    # myDataFrame.save()
     # TODO: add new contacts to contacs json file
     # from DataFrame.plot_dataframe import how_many_experiments
 
