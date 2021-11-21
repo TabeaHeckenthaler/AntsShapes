@@ -20,7 +20,7 @@ class Trajectory_gillespie(Trajectory):
 #        x_info, y_info = maze.slits[0], maze.arena_height / 2
         self.GillespieCargo = GillespieCargo(maze)
 
-    def step(self, maze, i, display):
+    def step(self, maze, i, display=None):
 
         maze.set_configuration(self.position[i], self.angle[i])
         cargo = maze.bodies[-1]
@@ -37,7 +37,7 @@ class Trajectory_gillespie(Trajectory):
         self.angle = np.hstack((self.angle, cargo.angle))
         return
 
-    def forces(self, cargo, pause=False, display=None):
+    def forces(self, cargo, display=None):
         # TODO: make this better...
         cargo.linearVelocity = 0 * cargo.linearVelocity
         cargo.angularVelocity = 0 * cargo.angularVelocity
@@ -45,27 +45,31 @@ class Trajectory_gillespie(Trajectory):
         """ Magnitude of forces """
         for i in range(len(self.GillespieCargo.n_p)):
             start = self.GillespieCargo.pos_site(i, cargo)
-            end = None
 
             if self.GillespieCargo.n_p[i]:
                 f_ant = self.GillespieCargo.ant_force(i, cargo)
                 cargo.ApplyForce(f_ant, start, True)
-                Arrow(start, start + [0.5 * f_ant[0], 0.5 * f_ant[1]], 'puller', 'puller').draw(display)
+                if display is not None:
+                    Arrow(start, start + [0.5 * f_ant[0], 0.5 * f_ant[1]], 'puller', 'puller').draw(display)
 
             elif self.GillespieCargo.n_l[i]:
                 vec = self.GillespieCargo.normal_site_vec(i, cargo.angle)  # TODO check this vector
-                Line(start, start + [0.5 * vec[0], 0.5 * vec[1]]).draw(display)
+                if display is not None:
+                    Line(start, start + [0.5 * vec[0], 0.5 * vec[1]]).draw(display)
 
 #            else:
 #                Point(start, end).draw(display)
 
-    def run_simulation(self, frameNumber, free=False):
+    def run_simulation(self, frameNumber, free=False, display=True):
         maze = Maze(size=self.size, shape=self.shape, solver='sim', free=free)
         self.frames = np.linspace(1, frameNumber, frameNumber)
         self.position = np.array([[maze.arena_length / 4, maze.arena_height / 2]])
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
-        from PhysicsEngine.Display import Display
-        self.run_trj(maze, display=Display(self, maze))
+        if display:
+            from PhysicsEngine.Display import Display
+            self.run_trj(maze, display=Display(self, maze))
+        else:
+            self.run_trj(maze)
 
     def load_participants(self):
         self.participants = self.GillespieCargo

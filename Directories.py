@@ -61,6 +61,9 @@ def SetupDirectories():
     return
 
 
+video_directory ='C:\\Users\\tabea\\PycharmProjects\\AntShapes\\PhysicsEngine\\Video\\'
+
+
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
 trackedHumanMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}Output'.format(path.sep, path.sep,

@@ -137,7 +137,8 @@ class Trajectory:
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 
-        if hasattr(x, 'participants'):
+        if hasattr(x, 'participants') and x.participants is not None:   # TODO: this is a bit ugly, why does Amirs
+            # have participants?
             x.participants.positions = x.participants.positions[f1:f2:step, :]
             x.participants.angles = x.participants.angles[f1:f2:step]
             if hasattr(x.participants, 'forces'):
@@ -189,7 +190,8 @@ class Trajectory:
                     self.frames = self.frames[:i]
                     break
                 display.renew_screen(frame=self.frames[i], movie_name=self.filename)
-        display.end_screen()
+        if display is not None:
+            display.end_screen()
 
     def initial_cond(self):
         """

@@ -6,8 +6,8 @@ import numpy as np
 import cv2
 from mss import mss
 from PIL import Image
-from tkinter import Tk
 import sys
+from Directories import video_directory
 
 
 class Display:
@@ -35,7 +35,7 @@ class Display:
         self.renew_screen()
         self.ps = ps
         if videowriter:
-            self.VideoWriter = cv2.VideoWriter(sys.argv[0][:-3] + '.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
+            self.VideoWriter = cv2.VideoWriter(video_directory + sys.argv[0][:-3] + '.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
                                                (self.monitor['width'], self.monitor['height']))
 
     def create_screen(self, x, caption=str()) -> pygame.surface:
