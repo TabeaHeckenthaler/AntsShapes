@@ -18,8 +18,12 @@ def reduce_legend():
 
 def save_fig(fig, name):
     name = "".join(x for x in name if x.isalnum())
-    fig.savefig(graph_dir() + path.sep + name + '.pdf', format='pdf', pad_inches=0.5, bbox_inches='tight')
-    fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=0.5, bbox_inches='tight')
+    if fig.__module__ == 'plotly.graph_objs._figure':
+        fig.write_image(graph_dir() + path.sep + name + '.pdf')
+        fig.write_image(graph_dir() + path.sep + name + '.svg')
+    else:
+        fig.savefig(graph_dir() + path.sep + name + '.pdf', format='pdf', pad_inches=0.5, bbox_inches='tight')
+        fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=0.5, bbox_inches='tight')
 
 
 def Carrier_Number_Binning(df, solver, number_of_bins=5):

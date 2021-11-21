@@ -28,8 +28,7 @@ point_particle = False
 if point_particle:
     name = name + '_pp'
 
-path = os.path.join(PhaseSpaceDirectory, 'ant', name + ".pkl")
 ps = PhaseSpace('ant', 'XL', shape, name=name)
-ps.load_space(path=path)
+ps.load_space()
 ps.visualize_space()
 k = 1

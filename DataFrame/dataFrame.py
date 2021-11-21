@@ -5,7 +5,6 @@ from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Maze import Maze
 from Setup.Attempts import Attempts
-import numpy as np
 from tqdm import tqdm
 
 tqdm.pandas()

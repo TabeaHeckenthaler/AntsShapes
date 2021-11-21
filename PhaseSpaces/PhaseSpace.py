@@ -7,7 +7,7 @@ from copy import copy
 import os
 from Setup.Maze import Maze
 from progressbar import progressbar
-from Directories import PhaseSpaceDirectory
+from Directories import PhaseSpaceDirectory, ps_path
 from Analysis.PathLength import resolution
 import cv2
 from mss import mss
@@ -125,44 +125,40 @@ class PhaseSpace(object):
         self.space = ps_calc(0, self.space.shape[0])
         return
 
-    def visualize_space(self, name=None):
-        if name is None:
-            name = self.name
+    def new_fig(self):
+        fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
+        return fig
 
-        vis_space = copy(self.space)
-
+    def visualize_space(self, fig=None, colormap='Greys'):
+        if fig is not None:
+            self.fig = fig
+        else:
+            self.fig = self.new_fig()
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
-                      self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
-                      self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
-                      ]
+                               self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
+                               self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
+                               ]
 
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
-        self.fig = mlab.figure(figure=name,
-                               bgcolor=(1, 1, 1,),
-                               fgcolor=(0, 0, 0,),
-                               size=(800, 800))
-
         cont = mlab.contour3d(x, y, theta,
-                              vis_space[:x.shape[0], :x.shape[1], :x.shape[2]],
+                              self.space[:x.shape[0], :x.shape[1], :x.shape[2]],
                               opacity=0.15,
                               figure=self.fig,
-                              colormap='gray')
+                              colormap=colormap)
 
         cont.actor.actor.scale = [1, 1, self.average_radius]
-
-        """ to get theta """
-        ax = mlab.axes(xlabel="x",
-                       ylabel="y",
-                       zlabel="theta",
-                       line_width=2,
-                       ranges=[self.extent['x'][0], self.extent['x'][1],
-                               self.extent['y'][0], self.extent['y'][1],
-                               self.extent['theta'][0], self.extent['theta'][1],
-                               ],
-                       )
-
-        ax.axes.label_format = '%.2f'
-        ax.label_text_property.font_family = 'times'
+        # ax = mlab.axes(xlabel="x",
+        #                ylabel="y",
+        #                zlabel="theta",
+        #                line_width=2,
+        #                ranges=[self.extent['x'][0], self.extent['x'][1],
+        #                        self.extent['y'][0], self.extent['y'][1],
+        #                        self.extent['theta'][0], self.extent['theta'][1],
+        #                        ],
+        #                )
+        #
+        # ax.axes.label_format = '%.2f'
+        # ax.label_text_property.font_family = 'times'
 
     def iterate_coordinates(self, x0: int = 0, x1: int = -1):
         r"""
@@ -198,7 +194,14 @@ class PhaseSpace(object):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
-    def load_space(self, path=PhaseSpaceDirectory + '\\ant\\XL_SPT.pkl', point_particle=False, new2021=False):
+    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+        """
+        Load Phase Space pickle.
+        :param path: path, where the pickle to be loaded is stored.
+        :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
+        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
+        """
+        path = ps_path(self.size, self.shape, point_particle=point_particle, new2021=new2021)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -308,6 +311,6 @@ if __name__ == '__main__':
 
     path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace(solver, size, shape, name=name)
-    ps.load_space(path=path)
+    ps.load_space()
     ps.visualize_space()
     k = 1

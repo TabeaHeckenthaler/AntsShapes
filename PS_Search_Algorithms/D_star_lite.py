@@ -249,7 +249,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # ====Search Path with RRT====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
-    conf_space.load_space(path=ps_path(size, shape, solver, point_particle=False))
+    conf_space.load_space()
 
     if starting_point is None:
         starting_point = start(size, shape, solver)

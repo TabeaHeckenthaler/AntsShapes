@@ -11,7 +11,7 @@ import sys
 
 
 class Display:
-    def __init__(self, x, my_maze, wait=0, ps=None, i=0, videowriter=False):
+    def __init__(self, x, my_maze, wait=0, ps=None, i=0, videowriter=True):
         self.my_maze = my_maze
         self.filename = x.filename
         self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter

@@ -13,6 +13,7 @@ from copy import deepcopy
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from scipy.signal import savgol_filter
+from Analysis.Velocity import velocity
 
 """ Making Directory Structure """
 shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
@@ -113,6 +114,9 @@ class Trajectory:
             contact.append(contact_loop_experiment(my_load, my_maze))
             i += 1
         return contact
+
+    def velocity(self, second_smooth, *args):
+        return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
 
     def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
         """

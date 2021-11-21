@@ -228,8 +228,7 @@ def main(size='XL', shape='SPT', solver='ant'):
     # ====Search Path with RRT====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
                                        name=size + '_' + shape)
-    conf_space.load_space(path=os.path.join(os.path.dirname(SaverDirectories[solver]),
-                                            PhaseSpace.data_dir, solver, conf_space.name + ".pkl"))
+    conf_space.load_space()
 
     sampling_area = [[start[solver][shape][0] - 10, conf_space.extent['x'][-1] - 0.1],
                      [0, conf_space.extent['y'][-1]-0.1],

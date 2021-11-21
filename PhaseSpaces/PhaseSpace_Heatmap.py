@@ -3,7 +3,7 @@ import os
 import numpy as np
 from mayavi import mlab
 from Analysis.GeneralFunctions import graph_dir
-from dataframe.dataFrame import myDataFrame
+from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
 from Directories import data_home
 
@@ -28,7 +28,7 @@ for (solver, size, shape), df1 in filenames_group:
 
             data_dir = data_home + 'PhaseSpace\\' + solver
 
-            ps.load_space(path=os.path.join(data_dir, ps.name + ".pkl"))
+            ps.load_space()
 
             # y_range = max(abs(np.min(position[:, 1]) - maze.arena_height/2),
             #               abs(np.max(position[:, 1]) - maze.arena_height/2))
@@ -38,9 +38,7 @@ for (solver, size, shape), df1 in filenames_group:
 
             fig = ps.visualize_space()
 
-            fig = ps.draw_trajectory(fig, position, angle,
-                                     scale_factor=0.4,
-                                     color=(1, 0, 0))
+            ps.draw_trajectory(position, angle, scale_factor=0.4, color=(1, 0, 0))
 
             mlab.savefig(graph_dir() + os.path.sep + ps.name + '.jpg', magnification=4)
             mlab.close()

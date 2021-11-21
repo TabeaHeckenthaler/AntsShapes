@@ -27,7 +27,7 @@ contacts_dir = data_home + 'Contacts' + path.sep + 'ant' + path.sep
 df_dir = data_home + 'DataFrame' + path.sep + 'data_frame.json'
 
 
-def ps_path(size: str, shape: str, solver='ant', point_particle: bool = False):
+def ps_path(size: str, shape: str, solver: str ='ant', point_particle: bool = False, new2021: bool = False):
     """
     where the phase space is saved
     """

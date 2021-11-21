@@ -16,9 +16,8 @@ def calc(point_particle, shape, size, solver, parallel=False):
     if point_particle:
         name = name + '_pp'
 
-    path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace.PhaseSpace(solver, size, shape, name=name)
-    ps.load_space(path=path, point_particle=point_particle, parallel=parallel)
+    ps.load_space(point_particle=point_particle)  # here, I used to have parallel...
 
     # ps.save_space(path=os.path.join(ps_dir, solver, name + ".pkl"))
     # ps.visualize_space(ps.name)

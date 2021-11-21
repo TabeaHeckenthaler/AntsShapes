@@ -88,14 +88,10 @@ def polar_velocity(position, angle, fps, size, shape, second_smooth):
     return radius, theta
 
 
-def velocity_x(x, second_smooth, *args, **kwargs):
-    return velocity(x.position, x.angle, x.fps, x.size, x.shape, second_smooth, x.solver, *args, **kwargs)
-
-
 def acceleration(x, second_smooth, *args, **kwargs):
     """ If I add specifications to args, I only return these specific velocities,
     otherwise, I return x, y and angular velocity"""
-    vel = velocity_x(x, second_smooth, *args, **kwargs)
+    vel = x.velocity(second_smooth, *args, **kwargs)
     acc = np.zeros([vel.shape[0], vel.shape[1] - 1])
 
     ''' Calculate velocity '''
@@ -111,7 +107,7 @@ def acceleration(x, second_smooth, *args, **kwargs):
 
 
 def check_for_false_tracking(x):
-    vel = velocity_x(x, 0)
+    vel = x.velocity_x(0)
     lister = [x_vel or y_vel or ang_vel or isNaN for x_vel, y_vel, ang_vel, isNaN in
               zip(vel[0, :] > max_Vel_trans[x.size],
                   vel[1, :] > max_Vel_trans[x.size],
