@@ -34,11 +34,11 @@ class Trajectory_ant(Trajectory):
 
     def new2021(self):
         """
-        I restarted experiments and altered the maze dimensions for the small SPT.
+        I restarted experiments and altered the maze dimensions for the S, M, L and XL SPT.
         I am keeping track of the movies, that have these altered maze dimensions.
         :return: bool.
         """
-        new_starting_conditions = ['48000', '47900']
+        new_starting_conditions = [str(x) for x in range(46300, 48100, 100)]
         return np.any([new_starting_condition in self.filename
                        for new_starting_condition in new_starting_conditions])
 

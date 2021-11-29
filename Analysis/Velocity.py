@@ -107,7 +107,7 @@ def acceleration(x, second_smooth, *args, **kwargs):
 
 
 def check_for_false_tracking(x):
-    vel = x.velocity_x(0)
+    vel = x.velocity(0)
     lister = [x_vel or y_vel or ang_vel or isNaN for x_vel, y_vel, ang_vel, isNaN in
               zip(vel[0, :] > max_Vel_trans[x.size],
                   vel[1, :] > max_Vel_trans[x.size],
@@ -122,14 +122,14 @@ def check_for_false_tracking(x):
 
 
 def plotVelocity(x):
-    x_vel, y_vel = velocity_x(x, 1, 'x')[0], velocity_x(x, 1, 'y')[0]
+    x_vel, y_vel = velocity(x, 1, 'x')[0], velocity(x, 1, 'y')[0]
     plt.plot(range(x_vel.shape[0]), x_vel)
     plt.plot(range(y_vel.shape[0]), y_vel)
     plt.show()
 
 
 def velocity_distribution_plotting(x):
-    x_vel, y_vel = velocity_x(x, 1, 'x')[0], velocity_x(x, 1, 'y')[0]
+    x_vel, y_vel = velocity(x, 1, 'x')[0], velocity(x, 1, 'y')[0]
     fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
     axs[0].hist(x_vel, bins=30)
     axs[1].hist(y_vel, bins=30)
@@ -141,7 +141,7 @@ def velocity_distribution_plotting(x):
 
 
 def velocity_distribution_fitting(x):
-    x_vel, y_vel = velocity_x(x, 1, 'x')[0], velocity_x(x, 1, 'y')[0]
+    x_vel, y_vel = velocity(x, 1, 'x')[0], velocity(x, 1, 'y')[0]
     hist, bin_edges = velocity_distribution_plotting(x)
     average = np.mean(x_vel)  # note this correction
     sigma = sum(bin_edges[:-1] * (hist - average) ** 2) / hist.shape[0]  # note this correction

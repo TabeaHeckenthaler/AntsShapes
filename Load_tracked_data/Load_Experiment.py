@@ -64,9 +64,6 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
     return x
 
 
-new_starting_conditions = ['48000', '47900', '47800', '47700']
-
-
 def part2_filename(part1_filename):
     l = part1_filename.split("_")
     return ''.join(l[:1]) + '_' + str(int(l[1]) + 1) + '_' + '_'.join(l[2:-1]) + "_" + l[-1].replace('1', '2')
@@ -75,9 +72,9 @@ def part2_filename(part1_filename):
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     # for size in sizes[solver]:
-    for size in 'S':
+    for size in 'M':
         for filename in tqdm(find_unpickled(solver, size, shape)):
-            if '480' in filename:
+            if 'test' in filename:
                 print('\n' + filename)
                 winner = bool(input('winner? '))
                 x = Load_Experiment(solver, filename, [], winner, 50, size=size, shape=shape)
@@ -87,7 +84,7 @@ if __name__ == '__main__':
                     part2 = Load_Experiment(solver, part2_filename(filename), [], winner, 50, size=size, shape=shape)
                     con = SmoothConnector(part1, part2, con_frames=1000)
                     x = part1 + con + part2
-                x.play()
+                x.play(wait=1000)
                 save = 1
                 # TODO: Check that the winner is correctly saved!!
                 # TODO: add new file to contacs json file
