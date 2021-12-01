@@ -1,5 +1,6 @@
 from PhaseSpaces import PhaseSpace, PS_transformations
 from trajectory_inheritance.trajectory import get
+from copy import copy
 
 
 x = get('XL_SPT_dil0_sensing1')
@@ -15,7 +16,7 @@ ps.load_space(point_particle=False)
 fig = ps.new_fig()
 ps.visualize_space(fig, colormap='Greys')
 
-ps_dil = PS_transformations.dilation(ps, radius=20)
+ps_dil = copy(ps)
+ps_dil.dilate(radius=20)
 ps_dil.visualize_space(fig, colormap='Oranges')
-k = 1
-# x.play(ps=ps, step=3)
+

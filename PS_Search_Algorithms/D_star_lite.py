@@ -4,7 +4,6 @@ from Directories import SaverDirectories
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
 from copy import copy
-from progressbar import progressbar
 from mayavi import mlab
 import os
 import numpy as np
@@ -58,10 +57,10 @@ class D_star_lite:
         self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
         # Set current node as the start node.
-        self.start = Node_ind(*starting_node, self.conf_space.space.shape, average_radius)
+        self.start = Node_ind(*starting_node, self.conf_space, average_radius)
         if self.collision(self.start):
             raise Exception('Your start is not in configuration space')
-        self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
+        self.end = Node_ind(*ending_node, self.conf_space, average_radius)
         if self.collision(self.end):
             raise Exception('Your end_screen is not in configuration space')
 
@@ -176,7 +175,7 @@ class D_star_lite:
             greedy_node_ind = connected[greedy]
 
             if np.sum(np.logical_and(~self.current.surrounding(conf_space, greedy_node_ind), voxel)) > 0:
-                node = Node_ind(*greedy_node_ind, conf_space.space.shape, self.average_radius)
+                node = Node_ind(*greedy_node_ind, conf_space, self.average_radius)
                 return node
             else:
                 connected.remove(greedy_node_ind)
@@ -209,7 +208,7 @@ class D_star_lite:
         self.end.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
 
         path = self.generate_path()
-        conf_space.draw_trajectory(fig, path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
+        conf_space.draw(fig, path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
         return fig
 
     def generate_path(self, length=np.infty, ind=False):
@@ -264,7 +263,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     # 2) dilated version of the conf_space
     known_conf_space = copy(conf_space)
     if dil_radius > 0:
-        known_conf_space = PS_transformations.dilation(known_conf_space, radius=dil_radius)
+        known_conf_space.dilate(radius=dil_radius)
 
     # ====Set Initial parameters====
     d_star_lite = D_star_lite(

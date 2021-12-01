@@ -26,9 +26,7 @@ from progressbar import progressbar
 import math
 import random
 from PhaseSpaces import PhaseSpace
-from Directories import SaverDirectories
-from Setup.Load import average_radius
-from Setup.Maze import start, end
+from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node import Node
 
 from mayavi import mlab
@@ -261,7 +259,7 @@ def main(size='XL', shape='SPT', solver='ant'):
 
         # Draw final path
         if show_animation:
-            conf_space.draw_trajectory(fig, path[:, 0:2], path[:, 2], scale_factor=0.4, color=(0, 1, 0))
+            conf_space.draw(fig, path[:, 0:2], path[:, 2], scale_factor=0.4, color=(0, 1, 0))
             mlab.savefig(graph_dir() + os.path.sep + conf_space.name + '.jpg', magnification=4)
             mlab.close()
     return

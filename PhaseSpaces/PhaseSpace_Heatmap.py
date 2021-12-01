@@ -38,7 +38,7 @@ for (solver, size, shape), df1 in filenames_group:
 
             fig = ps.visualize_space()
 
-            ps.draw_trajectory(position, angle, scale_factor=0.4, color=(1, 0, 0))
+            ps.draw(position, angle, scale_factor=0.4, color=(1, 0, 0))
 
             mlab.savefig(graph_dir() + os.path.sep + ps.name + '.jpg', magnification=4)
             mlab.close()

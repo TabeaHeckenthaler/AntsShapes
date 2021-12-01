@@ -1,9 +1,8 @@
 import math
-from Setup.Load import average_radius
-
 from mayavi import mlab
 import numpy as np
 from copy import copy
+from Setup.Maze import Maze
 
 
 class Node:
@@ -54,7 +53,7 @@ class Node:
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0), average_radius=average_radius):
+    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
         # plot the random point
         # if point is not None:
         mlab.points3d(self.x, self.y, self.theta * average_radius,
@@ -63,7 +62,7 @@ class Node:
                       color=color,
                       )
 
-    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0), average_radius=average_radius):
+    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
 
         if abs(node.theta - self.theta) > np.pi:
             if node.theta > self.theta:

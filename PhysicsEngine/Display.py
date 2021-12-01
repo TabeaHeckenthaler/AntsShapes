@@ -104,7 +104,7 @@ class Display:
                 kwargs = {'color': (0, 0, 0), 'scale_factor': 1.}
             else:
                 kwargs = {}
-            self.ps.draw_trajectory(x.position[self.i:self.i+1], x.angle[self.i:self.i+1], **kwargs)
+            self.ps.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)

@@ -6,12 +6,10 @@ from PhysicsEngine.Contact import contact_loop_phase_space
 from copy import copy
 import os
 from Setup.Maze import Maze
-from progressbar import progressbar
 from Directories import PhaseSpaceDirectory, ps_path
 from Analysis.PathLength import resolution
-import cv2
-from mss import mss
-from PIL import Image
+from scipy import ndimage
+import cc3d
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -25,8 +23,7 @@ scale = 5
 
 
 class PhaseSpace(object):
-
-    def __init__(self, solver, size, shape, name="", new2021=False):
+    def __init__(self, solver:str, size:str, shape:str, name="", new2021:bool=False):
         """
         :param board_coords:
         :param load_coords:
@@ -80,7 +77,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, new2021=False, point_particle=False, screen=None):
+    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None):
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -129,7 +126,7 @@ class PhaseSpace(object):
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
         return fig
 
-    def visualize_space(self, fig=None, colormap='Greys'):
+    def visualize_space(self, fig=None, colormap='Greys') -> None:
         if fig is not None:
             self.fig = fig
         else:
@@ -259,10 +256,13 @@ class PhaseSpace(object):
             if self._is_boundary_cell(ix, iy, itheta):
                 self.space_boundary[ix, iy, itheta] = 1
 
-    def draw_trajectory(self, positions, angles, scale_factor: float = 0.5, color=(1, 0, 0)):
+    def draw(self, positions, angles, scale_factor: float = 0.5, color=(1, 0, 0)):
         """
         draw positions and angles in 3 dimensional phase space
         """
+        if np.array(positions).ndim == 1:
+            positions = np.expand_dims(np.array(positions), axis=0)
+            angles = np.expand_dims(np.array(angles), axis=0)
         # if self.VideoWriter is None:
         #     self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20, (354, 400))
         angle = angles * self.average_radius
@@ -271,13 +271,6 @@ class PhaseSpace(object):
                       scale_factor=scale_factor,
                       color=color
                       )
-
-    def write_to_Video(self):
-        with mss() as sct:
-            screenShot = sct.grab(self.monitor)
-            img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
-        self.VideoWriter.write(mlab.screenshot())
-        # self.VideoWriter.write(np.array(img))
 
     def trim(self, borders):
         [[x_min, x_max], [y_min, y_max]] = borders
@@ -289,13 +282,39 @@ class PhaseSpace(object):
                      min(int(y_max / self.pos_resolution) + 1, self.space.shape[1]),
                      ]
 
-    # TODO: implement this method!
-    def draw(self, x, i, my_load, interval) -> None:
-        if i < interval:
-            self.draw_trajectory(np.array([my_load.position]), np.array([my_load.angle]), scale_factor=1,
-                                 color=(0, 0, 0))
-        else:
-            self.draw_trajectory(x.position[i:i + interval], x.angle[i:i + interval], scale_factor=1, color=(1, 0, 0))
+    def dilate(self, radius: int = 8) -> None:
+        """
+        dilate phase space
+        :param radius: radius of dilation
+        """
+        struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
+        self.space = np.array(~ndimage.binary_dilation(~np.array(self.space, dtype=bool), structure=struct), dtype=int)
+
+    def erode(self, radius: int = 8) -> None:
+        """
+        erode phase space
+        :param radius: radius of erosion
+        """
+        struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
+        self.space = np.array(~ndimage.binary_erosion(~np.array(self.space, dtype=bool), structure=struct), dtype=int)
+
+    def split_connected_components(self, min=10) -> (list, list):
+        """
+        from self find connected components, and return a list of ps spaces, that have only single connected components.
+        """
+        pss = []
+        labels, number_cc = cc3d.connected_components(np.invert(np.array(self.space, dtype=bool)),
+                                                      connectivity=6, return_N=True)
+        stats = cc3d.statistics(labels)
+        centroids = []
+
+        for label, centroid, voxel_count in zip(range(1, number_cc), stats['centroids'], stats['voxel_counts']):
+            if voxel_count > min:
+                ps = PhaseSpace(self.solver, self.size, self.shape)
+                ps.space = np.int8(labels == label)
+                pss.append(ps)
+                centroids.append(self.indexes_to_coords(*np.floor(centroid)))
+        return pss, centroids
 
 
 if __name__ == '__main__':

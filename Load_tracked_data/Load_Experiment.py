@@ -72,9 +72,9 @@ def part2_filename(part1_filename):
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     # for size in sizes[solver]:
-    for size in 'M':
+    for size in ['M']:
         for filename in tqdm(find_unpickled(solver, size, shape)):
-            if 'test' in filename:
+            if 'test3' in filename:
                 print('\n' + filename)
                 winner = bool(input('winner? '))
                 x = Load_Experiment(solver, filename, [], winner, 50, size=size, shape=shape)
@@ -84,8 +84,8 @@ if __name__ == '__main__':
                     part2 = Load_Experiment(solver, part2_filename(filename), [], winner, 50, size=size, shape=shape)
                     con = SmoothConnector(part1, part2, con_frames=1000)
                     x = part1 + con + part2
-                x.play(wait=1000)
+                x.play(wait=10)
                 save = 1
                 # TODO: Check that the winner is correctly saved!!
-                # TODO: add new file to contacs json file
+                # TODO: add new file to contacts json file
                 # x.save()
