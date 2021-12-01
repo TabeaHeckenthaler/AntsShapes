@@ -27,7 +27,7 @@ import math
 import random
 from PhaseSpaces import PhaseSpace
 from Setup.Maze import start, end, Maze
-from PS_Search_Algorithms.classes.Node import Node
+from PS_Search_Algorithms.classes.Node_rrt import Node
 
 from mayavi import mlab
 import os

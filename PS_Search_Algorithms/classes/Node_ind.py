@@ -9,7 +9,7 @@ class Node_ind:
     DeLiteNode Node
     """
 
-    def __init__(self, xi, yi, thetai, conf_space, average_radius):
+    def __init__(self, xi, yi, thetai, conf_space_shape, average_radius):
         self.xi = xi
         self.yi = yi
         self.thetai = thetai  # this takes values between 0 and 2*np.pi
@@ -17,8 +17,8 @@ class Node_ind:
         self.path_yi = []
         self.path_thetai = []  # this takes values between 0 and 2*np.pi
         self.parent = None
+        self.conf_space_shape = conf_space_shape
         self.average_radius = average_radius
-        self.conf_space = conf_space
 
     def __str__(self):
         return 'Node with ind = {}, {}, {}'.format(*self.ind())
@@ -27,12 +27,12 @@ class Node_ind:
         if self.thetai is None:
             return self.xi, self.yi, self.thetai
         else:
-            return self.xi, self.yi, self.thetai % self.conf_space.space.shape[2]
+            return self.xi, self.yi, self.thetai % self.conf_space_shape[2]
 
-    def connected(self):
+    def connected(self, conf_space):
         nn = []
-        for xi, yi, thetai in self.iterate_surroundings():
-            if not self.conf_space.space[xi, yi, thetai]:
+        for xi, yi, thetai in self.iterate_surroundings(conf_space):
+            if not conf_space.space[xi, yi, thetai]:
                 nn.append((xi, yi, thetai))
 
         if self.ind() not in nn:
@@ -51,13 +51,13 @@ class Node_ind:
 
         return nn
 
-    def iterate_surroundings(self):
+    def iterate_surroundings(self, conf_space):
         # I want the walker to prefer not to wobble back and forth, so I sort the order I want to ...
-        thetai = [(self.thetai - 1) % self.conf_space.space.shape[2],
+        thetai = [(self.thetai - 1) % conf_space.space.shape[2],
                   self.thetai,
-                  (self.thetai + 1) % self.conf_space.space.shape[2]]
-        xi = [max(0, self.xi - 1), self.xi, min(self.conf_space.space.shape[0] - 1, self.xi + 1)]
-        yi = [max(0, self.yi - 1), self.yi, min(self.conf_space.space.shape[1] - 1, self.yi + 1)]
+                  (self.thetai + 1) % conf_space.space.shape[2]]
+        xi = [max(0, self.xi - 1), self.xi, min(conf_space.space.shape[0] - 1, self.xi + 1)]
+        yi = [max(0, self.yi - 1), self.yi, min(conf_space.space.shape[1] - 1, self.yi + 1)]
 
         yield xi[1], yi[1], thetai[1]
         yield xi[0], yi[1], thetai[1]
@@ -90,12 +90,12 @@ class Node_ind:
         yield xi[2], yi[1], thetai[2]
         yield xi[2], yi[2], thetai[2]
 
-    def iterate_surroundings2(self):
+    def iterate_surroundings2(self, conf_space):
         for thetai in [self.thetai,
-                       (self.thetai - 1) % self.conf_space.space.shape[2],
-                       (self.thetai + 1) % self.conf_space.space.shape[2]]:
-            for xi in [self.xi, max(0, self.xi - 1), min(self.conf_space.space.shape[0] - 1, self.xi + 1)]:
-                for yi in [self.yi, max(0, self.yi - 1), min(self.conf_space.space.shape[1] - 1, self.yi + 1)]:
+                       (self.thetai - 1) % conf_space.space.shape[2],
+                       (self.thetai + 1) % conf_space.space.shape[2]]:
+            for xi in [self.xi, max(0, self.xi - 1), min(conf_space.space.shape[0] - 1, self.xi + 1)]:
+                for yi in [self.yi, max(0, self.yi - 1), min(conf_space.space.shape[1] - 1, self.yi + 1)]:
                     yield xi, yi, thetai
 
     @staticmethod
@@ -106,19 +106,19 @@ class Node_ind:
                                : 2 * radius + 1],
                         dtype=bool)
 
-    def coord(self):
-        return self.conf_space.indexes_to_coords(*self.ind())
+    def coord(self, conf_space):
+        return conf_space.indexes_to_coords(*self.ind())
 
-    def distance(self, node):
-        coo_self = self.coord()
-        coo_node = node.coord()
+    def distance(self, node, conf_space):
+        coo_self = self.coord(conf_space)
+        coo_node = node.coord(conf_space)
         return np.sqrt((coo_node[0] - coo_self[0]) ** 2 +
                        (coo_node[1] - coo_self[1]) ** 2 +
                        (((coo_node[2] - coo_self[2] + np.pi) % (2 * np.pi) - np.pi) * self.average_radius) ** 2)
 
-    def calc_distance_and_angles(self, to_node):
-        coo_self = self.coord()
-        coo_to_node = to_node.coord()
+    def calc_distance_and_angles(self, to_node, conf_space):
+        coo_self = self.coord(conf_space)
+        coo_to_node = to_node.coord(conf_space)
 
         dx = coo_to_node[0] - coo_self[0]
         dy = coo_to_node[1] - coo_self[1]
@@ -135,17 +135,17 @@ class Node_ind:
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
-        coo = self.coord()
+    def draw_node(self, conf_space, fig=None, scale_factor=0.2, color=(0, 0, 0)):
+        coo = self.coord(conf_space)
         mlab.points3d(coo[0], coo[1], coo[2] * self.average_radius,
                       figure=fig,
                       scale_factor=scale_factor,
                       color=color,
                       )
 
-    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
-        coo_self = self.coord()
-        coo_node = node.coord()
+    def draw_line(self, node, conf_space, fig=None, line_width=0.2, color=(0, 0, 0)):
+        coo_self = self.coord(conf_space)
+        coo_node = node.coord(conf_space)
 
         if abs(coo_node[2] - coo_self[2]) > np.pi:
             if coo_node[2] > coo_self[2]:

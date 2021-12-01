@@ -302,11 +302,10 @@ class PhaseSpace(object):
         """
         from self find connected components, and return a list of ps spaces, that have only single connected components.
         """
-        pss = []
+        pss = centroids = []
         labels, number_cc = cc3d.connected_components(np.invert(np.array(self.space, dtype=bool)),
                                                       connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
-        centroids = []
 
         for label, centroid, voxel_count in zip(range(1, number_cc), stats['centroids'], stats['voxel_counts']):
             if voxel_count > min:
