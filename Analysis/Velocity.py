@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 from Analysis.GeneralFunctions import ranges, gauss
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
+import pandas as pd
 
 max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
                                {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
@@ -155,3 +156,38 @@ def velocity_distribution_fitting(x):
     plt.xlabel('interval')
     plt.ylabel('number of frames')  # or 1/s that we spent in this state
     plt.show()
+
+
+if __name__ == '__main__':
+    from trajectory_inheritance.trajectory import get
+    from tqdm import tqdm
+    # I want to calculate the average speed during an experiment (scaled by maze size?)
+    df_dir = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.json'
+    df = pd.DataFrame(pd.read_json(df_dir))
+
+    shape = 'SPT'
+    solver = 'ant'
+
+    df = df[df['shape'] == shape]
+    df = df.groupby('solver').get_group(solver)[
+        ['filename', 'maze size', 'path length [length unit]', 'minimal path length [length unit]',
+         'average Carrier Number', 'winner']]
+    df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
+    #
+    # mean_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
+    #     ['average Carrier Number']].mean().unstack().reindex(sizes['ant'])
+    # sem_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
+    #     ['average Carrier Number']].sem().unstack().reindex(sizes['ant'])
+
+    vel = []
+    scaled_vel = []
+    for filename, min_path in tqdm(zip(df['filename'], df['minimal path length [length unit]'])):
+        x = get(filename)
+        mean_vel = np.mean(np.linalg.norm(x.velocity(1), axis=0))
+        vel.append(mean_vel)
+        scaled_vel.append(mean_vel/min_path)
+    df['velocity'] = vel
+    df['scaled_velocity'] = scaled_vel
+    df = df.dropna()
+    df.to_json('C:\\Users\\tabea\\PycharmProjects\\Python_Adv_Course_2021' +
+               '\\MachineLearning\\data_frame_machineLearning.json')

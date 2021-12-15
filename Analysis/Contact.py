@@ -29,6 +29,9 @@ def theta(r: list) -> float:
 
 class Contact(pd.Series):
     def __init__(self, filename=str(), impact_frame=int(), contact_points=None, ds: pd.Series = pd.Series([])):
+        """
+        ds: DataSeries
+        """
         if len(ds) > 0:
             super().__init__(ds)
         else:
@@ -42,6 +45,7 @@ class Contact(pd.Series):
                                         'arena_height': my_maze.arena_height,
                                         'exit_size': my_maze.exit_size
                                         }))
+        k = 1
 
     @staticmethod
     def reduce_contact_points(contact_points: list) -> list:
@@ -142,7 +146,7 @@ class Contact_analyzer(pd.DataFrame):
         return self.contacts.transpose().reset_index(drop=True)
 
     @staticmethod
-    def plot(torques, theta_dots, information=''):
+    def plot(torques, theta_dots, size, information=''):
         # this is to out single points :)
         fig = px.scatter(x=torques, y=theta_dots, text=information)
         fig.update_layout(xaxis_range=[-10, 10], yaxis_range=[-1, 1])
@@ -170,24 +174,38 @@ class Contact_analyzer(pd.DataFrame):
         else:
             self.contacts = self.find_contacts()
             if save:
-                contact_analyzer.save()
+                self.save()
 
 
 if __name__ == '__main__':
     solver = 'ant'
     shapes = ['I', 'T', 'H']
+    #
+    # for shape in shapes:
+    #     df = myDataFrame.groupby('solver').get_group(solver).groupby('shape').get_group(shape)
+    #
+    #     for size in ['XL']:
+    #     # for size in df.groupby('size').groups.keys():
+    #         contact_analyzer = Contact_analyzer(df.loc[df.groupby('size').groups[size]][['filename', 'size', 'solver', 'shape', 'fps']])
+    #         contact_analyzer.load_contacts()
+    #         contacts = [Contact(ds=contact[1]) for contact in contact_analyzer.contacts.iterrows()]
+    #         contacts[4].theta_dot()
+    #
+    #         torques = [contact.torque() for contact in contacts]
+    #         theta_dots = [contact.theta_dot() for contact in contacts]
+    #         k = [i for i, (torque, theta_dot) in enumerate((zip(torques, theta_dots))) if torque > 0 and theta_dot > 0]
+    #         contact_analyzer.plot(torques, theta_dots, information=contact_analyzer.contacts['filename'].to_list())
+    #         k = 1
 
-    for shape in shapes:
-        df = myDataFrame.groupby('solver').get_group(solver).groupby('shape').get_group(shape)
-        for size in ['XL']:
-        # for size in df.groupby('size').groups.keys():
-            contact_analyzer = Contact_analyzer(df.loc[df.groupby('size').groups[size]][['filename', 'size', 'solver', 'shape', 'fps']])
-            contact_analyzer.load_contacts()
-            contacts = [Contact(ds=contact[1]) for contact in contact_analyzer.contacts.iterrows()]
-            contacts[4].theta_dot()
+    shape = 'I'
+    df = myDataFrame.groupby('solver').get_group(solver).groupby('shape').get_group(shape)
+    contact_analyzer = Contact_analyzer(df[['filename', 'size', 'solver', 'shape', 'fps']])
+    contact_analyzer.load_contacts()
+    contacts = [Contact(ds=contact[1]) for contact in contact_analyzer.contacts.iterrows()]  # contacts[1] because iterrows returns a tuple
+    contact1 = contacts[1]
 
-            torques = [contact.torque() for contact in contacts]
-            theta_dots = [contact.theta_dot() for contact in contacts]
-            k = [i for i, (torque, theta_dot) in enumerate((zip(torques, theta_dots))) if torque > 0 and theta_dot > 0]
-            contact_analyzer.plot(torques, theta_dots, information=contact_analyzer.contacts['filename'].to_list())
-            k = 1
+    contacts_df = pd.concat(contacts, axis=1).transpose()
+    contacts_df['torque'] = [contact.torque() for contact in contacts]
+    contacts_df['theta_dot'] = [contact.theta_dot() for contact in contacts]
+
+    k = 1

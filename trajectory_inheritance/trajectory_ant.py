@@ -16,10 +16,10 @@ trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'
 class Trajectory_ant(Trajectory):
     def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
                  angle_error=0, falseTracking=[]):
+        solver = 'ant'
+        filename = NewFileName(old_filename, solver, size, shape, 'exp')
 
-        filename = NewFileName(old_filename, size, shape, 'exp')
-
-        super().__init__(size=size, shape=shape, solver='ant', filename=filename, fps=fps, winner=winner)
+        super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
         self.x_error = x_error
         self.y_error = y_error
         self.angle_error = angle_error
@@ -112,7 +112,10 @@ class Trajectory_ant(Trajectory):
             return trackedAntMovieDirectory + path.sep + 'Free' + path.sep + 'Output Data' + path.sep + \
                    shape_folder_naming[self.shape]
 
-    def matlab_loading(self, old_filename):
+    def matlab_loading(self, old_filename: str):
+        """
+        old_filename: str of old_filename with .mat extension
+        """
         if not (old_filename == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
             file = sio.loadmat(self.matlabFolder() + path.sep + old_filename)
 

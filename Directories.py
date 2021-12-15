@@ -27,12 +27,16 @@ contacts_dir = data_home + 'Contacts' + path.sep + 'ant' + path.sep
 df_dir = data_home + 'DataFrame' + path.sep + 'data_frame.json'
 
 
-def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False):
+def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False,
+            erosion_radius: int = None):
     """
     where the phase space is saved
+    If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
+    if erosion_radius is not None:
+        return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
     return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '.pkl')
 
 
@@ -89,7 +93,7 @@ def MatlabFolder(solver, size, shape):
         print('MatlabFolder: who is solver?')
 
 
-def NewFileName(old_filename, size, shape, expORsim):
+def NewFileName(old_filename: str, solver: str, size: str, shape: str, expORsim: str) -> str:
     import glob
     if expORsim == 'sim':
         counter = int(len(glob.glob(size + '_' + shape + '*_' + expORsim + '_*')) / 2 + 1)
@@ -98,11 +102,15 @@ def NewFileName(old_filename, size, shape, expORsim):
         filename = old_filename.replace('.mat', '')
         if shape.endswith('ASH'):
             return filename.replace(old_filename.split('_')[0], size + '_' + shape)
+
         else:
-            if size + shape in filename or size + '_' + shape in filename:
-                return filename.replace(size + shape, size + '_' + shape)
-            else:
-                raise ValueError('Your filename does not seem to be right.')
+            if solver == 'ants':
+                if size + shape in filename or size + '_' + shape in filename:
+                    return filename.replace(size + shape, size + '_' + shape)
+                else:
+                    raise ValueError('Your filename does not seem to be right.')
+            elif solver == 'human':
+                return filename
 
 
 SetupDirectories()

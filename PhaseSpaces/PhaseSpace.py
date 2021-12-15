@@ -3,13 +3,17 @@ import itertools
 import pickle
 from mayavi import mlab
 from PhysicsEngine.Contact import contact_loop_phase_space
-from copy import copy
 import os
+import itertools
 from Setup.Maze import Maze
 from Directories import PhaseSpaceDirectory, ps_path
 from Analysis.PathLength import resolution
 from scipy import ndimage
 import cc3d
+import networkx as nx
+from datetime import datetime
+from joblib import Parallel, delayed
+from skfmm import distance
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -23,7 +27,7 @@ scale = 5
 
 
 class PhaseSpace(object):
-    def __init__(self, solver:str, size:str, shape:str, name="", new2021:bool=False):
+    def __init__(self, solver: str, size: str, shape: str, name="", new2021: bool = False):
         """
         :param board_coords:
         :param load_coords:
@@ -59,6 +63,17 @@ class PhaseSpace(object):
         # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
+
+    def __add__(self, PhaseSpace2):
+        FinalPS = PhaseSpace(self.solver, self.size, self.shape, name=self.name)
+        FinalPS.space = np.logical_and(self.space, PhaseSpace2)
+        return FinalPS
+
+    def iter_inds(self) -> iter:
+        for x_i, y_i, theta_i in itertools.product(range(self.space.shape[0]),
+                                                   range(self.space.shape[1]),
+                                                   range(self.space.shape[2])):
+            yield x_i, y_i, theta_i
 
     def number_of_points(self):
         # x_num = np.ceil(self.extent['x'][1]/resolution)
@@ -129,16 +144,18 @@ class PhaseSpace(object):
     def visualize_space(self, fig=None, colormap='Greys') -> None:
         if fig is not None:
             self.fig = fig
-        else:
+        elif self.fig is None:
             self.fig = self.new_fig()
+
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
-                               self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
-                               self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
-                               ]
+                      self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
+                      self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
+                      ]
 
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
+        space = np.array(self.space, dtype=int)
         cont = mlab.contour3d(x, y, theta,
-                              self.space[:x.shape[0], :x.shape[1], :x.shape[2]],
+                              space[:x.shape[0], :x.shape[1], :x.shape[2]],
                               opacity=0.15,
                               figure=self.fig,
                               colormap=colormap)
@@ -157,10 +174,10 @@ class PhaseSpace(object):
         # ax.axes.label_format = '%.2f'
         # ax.label_text_property.font_family = 'times'
 
-    def iterate_coordinates(self, x0: int = 0, x1: int = -1):
+    def iterate_coordinates(self, x0: int = 0, x1: int = -1) -> iter:
         r"""
-        param x0: indice to start with
-        param x1: indice to end with
+        param x0: index to start with
+        param x1: index to end with
         :return: iterator
         """
         x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
@@ -194,7 +211,6 @@ class PhaseSpace(object):
     def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
-        :param path: path, where the pickle to be loaded is stored.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
@@ -292,28 +308,265 @@ class PhaseSpace(object):
 
     def erode(self, radius: int = 8) -> None:
         """
-        erode phase space
+        Erode phase space.
+        We erode twice
         :param radius: radius of erosion
         """
+
+        def erode_space(space, struct):
+            return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=int)
+
         struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
-        self.space = np.array(~ndimage.binary_erosion(~np.array(self.space, dtype=bool), structure=struct), dtype=int)
+        space1 = erode_space(self.space, struct)
+
+        slice = int(self.space.shape[-1] / 2)
+        space2 = erode_space(np.concatenate([self.space[:, :, slice:], self.space[:, :, :slice]], axis=2), struct)
+        space2 = np.concatenate([space2[:, :, slice:], space2[:, :, :slice]], axis=2)
+
+        self.space = np.array(np.logical_and(space1, space2), dtype=int)
 
     def split_connected_components(self, min=10) -> (list, list):
         """
-        from self find connected components, and return a list of ps spaces, that have only single connected components.
+        from self find connected components
+        Take into account periodicity
+        :return: list of ps spaces, that have only single connected components
         """
-        pss = centroids = []
+        ps_states = []
+        centroids = np.empty((0, 3))
         labels, number_cc = cc3d.connected_components(np.invert(np.array(self.space, dtype=bool)),
                                                       connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        for label, centroid, voxel_count in zip(range(1, number_cc), stats['centroids'], stats['voxel_counts']):
-            if voxel_count > min:
-                ps = PhaseSpace(self.solver, self.size, self.shape)
-                ps.space = np.int8(labels == label)
-                pss.append(ps)
-                centroids.append(self.indexes_to_coords(*np.floor(centroid)))
-        return pss, centroids
+        for label in range(1, number_cc):
+            if stats['voxel_counts'][label] > min:
+                ps = PS_Area(self, np.int8(labels == label), label)
+                # if this is part of a another ps that is split by 0 or 2pi
+                centroid = np.array(self.indexes_to_coords(*np.floor(stats['centroids'][label])))
+
+                border_bottom = np.any(ps.space[:, :, 0])
+                border_top = np.any(ps.space[:, :, -1])
+                if (border_bottom and not border_top) or (border_top and not border_bottom):
+                    index = np.where(centroid[0] == centroids[:, 0])[0]
+                    if len(index) > 0:
+                        ps_states[index[0]].space = np.array(np.logical_or(ps_states[index[0]].space, ps.space),
+                                                             dtype=int)
+                        centroids[index[0]][-1] = 0
+                    else:
+                        ps_states.append(ps)
+                        centroids = np.vstack([centroids, centroid])
+                else:
+                    ps_states.append(ps)
+                    centroids = np.vstack([centroids, centroid])
+        return ps_states, centroids
+
+
+class PS_Area(PhaseSpace):
+    def __init__(self, ps, space, name: int):
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
+        self.space = space
+        self.fig = ps.fig
+        self.name = name
+        self.distance = None
+
+    def overlapping(self, ps_area):
+        return np.any(self.space[ps_area.space])
+
+    def calculate_distance(self):
+        self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
+
+
+class PS_Mask(PS_Area):
+    def __init__(self, ps):
+        space = np.zeros(ps.space.shape, dtype=bool)
+        super().__init__(ps, space, 0)
+
+    @staticmethod
+    def paste(wall: np.array, block: np.array, loc: tuple) -> np.array:
+        """
+        :param wall:
+        :param block:
+        :param loc: the location of the wall, that should be in the (0, 0) position of the block
+        """
+        def paste_slices(tup) -> tuple:
+            pos, w, max_w = tup
+            wall_min = max(pos, 0)
+            wall_max = min(pos + w, max_w)
+            block_min = -min(pos, 0)
+            block_max = max_w - max(pos + w, max_w)
+            block_max = block_max if block_max != 0 else None
+            return slice(wall_min, wall_max), slice(block_min, block_max)
+
+        loc_zip = zip(loc, block.shape, wall.shape)
+        wall_slices, block_slices = zip(*map(paste_slices, loc_zip))
+        wall[wall_slices] = block[block_slices]
+        return wall
+
+    def add_circ_mask(self, radius: int, indices: tuple):
+        """
+        because of periodic boundary conditions in theta, we first roll the array, then assign, then unroll
+        add a circular mask to
+        """
+        def circ_mask() -> np.array:
+            x, y, theta = np.ogrid[(-1) * radius: radius + 1, (-1) * radius: radius + 1, (-1) * radius: radius + 1]
+            mask = np.array(x ** 2 + y ** 2 + theta ** 2 <= radius ** 2)
+            return mask
+
+        loc = (-radius + indices[0], -radius + indices[1], 0)
+        self.paste(self.space, circ_mask(), loc)
+        self.space = np.roll(self.space, indices[2], axis=2)
+
+
+class Node:
+    def __init__(self, indices):
+        self.indices: tuple = indices
+
+    def draw(self, ps):
+        ps.draw(ps.indexes_to_coords(*self.indices)[:2], ps.indexes_to_coords(*self.indices)[2])
+
+    def find_closest_states(self, ps_states: list, N: int = 1) -> list:
+        """
+        :param N: how many of the closest states do you want to find?
+        :param ps_states: how many of the closest states do you want to find?
+        :return: name of the closest PhaseSpace
+        """
+
+        def find_closest_state() -> int:  # TODO: how to speed up the process?
+            """
+            :return: name of the ps_state closest to indices, chosen from ps_states
+            """
+            for radius in range(1, 50):
+                print(radius)
+                ps_mask = PS_Mask(ps_states[0])
+                ps_mask.add_circ_mask(radius, self.indices)
+
+                for ps_state in ps_states:
+                    if ps_state.overlapping(ps_mask):
+                        print(ps_state.name)
+                        # self.visualize_space()
+                        # ps_state.visualize_space(self.fig)
+                        # ps_mask.visualize_space(self.fig, colormap='Oranges')
+                        return ps_state.name
+            return 0
+
+        state_order = []  # carries the names of the closest states, from closest to farthest
+
+        for i in range(N):
+            closest = find_closest_state()
+            state_order.append(closest)
+            [ps_states.remove(ps_state) for ps_state in ps_states if ps_state.name == closest]
+        return state_order
+
+
+class PhaseSpace_Labeled(PhaseSpace):
+    """
+    This class stores configuration space for a piano_movers problem in a 3 dim array.
+    Axis 0 = x direction
+    Axis 1 = y direction
+    Axis 0 = x direction
+    Every element of self.space carries on of the following indices of:
+    - 0 (not allowed)
+    - 1, ... N (in self.eroded_space), where N is the number of states
+    - (n_1, n_2), where n_1 and n_2 are in (1, ... N).
+        n_1 describes the state you came from.
+        n_2 describes the state you are
+    """
+
+    def __init__(self, ps: PhaseSpace, ps_eroded: np.array, ps_states: list, erosion_radius: int):
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
+        self.space = ps.space  # 1, if there is collision. 0, if it is an allowed configuration
+        self.ps_states = ps_states
+        self.eroded_space = ps_eroded.space
+        self.erosion_radius = erosion_radius
+        self.space_labeled = None
+
+    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+        """
+        Load Phase Space pickle.
+        :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
+        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
+        """
+        path = ps_path(self.size, self.shape, point_particle=point_particle, new2021=new2021,
+                       erosion_radius=self.erosion_radius)
+
+        if os.path.exists(path):
+            self.space_labeled = pickle.load(open(path, 'rb'))
+        else:
+            self.label_space2()
+            self.save_space(path=path)
+        return
+
+    # def label_space_slow(self) -> None:
+    #     """
+    #     label each node in PhaseSpace.space with a list
+    #     """
+    #     self.space_labeled = np.zeros([*self.space.shape, 2])
+    #
+    #     def calculate_label_slow(indices: tuple) -> list:
+    #         """
+    #         Finds the label for the coordinates x, y and theta
+    #         :return: integer or list
+    #         """
+    #         # everything not in self.space.
+    #         if self.space[indices]:
+    #             return [0, np.NaN]
+    #
+    #         # everything in self.ps_states.
+    #         for i, ps in enumerate(self.ps_states):
+    #             # [not self.ps_states[i].space[indices] for i in range(len(self.ps_states))]
+    #             if ps.space[indices]:
+    #                 return [i, np.NaN]
+    #
+    #         # in eroded space
+    #         return Node(indices).find_closest_states(self.ps_states, N=2)
+    #
+    #     def label_slice(x_i):
+    #         matrix = np.zeros((self.space.shape[1], self.space.shape[2], 2))
+    #         for y_i, theta_i in itertools.product(range(self.space.shape[1]), range(self.space.shape[2])):
+    #             matrix[y_i, theta_i] = calculate_label_slow((x_i, y_i, theta_i))
+    #         print('finished slice ', str(x_i))
+    #         return matrix
+    #
+    #     start_time = datetime.now()
+    #     label_slice(100)
+    #     print('Duration: {}'.format(datetime.now() - start_time))
+    #
+    #     matrices = Parallel(n_jobs=4)(delayed(label_slice)(x_i) for x_i in range(self.space.shape[0]))
+    #     self.space_labeled = np.stack(matrices, axis=0)
+
+    def save_labeled(self, path=None) -> None:
+        if path is None:
+            path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
+                           erosion_radius=self.erosion_radius)  # TODO have different kwargs
+        print('Saving ' + self.name + ' in path: ' + path)
+        pickle.dump(self.space_labeled, open(path, 'wb'))
+
+    def label_space2(self) -> None:
+        [ps_state.calculate_distance() for ps_state in self.ps_states]
+        distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+
+        def calculate_label2(indices) -> list:
+            # everything not in self.space.
+            if self.space[indices]:
+                return [0, np.NaN]
+
+            # everything in self.ps_states.
+            for i, ps in enumerate(self.ps_states):
+                if ps.space[indices]:
+                    return [i, np.NaN]
+
+            return np.argsort(distance_stack[indices])[:2]
+
+        self.space_labeled = np.zeros([*self.space.shape, 2])
+
+        for ind in self.iter_inds():
+            self.space_labeled[ind] = calculate_label2(ind)
+        return
+
+
+class PS_Network(nx.Graph):  # TODO
+    def __init__(self, ps_states):
+        super().__init__()
+        self.add_nodes_from(ps_states)
 
 
 if __name__ == '__main__':
@@ -327,7 +580,6 @@ if __name__ == '__main__':
     if point_particle:
         name = name + '_pp'
 
-    path = os.path.join(PhaseSpaceDirectory, solver, name + ".pkl")
     ps = PhaseSpace(solver, size, shape, name=name)
     ps.load_space()
     ps.visualize_space()

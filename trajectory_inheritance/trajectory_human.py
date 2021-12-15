@@ -41,7 +41,7 @@ class Trajectory_human(Trajectory):
         folder = MatlabFolder(self.solver, self.size, self.shape)
 
         if old_filename + '.mat' in listdir(folder):
-            file = sio.loadmat(folder + path.sep + old_filename + '.mat')
+            file = sio.loadmat(folder + path.sep + old_filename)
         else:
             raise Exception('Cannot find ' + old_filename + '.mat' + ' in ' + str(folder))
 

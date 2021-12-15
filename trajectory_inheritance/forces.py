@@ -144,10 +144,12 @@ class Forces:
 
         # write the force into the self.frame[:].forces variable
         if len(forces_all_frames) < len(frames) + synch_offset:
+            if sheet.cell(row=self.excel_index, column=18).value == None:
+                print()
             if 'battery' in sheet.cell(row=self.excel_index, column=18).value:
                 print('Battery empty')
                 empty = [0.0 for _ in range(len(forces_all_frames[0]))]
-                missing_frames = range(len(forces_all_frames) - len(frames) + 1)
+                missing_frames = range(-len(forces_all_frames) + (len(frames) + synch_offset + 10))
                 [forces_all_frames.append(empty) for _ in missing_frames]
 
         abs_values = []

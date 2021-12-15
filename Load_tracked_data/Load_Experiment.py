@@ -11,7 +11,7 @@ from Directories import NewFileName
 from tqdm import tqdm
 from copy import copy
 from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
-
+import numpy as np
 
 def find_unpickled(solver, size, shape, no_part2=True):
     """
@@ -24,15 +24,23 @@ def find_unpickled(solver, size, shape, no_part2=True):
     else:
         expORsim = 'sim'
     mat_files = listdir(MatlabFolder(solver, size, shape))
-
-    return [mat_file for mat_file in mat_files if (NewFileName(mat_file, size, shape, expORsim) not in set(pickled)
-                                                   and ('part 2' not in mat_file or not no_part2))]
+    unpickled = [mat_file[:-4] for mat_file in mat_files
+                 if (NewFileName(mat_file, solver, size, shape, expORsim) not in set(pickled)
+                     and ('part 2' not in mat_file or not no_part2))]
+    return unpickled
 
 
 def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: bool, fps: int,
                     x_error: float = 0.0, y_error: float = 0.0, angle_error: float = 0.0,
                     size: str = None, shape: str = None, free: bool = False,
                     **kwargs):
+    """
+    solver: str 'ant', 'human', 'humanhand', 'gillespie'
+    filename: old_filename with .mat extension
+    falseTracking: list of lists [[fr1, fr2], [fr3, fr4] ...] with falsely tracked frames
+    winner: boolean, whether the trail was successful
+    fsp: frames per second of the camera
+    """
     if solver == 'ant':
         from trajectory_inheritance.trajectory_ant import Trajectory_ant
         x = Trajectory_ant(size=size, shape=shape, old_filename=filename, free=free, winner=winner,
@@ -70,22 +78,27 @@ def part2_filename(part1_filename):
 
 
 if __name__ == '__main__':
-    solver, shape = 'ant', 'SPT'
+    solver, shape = 'human', 'SPT'
+    if solver == 'human':
+        fps = 30
+    elif solver == 'ant':
+        fps = 50
+    else:
+        fps = np.NaN
     # for size in sizes[solver]:
-    for size in ['M']:
+    for size in ['Large']:
         for filename in tqdm(find_unpickled(solver, size, shape)):
-            if 'test3' in filename:
-                print('\n' + filename)
-                winner = bool(input('winner? '))
-                x = Load_Experiment(solver, filename, [], winner, 50, size=size, shape=shape)
-                if 'force_vector 1' in filename:
-                    part1 = copy(x)
-                    print('\n' + part2_filename(filename))
-                    part2 = Load_Experiment(solver, part2_filename(filename), [], winner, 50, size=size, shape=shape)
-                    con = SmoothConnector(part1, part2, con_frames=1000)
-                    x = part1 + con + part2
-                x.play(wait=10)
-                save = 1
-                # TODO: Check that the winner is correctly saved!!
-                # TODO: add new file to contacts json file
-                # x.save()
+            print('\n' + filename)
+            winner = bool(input('winner? '))
+            x = Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
+            if 'force_vector 1' in filename:
+                part1 = copy(x)
+                print('\n' + part2_filename(filename))
+                part2 = Load_Experiment(solver, part2_filename(filename), [], winner, fps, size=size, shape=shape)
+                con = SmoothConnector(part1, part2, con_frames=1000)
+                x = part1 + con + part2
+            x.play(step=20)
+            save = 1
+            # TODO: Check that the winner is correctly saved!!
+            # TODO: add new file to contacts json file
+            x.save()
