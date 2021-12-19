@@ -10,10 +10,12 @@ from Directories import PhaseSpaceDirectory, ps_path
 from Analysis.PathLength import resolution
 from scipy import ndimage
 import cc3d
-import networkx as nx
 from datetime import datetime
+import string
 from joblib import Parallel, delayed
 from skfmm import distance
+from tqdm import tqdm
+from itertools import groupby
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -181,7 +183,7 @@ class PhaseSpace(object):
         :return: iterator
         """
         x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
-        for x in x_iter:
+        for x in tqdm(x_iter):
             for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
                 for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
                     yield x, y, theta
@@ -332,6 +334,7 @@ class PhaseSpace(object):
         :return: list of ps spaces, that have only single connected components
         """
         ps_states = []
+        letters = list(string.ascii_lowercase)
         centroids = np.empty((0, 3))
         labels, number_cc = cc3d.connected_components(np.invert(np.array(self.space, dtype=bool)),
                                                       connectivity=6, return_N=True)
@@ -339,7 +342,8 @@ class PhaseSpace(object):
 
         for label in range(1, number_cc):
             if stats['voxel_counts'][label] > min:
-                ps = PS_Area(self, np.int8(labels == label), label)
+                ps = PS_Area(self, np.int8(labels == label), letters.pop(0))
+
                 # if this is part of a another ps that is split by 0 or 2pi
                 centroid = np.array(self.indexes_to_coords(*np.floor(stats['centroids'][label])))
 
@@ -361,12 +365,12 @@ class PhaseSpace(object):
 
 
 class PS_Area(PhaseSpace):
-    def __init__(self, ps, space, name: int):
+    def __init__(self, ps: PhaseSpace, space: np.array, name: str):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
-        self.space = space
+        self.space: np.array = space
         self.fig = ps.fig
-        self.name = name
-        self.distance = None
+        self.name: str = name
+        self.distance: np.array = None
 
     def overlapping(self, ps_area):
         return np.any(self.space[ps_area.space])
@@ -378,7 +382,7 @@ class PS_Area(PhaseSpace):
 class PS_Mask(PS_Area):
     def __init__(self, ps):
         space = np.zeros(ps.space.shape, dtype=bool)
-        super().__init__(ps, space, 0)
+        super().__init__(ps, space, 'mask')
 
     @staticmethod
     def paste(wall: np.array, block: np.array, loc: tuple) -> np.array:
@@ -464,9 +468,9 @@ class PhaseSpace_Labeled(PhaseSpace):
     Axis 1 = y direction
     Axis 0 = x direction
     Every element of self.space carries on of the following indices of:
-    - 0 (not allowed)
-    - 1, ... N (in self.eroded_space), where N is the number of states
-    - (n_1, n_2), where n_1 and n_2 are in (1, ... N).
+    - '0' (not allowed)
+    - A, B...  (in self.eroded_space), where N is the number of states
+    - n_1 + n_2 where n_1 and n_2 are in (A, B...).
         n_1 describes the state you came from.
         n_2 describes the state you are
     """
@@ -491,9 +495,8 @@ class PhaseSpace_Labeled(PhaseSpace):
         if os.path.exists(path):
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
-            self.label_space2()
-            self.save_space(path=path)
-        return
+            self.label_space()
+            self.save_labeled()
 
     # def label_space_slow(self) -> None:
     #     """
@@ -540,33 +543,37 @@ class PhaseSpace_Labeled(PhaseSpace):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump(self.space_labeled, open(path, 'wb'))
 
-    def label_space2(self) -> None:
-        [ps_state.calculate_distance() for ps_state in self.ps_states]
+    def label_space(self) -> None:
+        [ps_state.calculate_distance() for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
-        def calculate_label2(indices) -> list:
+        def calculate_label() -> str:
             # everything not in self.space.
             if self.space[indices]:
-                return [0, np.NaN]
+                return '0'
 
             # everything in self.ps_states.
             for i, ps in enumerate(self.ps_states):
                 if ps.space[indices]:
-                    return [i, np.NaN]
+                    return ps.name
 
-            return np.argsort(distance_stack[indices])[:2]
+            # in eroded space
+            return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices])[:2]])
 
-        self.space_labeled = np.zeros([*self.space.shape, 2])
+        self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
 
-        for ind in self.iter_inds():
-            self.space_labeled[ind] = calculate_label2(ind)
+        for indices in self.iter_inds():
+            self.space_labeled[indices] = calculate_label()
         return
 
+    def label_trajectory(self, x):
+        labels = [self.space_labeled[self.coords_to_indexes(*coords)] for coords in x.iterate_coords()]
+        return labels
 
-class PS_Network(nx.Graph):  # TODO
-    def __init__(self, ps_states):
-        super().__init__()
-        self.add_nodes_from(ps_states)
+    @staticmethod # maybe better to be part of a new class
+    def reduces_labels(labels):
+        return [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels])]
 
 
 if __name__ == '__main__':

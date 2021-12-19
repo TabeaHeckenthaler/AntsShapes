@@ -102,6 +102,10 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
+    def iterate_coords(self) -> iter:
+        for pos, angle in zip(self.position, self.angle):
+            yield pos[0], pos[1], angle
+
     def find_contact(self):
         from PhysicsEngine.Contact import contact_loop_experiment
         my_maze = Maze(self)

@@ -1,5 +1,6 @@
 from PhaseSpaces import PhaseSpace
 from copy import copy
+from trajectory_inheritance.trajectory import get
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -15,18 +16,18 @@ if __name__ == '__main__':
 
     pss, centroids = conf_space_erode.split_connected_components()
 
-    # TODO: Label your ps.space
-    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, conf_space_erode, pss, erosion_radius)
-    conf_space_labeled.load_space()
-    conf_space_labeled.save_labeled()
-
     # for index in range(len(centroids)):
     #     pss[index].visualize_space(fig=conf_space.fig)
     #     conf_space.draw(centroids[index][:2], centroids[index][-1], scale_factor=1)
 
-    # TODO: Are there network packages I can map this to?
+    # TODO: Label all your your ps.spaces
+    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, conf_space_erode, pss, erosion_radius)
+    conf_space_labeled.load_space()
+    # conf_space_labeled.save_labeled()
 
-    # TODO: A given trajectory into runs between nodes of network
+    x = get('XL_SPT_dil9_sensing4')
+    labels = conf_space_labeled.label_trajectory(x)
+
 
     # TODO: Given all trajectories, what
 

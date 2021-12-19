@@ -118,11 +118,11 @@ class Display:
         pygame.display.flip()
 
     def write_to_Video(self):
-        with mss() as sct:
-            screenShot = sct.grab(self.monitor)
-            img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
         # self.VideoWriter.write(pygame.surfarray.pixels3d(self.screen))
         if hasattr(self, 'VideoWriter'):
+            with mss() as sct:
+                screenShot = sct.grab(self.monitor)
+                img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
             self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
         # if self.ps is not None:
         #     self.ps.write_to_Video()
