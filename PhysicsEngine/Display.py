@@ -8,15 +8,17 @@ from mss import mss
 from PIL import Image
 import sys
 from Directories import video_directory
+from Videos.merge_videos import merge_frames
+from mayavi import mlab
 
 
 class Display:
     def __init__(self, x, my_maze, wait=0, ps=None, i=0, videowriter=True):
         self.my_maze = my_maze
         self.filename = x.filename
-        self.ppm = int(1500 / self.my_maze.arena_length)  # pixels per meter
+        self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
-        self.width = 1500
+        self.width = 1100
 
         pygame.font.init()  # display and fonts
         self.font = pygame.font.Font('freesansbold.ttf', 25)
@@ -35,9 +37,15 @@ class Display:
         self.renew_screen()
         self.ps = ps
         if videowriter:
+            if self.ps is not None:
+                self.VideoShape = (max(self.height, mlab.screenshot(self.ps.fig, mode='rgb').shape[0]),
+                                   self.width + mlab.screenshot(self.ps.fig, mode='rgb').shape[1])
+
+            else:
+                self.VideoShape = (self.monitor['height'], self.monitor['width'])
             self.VideoWriter = cv2.VideoWriter(video_directory + sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v',
                                                cv2.VideoWriter_fourcc(*'DIVX'), 20,
-                                               (self.monitor['width'], self.monitor['height']))
+                                               (self.VideoShape[1], self.VideoShape[0]))
 
     def create_screen(self, x, caption=str()) -> pygame.surface:
         pygame.font.init()  # display and fonts
@@ -118,12 +126,18 @@ class Display:
         pygame.display.flip()
 
     def write_to_Video(self):
-        # self.VideoWriter.write(pygame.surfarray.pixels3d(self.screen))
         if hasattr(self, 'VideoWriter'):
-            with mss() as sct:
-                screenShot = sct.grab(self.monitor)
-                img = Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb)
+            # with mss() as sct:
+            #     screenShot = sct.grab(self.monitor)
+            #     img = np.array(Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb))
+            img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+            if hasattr(self, 'ps'):
+                img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
+                                   (self.VideoShape[0], self.VideoShape[1], 3),
+                                   [[0, 0], [0, self.width]])
+
             self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
+
         # if self.ps is not None:
         #     self.ps.write_to_Video()
 

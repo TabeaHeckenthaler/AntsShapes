@@ -16,6 +16,7 @@ from joblib import Parallel, delayed
 from skfmm import distance
 from tqdm import tqdm
 from itertools import groupby
+from copy import copy
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -94,7 +95,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None):
+    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None, parallel=True):
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -115,28 +116,42 @@ class PhaseSpace(object):
             space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
-                space[self.coords_to_indexes(x, y, theta)] = np.any(contact_loop_phase_space(load, maze))
+                space[self.coords_to_indexes(x, y, theta)] = contact_loop_phase_space(load, maze)
+            return space
+
+        # how to iterate over phase space
+        def ps_calc_parallel(iterate: iter, space: np.array, load, maze, coords):
+            """
+            param iterate: index of x array to start with
+            param space: index of x array to end with
+            :return: space
+            """
+            for (x, y, theta), coord in zip(iterate, coords):
+                load.position, load.angle = [x, y], float(theta)
+                space[coord] = contact_loop_phase_space(load, maze)
             return space
 
         # iterate using parallel processing
-        # if parallel:
-        #     n_jobs = 5
-        #     x_index_first = int(np.floor(self.space.shape[0]/n_jobs))
-        #     split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs-1)]
-        #     split_list.append((split_list[-1][-1], self.space.shape[0]))
-        #
-        #     # we should be able to paralyze this process...
-        #     # results = ps_calc(*split_list[0])
-        #     import multiprocessing as mp
-        #     pool = mp.Pool(mp.cpu_count())
-        #     # k = ps_calc(self, load, maze, 0, 2)
-        #     results = [pool.apply(ps_calc, args=(copy(self), copy(load), copy(maze), copy(x0), copy(x1)))
-        #                for x0, x1 in [(0, 2), (2, 4)]]
-        #     # results = Parallel(n_jobs=5)(delayed(ps_calc)(x0, x1) for x0, x1 in [(0, 2), (2, 4)])
-        #     # results = Parallel(n_jobs=5)(delayed(ps_calc)(x0, x1) for x0, x1 in split_list)
-        #     self.space = np.concatenate(results, axis=0)
+        if parallel:
+            n_jobs = 5
+            x_index_first = int(np.floor(self.space.shape[0]/n_jobs))
+            split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs-1)]
+            split_list.append((split_list[-1][-1], self.space.shape[0]))
 
-        self.space = ps_calc(0, self.space.shape[0])
+            list_of_jobs = []
+            for x0, x1 in split_list:  # split_list
+                space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
+                coords = [self.coords_to_indexes(x, y, theta)
+                          for x, y, theta in self.iterate_coordinates(x0=0, x1=x1-x0)]
+                iterator = self.iterate_coordinates(x0=x0, x1=x1)
+                list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
+                # m = ps_calc_parallel(iterator, space, copy(load), copy(maze))
+
+            matrices = Parallel(n_jobs=n_jobs, prefer='threads')(list_of_jobs)
+            self.space = np.concatenate(matrices, axis=0)
+
+        else:
+            self.space = ps_calc(0, self.space.shape[0])
         return
 
     def new_fig(self):
@@ -144,10 +159,10 @@ class PhaseSpace(object):
         return fig
 
     def visualize_space(self, fig=None, colormap='Greys') -> None:
-        if fig is not None:
-            self.fig = fig
-        elif self.fig is None:
+        if self.fig is None or not self.fig.running:
             self.fig = self.new_fig()
+        else:
+            self.fig = fig
 
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
                       self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
@@ -155,6 +170,8 @@ class PhaseSpace(object):
                       ]
 
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
+        if self.space is None:
+            self.load_space()
         space = np.array(self.space, dtype=int)
         cont = mlab.contour3d(x, y, theta,
                               space[:x.shape[0], :x.shape[1], :x.shape[2]],
@@ -163,6 +180,7 @@ class PhaseSpace(object):
                               colormap=colormap)
 
         cont.actor.actor.scale = [1, 1, self.average_radius]
+        mlab.view(-90, 90)
         # ax = mlab.axes(xlabel="x",
         #                ylabel="y",
         #                zlabel="theta",
@@ -198,13 +216,13 @@ class PhaseSpace(object):
                 continue
             yield _ix, _iy, _itheta
 
-    @staticmethod
-    def plot_trajectory(traj, color=(0, 0, 0)):
-        mlab.plot3d(traj[0],
-                    traj[1],
-                    traj[2],
-                    color=color, tube_radius=0.045, colormap='Spectral')
-        mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
+    # @staticmethod
+    # def plot_trajectory(traj, color=(0, 0, 0)):
+    #     mlab.plot3d(traj[0],
+    #                 traj[1],
+    #                 traj[2],
+    #                 color=color, tube_radius=0.045, colormap='Spectral')
+    #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
     def save_space(self, path='SLT.pkl'):
         print('Saving ' + self.name + ' in path: ' + path)
