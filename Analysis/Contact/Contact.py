@@ -70,6 +70,17 @@ class Contact(pd.Series):
         """
         return np.mean(np.array(self.contact_points)[:, 1]) < self.arena_height / 2 - self.exit_size / 2 + 0.1
 
+    def pre_velocity(self):
+        x = get(self.filename)
+        return np.mean(x.velocity(1, 'x', 'y')[:, self.start_frame:self.impact_frame], axis=1)
+
+    def post_velocity(self):
+        x = get(self.filename)
+        return np.mean(x.velocity(1, 'x', 'y')[:, self.impact_frame:self.end_frame], axis=1)
+
+    def retraction_distance(self) -> float:
+        return 0.
+
     def torque(self) -> float:
         """
         :return: torque on the object according to the velocity and the points of contact with the wall
@@ -79,7 +90,7 @@ class Contact(pd.Series):
 
         for contact_point in self.contact_points:
             rho = x.position[self.impact_frame] - contact_point
-            v0 = np.mean(x.velocity(1, 'x', 'y')[:, self.start_frame:self.impact_frame], axis=1)
+            v0 = self.pre_velocity()
             torque += np.cross(np.hstack([rho, 0]), np.hstack([v0, 0]))[2]
 
         # I want to flip the ones contacting the top corner...
@@ -108,6 +119,9 @@ class Contact(pd.Series):
     def play(self):
         x = get(self.filename)
         x.play(indices=[self.start_frame, min(self.end_frame + 100, len(x.frames))])
+
+    def redecided(self) -> float:
+        return 0.
 
 
 class Contact_analyzer(pd.DataFrame):
