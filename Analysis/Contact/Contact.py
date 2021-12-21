@@ -141,6 +141,7 @@ class Contact(pd.Series):
 
         speed = speed[self.impact_frame:self.impact_frame+test_frame_distance]
         frames = len(np.where(walking_speed > speed)[0])
+
         if frames/x.fps > 10:
             k = 1
 
@@ -155,7 +156,7 @@ class Contact_analyzer(pd.DataFrame):
         self.contacts = pd.DataFrame([])
 
     def address(self):
-        return contacts_dir + self['size'].iloc[0] + '_' + self['shape'].iloc[0] + '_contact_list.json'
+        return os.path.join(contacts_dir, self['size'].iloc[0] + '_' + self['shape'].iloc[0] + '_contact_list.json')
 
     def add_column(self):
         fps = [get(filename).fps for filename in self.contacts['filename']]
