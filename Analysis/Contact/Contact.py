@@ -9,6 +9,7 @@ from Directories import contacts_dir
 import plotly.express as px
 import datetime
 from DataFrame.plot_dataframe import save_fig
+from matplotlib import pyplot as plt
 
 DELTA_T = 2
 
@@ -43,7 +44,8 @@ class Contact(pd.Series):
                                         'start_frame': int(max(0, impact_frame - x.fps * DELTA_T)),
                                         'end_frame': int(min(len(x.frames) - 1, impact_frame + x.fps * DELTA_T)),
                                         'arena_height': my_maze.arena_height,
-                                        'exit_size': my_maze.exit_size
+                                        'exit_size': my_maze.exit_size,
+                                        'fps': x.fps
                                         }))
         k = 1
 
@@ -72,11 +74,11 @@ class Contact(pd.Series):
 
     def pre_velocity(self):
         x = get(self.filename)
-        return np.mean(x.velocity(1, 'x', 'y')[:, self.start_frame:self.impact_frame], axis=1)
+        return np.mean(x.velocity(1, 'x', 'y', 'angle')[:, self.start_frame:self.impact_frame], axis=1)
 
     def post_velocity(self):
         x = get(self.filename)
-        return np.mean(x.velocity(1, 'x', 'y')[:, self.impact_frame:self.end_frame], axis=1)
+        return np.mean(x.velocity(1, 'x', 'y', 'angle')[:, self.impact_frame:self.end_frame], axis=1)
 
     def retraction_distance(self) -> float:
         return 0.
@@ -116,12 +118,33 @@ class Contact(pd.Series):
     def __str__(self):
         return self.filename + '_' + str(self.impact_frame)
 
-    def play(self):
+    def play(self, end_frame: int = None):
+        if end_frame is None:
+            end_frame = self.end_frame
         x = get(self.filename)
-        x.play(indices=[self.start_frame, min(self.end_frame + 100, len(x.frames))])
+        x.play(indices=[self.start_frame, min(end_frame + 200, len(x.frames))])
 
-    def redecided(self) -> float:
-        return 0.
+    def redecided(self, walking_speed=0.05) -> float:
+        """
+        Find the time after impact,  at which the shape resumes walking_speed.
+        :param walking_speed: At what speed, can we say, that the object is moving?
+        :return: Time passed before redecision
+        """
+        x = get(self.filename)
+        speed = np.linalg.norm(x.velocity(0.5, 'x', 'y', 'angle'), axis=0)
+        test_sec_distance_start = 6
+        test_frame_distance = min(int(x.fps*test_sec_distance_start), len(x.frames) - self.impact_frame-5)
+
+        while len(x.frames) > self.impact_frame+test_frame_distance and \
+                speed[self.impact_frame+test_frame_distance] < walking_speed:
+            test_frame_distance = test_frame_distance + x.fps
+
+        speed = speed[self.impact_frame:self.impact_frame+test_frame_distance]
+        frames = len(np.where(walking_speed > speed)[0])
+        if frames/x.fps > 10:
+            k = 1
+
+        return frames/x.fps
 
 
 class Contact_analyzer(pd.DataFrame):
@@ -133,6 +156,12 @@ class Contact_analyzer(pd.DataFrame):
 
     def address(self):
         return contacts_dir + self['size'].iloc[0] + '_' + self['shape'].iloc[0] + '_contact_list.json'
+
+    def add_column(self):
+        fps = [get(filename).fps for filename in self.contacts['filename']]
+        self.contacts['fps'] = fps
+        self.save()
+        return
 
     def find_contacts(self) -> pd.DataFrame:
         """

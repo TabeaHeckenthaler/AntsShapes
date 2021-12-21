@@ -57,8 +57,8 @@ def contact_loop_phase_space(load, maze) -> bool:
                     if intersect(load_vertices_list[i], load_vertices_list[i + 1],
                                  maze_vertices_list[ii], maze_vertices_list[ii + 1]):
                         return True
-
-    return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
+    return False
+    # return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
 
 
 def contact_loop_experiment(load, maze) -> list:
