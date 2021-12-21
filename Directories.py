@@ -1,30 +1,29 @@
 from os import path, mkdir
 
 # home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
-home = path.abspath(__file__).split('\\')[0] + path.sep + path.join(*path.abspath(__file__).split(path.sep)[1:-1])
-data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
+# data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
+home = path.join(path.abspath(__file__).split('\\')[0]+path.sep, *path.abspath(__file__).split(path.sep)[1:-1])
+data_home = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'PyCharm_Data', 'AntsShapes')
 
-work_dir = data_home + 'Pickled_Trajectories\\'
-SaverDirectories = {'ant': work_dir + 'Ant_Trajectories',
-                    'human': work_dir + 'Human_Trajectories',
-                    'humanhand': work_dir + 'HumanHand_Trajectories',
-                    'gillespie': work_dir + 'Gillespie_Trajectories',
-                    'ps_simulation': work_dir + 'PS_simulation_Trajectories'}
+work_dir = path.join(data_home, 'Pickled_Trajectories')
+SaverDirectories = {'ant': path.join(work_dir, 'Ant_Trajectories'),
+                    'human': path.join(work_dir, 'Human_Trajectories'),
+                    'humanhand': path.join(work_dir, 'HumanHand_Trajectories'),
+                    'gillespie': path.join(work_dir, 'Gillespie_Trajectories'),
+                    'ps_simulation': path.join(work_dir, 'PS_simulation_Trajectories')}
 
-mini_work_dir = data_home + 'mini_Pickled_Trajectories\\'
-mini_SaverDirectories = {'ant': mini_work_dir + 'Ant_Trajectories',
-                         'human': mini_work_dir + 'Human_Trajectories',
-                         'humanhand': mini_work_dir + 'HumanHand_Trajectories',
-                         'gillespie': mini_work_dir + 'Gillespie_Trajectories',
-                         'ps_simulation': mini_work_dir + 'PS_simulation_Trajectories'}
+mini_work_dir = path.join(data_home, 'mini_Pickled_Trajectories')
+mini_SaverDirectories = {'ant': path.join(mini_work_dir, 'Ant_Trajectories'),
+                         'human': path.join(mini_work_dir, 'Human_Trajectories'),
+                         'humanhand': path.join(mini_work_dir, 'HumanHand_Trajectories'),
+                         'gillespie': path.join(mini_work_dir, 'Gillespie_Trajectories'),
+                         'ps_simulation': path.join(mini_work_dir, 'PS_simulation_Trajectories')}
 
 PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 
-excel_sheet_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments'.format(path.sep, path.sep,
-                                                                                       path.sep,
-                                                                                       path.sep, path.sep)
-contacts_dir = data_home + 'Contacts' + path.sep + 'ant' + path.sep
-df_dir = data_home + 'DataFrame' + path.sep + 'data_frame.json'
+excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
+contacts_dir = path.join(data_home, 'Contacts', 'ant')
+df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
 
 
 def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False,
@@ -65,16 +64,14 @@ def SetupDirectories():
     return
 
 
-video_directory = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Videos\\'
+video_directory = path.join(home, 'Videos')
 if not path.exists(video_directory):
     mkdir(video_directory)
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
-trackedHumanMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}Output'.format(path.sep, path.sep,
-                                                                                                     path.sep, path.sep,
-                                                                                                     path.sep, path.sep)
-trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'
+trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
+trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
 
 
 def MatlabFolder(solver, size, shape):
@@ -82,11 +79,10 @@ def MatlabFolder(solver, size, shape):
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
                                'SPT': 'Special T', 'T': 'T'}
-        return trackedAntMovieDirectory + path.sep + 'Slitted' + path.sep + shape_folder_naming[
-            shape] + path.sep + size + path.sep + 'Output Data'
+        return path.join(trackedAntMovieDirectory, 'Slitted', shape_folder_naming[shape], size, 'Output Data')
 
     if solver == 'human':
-        return trackedHumanMovieDirectory + path.sep + size + path.sep + 'Data'
+        return path.join(trackedHumanMovieDirectory, size, 'Data')
 
     if solver == 'humanhand':
         return trackedHumanHandMovieDirectory
