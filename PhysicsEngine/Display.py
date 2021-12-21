@@ -1,14 +1,12 @@
 import pygame
-from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE, K_DOWN, K_UP, K_RIGHT, K_LEFT, K_r, K_l, K_d, K_a, K_KP4, K_KP6)
+from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE)
 from PhysicsEngine.drawables import colors
 import os
 import numpy as np
 import cv2
-from mss import mss
-from PIL import Image
 import sys
 from Directories import video_directory
-from Videos.merge_videos import merge_frames
+from Video_Editing.merge_videos import merge_frames
 from mayavi import mlab
 
 

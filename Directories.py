@@ -66,6 +66,8 @@ def SetupDirectories():
 
 
 video_directory = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Videos\\'
+if not path.exists(video_directory):
+    mkdir(video_directory)
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
