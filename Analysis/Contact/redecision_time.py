@@ -1,12 +1,13 @@
 from DataFrame.dataFrame import myDataFrame
 from Analysis.Contact.Contact import Contact, Contact_analyzer
 import pandas as pd
-from trajectory_inheritance.trajectory import get
-from Directories import contacts_dir
-import numpy as np
-import plotly.express as px
-from DataFrame.plot_dataframe import save_fig
 from tqdm import tqdm
+from matplotlib import pyplot as plt
+
+
+def plot_histogram(ax, data, max_time):
+    ax.hist(data, bins=20, density=True, range=(0, max_time))
+    return
 
 
 if __name__ == '__main__':
@@ -36,5 +37,11 @@ if __name__ == '__main__':
         # # display contacts
         # [c.play(end_frame=(c.impact_frame + c.fps * time + c['fps'] * 2))
         #  for c, time in zip(contacts, contacts_df['redecision_time']) if time > 0]
+
+    max_time = 5
+    fig, axs = plt.subplots(len(redecision_times.keys()))
+    for size, ax in zip(redecision_times.keys(), axs):
+        data = [redecision_time for redecision_time in redecision_times[size] if redecision_time < max_time]
+        plot_histogram(ax, data, max_time)
 
     k = 1
