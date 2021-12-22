@@ -24,6 +24,7 @@ PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
 excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
 contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
+network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
 
 
 def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False,

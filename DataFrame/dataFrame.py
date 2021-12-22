@@ -113,6 +113,7 @@ class DataFrame(pd.DataFrame):
 
 
 myDataFrame = DataFrame(pd.read_json(df_dir))
+
 if __name__ == '__main__':
     # myDataFrame.add_column()
     # myDataFrame.save()

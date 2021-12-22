@@ -1,36 +1,18 @@
-import pathpy as pp
 from trajectory_inheritance.trajectory import get
-from PhaseSpaces import PhaseSpace
-from copy import copy
+from Analysis.PathPy.network_functions import *
 from pathpy.visualisation import plot, export_html
+from os import path
+from Directories import network_dir
 
-conf_space = PhaseSpace.PhaseSpace('ant', 'XL', 'SPT', name='')
-conf_space.load_space()
+if __name__ == '__main__':
+    conf_space_labeled = load_labeled_conf_space()
 
-erosion_radius = 9
-conf_space_erode = copy(conf_space)
-conf_space_erode.erode(radius=erosion_radius)
+    filenames = ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]
+    trajectories = [get(filename) for filename in filenames]  # TODO: display trajectory in phase space... buggy?
+    labels = [conf_space_labeled.reduces_labels(conf_space_labeled.label_trajectory(x)) for x in trajectories]
+    paths = create_paths(labels)
+    n = pp.Network.from_paths(paths)
+    hon = create_higher_order_network(paths)
 
-pss, centroids = conf_space_erode.split_connected_components()
-
-conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, conf_space_erode, pss, erosion_radius)
-conf_space_labeled.load_space()
-
-trajectories = [get(filename) for filename in ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]]
-
-labels = [conf_space_labeled.label_trajectory(x) for x in trajectories]
-
-paths = pp.Paths()
-[paths.add_path(conf_space_labeled.reduces_labels(label)) for label in labels]
-
-n = pp.Network.from_paths(paths)
-export_html(n, 'paths.html')
-
-hon_2 = pp.HigherOrderNetwork(paths, k=2, null_model=True)
-print(hon_2)
-export_html(hon_2, 'hon_2.html')
-
-for e in hon_2.edges:
-    print(e, hon_2.edges[e])
-
-# t = pp.TemporalNetwork()
+    export_html(n, path.join('network.html'))
+    export_html(hon, path.join(network_dir, 'hon.html'))

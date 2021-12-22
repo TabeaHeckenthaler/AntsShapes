@@ -4,7 +4,7 @@ from DataFrame.dataFrame import myDataFrame
 import seaborn as sns
 import numpy as np
 
-size, shape, solver = 'XL', 'H', 'ant'
+size, shape, solver = 'M', 'H', 'ant'
 exps = myDataFrame[(myDataFrame['size'] == size) & (myDataFrame['shape'] == shape) & (myDataFrame['solver'] == solver)]
 
 filenames = exps['filename'][:10]
@@ -17,12 +17,13 @@ filenames = exps['filename'][:10]
 
 trajs = [get(filename) for filename in filenames]
 ps = PhaseSpace(solver=solver, size=size, shape=shape)
+ps.calculate_space()
 ps.visualize_space()
 
 cmap = sns.color_palette("rocket_r", as_cmap=True)
 colors = cmap(np.linspace(0.2, 1, len(trajs)))[:, :3]
 
-for traj, color in zip(trajs, colors):
+for traj, color in zip(trajs[3:5], [colors[3], colors[9]], ):
     ps.draw(traj.position, traj.angle, scale_factor=0.2, color=tuple(color))
 
 k = 1

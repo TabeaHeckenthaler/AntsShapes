@@ -28,6 +28,5 @@ if __name__ == '__main__':
     x = get('XL_SPT_dil9_sensing4')
     labels = conf_space_labeled.label_trajectory(x)
 
-
     # TODO: Given all trajectories, what
     k = 1
