@@ -125,16 +125,14 @@ class Display:
 
     def write_to_Video(self):
         if hasattr(self, 'VideoWriter'):
-            # with mss() as sct:
-            #     screenShot = sct.grab(self.monitor)
-            #     img = np.array(Image.frombytes('RGB', (screenShot.width, screenShot.height), screenShot.rgb))
-            img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
-            if hasattr(self, 'ps'):
-                img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
-                                   (self.VideoShape[0], self.VideoShape[1], 3),
-                                   [[0, 0], [0, self.width]])
+            pass
+            # img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+            # if hasattr(self, 'ps'):
+            #     img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
+            #                        (self.VideoShape[0], self.VideoShape[1], 3),
+            #                        [[0, 0], [0, self.width]])
 
-            self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
+            # self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
 
         # if self.ps is not None:
         #     self.ps.write_to_Video()

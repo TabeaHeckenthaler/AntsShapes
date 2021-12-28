@@ -42,6 +42,9 @@ class PhaseSpace(object):
         """
         maze = Maze(size=size, shape=shape, solver=solver, new2021=new2021)
 
+        if len(name) == 0:
+            name = size + '_' + shape
+
         self.name = name
         self.solver = solver
         self.shape = shape
@@ -95,7 +98,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None, parallel=True):
+    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None, parallel=False):
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -116,7 +119,8 @@ class PhaseSpace(object):
             space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
-                space[self.coords_to_indexes(x, y, theta)] = contact_loop_phase_space(load, maze)
+                coord = self.coords_to_indexes(x, y, theta)
+                space[coord] = contact_loop_phase_space(load, maze)
             return space
 
         # how to iterate over phase space
@@ -134,15 +138,15 @@ class PhaseSpace(object):
         # iterate using parallel processing
         if parallel:
             n_jobs = 5
-            x_index_first = int(np.floor(self.space.shape[0]/n_jobs))
-            split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs-1)]
+            x_index_first = int(np.floor(self.space.shape[0] / n_jobs))
+            split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs - 1)]
             split_list.append((split_list[-1][-1], self.space.shape[0]))
 
             list_of_jobs = []
             for x0, x1 in split_list:  # split_list
                 space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
                 coords = [self.coords_to_indexes(x, y, theta)
-                          for x, y, theta in self.iterate_coordinates(x0=0, x1=x1-x0)]
+                          for x, y, theta in self.iterate_coordinates(x0=0, x1=x1 - x0)]
                 iterator = self.iterate_coordinates(x0=x0, x1=x1)
                 list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
                 # m = ps_calc_parallel(iterator, space, copy(load), copy(maze))
@@ -224,7 +228,11 @@ class PhaseSpace(object):
     #                 color=color, tube_radius=0.045, colormap='Spectral')
     #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
-    def save_space(self, path='SLT.pkl'):
+    def save_space(self, path=None):
+        if path is None:
+            now = datetime.now()
+            date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
+            path = self.size + '_' + self.shape + '_' + date_string + '.pkl'
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
 
@@ -234,7 +242,7 @@ class PhaseSpace(object):
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, point_particle=point_particle, new2021=new2021)
+        path = ps_path(self.size, self.shape, solver=self.solver, point_particle=point_particle, new2021=new2021)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -242,7 +250,7 @@ class PhaseSpace(object):
                 print('need to correct' + self.name)
         else:
             self.calculate_boundary(point_particle=point_particle, new2021=new2021)
-            self.save_space(path=path)
+            self.save_space()
         return
 
     def _is_boundary_cell(self, x, y, theta):
@@ -409,6 +417,7 @@ class PS_Mask(PS_Area):
         :param block:
         :param loc: the location of the wall, that should be in the (0, 0) position of the block
         """
+
         def paste_slices(tup) -> tuple:
             pos, w, max_w = tup
             wall_min = max(pos, 0)
@@ -428,6 +437,7 @@ class PS_Mask(PS_Area):
         because of periodic boundary conditions in theta, we first roll the array, then assign, then unroll
         add a circular mask to
         """
+
         def circ_mask() -> np.array:
             x, y, theta = np.ogrid[(-1) * radius: radius + 1, (-1) * radius: radius + 1, (-1) * radius: radius + 1]
             mask = np.array(x ** 2 + y ** 2 + theta ** 2 <= radius ** 2)
@@ -589,7 +599,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         labels = [self.space_labeled[self.coords_to_indexes(*coords)] for coords in x.iterate_coords()]
         return labels
 
-    @staticmethod # maybe better to be part of a new class
+    @staticmethod  # maybe better to be part of a new class
     def reduces_labels(labels):
         return [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels])]
 

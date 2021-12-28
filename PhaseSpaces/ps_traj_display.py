@@ -5,21 +5,16 @@ import seaborn as sns
 import numpy as np
 
 size, shape, solver = 'M', 'H', 'ant'
-exps = myDataFrame[(myDataFrame['size'] == size) & (myDataFrame['shape'] == shape) & (myDataFrame['solver'] == solver)]
 
-filenames = exps['filename'][:10]
-
-# filenames = ['XL_H_4100022_1_ants',
-#              'XL_H_4100023_1_ants',
-#              'XL_H_4100026_1_ants',
-#              'XL_H_4100027_1_ants',
-#              ]
-
-trajs = [get(filename) for filename in filenames]
-ps = PhaseSpace(solver=solver, size=size, shape=shape)
+ps = PhaseSpace(solver=solver, size=size, shape=shape, name=size + '_' + shape)
 ps.calculate_space()
+ps.save_space()
 ps.visualize_space()
 
+exps = myDataFrame[(myDataFrame['size'] == size) & (myDataFrame['shape'] == shape) & (myDataFrame['solver'] == solver)]
+filenames = exps['filename'][:10]
+trajs = [get(filename) for filename in filenames]
+# trajs[1].play(ps=ps, step=20, videowriter=True) # TODO: Check
 cmap = sns.color_palette("rocket_r", as_cmap=True)
 colors = cmap(np.linspace(0.2, 1, len(trajs)))[:, :3]
 

@@ -20,6 +20,9 @@ if __name__ == '__main__':
 
 
 def resolution(size, solver):
+    if solver == 'human':
+        Res = {'Large': 0.1, 'L': 0.1, 'Medium': 0.05, 'M': 0.05, 'Small Far': 0.025, 'Small Near': 0.02, 'S': 0.02}
+        return Res[size]
     return 0.1 * ResizeFactors[solver][size]
 
 
