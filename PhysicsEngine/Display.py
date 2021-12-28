@@ -8,6 +8,7 @@ import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
 from mayavi import mlab
+from os import path
 
 
 class Display:
@@ -41,7 +42,7 @@ class Display:
 
             else:
                 self.VideoShape = (self.monitor['height'], self.monitor['width'])
-            self.VideoWriter = cv2.VideoWriter(video_directory + sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v',
+            self.VideoWriter = cv2.VideoWriter(path.join(video_directory, sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v'),
                                                cv2.VideoWriter_fourcc(*'DIVX'), 20,
                                                (self.VideoShape[1], self.VideoShape[0]))
 
@@ -87,6 +88,7 @@ class Display:
     def end_screen(self):
         if hasattr(self, 'VideoWriter'):
             self.VideoWriter.release()
+            print('Saved Movie in ', path.join(video_directory, sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v'))
         # if self.ps is not None:
         #     self.ps.VideoWriter.release()
         pygame.display.quit()
@@ -126,13 +128,13 @@ class Display:
     def write_to_Video(self):
         if hasattr(self, 'VideoWriter'):
             pass
-            # img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
-            # if hasattr(self, 'ps'):
-            #     img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
-            #                        (self.VideoShape[0], self.VideoShape[1], 3),
-            #                        [[0, 0], [0, self.width]])
+            img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+            if hasattr(self, 'ps'):
+                img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
+                                   (self.VideoShape[0], self.VideoShape[1], 3),
+                                   [[0, 0], [0, self.width]])
 
-            # self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
+            self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
 
         # if self.ps is not None:
         #     self.ps.write_to_Video()
