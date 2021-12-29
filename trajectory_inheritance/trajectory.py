@@ -31,18 +31,6 @@ def length_unit_func(solver):
     return length_unit[solver]
 
 
-def get(filename):
-    import os
-    for root, dirs, files in os.walk(work_dir):
-        for dir in dirs:
-            if filename in os.listdir(os.path.join(work_dir, dir)):
-                address = os.path.join(work_dir, dir, filename)
-                with open(address, 'rb') as f:
-                    x = pickle.load(f)
-                return x
-    else:
-        raise ValueError('I cannot find ' + filename)
-
 
 class Trajectory:
     def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool):
@@ -103,6 +91,10 @@ class Trajectory:
         return (len(self.frames) - 1) / self.fps
 
     def iterate_coords(self) -> iter:
+        """
+        Iterator over (x, y, theta) of the trajectory
+        :return: tuple (x, y, theta) of the trajectory
+        """
         for pos, angle in zip(self.position, self.angle):
             yield pos[0], pos[1], angle
 
@@ -217,3 +209,14 @@ class Trajectory:
         return False
 
 
+def get(filename) -> Trajectory:
+    import os
+    for root, dirs, files in os.walk(work_dir):
+        for dir in dirs:
+            if filename in os.listdir(os.path.join(work_dir, dir)):
+                address = os.path.join(work_dir, dir, filename)
+                with open(address, 'rb') as f:
+                    x = pickle.load(f)
+                return x
+    else:
+        raise ValueError('I cannot find ' + filename)

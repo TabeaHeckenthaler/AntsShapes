@@ -1,6 +1,7 @@
 from PhaseSpaces import PhaseSpace
 
-sizes = ['Large', 'Medium', 'Small Far']
+# sizes = ['Small Far', 'Small Near', 'Large', 'Medium']
+sizes = ['Small Far']
 shape = 'SPT'
 solver = 'human'
 

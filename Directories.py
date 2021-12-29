@@ -1,4 +1,5 @@
 from os import path, mkdir
+from datetime import datetime
 
 # home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
 # data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
@@ -27,17 +28,18 @@ df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
 network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
 
 
-def ps_path(size: str, shape: str, solver: str = 'ant', point_particle: bool = False, new2021: bool = False,
-            erosion_radius: int = None):
+def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
+            erosion_radius: int = None, addition: str = ''):
     """
     where the phase space is saved
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
+    filename = size + '_' + shape
     if point_particle:
-        return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_pp.pkl')
+        return path.join(PhaseSpaceDirectory, solver, filename + '_pp.pkl')
     if erosion_radius is not None:
-        return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
-    return path.join(PhaseSpaceDirectory, solver, size + '_' + shape + '.pkl')
+        return path.join(PhaseSpaceDirectory, solver, filename + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
+    return path.join(PhaseSpaceDirectory, solver, filename + '.pkl')
 
 
 def SetupDirectories():
