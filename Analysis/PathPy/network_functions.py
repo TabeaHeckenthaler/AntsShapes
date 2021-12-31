@@ -14,8 +14,10 @@ def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius
 
     pss, centroids = conf_space_erode.split_connected_components()
 
-    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, conf_space_erode, pss, erosion_radius)
-    conf_space_labeled.load_space()
+    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, pss, centroids, erosion_radius)
+    conf_space_labeled.visualize_states()
+    conf_space_labeled.load_space(uneroded_space=conf_space.space)
+
     return conf_space_labeled
 
 

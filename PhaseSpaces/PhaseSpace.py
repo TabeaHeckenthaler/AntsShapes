@@ -1,12 +1,11 @@
 import numpy as np
-import os
 import pickle
 from mayavi import mlab
 from PhysicsEngine.Contact import contact_loop_phase_space
 import os
 import itertools
 from Setup.Maze import Maze
-from Directories import PhaseSpaceDirectory, ps_path
+from Directories import ps_path
 from Analysis.PathLength import resolution
 from scipy import ndimage
 import cc3d
@@ -17,13 +16,13 @@ from skfmm import distance
 from tqdm import tqdm
 from itertools import groupby
 from copy import copy
+from matplotlib import pyplot as plt
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
 
 
-# TODO: fix the display in this module
 # TODO: fix the x.winner attribute
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
@@ -157,7 +156,7 @@ class PhaseSpace(object):
         return fig
 
     def visualize_space(self, fig=None, colormap='Greys') -> None:
-        if self.fig is None or not self.fig.running:
+        if fig is None and (self.fig is None or not self.fig.running):
             self.fig = self.new_fig()
         else:
             self.fig = fig
@@ -173,7 +172,7 @@ class PhaseSpace(object):
         space = np.array(self.space, dtype=int)
         cont = mlab.contour3d(x, y, theta,
                               space[:x.shape[0], :x.shape[1], :x.shape[2]],
-                              opacity=0.15,
+                              opacity=0.08,  # 0.15
                               figure=self.fig,
                               colormap=colormap)
 
@@ -277,6 +276,16 @@ class PhaseSpace(object):
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
 
+    def coordinate_to_index(self, axis: int, value):
+        if value is None:
+            return None
+        res = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}
+        value_i = min(int(np.round((value - list(self.extent.values())[axis][0]) / res[axis])),
+                      self.space.shape[axis] - 1)
+        if value_i >= self.space.shape[axis] or value_i <= -1:
+            print('check', list(self.extent.keys())[axis])
+        return value_i
+
     def coords_to_indexes(self, x: float, y: float, theta: float) -> tuple:
         """
         convert coordinates into indices in PhaseSpace
@@ -285,23 +294,8 @@ class PhaseSpace(object):
         :param theta: orientation of axis in radian
         :return: (xi, yi, thetai)
         """
-        if x is not None:
-            x = min(int(np.round((x - self.extent['x'][0]) / self.pos_resolution)), self.space.shape[0] - 1)
-            if x >= self.space.shape[0] or x <= -1:
-                print('check x')
-        if y is not None:
-            y = min(int(np.round((y - self.extent['y'][0]) / self.pos_resolution)), self.space.shape[1] - 1)
-            if y >= self.space.shape[1] or y <= -1:
-                print('check y')
-        if theta is not None:
-            theta = min(int(np.round((theta % (2 * np.pi) -
-                                      self.extent['theta'][0]) / self.theta_resolution)),
-                        self.space.shape[2])
-            if theta >= self.space.shape[2] or theta <= -1:
-                print('check theta')
-                print(theta)
-                print(self.space.shape[2])
-        return x, y, theta
+        return self.coordinate_to_index(0, x), self.coordinate_to_index(1, y), \
+               self.coordinate_to_index(2, theta % (2 * np.pi))
 
     def calculate_boundary(self, new2021=False, point_particle=False) -> None:
         if self.space is None:
@@ -390,7 +384,7 @@ class PhaseSpace(object):
                 border_bottom = np.any(ps.space[:, :, 0])
                 border_top = np.any(ps.space[:, :, -1])
                 if (border_bottom and not border_top) or (border_top and not border_bottom):
-                    index = np.where(centroid[0] == centroids[:, 0])[0]
+                    index = np.where(np.abs(centroid[0] - centroids[:, 0]) < 0.1)[0]
                     if len(index) > 0:
                         ps_states[index[0]].space = np.array(np.logical_or(ps_states[index[0]].space, ps.space),
                                                              dtype=int)
@@ -415,12 +409,27 @@ class PS_Area(PhaseSpace):
     def overlapping(self, ps_area):
         return np.any(self.space[ps_area.space])
 
-    def calculate_distance(self) -> np.array:
+    def calculate_distance(self, uneroded_space: np.array) -> np.array:
         """
         Calculate the distance to every other node in the array.
+        :param uneroded_space: Distances have to be calculated according to the available nodes in CS.
+        The available nodes are saved in uneroded_space.
         :return: np.array
         """
+
         self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
+
+        phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
+        masked_phi = np.ma.MaskedArray(phi, mask=uneroded_space)
+        self.distance = distance(masked_phi, periodic=(0, 0, 1))
+
+        # node at (105, 36, 102)
+
+        point = (105, 36, 102)
+        self.draw(self.indexes_to_coords(*point)[:2], self.indexes_to_coords(*point)[-1])
+        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
+        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
+        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
 
 
 class PS_Mask(PS_Area):
@@ -480,7 +489,7 @@ class Node:
         :return: name of the closest PhaseSpace
         """
 
-        def find_closest_state() -> int:  # TODO: how to speed up the process?
+        def find_closest_state() -> int:
             """
             :return: name of the ps_state closest to indices, chosen from ps_states
             """
@@ -521,15 +530,15 @@ class PhaseSpace_Labeled(PhaseSpace):
         n_2 describes the state you are
     """
 
-    def __init__(self, ps: PhaseSpace, ps_eroded: np.array, ps_states: list, erosion_radius: int):
+    def __init__(self, ps: PhaseSpace, ps_states: list, centroids: list, erosion_radius: int):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
         self.space = ps.space  # 1, if there is collision. 0, if it is an allowed configuration
         self.ps_states = ps_states
-        self.eroded_space = ps_eroded.space
         self.erosion_radius = erosion_radius
+        self.centroids = centroids
         self.space_labeled = None
 
-    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_space(self, uneroded_space=None, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
@@ -541,7 +550,10 @@ class PhaseSpace_Labeled(PhaseSpace):
         if os.path.exists(path):
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
-            self.label_space()
+            if uneroded_space is None:
+                print('You have to pass the uneroded_space!')
+            else:
+                self.label_space(uneroded_space)
             self.save_labeled()
 
     # def label_space_slow(self) -> None:
@@ -582,18 +594,29 @@ class PhaseSpace_Labeled(PhaseSpace):
     #     matrices = Parallel(n_jobs=4)(delayed(label_slice)(x_i) for x_i in range(self.space.shape[0]))
     #     self.space_labeled = np.stack(matrices, axis=0)
 
+    def visualize_states(self, fig=None, colormap='Oranges') -> None:
+        if self.fig is None or not self.fig.running:
+            self.visualize_space()
+
+        else:
+            self.fig = fig
+
+        for centroid, ps_state in zip(self.centroids, self.ps_states):
+            ps_state.visualize_space(fig=self.fig, colormap=colormap)
+            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
+
     def save_labeled(self, path=None) -> None:
         if path is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
-                           erosion_radius=self.erosion_radius, addition=date_string)  # TODO have different kwargs
+                           erosion_radius=self.erosion_radius, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump(self.space_labeled, open(path, 'wb'))
 
-    def label_space(self) -> None:
+    def label_space(self, uneroded_space) -> None:
         print('Calculating distances for the different states in', self.name)
-        [ps_state.calculate_distance() for ps_state in tqdm(self.ps_states)]
+        [ps_state.calculate_distance(uneroded_space) for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
@@ -617,13 +640,18 @@ class PhaseSpace_Labeled(PhaseSpace):
         return
 
     def label_trajectory(self, x):
+        """
+
+        :param x:
+        :return:
+        """
         indices = [self.coords_to_indexes(*coords) for coords in x.iterate_coords()]
-        labels = [self.space_labeled[index] for index in indices]
+        labels = [self.space_labeled[index][0] for index in indices]
         return labels
 
     @staticmethod  # maybe better to be part of a new class
-    def reduces_labels(labels):
-        return [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels])]
+    def reduces_labels(labels, no_zero=True):
+        return [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels if label != '0'])]
 
 
 if __name__ == '__main__':
