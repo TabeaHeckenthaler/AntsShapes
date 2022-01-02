@@ -1,22 +1,22 @@
 from Analysis.PathPy.network_functions import *
+import numpy as np
 from pathpy.visualisation import plot, export_html
 from Directories import network_dir
-import igraph
-import numpy as np
 
-solver = 'human'
-size = 'Large'
+solver = 'ant'
+size = 'XL'
 shape = 'SPT'
 
 if __name__ == '__main__':
     # load labeled configuration space
-    conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
+    conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape, reduction=5)
 
     # load relevant experimental paths
     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
 
     # label the trajectory according to conf_space_labeled
     labels = [conf_space_labeled.reduces_labels(conf_space_labeled.label_trajectory(x)) for x in trajectories]
+    # TODO: add a time stamp to labels
 
     # create paths and network
     paths = create_paths(labels)

@@ -5,7 +5,7 @@ from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
 
 
-def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius=9) -> PhaseSpace:
+def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius=9, reduction=1) -> PhaseSpace:
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
     conf_space.load_space()
 
@@ -15,8 +15,8 @@ def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius
     pss, centroids = conf_space_erode.split_connected_components()
 
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, pss, centroids, erosion_radius)
-    conf_space_labeled.visualize_states()
     conf_space_labeled.load_space(uneroded_space=conf_space.space)
+    conf_space_labeled.visualize_states(reduction=reduction)  # TODO with less resolution
 
     return conf_space_labeled
 

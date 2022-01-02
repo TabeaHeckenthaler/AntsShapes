@@ -155,21 +155,60 @@ class PhaseSpace(object):
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
         return fig
 
-    def visualize_space(self, fig=None, colormap='Greys') -> None:
+    @staticmethod
+    def reduced_resolution(space: np.array, reduction: int):
+        """
+
+        :param space: space that you want to reshpe
+        :param reduction:
+        :return:
+        """
+        for axis in range(int(space.ndim)):
+            space = space.take(indices=range(0, int(space.shape[axis] / reduction) * reduction), axis=axis)
+
+        def reshape(array) -> np.array:
+            """
+            Shrink an array
+            :return:
+            """
+            reshaper = [item for t in [(int(axis_len / reduction), reduction)
+                                       for axis_len in array.shape] for item in t]
+
+            return array.reshape(*reshaper)
+
+        def summer(array) -> np.array:
+            for i in range(int(array.ndim/2)):
+                array = array.sum(axis=i+1)
+            return array
+
+        # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
+        return summer(reshape(space))/(reduction**space.ndim)
+
+    def visualize_space(self, reduction=1, fig=None, colormap='Greys') -> None:
         if fig is None and (self.fig is None or not self.fig.running):
             self.fig = self.new_fig()
         else:
             self.fig = fig
 
-        x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution,
-                      self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution,
-                      self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution,
-                      ]
+        x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution * reduction,
+                               self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution * reduction,
+                               self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution * reduction,
+                               ]
 
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
         if self.space is None:
             self.load_space()
+
         space = np.array(self.space, dtype=int)
+        if reduction > 1:
+            space = self.reduced_resolution(space, reduction)
+            x = x.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
+                indices=range(space.shape[2]), axis=2)
+            y = y.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
+                indices=range(space.shape[2]), axis=2)
+            theta = theta.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
+                indices=range(space.shape[2]), axis=2)
+
         cont = mlab.contour3d(x, y, theta,
                               space[:x.shape[0], :x.shape[1], :x.shape[2]],
                               opacity=0.08,  # 0.15
@@ -178,18 +217,6 @@ class PhaseSpace(object):
 
         cont.actor.actor.scale = [1, 1, self.average_radius]
         mlab.view(-90, 90)
-        # ax = mlab.axes(xlabel="x",
-        #                ylabel="y",
-        #                zlabel="theta",
-        #                line_width=2,
-        #                ranges=[self.extent['x'][0], self.extent['x'][1],
-        #                        self.extent['y'][0], self.extent['y'][1],
-        #                        self.extent['theta'][0], self.extent['theta'][1],
-        #                        ],
-        #                )
-        #
-        # ax.axes.label_format = '%.2f'
-        # ax.label_text_property.font_family = 'times'
 
     def iterate_space_index(self) -> iter:
         """
@@ -417,7 +444,7 @@ class PS_Area(PhaseSpace):
         :return: np.array
         """
 
-        self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
+        # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
 
         phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
         masked_phi = np.ma.MaskedArray(phi, mask=uneroded_space)
@@ -425,11 +452,11 @@ class PS_Area(PhaseSpace):
 
         # node at (105, 36, 102)
 
-        point = (105, 36, 102)
-        self.draw(self.indexes_to_coords(*point)[:2], self.indexes_to_coords(*point)[-1])
-        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
-        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
-        plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
+        # point = (105, 36, 102)
+        # self.draw(self.indexes_to_coords(*point)[:2], self.indexes_to_coords(*point)[-1])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
 
 
 class PS_Mask(PS_Area):
@@ -594,15 +621,22 @@ class PhaseSpace_Labeled(PhaseSpace):
     #     matrices = Parallel(n_jobs=4)(delayed(label_slice)(x_i) for x_i in range(self.space.shape[0]))
     #     self.space_labeled = np.stack(matrices, axis=0)
 
-    def visualize_states(self, fig=None, colormap='Oranges') -> None:
+    def visualize_states(self, fig=None, colormap='Oranges', reduction: int = 1) -> None:
+        """
+
+        :param fig: mylab figure reference
+        :param colormap: What color do you want the available states to appear in?
+        :param reduction: What amount of reduction?
+        :return:
+        """
         if self.fig is None or not self.fig.running:
-            self.visualize_space()
+            self.visualize_space(reduction=reduction)
 
         else:
             self.fig = fig
 
         for centroid, ps_state in zip(self.centroids, self.ps_states):
-            ps_state.visualize_space(fig=self.fig, colormap=colormap)
+            ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
 
     def save_labeled(self, path=None) -> None:
@@ -642,8 +676,8 @@ class PhaseSpace_Labeled(PhaseSpace):
     def label_trajectory(self, x):
         """
 
-        :param x:
-        :return:
+        :param x: trajectory
+        :return: list of strings with labels
         """
         indices = [self.coords_to_indexes(*coords) for coords in x.iterate_coords()]
         labels = [self.space_labeled[index][0] for index in indices]
@@ -651,7 +685,22 @@ class PhaseSpace_Labeled(PhaseSpace):
 
     @staticmethod  # maybe better to be part of a new class
     def reduces_labels(labels, no_zero=True):
-        return [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels if label != '0'])]
+
+        def check_labels(labels):
+            permitted_transitions = {'a': ['b', 'd'], 'b': ['a'], 'd': ['a', 'f', 'e'], 'e': ['d', 'g'],
+                                     'f': ['d', 'g'],
+                                     'g': ['f', 'j'], 'i': ['j'], 'j': ['i', 'g']}
+
+            def check_label(label: list) -> bool:
+                return np.all([l in permitted_transitions[l] for l in label])
+            return [check_label(label) for label in labels]
+
+        labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels if label != '0'])]
+
+        wrong = np.where(check_labels(labels))[0]
+        if len(wrong) > 0:
+            print('Wrong labels in', str(np.where(check_labels(labels))[0]))
+        return labels
 
 
 if __name__ == '__main__':
