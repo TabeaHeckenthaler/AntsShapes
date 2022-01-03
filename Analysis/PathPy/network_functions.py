@@ -10,7 +10,7 @@ from Directories import network_dir
 from os import path
 
 
-def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius=9, reduction=1) -> PhaseSpace:
+def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius=9) -> PhaseSpace:
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
     conf_space.load_space()
 
@@ -20,7 +20,6 @@ def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius
     pss, centroids = conf_space_erode.split_connected_components()   # TODO: Save pss... (to speed up the processes)
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, pss, centroids, erosion_radius)
     conf_space_labeled.load_space(uneroded_space=conf_space.space)
-    conf_space_labeled.visualize_states(reduction=reduction)
 
     return conf_space_labeled
 
@@ -34,8 +33,8 @@ def create_paths(labels) -> pp.paths:
 def create_higher_order_network(paths, k=2) -> pp.Network:
     hon = pp.HigherOrderNetwork(paths, k=k, null_model=True)
 
-    for e in hon.edges:
-        print(e, hon.edges[e])
+    # for e in hon.edges:
+    #     print(e, hon.edges[e])
     return hon
 
 
@@ -90,5 +89,11 @@ def plot_network(n: pp.Network, name: str = 'network') -> None:
     :param name: name, under which the .html will be saved
     """
     g1 = Network2igraph(n)
-    visual_style = {"layout": g1.layout_auto(), "vertex_label": g1.vs["name"], "edge_label": g1.es["weight"]}
+    visual_style = {"layout": g1.layout_auto(), "vertex_label": g1.vs["name"], "edge_label": g1.es["weight"],
+                    "width": 3200, "height":3200,
+                    # "d3js_path": # TODO
+                    # "edge_width": 1
+                    "label_color": "#010101",
+                    # "edge_color": "#010101"
+                    }
     export_html(n, path.join(network_dir, name + '.html'), **visual_style)

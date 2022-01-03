@@ -157,9 +157,9 @@ class PhaseSpace(object):
     @staticmethod
     def reduced_resolution(space: np.array, reduction: int):
         """
-
+        Reduce the resolution of the PS.
         :param space: space that you want to reshpe
-        :param reduction:
+        :param reduction: By what factor the PS will be reduced.
         :return:
         """
         for axis in range(int(space.ndim)):

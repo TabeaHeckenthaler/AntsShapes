@@ -2,7 +2,10 @@ from itertools import groupby
 
 
 class States:
-
+    """
+    States is a class which represents the transitions of states of a trajectory. States are defined by eroding the CS,
+    and then finding connected components.
+    """
     def __init__(self, conf_space_labeled, x, step: int = 1):
         """
         :param step: after how many frames I add a label to my label list
@@ -18,7 +21,8 @@ class States:
                                       'j': ['j', 'i', 'g']}
         self.state_series = self.calculate_state_series()
         if len(self.transitions_forbidden()) > 0:
-            print('forbidden', self.transitions_forbidden(), 'in', x.filename)
+            print('Forbidden:', self.transitions_forbidden(), 'in', x.filename)
+            print('You might want to decrease your step size, because you might be skipping state transitions.')
 
     def interpolate_zeros(self) -> None:
         """
