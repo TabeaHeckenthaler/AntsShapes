@@ -1,7 +1,7 @@
 from PhaseSpaces import PhaseSpace
 
 # sizes = ['Small Far', 'Small Near', 'Large', 'Medium']
-sizes = ['Small Far', 'Large', 'Medium']
+sizes = ['Large', 'Medium']  # TODO: There ones are HUGE. Let them run over night
 shape = 'SPT'
 solver = 'human'
 

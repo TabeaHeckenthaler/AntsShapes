@@ -1,33 +1,28 @@
 from Analysis.PathPy.network_functions import *
 import numpy as np
-from pathpy.visualisation import plot, export_html
-from Directories import network_dir
+from Analysis.States import States
+
 
 solver = 'ant'
 size = 'XL'
 shape = 'SPT'
 
-if __name__ == '__main__':
-    # load labeled configuration space
-    conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape, reduction=5)
 
-    # load relevant experimental paths
-    trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
-
-    # label the trajectory according to conf_space_labeled
-    labels = [conf_space_labeled.reduces_labels(conf_space_labeled.label_trajectory(x)) for x in trajectories]
-    # TODO: add a time stamp to labels
-
+def pathpy_analysis():
     # create paths and network
     paths = create_paths(labels)
     n = pp.Network.from_paths(paths)
-    state_dict = n.node_to_name_map()
+    plot_network(n)
+    state_order = ['b', 'a', 'd', 'e', 'f', 'g', 'j']
+    state_dict = {v: n.node_to_name_map()[v] for v in state_order if v in n.node_to_name_map().keys()}
 
     # adjacency_matrix, degrees, laplacian, transition matrix and eigenvector
     A = n.adjacency_matrix().toarray()
     D = np.eye(len(n.degrees())) * np.array(n.degrees())
     L = n.laplacian_matrix(n.degrees()).toarray()
     T = n.transition_matrix().toarray()
+    plot_transition_matrix(T, list(n.node_to_name_map().keys()) + ['i'])
+
     EV = n.leading_eigenvector(n.adjacency_matrix())
 
     # higher order networks
@@ -47,30 +42,19 @@ if __name__ == '__main__':
     ms = pp.MarkovSequence(paths.sequence())
     order = ms.estimate_order(4)
 
+
+if __name__ == '__main__':
+    # load labeled configuration space
+    conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape, reduction=5)
+
+    # load relevant experimental paths
+    trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
+
+    # label the trajectory according to conf_space_labeled
+    labels = [States(conf_space_labeled, x, step=5 * x.fps) for x in trajectories]
+
+    # TODO: add a time stamp to labels
+    pathpy_analysis()
+
     # TODO: Look at returning to dead ends to define
 
-    # # display network
-    # def Network2igraph(network):
-    #     """
-    #     Returns an igraph Graph object which represents
-    #     the k-th layer of a multi-order graphical model.
-    #     """
-    #     g = igraph.Graph(directed=True)
-    #
-    #     for e in network.edges:
-    #         if g.vcount() == 0 or e[0] not in g.vs()["name"]:
-    #             g.add_vertex(e[0])
-    #         if g.vcount() == 0 or e[1] not in g.vs()["name"]:
-    #             g.add_vertex(e[1])
-    #         g.add_edge(e[0], e[1], weight=network.edges[e]['weight'])
-    #     return g
-    #
-    #
-    # g1 = Network2igraph(n)
-    # visual_style = {}
-    # visual_style["layout"] = g1.layout_auto()
-    # visual_style["vertex_label"] = g1.vs["name"]
-    # visual_style["edge_label"] = g1.es["weight"]
-    #
-    # export_html(n, path.join('network.html'), **visual_style)
-    # export_html(hon, path.join(network_dir, 'hon.html'), **visual_style)

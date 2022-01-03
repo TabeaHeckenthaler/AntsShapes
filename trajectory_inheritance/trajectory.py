@@ -31,7 +31,6 @@ def length_unit_func(solver):
     return length_unit[solver]
 
 
-
 class Trajectory:
     def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool):
         self.shape = shape  # shape (maybe this will become name of the maze...) (H, I, T, SPT)
@@ -90,12 +89,12 @@ class Trajectory:
     def timer(self):
         return (len(self.frames) - 1) / self.fps
 
-    def iterate_coords(self) -> iter:
+    def iterate_coords(self, step=1) -> iter:
         """
         Iterator over (x, y, theta) of the trajectory
         :return: tuple (x, y, theta) of the trajectory
         """
-        for pos, angle in zip(self.position, self.angle):
+        for pos, angle in zip(self.position[::step, :], self.angle[::step]):
             yield pos[0], pos[1], angle
 
     def find_contact(self):

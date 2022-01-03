@@ -14,7 +14,6 @@ import string
 from joblib import Parallel, delayed
 from skfmm import distance
 from tqdm import tqdm
-from itertools import groupby
 from copy import copy
 from matplotlib import pyplot as plt
 
@@ -177,12 +176,12 @@ class PhaseSpace(object):
             return array.reshape(*reshaper)
 
         def summer(array) -> np.array:
-            for i in range(int(array.ndim/2)):
-                array = array.sum(axis=i+1)
+            for i in range(int(array.ndim / 2)):
+                array = array.sum(axis=i + 1)
             return array
 
         # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
-        return summer(reshape(space))/(reduction**space.ndim)
+        return summer(reshape(space)) / (reduction ** space.ndim)
 
     def visualize_space(self, reduction=1, fig=None, colormap='Greys') -> None:
         if fig is None and (self.fig is None or not self.fig.running):
@@ -191,9 +190,9 @@ class PhaseSpace(object):
             self.fig = fig
 
         x, y, theta = np.mgrid[self.extent['x'][0]:self.extent['x'][1]:self.pos_resolution * reduction,
-                               self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution * reduction,
-                               self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution * reduction,
-                               ]
+                      self.extent['y'][0]:self.extent['y'][1]:self.pos_resolution * reduction,
+                      self.extent['theta'][0]:self.extent['theta'][1]:self.theta_resolution * reduction,
+                      ]
 
         # os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (800, 160)
         if self.space is None:
@@ -672,35 +671,6 @@ class PhaseSpace_Labeled(PhaseSpace):
         for indices in self.iterate_space_index():
             self.space_labeled[indices] = calculate_label()
         return
-
-    def label_trajectory(self, x):
-        """
-
-        :param x: trajectory
-        :return: list of strings with labels
-        """
-        indices = [self.coords_to_indexes(*coords) for coords in x.iterate_coords()]
-        labels = [self.space_labeled[index][0] for index in indices]
-        return labels
-
-    @staticmethod  # maybe better to be part of a new class
-    def reduces_labels(labels, no_zero=True):
-
-        def check_labels(labels):
-            permitted_transitions = {'a': ['b', 'd'], 'b': ['a'], 'd': ['a', 'f', 'e'], 'e': ['d', 'g'],
-                                     'f': ['d', 'g'],
-                                     'g': ['f', 'j'], 'i': ['j'], 'j': ['i', 'g']}
-
-            def check_label(label: list) -> bool:
-                return np.all([l in permitted_transitions[l] for l in label])
-            return [check_label(label) for label in labels]
-
-        labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in labels if label != '0'])]
-
-        wrong = np.where(check_labels(labels))[0]
-        if len(wrong) > 0:
-            print('Wrong labels in', str(np.where(check_labels(labels))[0]))
-        return labels
 
 
 if __name__ == '__main__':
