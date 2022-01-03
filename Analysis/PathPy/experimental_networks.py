@@ -10,11 +10,11 @@ shape = 'SPT'
 
 def pathpy_analysis():
     # create paths and network
-    paths = create_paths(labels)
+    paths = create_paths([states.state_series for states in list_of_states])
     n = pp.Network.from_paths(paths)
     plot_network(n)
     state_order = ['b', 'a', 'd', 'e', 'f', 'g', 'j']
-    state_dict = {v: n.node_to_name_map()[v] for v in state_order if v in n.node_to_name_map().keys()}
+    # state_dict = {v: n.node_to_name_map()[v] for v in state_order if v in n.node_to_name_map().keys()}
 
     # adjacency_matrix, degrees, laplacian, transition matrix and eigenvector
     A = n.adjacency_matrix().toarray()
@@ -25,22 +25,22 @@ def pathpy_analysis():
 
     EV = n.leading_eigenvector(n.adjacency_matrix())
 
-    # higher order networks
-    hon = create_higher_order_network(paths)
-    hon.likelihood(paths)
-    eigenvalue_gap = pp.algorithms.spectral.eigenvalue_gap(hon)
-
-    # How much slower is the second order network than the markovian network?
-    pp.algorithms.path_measures.slow_down_factor(paths)
-
-    # slow down factor
-    # Ratios smaller than one indicate that the temporal network exhibits non - Markovian characteristics
-    pp.algorithms.path_measures.entropy_growth_rate_ratio(paths, method='Miller')
-
-    # Is the process Markovian?
-    # estimate the order of the sequence (something like memory)
-    ms = pp.MarkovSequence(paths.sequence())
-    order = ms.estimate_order(4)
+    # # higher order networks
+    # hon = create_higher_order_network(paths)
+    # hon.likelihood(paths)
+    # eigenvalue_gap = pp.algorithms.spectral.eigenvalue_gap(hon)
+    #
+    # # How much slower is the second order network than the markovian network?
+    # pp.algorithms.path_measures.slow_down_factor(paths)
+    #
+    # # slow down factor
+    # # Ratios smaller than one indicate that the temporal network exhibits non - Markovian characteristics
+    # pp.algorithms.path_measures.entropy_growth_rate_ratio(paths, method='Miller')
+    #
+    # # Is the process Markovian?
+    # # estimate the order of the sequence (something like memory)
+    # ms = pp.MarkovSequence(paths.sequence())
+    # order = ms.estimate_order(4)
 
 
 if __name__ == '__main__':
@@ -51,9 +51,8 @@ if __name__ == '__main__':
     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
 
     # label the trajectory according to conf_space_labeled
-    labels = [States(conf_space_labeled, x, step=5 * x.fps) for x in trajectories]
+    list_of_states = [States(conf_space_labeled, x, step=x.fps) for x in trajectories]
 
-    # TODO: add a time stamp to labels
     pathpy_analysis()
 
     # TODO: Look at returning to dead ends to define

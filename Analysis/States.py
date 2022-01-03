@@ -1,5 +1,4 @@
 from itertools import groupby
-import numpy as np
 
 
 class States:
@@ -13,10 +12,13 @@ class States:
         self.time_step = step/x.fps
         indices = [conf_space_labeled.coords_to_indexes(*coords) for coords in x.iterate_coords(step=step)]
         self.time_series = [conf_space_labeled.space_labeled[index][0] for index in indices]
+        self.interpolate_zeros()
         self.permitted_transitions = {'a': ['a', 'b', 'd'], 'b': ['b', 'a'], 'd': ['d', 'a', 'f', 'e'],
                                       'e': ['e', 'd', 'g'], 'f': ['f', 'd', 'g'], 'g': ['g', 'f', 'j'], 'i': ['i', 'j'],
                                       'j': ['j', 'i', 'g']}
         self.state_series = self.calculate_state_series()
+        if len(self.transitions_forbidden()) > 0:
+            print('forbidden', self.transitions_forbidden(), 'in', x.filename)
 
     def interpolate_zeros(self) -> None:
         """
@@ -30,12 +32,13 @@ class States:
             if l == '0':
                 self.time_series[i] = self.time_series[i - 1]
 
-    def check_labels(self) -> None:
+    def transitions_forbidden(self) -> list:
         """
         Check whether the permitted transitions are all allowed
         :return: boolean, whether all transitions are allowed
         """
-        return np.all([l1 in self.permitted_transitions[l0] for l0, l1 in zip(self.time_series, self.time_series[1:])])
+        return [str(l0) + ' to ' + str(l1) for l0, l1 in zip(self.time_series, self.time_series[1:])
+                if l1 not in self.permitted_transitions[l0]]
 
     def calculate_state_series(self):
         """
