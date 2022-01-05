@@ -90,7 +90,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = 1
         self.space[:, -1, :] = 1
 
-    def calculate_space(self, new2021: bool = False, point_particle=False, screen=None, parallel=False) -> None:
+    def calculate_space(self, new2021: bool = False, point_particle=False, parallel=False) -> None:
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -368,7 +368,7 @@ class PhaseSpace(object):
         struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
         self.space = np.array(~ndimage.binary_dilation(~np.array(self.space, dtype=bool), structure=struct), dtype=int)
 
-    def erode(self, radius: int = 8) -> None:
+    def erode(self, radius: int) -> None:
         """
         Erode phase space.
         We erode twice
@@ -556,15 +556,21 @@ class PhaseSpace_Labeled(PhaseSpace):
         n_2 describes the state you are
     """
 
-    def __init__(self, ps: PhaseSpace, ps_states: list, centroids: list, erosion_radius: int):
+    def __init__(self, ps: PhaseSpace):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
         self.space = ps.space  # 1, if there is collision. 0, if it is an allowed configuration
-        self.ps_states = ps_states
-        self.erosion_radius = erosion_radius
+
+        self.eroded_space = copy(ps)
+        self.erosion_radius = self.erosion_radius_default()
+        self.eroded_space.erode(radius=self.erosion_radius)
+
+        self.ps_states, centroids = self.eroded_space.split_connected_components()
+        self.centroids = centroids # TODO: Save pss... (to speed up the processes)
+
         self.centroids = centroids
         self.space_labeled = None
 
-    def load_space(self, uneroded_space=None, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
@@ -576,10 +582,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         if os.path.exists(path):
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
-            if uneroded_space is None:
-                print('You have to pass the uneroded_space!')
-            else:
-                self.label_space(uneroded_space)
+            self.label_space(self.space)
             self.save_labeled()
 
     # def label_space_slow(self) -> None:
@@ -646,6 +649,9 @@ class PhaseSpace_Labeled(PhaseSpace):
                            erosion_radius=self.erosion_radius, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump(self.space_labeled, open(path, 'wb'))
+
+    def erosion_radius_default(self):
+        return int(np.ceil(self.coords_to_indexes(0.9, 0, 0)[0]))
 
     def label_space(self, uneroded_space) -> None:
         print('Calculating distances for the different states in', self.name)

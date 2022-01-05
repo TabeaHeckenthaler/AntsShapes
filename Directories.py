@@ -26,6 +26,7 @@ excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 
 contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
 network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
+maze_dimension_directory = path.join(home, 'Setup')
 
 
 def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
@@ -34,6 +35,8 @@ def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, ne
     where the phase space is saved
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
+    if size in ['Small Far', 'Small Near']: # both have same dimensions
+        size = 'Small'
     filename = size + '_' + shape
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, filename + '_pp.pkl')

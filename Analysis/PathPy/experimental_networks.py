@@ -61,9 +61,12 @@ def higher_order_networks(paths):
 
 
 if __name__ == '__main__':
+    #
+    # solver = 'ant'
+    # sizes = ['XL', 'L', 'M', 'S']
 
-    solver = 'ant'
-    sizes = ['XL', 'L', 'M', 'S']
+    solver = 'human'
+    sizes = ['Small Far', 'Medium', 'Large']
     shape = 'SPT'
 
     results = pd.DataFrame()

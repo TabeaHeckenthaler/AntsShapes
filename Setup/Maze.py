@@ -3,9 +3,10 @@ from Box2D import b2BodyDef, b2_staticBody, b2World, b2_dynamicBody, b2FixtureDe
 from Setup.MazeFunctions import BoxIt
 from scipy.spatial import cKDTree
 from pandas import read_excel
-from Directories import home
+from Directories import maze_dimension_directory
 from PhysicsEngine.drawables import Polygon, Point, Circle, colors
 from copy import copy
+from os import path
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
@@ -80,7 +81,8 @@ class Maze(b2World):
             self.solver = solver
 
         self.free = free
-        self.new2021 = new2021
+        self.new2021 = new2021  # TODO: At some point, this might have to become a filename, that carries the
+        # relevant sizes
         self.statenames = StateNames[shape]
         self.getMazeDim()
         self.body = self.CreateMaze()
@@ -95,14 +97,12 @@ class Maze(b2World):
             return
 
         else:
-            dir = home + '\\Setup'
-
             if self.solver == 'ant' and self.new2021:
-                df = read_excel(dir + '\\MazeDimensions_new2021_ant.xlsx', engine='openpyxl')
+                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_new2021_ant.xlsx'), engine='openpyxl')
             elif self.solver in ['sim', 'gillespie']:
-                df = read_excel(dir + '\\MazeDimensions_ant.xlsx', engine='openpyxl')
+                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_ant.xlsx'), engine='openpyxl')
             else:
-                df = read_excel(dir + '\\MazeDimensions_' + self.solver + '.xlsx', engine='openpyxl')
+                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_' + self.solver + '.xlsx'), engine='openpyxl')
 
             if self.solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # all measurements in cm
                 d = df.loc[df['Name'] == self.size + '_' + self.shape]
@@ -120,7 +120,7 @@ class Maze(b2World):
                 else:
                     self.slits = [d['slits'].values[0]]
 
-            elif self.solver == 'human' and not self.new2021:  # all measurements in meters
+            elif self.solver == 'human':  # all measurements in meters
                 # StartedScripts: measure the slits again...
                 # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
                 # Experiments\ExperimentalSetup
@@ -532,12 +532,12 @@ class Maze(b2World):
         elif self.solver == 'human':
             # [shape_height, shape_width, shape_thickness, short_edge]
             if short_edge:
-                SPT_Human_sizes = {'S': [0.805, 1.61, 0.125, 0.405],
-                                   'M': [1.59, 3.18, 0.240, 0.795],
+                SPT_Human_sizes = {'S': [0.805, 1.56, 0.125, 0.405],  # 1.61 to 1.56
+                                   'M': [1.59, 3.18, 0.230, 0.795],   # 0.24 to 0.23
                                    'L': [3.2, 6.38, 0.51, 1.585]}
             else:
-                SPT_Human_sizes = {'S': [0.805, 1.61, 0.125],
-                                   'M': [1.59, 3.18, 0.240],
+                SPT_Human_sizes = {'S': [0.805, 1.56, 0.125],
+                                   'M': [1.59, 3.18, 0.230],
                                    'L': [3.2, 6.38, 0.51]}
             return SPT_Human_sizes[self.size[0]]
 

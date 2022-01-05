@@ -14,5 +14,5 @@ conf_space_erode.visualize_space()
 
 pss, centroids = conf_space_erode.split_connected_components()
 
-conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, conf_space_erode, pss, erosion_radius)
+conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
 conf_space_labeled.load_space()

@@ -1,15 +1,28 @@
 from PhaseSpaces import PhaseSpace
+from Analysis.PathPy.network_functions import load_labeled_conf_space
 
 # sizes = ['Small Far', 'Small Near', 'Large', 'Medium']
-sizes = ['L', 'M', 'S']  # TODO: There ones are HUGE. Let them run over night
+# sizes = ['S']
+# shape = 'SPT'
+# solver = 'ant'
+#
+# if __name__ == '__main__':
+#
+#     for size in sizes:
+#         conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape, new2021=True)
+#         conf_space.load_space()
+#         # conf_space.visualize_space()
+#         # conf_space.save_space(path=size + '_' + shape + '.pkl')
+
+solver = 'human'
+sizes = ['Small Far']
 shape = 'SPT'
-solver = 'ant'
+new2021 = True
 
-if __name__ == '__main__':
+for size in sizes:
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
+    conf_space.load_space(new2021=new2021)
+    conf_space.save_space()
+    # conf_space.visualize_space()
 
-    for size in sizes:
-        conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape, new2021=True)
-        conf_space.load_space()
-        # conf_space.visualize_space()
-        # conf_space.save_space(path=size + '_' + shape + '.pkl')
-
+    DEBUG = 1

@@ -10,16 +10,13 @@ from Directories import network_dir
 from os import path
 
 
-def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', erosion_radius=9) -> PhaseSpace:
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
-    conf_space.load_space()
+def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', new2021=True) -> PhaseSpace:
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
+    conf_space.load_space(new2021=new2021)
+    conf_space.visualize_space(reduction=10)
 
-    conf_space_erode = copy(conf_space)
-    conf_space_erode.erode(radius=erosion_radius)
-
-    pss, centroids = conf_space_erode.split_connected_components()   # TODO: Save pss... (to speed up the processes)
-    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space, pss, centroids, erosion_radius)
-    conf_space_labeled.load_space(uneroded_space=conf_space.space)
+    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
+    conf_space_labeled.load_space()
 
     return conf_space_labeled
 
