@@ -1,8 +1,6 @@
-from PhaseSpaces import PhaseSpace
-from Analysis.PathPy.network_functions import load_labeled_conf_space
-
-# sizes = ['Small Far', 'Small Near', 'Large', 'Medium']
-# sizes = ['S']
+# from PhaseSpaces import PhaseSpace
+#
+# sizes = ['S', 'M', 'L']
 # shape = 'SPT'
 # solver = 'ant'
 #

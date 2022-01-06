@@ -148,7 +148,6 @@ class PhaseSpace(object):
 
         else:
             self.space = ps_calc(0, self.space.shape[0])
-        return
 
     def new_fig(self) -> mlab.figure:
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
