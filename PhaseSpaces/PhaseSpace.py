@@ -184,7 +184,7 @@ class PhaseSpace(object):
         # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
         return summer(reshape(space)) / (reduction ** space.ndim)
 
-    def visualize_space(self, reduction=1, fig=None, colormap='Greys') -> None:
+    def visualize_space(self, reduction=1, fig=None, colormap='Greys', space=None) -> None:
         if fig is None and (self.fig is None or not self.fig.running):
             self.fig = self.new_fig()
         else:
@@ -199,7 +199,11 @@ class PhaseSpace(object):
         if self.space is None:
             self.load_space()
 
-        space = np.array(self.space, dtype=int)
+        if space is not None:
+            space = np.array(self.space, dtype=int)
+        else:
+            space = np.array(space, dtype=int)
+
         if reduction > 1:
             space = self.reduced_resolution(space, reduction)
 
@@ -366,7 +370,7 @@ class PhaseSpace(object):
                      ]
 
     @staticmethod
-    def dilate(self, space: np.array, radius: int) -> np.array:
+    def dilate(space: np.array, radius: int) -> np.array:
         """
         dilate phase space
         :param radius: radius of dilation

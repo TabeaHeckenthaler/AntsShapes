@@ -9,7 +9,16 @@ from Directories import network_dir
 from os import path
 
 
-def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', new2021=True) -> PhaseSpace:
+def load_labeled_conf_space(solver: str = 'ant', size: str = 'XL', shape: str = 'SPT', new2021: bool = True) \
+        -> PhaseSpace:
+    """
+    Loads the labeled configuration space.
+    :param solver:
+    :param size:
+    :param shape:
+    :param new2021:
+    :return: labeled configuration space
+    """
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
     conf_space.load_space(new2021=new2021)
     # conf_space.visualize_space(reduction=10)

@@ -2,7 +2,7 @@ from PhaseSpaces import PhaseSpace, PS_transformations
 from trajectory_inheritance.trajectory import Trajectory
 from Directories import SaverDirectories
 from Setup.Maze import start, end, Maze
-from PS_Search_Algorithms.classes.Node import Node_ind
+from PS_Search_Algorithms.classes.Node_ind import Node_ind
 from copy import copy
 from mayavi import mlab
 import os

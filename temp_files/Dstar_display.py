@@ -16,7 +16,6 @@ ps.load_space(point_particle=False)
 fig = ps.new_fig()
 ps.visualize_space(fig, colormap='Greys')
 
-ps_dil = copy(ps)
-ps_dil.dilate(radius=20)
-ps_dil.visualize_space(fig, colormap='Oranges')
+ps_dil = ps.dilate(ps.space, radius=20)
+ps.visualize_space(fig, colormap='Oranges', space=ps_dil)
 
