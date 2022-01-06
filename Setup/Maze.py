@@ -519,7 +519,7 @@ class Maze(b2World):
                            'T': [5.4, 5.6, 1.6]
                            }
             if short_edge:
-                shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85 * SPT_RATIO]
+                shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85 * SPT_RATIO]  # 9.65 to 9.55
             # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
             dimensions = [i * resize_factor for i in shape_sizes[self.shape]]
 

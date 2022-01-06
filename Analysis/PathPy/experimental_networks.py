@@ -66,13 +66,12 @@ if __name__ == '__main__':
     # sizes = ['XL', 'L', 'M', 'S']
 
     solver = 'human'
-    sizes = ['Small Far', 'Medium', 'Large']
+    sizes = ['Large']
     shape = 'SPT'
 
     results = pd.DataFrame()
     for size in sizes:
         conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
-        # conf_space_labeled.visualize_states(reduction=5)
 
         trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
 

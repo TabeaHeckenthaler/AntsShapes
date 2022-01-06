@@ -261,9 +261,8 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     # known_conf_space.load_space(path=ps_path(size, shape, solver, point_particle=True))
 
     # 2) dilated version of the conf_space
-    known_conf_space = copy(conf_space)
-    if dil_radius > 0:
-        known_conf_space.dilate(radius=dil_radius)
+
+    known_conf_space = conf_space.dilate(space=conf_space, radius=dil_radius)
 
     # ====Set Initial parameters====
     d_star_lite = D_star_lite(

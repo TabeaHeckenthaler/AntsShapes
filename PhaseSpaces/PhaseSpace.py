@@ -283,7 +283,7 @@ class PhaseSpace(object):
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=False)
+        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=True)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -365,43 +365,51 @@ class PhaseSpace(object):
                      min(int(y_max / self.pos_resolution) + 1, self.space.shape[1]),
                      ]
 
-    def dilate(self, radius: int = 8) -> None:
+    @staticmethod
+    def dilate(self, space: np.array, radius: int) -> np.array:
         """
         dilate phase space
         :param radius: radius of dilation
         """
-        struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
-        self.space = np.array(~ndimage.binary_dilation(~np.array(self.space, dtype=bool), structure=struct), dtype=int)
+        print('Dilating space...')
+        struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
+        return np.array(~ndimage.binary_dilation(~space, structure=struct), dtype=bool)
 
-    def erode(self, radius: int) -> None:
+    @staticmethod
+    def erode(space, radius: int) -> np.array:
         """
         Erode phase space.
         We erode twice
+        :param space: Actual space you want to erode
         :param radius: radius of erosion
         """
+        print('Eroding space...')
 
         def erode_space(space, struct):
-            return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=int)
+            return ~ndimage.binary_erosion(~space, structure=struct)
+            # return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=bool)
 
-        struct = np.ones([radius for _ in range(self.space.ndim)], dtype=bool)
-        space1 = erode_space(self.space, struct)
+        struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
 
-        slice = int(self.space.shape[-1] / 2)
-        space2 = erode_space(np.concatenate([self.space[:, :, slice:], self.space[:, :, :slice]], axis=2), struct)
+        space1 = erode_space(space, struct)
+
+        slice = int(space.shape[-1] / 2)
+        space2 = erode_space(np.concatenate([space[:, :, slice:], space[:, :, :slice]], axis=2), struct)
         space2 = np.concatenate([space2[:, :, slice:], space2[:, :, :slice]], axis=2)
 
-        self.space = np.array(np.logical_and(space1, space2), dtype=int)
+        return np.logical_and(space1, space2)
 
-    def split_connected_components(self, min=10) -> (list, list):
+    def split_connected_components(self, space: np.array, min=10) -> (list, list):
         """
         from self find connected components
         Take into account periodicity
+        :param space: which space should be split
         :return: list of ps spaces, that have only single connected components
         """
         ps_states = []
         letters = list(string.ascii_lowercase)
         centroids = np.empty((0, 3))
-        labels, number_cc = cc3d.connected_components(np.invert(np.array(self.space, dtype=bool)),
+        labels, number_cc = cc3d.connected_components(np.invert(np.array(space, dtype=bool)),
                                                       connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
@@ -440,18 +448,18 @@ class PS_Area(PhaseSpace):
     def overlapping(self, ps_area):
         return np.any(self.space[ps_area.space])
 
-    def calculate_distance(self, uneroded_space: np.array) -> np.array:
+    def calculate_distance(self, mask: np.array) -> np.array:
         """
         Calculate the distance to every other node in the array.
-        :param uneroded_space: Distances have to be calculated according to the available nodes in CS.
-        The available nodes are saved in uneroded_space.
-        :return: np.array
+        :param mask: Distances have to be calculated according to the available nodes.
+        The available nodes are saved in 'mask'
+        :return: np.array with distances from each node
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
 
         phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
-        masked_phi = np.ma.MaskedArray(phi, mask=uneroded_space)
+        masked_phi = np.ma.MaskedArray(phi, mask=mask)
         self.distance = distance(masked_phi, periodic=(0, 0, 1))
 
         # node at (105, 36, 102)
@@ -563,19 +571,14 @@ class PhaseSpace_Labeled(PhaseSpace):
 
     def __init__(self, ps: PhaseSpace):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
-        self.space = ps.space  # 1, if there is collision. 0, if it is an allowed configuration
+        self.space = ps.space  # True, if there is collision. False, if it is an allowed configuration
 
-        self.eroded_space = copy(ps)
+        self.eroded_space = None
         self.erosion_radius = self.erosion_radius_default()
-        self.eroded_space.erode(radius=self.erosion_radius)
-
-        self.ps_states, centroids = self.eroded_space.split_connected_components()
-        self.centroids = centroids # TODO: Save pss... (to speed up the processes)
-
-        self.centroids = centroids
+        self.ps_states = self.centroids = None
         self.space_labeled = None
 
-    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
@@ -587,7 +590,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         if os.path.exists(path):
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
-            self.label_space(self.space)
+            self.label_space()
             self.save_labeled()
 
     # def label_space_slow(self) -> None:
@@ -658,9 +661,10 @@ class PhaseSpace_Labeled(PhaseSpace):
     def erosion_radius_default(self):
         return int(np.ceil(self.coords_to_indexes(0.9, 0, 0)[0]))
 
-    def label_space(self, uneroded_space) -> None:
+    def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)
-        [ps_state.calculate_distance(uneroded_space) for ps_state in tqdm(self.ps_states)]
+        [ps_state.calculate_distance(self.dilate(self.space, self.erosion_radius_default()))
+         for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 

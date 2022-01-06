@@ -1,5 +1,4 @@
 from PhaseSpaces import PhaseSpace
-from copy import copy
 import pathpy as pp
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
@@ -13,10 +12,16 @@ from os import path
 def load_labeled_conf_space(solver='ant', size='XL', shape='SPT', new2021=True) -> PhaseSpace:
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
     conf_space.load_space(new2021=new2021)
-    conf_space.visualize_space(reduction=10)
+    # conf_space.visualize_space(reduction=10)
 
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
-    conf_space_labeled.load_space()
+    conf_space_labeled.eroded_space = conf_space_labeled.erode(conf_space_labeled.space,
+                                                               radius=conf_space_labeled.erosion_radius)
+    conf_space_labeled.ps_states, conf_space_labeled.centroids = \
+        conf_space_labeled.split_connected_components(conf_space_labeled.eroded_space)
+    conf_space_labeled.visualize_states(reduction=5)
+
+    conf_space_labeled.load_labeled_space()
 
     return conf_space_labeled
 
