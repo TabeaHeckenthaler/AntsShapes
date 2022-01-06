@@ -99,7 +99,8 @@ class PhaseSpace(object):
         self.space = np.ones((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
                               int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
                               int(np.ceil(
-                                  (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))))
+                                  (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
+                             dtype=bool)
         print("PhaseSpace: Calculating space " + self.name)
 
         # how to iterate over phase space
@@ -108,7 +109,8 @@ class PhaseSpace(object):
             param x0: index of x array to start with
             param x1: index of x array to end with
             :return: iterator"""
-            space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
+
+            space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]], dtype=bool)
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
                 coord = self.coords_to_indexes(x, y, theta)
@@ -200,6 +202,8 @@ class PhaseSpace(object):
         space = np.array(self.space, dtype=int)
         if reduction > 1:
             space = self.reduced_resolution(space, reduction)
+
+        if x.shape != space.shape:
             x = x.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
                 indices=range(space.shape[2]), axis=2)
             y = y.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
@@ -263,13 +267,15 @@ class PhaseSpace(object):
         :return:
         """
         if path is None:
-            path = ps_path(self.size, self.shape, self.solver)
+            path = ps_path(self.size, self.shape, self.solver, boolean=True)
             if os.path.exists(path):
                 now = datetime.now()
                 date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
                 path = ps_path(self.size, self.shape, self.solver, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
-        pickle.dump((self.space, self.space_boundary, self.extent), open(path, 'wb'))
+        pickle.dump((np.array(self.space, dtype=bool),
+                     np.array(self.space_boundary, dtype=bool),
+                     self.extent), open(path, 'wb'))
 
     def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
@@ -277,7 +283,7 @@ class PhaseSpace(object):
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021)
+        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=False)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()

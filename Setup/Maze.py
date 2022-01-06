@@ -116,7 +116,7 @@ class Maze(b2World):
                 if type(d['slits'].values[0]) == str:
                     # self.slits = [float(s) for s in d['slits'].values[0].split(', ')] # TODO: correct this!!!
                     self.slits = [[float(s) for s in d['slits'].values[0].split(', ')][0],
-                                  [float(s) for s in d['slits'].values[0].split(', ')][1] - 0.6]
+                                  [float(s) for s in d['slits'].values[0].split(', ')][1]]
                 else:
                     self.slits = [d['slits'].values[0]]
 

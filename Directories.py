@@ -30,19 +30,25 @@ maze_dimension_directory = path.join(home, 'Setup')
 
 
 def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
-            erosion_radius: int = None, addition: str = ''):
+            erosion_radius: int = None, addition: str = '', boolean=False):
     """
     where the phase space is saved
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
+
     if size in ['Small Far', 'Small Near']: # both have same dimensions
         size = 'Small'
+
     filename = size + '_' + shape
+
+    if boolean:  # I changed to saving only boolean arrays, because they take less memory in storage.
+        filename = filename + '_boolean'
+
     if point_particle:
-        return path.join(PhaseSpaceDirectory, solver, filename + '_pp.pkl')
+        return path.join(PhaseSpaceDirectory, solver, shape, filename + '_pp.pkl')
     if erosion_radius is not None:
-        return path.join(PhaseSpaceDirectory, solver, filename + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
-    return path.join(PhaseSpaceDirectory, solver, filename + '.pkl')
+        return path.join(PhaseSpaceDirectory, solver, shape, filename + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
+    return path.join(PhaseSpaceDirectory, solver, shape, filename + '.pkl')
 
 
 def SetupDirectories():
