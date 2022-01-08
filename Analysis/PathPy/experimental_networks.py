@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
         trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
 
-        list_of_states = [States(conf_space_labeled, x, step=x.fps) for x in trajectories]
+        list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
 
         paths, n = pathpy_network()
         T = Markovian_analysis(n)

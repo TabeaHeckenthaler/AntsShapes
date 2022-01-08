@@ -11,27 +11,13 @@ from os import path
 
 def load_labeled_conf_space(solver: str = 'ant', size: str = 'XL', shape: str = 'SPT', new2021: bool = True) \
         -> PhaseSpace:
-    """
-    Loads the labeled configuration space.
-    :param solver:
-    :param size:
-    :param shape:
-    :param new2021:
-    :return: labeled configuration space
-    """
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
     conf_space.load_space(new2021=new2021)
-    # conf_space.visualize_space(reduction=10)
 
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
-    conf_space_labeled.eroded_space = conf_space_labeled.erode(conf_space_labeled.space,
-                                                               radius=conf_space_labeled.erosion_radius)
-    conf_space_labeled.ps_states, conf_space_labeled.centroids = \
-        conf_space_labeled.split_connected_components(conf_space_labeled.eroded_space)
-    conf_space_labeled.visualize_states(reduction=5)
-
     conf_space_labeled.load_labeled_space()
-
+    conf_space_labeled.visualize_states(reduction=10)
+    print(conf_space_labeled.check_labels())
     return conf_space_labeled
 
 

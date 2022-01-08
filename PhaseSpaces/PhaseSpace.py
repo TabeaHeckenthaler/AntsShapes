@@ -199,7 +199,7 @@ class PhaseSpace(object):
         if self.space is None:
             self.load_space()
 
-        if space is not None:
+        if space is None:
             space = np.array(self.space, dtype=int)
         else:
             space = np.array(space, dtype=int)
@@ -461,7 +461,7 @@ class PS_Area(PhaseSpace):
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-
+        print('Calculating distances!')
         phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
         masked_phi = np.ma.MaskedArray(phi, mask=mask)
         self.distance = distance(masked_phi, periodic=(0, 0, 1))
@@ -592,10 +592,37 @@ class PhaseSpace_Labeled(PhaseSpace):
                        erosion_radius=self.erosion_radius)
 
         if os.path.exists(path):
-            self.space_labeled = pickle.load(open(path, 'rb'))
+            # self.space_labeled = pickle.load(open(path, 'rb'))
+            self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(path, 'rb'))
         else:
+            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
+            self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
+            # self.visualize_states(reduction=5)
             self.label_space()
             self.save_labeled()
+
+    def check_labels(self) -> list:
+        """
+        I want to check, whether there are labels, that I dont want to have.
+        :return: list of all the labels that are not labels I wanted to have
+        """
+        states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
+        forbidden_transition_attempts = ['be', 'bf',
+                                         'di',
+                                         'eb', 'ei',
+                                         'fb', 'fi',
+                                         'gf', 'ge', 'gj',
+                                         'id', 'ie', 'if']
+        allowed_transition_attempts = ['ab', 'ad',
+                                       'ba',
+                                       'de', 'df',
+                                       'ed', 'eg',
+                                       'fd', 'fg',
+                                       'gf', 'ge', 'gj',
+                                       'ij',
+                                       'jg', 'ji']
+        return [label for label in np.unique(self.space_labeled) if label not in
+                states + forbidden_transition_attempts + allowed_transition_attempts]
 
     # def label_space_slow(self) -> None:
     #     """
@@ -660,7 +687,8 @@ class PhaseSpace_Labeled(PhaseSpace):
             path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
                            erosion_radius=self.erosion_radius, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
-        pickle.dump(self.space_labeled, open(path, 'wb'))
+        pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
+        # pickle.dump(self.space_labeled, open(path, 'wb'))
 
     def erosion_radius_default(self):
         return int(np.ceil(self.coords_to_indexes(0.9, 0, 0)[0]))
