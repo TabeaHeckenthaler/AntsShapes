@@ -7,7 +7,7 @@ import cv2
 import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
-from mayavi import mlab
+# from mayavi import mlab
 from os import path
 
 
@@ -119,7 +119,7 @@ class Display:
             if hasattr(x.participants, 'positions'):
                 x.participants.draw(self)
         self.display()
-        self.write_to_Video()
+        # self.write_to_Video()
         return
 
     def display(self):

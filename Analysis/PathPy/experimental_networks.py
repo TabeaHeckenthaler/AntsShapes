@@ -41,7 +41,6 @@ def Markovian_analysis(n) -> np.array:
     EV = n.leading_eigenvector(n.adjacency_matrix())
     return T
 
-
 def higher_order_networks(paths):
     hon = create_higher_order_network(paths)
     hon.likelihood(paths)
@@ -65,24 +64,25 @@ if __name__ == '__main__':
     # solver = 'ant'
     # sizes = ['XL', 'L', 'M', 'S']
 
-    solver = 'human'
-    sizes = ['Large']
+    solvers = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
     shape = 'SPT'
 
-    results = pd.DataFrame()
-    for size in sizes:
-        conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
+    # results = pd.DataFrame()
+    for solver, sizes in solvers.items():
+        for size in sizes:
+            print(solver, size)
+            # conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
 
-        trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
-
-        list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
-
-        paths, n = pathpy_network()
-        T = Markovian_analysis(n)
-        t = absorbing_state_analysis(T)
-        series = pd.Series([t], ['t'], name=size)
-        results = results.append(series)
-    results.tojson(path.join(network_dir, 'Markov_results.json'))
+    #     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
+    #
+    #     list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
+    #
+    #     paths, n = pathpy_network()
+    #     T = Markovian_analysis(n)
+    #     t = absorbing_state_analysis(T)
+    #     series = pd.Series([t], ['t'], name=size)
+    #     results = results.append(series)
+    # results.tojson(path.join(network_dir, 'Markov_results.json'))
 
 
 # TODO: Look at returning to dead ends to define

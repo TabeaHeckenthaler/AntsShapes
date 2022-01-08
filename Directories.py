@@ -75,7 +75,6 @@ def SetupDirectories():
         mkdir(mini_SaverDirectories['ps_simulation'])
     return
 
-
 video_directory = path.join(home, 'Videos')
 if not path.exists(video_directory):
     mkdir(video_directory)
