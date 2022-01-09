@@ -211,7 +211,7 @@ class RRT:
 
     def collision(self, x, y, theta):
         """
-        finds the indices of (x, y, theta) in conf_space,
+        finds the indices_to_coords of (x, y, theta) in conf_space,
         where angles go from (0 to 2pi)
         """
         ind = self.conf_space.coords_to_indexes(x, y, theta)

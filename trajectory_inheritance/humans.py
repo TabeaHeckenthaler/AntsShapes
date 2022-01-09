@@ -226,7 +226,7 @@ class Humans(Participants, ABC):
 
     def gender(self) -> dict:
         """
-        return dict which gives the gender of every participant. The keys of the dictionary are indices of participants,
+        return dict which gives the gender of every participant. The keys of the dictionary are indices_to_coords of participants,
         where participant A has index 0, B has index 1, ... and Z has index 25. This is different from the counting in
         Aviram's movies!!
         """

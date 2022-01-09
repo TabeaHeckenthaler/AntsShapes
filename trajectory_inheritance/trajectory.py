@@ -121,7 +121,7 @@ class Trajectory:
         :param ps: Configuration space
         :param step: display only the ith frame
         :Keyword Arguments:
-            * *indices* (``[int, int]``) --
+            * *indices_to_coords* (``[int, int]``) --
               starting and ending frame of trajectory_inheritance, which you would like to display
         """
         x = deepcopy(self)

@@ -1,6 +1,7 @@
 from Analysis.PathPy.network_functions import *
-from Analysis.States import States
 from Analysis.PathPy.AbsorbingMarkovChain import *
+from PhaseSpaces import PhaseSpace
+from Analysis.States import States
 import pandas as pd
 
 
@@ -61,23 +62,22 @@ def higher_order_networks(paths):
 
 
 if __name__ == '__main__':
-    #
-    # solver = 'ant'
-    # sizes = ['XL', 'L', 'M', 'S']
-    not_done = {'ant': ['M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
+    not_done = {'ant': ['S'], 'human': ['Large', 'Medium', 'Small Far']}
 
-    solvers = {'ant': ['L', 'M', 'XL', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
+    solvers = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
     shape = 'SPT'
 
     # results = pd.DataFrame()
-    for solver, sizes in not_done.items():
+    for solver, sizes in solvers.items():
         for size in sizes:
             print(solver, size)
             conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
             conf_space_labeled.load_labeled_space()
-            # conf_space_labeled.visualize_states()
-            # print(conf_space_labeled.check_labels())
-    #     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
+
+            #conf_space_labeled.visualize_states(reduction=2)
+            #print(conf_space_labeled.check_labels())
+
+            #trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
     #
     #     list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
     #

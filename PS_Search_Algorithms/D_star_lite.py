@@ -182,7 +182,7 @@ class D_star_lite:
 
     def collision(self, node):
         """
-        finds the indices of (x, y, theta) in conf_space,
+        finds the indices_to_coords of (x, y, theta) in conf_space,
         where angles go from (0 to 2pi)
         """
         if self.conf_space.space[node.xi, node.yi, node.thetai]:  # if there is a 1, we collide

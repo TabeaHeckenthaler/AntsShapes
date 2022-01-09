@@ -107,7 +107,7 @@ class Node_ind:
                         dtype=bool)
 
     def coord(self, conf_space):
-        return conf_space.indexes_to_coords(*self.ind())
+        return conf_space.indices_to_coords(*self.ind())
 
     def distance(self, node, conf_space):
         coo_self = self.coord(conf_space)

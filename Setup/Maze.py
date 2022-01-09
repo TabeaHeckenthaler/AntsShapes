@@ -605,7 +605,7 @@ class Maze(b2World):
             yM_P = shape_height / 10 * 3
             yN_O = shape_height / 10
 
-            # indices in comment describe the index shown in Aviram's tracking movie
+            # indices_to_coords in comment describe the index shown in Aviram's tracking movie
             positions = [[xAB, -yA_B],  # 1, A
                          [xAB, yA_B],  # 2, B
                          [xCZ, yC_Z],  # 3, C

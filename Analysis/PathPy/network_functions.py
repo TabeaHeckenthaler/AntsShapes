@@ -1,4 +1,3 @@
-from PhaseSpaces import PhaseSpace
 import pathpy as pp
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get

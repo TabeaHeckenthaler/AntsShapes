@@ -40,11 +40,11 @@ def difficulty(df, shapes, dil_radius=10, sensing_radius=5, measure='path length
     plt.show(block=False)
     means['x_axis'] = means.index.get_level_values('shape').map(x_axis_dict)
 
-    for solver, indices in means.groupby(by='solver').indices.items():
+    for solver, indices in means.groupby(by='solver').indices_to_coords.items():
         three_D_plotting(means.iloc[indices]['x_axis'].values,
                          means.iloc[indices][measure].values,
                          means.iloc[indices]['average Carrier Number'].values,
-                         # np.zeros(means.iloc[indices][measure].values.shape),
+                         # np.zeros(means.iloc[indices_to_coords][measure].values.shape),
                          yerr=sem.iloc[indices][measure].values,
                          color=colors[solver],
                          label=solver,

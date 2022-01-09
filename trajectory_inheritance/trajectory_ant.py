@@ -223,7 +223,7 @@ class Trajectory_ant(Trajectory):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
-            * *indices* (``[int, int]``) --
+            * *indices_to_coords* (``[int, int]``) --
               starting and ending frame of trajectory_inheritance, which you would like to display
         """
         x = deepcopy(self)

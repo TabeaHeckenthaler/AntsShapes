@@ -227,7 +227,7 @@ class PhaseSpace(object):
 
     def iterate_space_index(self) -> iter:
         """
-        :return: iterator over the indices of self.space
+        :return: iterator over the indices_to_coords of self.space
         """
         for x_i, y_i, theta_i in itertools.product(range(self.space.shape[0]),
                                                    range(self.space.shape[1]),
@@ -307,7 +307,7 @@ class PhaseSpace(object):
                 return True
         return False
 
-    def indexes_to_coords(self, ix, iy, itheta) -> tuple:
+    def indices_to_coords(self, ix, iy, itheta) -> tuple:
         return (self.extent['x'][0] + ix * self.pos_resolution,
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
@@ -324,7 +324,7 @@ class PhaseSpace(object):
 
     def coords_to_indexes(self, x: float, y: float, theta: float) -> tuple:
         """
-        convert coordinates into indices in PhaseSpace
+        convert coordinates into indices_to_coords in PhaseSpace
         :param x: x position of CM in cm
         :param y: y position of CM in cm
         :param theta: orientation of axis in radian
@@ -418,15 +418,15 @@ class PhaseSpace(object):
                                                       connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = 10 # becuase we want to have 8 states, but two are then are split because of peridicity
-        min = np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1
+        cc_to_keep = 10  # becuase we want to have 8 states, but two are then are split because of peridicity
+        min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1)
 
         for label in range(1, number_cc):
             if stats['voxel_counts'][label] > min:
                 ps = PS_Area(self, np.int8(labels == label), letters.pop(0))
 
                 # if this is part of a another ps that is split by 0 or 2pi
-                centroid = np.array(self.indexes_to_coords(*np.floor(stats['centroids'][label])))
+                centroid = np.array(self.indices_to_coords(*np.floor(stats['centroids'][label])))
 
                 border_bottom = np.any(ps.space[:, :, 0])
                 border_top = np.any(ps.space[:, :, -1])
@@ -472,7 +472,7 @@ class PS_Area(PhaseSpace):
         # node at (105, 36, 102)
 
         # point = (105, 36, 102)
-        # self.draw(self.indexes_to_coords(*point)[:2], self.indexes_to_coords(*point)[-1])
+        # self.draw(self.indices_to_coords(*point)[:2], self.indices_to_coords(*point)[-1])
         # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
         # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
         # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
@@ -526,7 +526,7 @@ class Node:
         self.indices: tuple = indices
 
     def draw(self, ps):
-        ps.draw(ps.indexes_to_coords(*self.indices)[:2], ps.indexes_to_coords(*self.indices)[2])
+        ps.draw(ps.indices_to_coords(*self.indices)[:2], ps.indices_to_coords(*self.indices)[2])
 
     def find_closest_states(self, ps_states: list, N: int = 1) -> list:
         """
@@ -537,7 +537,7 @@ class Node:
 
         def find_closest_state() -> int:
             """
-            :return: name of the ps_state closest to indices, chosen from ps_states
+            :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
             """
             for radius in range(1, 50):
                 print(radius)
@@ -568,7 +568,7 @@ class PhaseSpace_Labeled(PhaseSpace):
     Axis 0 = x direction
     Axis 1 = y direction
     Axis 0 = x direction
-    Every element of self.space carries on of the following indices of:
+    Every element of self.space carries on of the following indices_to_coords of:
     - '0' (not allowed)
     - A, B...  (in self.eroded_space), where N is the number of states
     - n_1 + n_2 where n_1 and n_2 are in (A, B...).
@@ -636,23 +636,23 @@ class PhaseSpace_Labeled(PhaseSpace):
     #     """
     #     self.space_labeled = np.zeros([*self.space.shape, 2])
     #
-    #     def calculate_label_slow(indices: tuple) -> list:
+    #     def calculate_label_slow(indices_to_coords: tuple) -> list:
     #         """
     #         Finds the label for the coordinates x, y and theta
     #         :return: integer or list
     #         """
     #         # everything not in self.space.
-    #         if self.space[indices]:
+    #         if self.space[indices_to_coords]:
     #             return [0, np.NaN]
     #
     #         # everything in self.ps_states.
     #         for i, ps in enumerate(self.ps_states):
-    #             # [not self.ps_states[i].space[indices] for i in range(len(self.ps_states))]
-    #             if ps.space[indices]:
+    #             # [not self.ps_states[i].space[indices_to_coords] for i in range(len(self.ps_states))]
+    #             if ps.space[indices_to_coords]:
     #                 return [i, np.NaN]
     #
     #         # in eroded space
-    #         return Node(indices).find_closest_states(self.ps_states, N=2)
+    #         return Node(indices_to_coords).find_closest_states(self.ps_states, N=2)
     #
     #     def label_slice(x_i):
     #         matrix = np.zeros((self.space.shape[1], self.space.shape[2], 2))
@@ -715,6 +715,9 @@ class PhaseSpace_Labeled(PhaseSpace):
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
         def calculate_label() -> str:
+            """
+            :return: label.
+            """
             # everything not in self.space.
             if self.space[indices]:
                 return '0'
@@ -725,7 +728,10 @@ class PhaseSpace_Labeled(PhaseSpace):
                     return ps.name
 
             # in eroded space
-            return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices])[:2]])
+            # self.visualize_states()
+            # self.draw(self.indices_to_coords(*indices)[:2], self.indices_to_coords(*indices)[2])
+            mask = (0 < distance_stack[indices]) & (distance_stack[indices] < self.space.shape[1]/4)
+            return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices][mask])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
 
