@@ -360,6 +360,10 @@ class PhaseSpace(object):
                       color=color
                       )
 
+    def draw_ind(self, indices):
+        coords = self.indices_to_coords(*indices)
+        self.draw(coords[:2], coords[2])
+
     def trim(self, borders) -> None:
         [[x_min, x_max], [y_min, y_max]] = borders
         self.extent['x'] = (max(0, x_min), min(self.extent['x'][1], x_max))
@@ -526,7 +530,7 @@ class Node:
         self.indices: tuple = indices
 
     def draw(self, ps):
-        ps.draw(ps.indices_to_coords(*self.indices)[:2], ps.indices_to_coords(*self.indices)[2])
+        ps.draw_ind(self.indices)
 
     def find_closest_states(self, ps_states: list, N: int = 1) -> list:
         """
@@ -621,7 +625,7 @@ class PhaseSpace_Labeled(PhaseSpace):
                                          'id', 'ie', 'if']
         allowed_transition_attempts = ['ab', 'ad',
                                        'ba',
-                                       'de', 'df',
+                                       'de', 'df', 'da'
                                        'ed', 'eg',
                                        'fd', 'fg',
                                        'gf', 'ge', 'gj',
@@ -734,8 +738,10 @@ class PhaseSpace_Labeled(PhaseSpace):
             return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices][mask])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
-
+        print('Iterating over every node and calculating space')
         for indices in self.iterate_space_index():
+            if indices == (279, 109, 293):
+                DEBUG = 1  # Here, the label should be 'i', but instead it was 'ef'
             self.space_labeled[indices] = calculate_label()
         return
 

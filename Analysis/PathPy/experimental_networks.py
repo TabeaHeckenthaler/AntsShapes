@@ -68,16 +68,19 @@ if __name__ == '__main__':
     shape = 'SPT'
 
     # results = pd.DataFrame()
-    for solver, sizes in solvers.items():
-        for size in sizes:
-            print(solver, size)
-            conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
-            conf_space_labeled.load_labeled_space()
+    # for solver, sizes in solvers.items():
 
-            #conf_space_labeled.visualize_states(reduction=2)
-            #print(conf_space_labeled.check_labels())
+    solver = 'human'
+    size = 'Large'
 
-            #trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
+    print(solver, size)
+    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
+    conf_space_labeled.load_labeled_space()
+
+    conf_space_labeled.visualize_states(reduction=4)
+    print(conf_space_labeled.check_labels())
+
+    # trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
     #
     #     list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
     #

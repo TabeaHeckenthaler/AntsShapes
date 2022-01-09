@@ -74,7 +74,7 @@ def plot_network(n: pp.Network, name: str = 'network') -> None:
     """
     g1 = Network2igraph(n)
     visual_style = {"layout": g1.layout_auto(), "vertex_label": g1.vs["name"], "edge_label": g1.es["weight"],
-                    "width": 3200, "height":3200,
+                    "width": 3200, "height": 3200,
                     # "d3js_path": # TODO
                     # "edge_width": 1
                     "label_color": "#010101",
