@@ -730,7 +730,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             # in eroded space
             # self.visualize_states()
             # self.draw(self.indices_to_coords(*indices)[:2], self.indices_to_coords(*indices)[2])
-            mask = (0 < distance_stack[indices]) & (distance_stack[indices] < self.space.shape[1]/4)
+            mask = (0 < distance_stack[indices]) & (distance_stack[indices] < self.space.shape[1]/2)
             return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices][mask])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
