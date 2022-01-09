@@ -23,6 +23,7 @@ scale = 5
 
 
 # TODO: fix the x.winner attribute
+# TODO: fix, that there are different geometries
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
@@ -443,7 +444,7 @@ class PhaseSpace(object):
 
 class PS_Area(PhaseSpace):
     def __init__(self, ps: PhaseSpace, space: np.array, name: str):
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=True)
         self.space: np.array = space
         self.fig = ps.fig
         self.name: str = name
@@ -574,7 +575,7 @@ class PhaseSpace_Labeled(PhaseSpace):
     """
 
     def __init__(self, ps: PhaseSpace):
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape)
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=True)
         self.space = ps.space  # True, if there is collision. False, if it is an allowed configuration
 
         self.eroded_space = None
@@ -677,6 +678,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.fig = fig
 
         for centroid, ps_state in zip(self.centroids, self.ps_states):
+            # ps_state.extent = self.extent # This was only becaus I had made a mistake
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
 
@@ -689,9 +691,16 @@ class PhaseSpace_Labeled(PhaseSpace):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
         # pickle.dump(self.space_labeled, open(path, 'wb'))
+        print('Finished saving ' + self.name + ' in path: ' + path)
 
-    def erosion_radius_default(self):
-        return int(np.ceil(self.coords_to_indexes(0.9, 0, 0)[0]))
+    def erosion_radius_default(self) -> int:
+        """
+        for ant XL, the right radius of erosion is 0.9cm. To find this length independent of scaling for every system,
+        we use this function.
+        :return:
+        """
+        return self.coords_to_indexes(0, (self.extent['y'][1] / 21.3222222), 0)[1]
+        # return int(np.ceil(self.coords_to_indexes(0, 0.9, 0)[0]))
 
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)

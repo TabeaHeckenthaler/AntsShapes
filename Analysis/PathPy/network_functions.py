@@ -13,6 +13,7 @@ def load_labeled_conf_space(solver: str = 'ant', size: str = 'XL', shape: str = 
         -> PhaseSpace:
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
     conf_space.load_space(new2021=new2021)
+    # conf_space.visualize_space()
 
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
     conf_space_labeled.load_labeled_space()

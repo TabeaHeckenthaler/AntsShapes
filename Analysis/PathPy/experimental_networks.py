@@ -41,6 +41,7 @@ def Markovian_analysis(n) -> np.array:
     EV = n.leading_eigenvector(n.adjacency_matrix())
     return T
 
+
 def higher_order_networks(paths):
     hon = create_higher_order_network(paths)
     hon.likelihood(paths)
@@ -64,14 +65,14 @@ if __name__ == '__main__':
     # solver = 'ant'
     # sizes = ['XL', 'L', 'M', 'S']
 
-    solvers = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
+    solvers = {'ant': ['L', 'M', 'XL', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
     shape = 'SPT'
 
     # results = pd.DataFrame()
     for solver, sizes in solvers.items():
         for size in sizes:
             print(solver, size)
-            # conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
+            conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
 
     #     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
     #
