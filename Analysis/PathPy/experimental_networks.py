@@ -4,7 +4,7 @@ from Analysis.PathPy.AbsorbingMarkovChain import *
 import pandas as pd
 
 
-def pathpy_network() -> (pp.Paths, pp.Network):
+def pathpy_network(list_of_states) -> (pp.Paths, pp.Network):
     # create paths and network
     paths = create_paths([states.state_series for states in list_of_states])
     n = pp.Network.from_paths(paths)
@@ -64,21 +64,24 @@ if __name__ == '__main__':
     #
     # solver = 'ant'
     # sizes = ['XL', 'L', 'M', 'S']
+    not_done = {'ant': ['M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
 
     solvers = {'ant': ['L', 'M', 'XL', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
     shape = 'SPT'
 
     # results = pd.DataFrame()
-    for solver, sizes in solvers.items():
+    for solver, sizes in not_done.items():
         for size in sizes:
             print(solver, size)
-            conf_space_labeled = load_labeled_conf_space(solver=solver, size=size, shape=shape)
-
+            conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
+            conf_space_labeled.load_labeled_space()
+            # conf_space_labeled.visualize_states()
+            # print(conf_space_labeled.check_labels())
     #     trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
     #
     #     list_of_states = [States(conf_space_labeled, x, step=int(x.fps/2)) for x in trajectories]
     #
-    #     paths, n = pathpy_network()
+    #     paths, n = pathpy_network(list_of_states)
     #     T = Markovian_analysis(n)
     #     t = absorbing_state_analysis(T)
     #     series = pd.Series([t], ['t'], name=size)

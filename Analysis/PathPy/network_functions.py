@@ -9,19 +9,6 @@ from Directories import network_dir
 from os import path
 
 
-def load_labeled_conf_space(solver: str = 'ant', size: str = 'XL', shape: str = 'SPT', new2021: bool = True) \
-        -> PhaseSpace:
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='', new2021=new2021)
-    conf_space.load_space(new2021=new2021)
-    # conf_space.visualize_space()
-
-    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
-    conf_space_labeled.load_labeled_space()
-    conf_space_labeled.visualize_states(reduction=10)
-    print(conf_space_labeled.check_labels())
-    return conf_space_labeled
-
-
 def create_paths(labels) -> pp.paths:
     paths = pp.Paths()
     [paths.add_path(label) for label in labels]

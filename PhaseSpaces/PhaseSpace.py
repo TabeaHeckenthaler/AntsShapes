@@ -404,7 +404,7 @@ class PhaseSpace(object):
 
         return np.logical_and(space1, space2)
 
-    def split_connected_components(self, space: np.array, min=10) -> (list, list):
+    def split_connected_components(self, space: np.array) -> (list, list):
         """
         from self find connected components
         Take into account periodicity
@@ -417,6 +417,9 @@ class PhaseSpace(object):
         labels, number_cc = cc3d.connected_components(np.invert(np.array(space, dtype=bool)),
                                                       connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
+
+        cc_to_keep = 10 # becuase we want to have 8 states, but two are then are split because of peridicity
+        min = np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1
 
         for label in range(1, number_cc):
             if stats['voxel_counts'][label] > min:
@@ -462,7 +465,6 @@ class PS_Area(PhaseSpace):
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-        print('Calculating distances!')
         phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
         masked_phi = np.ma.MaskedArray(phi, mask=mask)
         self.distance = distance(masked_phi, periodic=(0, 0, 1))
@@ -574,8 +576,11 @@ class PhaseSpace_Labeled(PhaseSpace):
         n_2 describes the state you are
     """
 
-    def __init__(self, ps: PhaseSpace):
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=True)
+    def __init__(self, solver, size, shape, ps: PhaseSpace = None, new2021=True):
+        if ps is None:
+            ps = PhaseSpace(solver, size, shape, name='', new2021=new2021)
+            ps.load_space(new2021=new2021)
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=new2021)
         self.space = ps.space  # True, if there is collision. False, if it is an allowed configuration
 
         self.eroded_space = None
@@ -704,8 +709,8 @@ class PhaseSpace_Labeled(PhaseSpace):
 
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)
-        [ps_state.calculate_distance(self.dilate(self.space, self.erosion_radius_default()))
-         for ps_state in tqdm(self.ps_states)]
+        dilated_space = self.dilate(self.space, self.erosion_radius_default())
+        [ps_state.calculate_distance(dilated_space) for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
