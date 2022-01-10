@@ -687,6 +687,31 @@ class PhaseSpace_Labeled(PhaseSpace):
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
 
+    def visualize_labels(self, fig=None, reduction: int = 1) -> None:
+        """
+
+        :param fig: mylab figure reference
+        :param colormap: What color do you want the available states to appear in?
+        :param reduction: What amount of reduction?
+        :return:
+        """
+        if self.fig is None or not self.fig.running:
+            self.visualize_space(reduction=reduction)
+
+        else:
+            self.fig = fig
+
+        idx = 0
+        for label in np.unique(self.space_labeled):
+            if len(label) > 2:
+                if idx % 2 == 0:
+                    colormap = 'reds'
+                else:
+                    colormap = 'purples'
+                space = self.space_labeled == label
+                self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
+                mlab.text3d(*(np.array(np.where(space))[:, 0] * [1, 1, self.average_radius]), label, scale=2)
+
     def save_labeled(self, path=None) -> None:
         if path is None:
             now = datetime.now()

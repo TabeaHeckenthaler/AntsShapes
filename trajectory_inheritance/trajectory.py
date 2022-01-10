@@ -16,11 +16,10 @@ from scipy.signal import savgol_filter
 from Analysis.Velocity import velocity
 
 """ Making Directory Structure """
-shapes = {'ant': ['SPT', 'H', 'I', 'T', 'RASH', 'LASH'],
-          'human': ['SPT']}
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'human': ['Small Far', 'Small Near', 'Medium', 'Large'],
          'humanhand': ''}
+
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
 exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']},
