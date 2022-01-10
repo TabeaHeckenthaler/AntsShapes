@@ -20,7 +20,7 @@ class Node:
         self.parent = None
 
     def connected(self, conf_space):
-        ind = conf_space.coords_to_indexes(self.x, self.y, self.theta)
+        ind = conf_space.coords_to_indices(self.x, self.y, self.theta)
         nn = []
         for ix in [ind[0]-1, ind[0], ind[0]+1]:
             for iy in [ind[1]-1, ind[1], ind[1]+1]:

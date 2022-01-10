@@ -214,7 +214,7 @@ class RRT:
         finds the indices_to_coords of (x, y, theta) in conf_space,
         where angles go from (0 to 2pi)
         """
-        ind = self.conf_space.coords_to_indexes(x, y, theta)
+        ind = self.conf_space.coords_to_indices(x, y, theta)
         if self.conf_space.space[ind]:  # if there is a 1, we collide
             return True  # collision
         return False

@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 from mayavi import mlab
-from PhysicsEngine.Contact import contact_loop_phase_space
+from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
 from Setup.Maze import Maze
@@ -60,7 +60,7 @@ class PhaseSpace(object):
         self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
         self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
 
-        self.space = None  # True, if there is a collision with the wall; False, if there is no collision
+        self.space = None  # True, if configuration is possible; False, if there is a collision with the wall
         self.space_boundary = None
         self.fig = None
 
@@ -68,11 +68,6 @@ class PhaseSpace(object):
         # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
-
-    def __add__(self, PhaseSpace2):
-        FinalPS = PhaseSpace(self.solver, self.size, self.shape, name=self.name)
-        FinalPS.space = np.logical_and(self.space, PhaseSpace2)
-        return FinalPS
 
     def number_of_points(self) -> dict:
         # x_num = np.ceil(self.extent['x'][1]/resolution)
@@ -86,10 +81,10 @@ class PhaseSpace(object):
         set x&y edges to 0 in order to define the maze boundaries (helps the visualization)
         :return:
         """
-        self.space[0, :, :] = 1
-        self.space[-1, :, :] = 1
-        self.space[:, 0, :] = 1
-        self.space[:, -1, :] = 1
+        self.space[0, :, :] = False
+        self.space[-1, :, :] = False
+        self.space[:, 0, :] = False
+        self.space[:, -1, :] = False
 
     def calculate_space(self, new2021: bool = False, point_particle=False, parallel=False) -> None:
         # TODO: implement point particles
@@ -114,8 +109,8 @@ class PhaseSpace(object):
             space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]], dtype=bool)
             for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
                 load.position, load.angle = [x, y], float(theta)
-                coord = self.coords_to_indexes(x, y, theta)
-                space[coord] = contact_loop_phase_space(load, maze)
+                coord = self.coords_to_indices(x, y, theta)
+                space[coord] = possible_configuration(load, maze)
             return space
 
         # how to iterate over phase space
@@ -127,7 +122,7 @@ class PhaseSpace(object):
             """
             for (x, y, theta), coord in zip(iterate, coords):
                 load.position, load.angle = [x, y], float(theta)
-                space[coord] = contact_loop_phase_space(load, maze)
+                space[coord] = possible_configuration(load, maze)
             return space
 
         # iterate using parallel processing
@@ -140,7 +135,7 @@ class PhaseSpace(object):
             list_of_jobs = []
             for x0, x1 in split_list:  # split_list
                 space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
-                coords = [self.coords_to_indexes(x, y, theta)
+                coords = [self.coords_to_indices(x, y, theta)
                           for x, y, theta in self.iterate_coordinates(x0=0, x1=x1 - x0)]
                 iterator = self.iterate_coordinates(x0=x0, x1=x1)
                 list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
@@ -264,10 +259,7 @@ class PhaseSpace(object):
     #                 color=color, tube_radius=0.045, colormap='Spectral')
     #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
-    def invert_space(self):
-        self.space = ~np.array(self.space, dtype=bool)
-
-    def save_space(self, path=None, inverted=True, boolean=True):
+    def save_space(self, path=None):
         """
         Pickle the numpy array in given path, or in default path. If default path exists, add a string for time, in
         order not to overwrite the old .pkl file.
@@ -275,7 +267,7 @@ class PhaseSpace(object):
         :return:
         """
         if path is None:
-            path = ps_path(self.size, self.shape, self.solver, boolean=boolean, inverted=inverted)
+            path = ps_path(self.size, self.shape, self.solver)
             if os.path.exists(path):
                 now = datetime.now()
                 date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
@@ -283,15 +275,16 @@ class PhaseSpace(object):
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((np.array(self.space, dtype=bool),
                      np.array(self.space_boundary, dtype=bool),
-                     self.extent), open(path, 'wb'))
+                     self.extent),
+                    open(path, 'wb'))
 
-    def load_space(self, point_particle: bool = False, new2021: bool = False, boolean=False) -> None:
+    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=boolean)
+        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -315,7 +308,7 @@ class PhaseSpace(object):
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
 
-    def coordinate_to_index(self, axis: int, value):
+    def coords_to_index(self, axis: int, value):
         if value is None:
             return None
         res = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}
@@ -325,7 +318,7 @@ class PhaseSpace(object):
             print('check', list(self.extent.keys())[axis])
         return value_i
 
-    def coords_to_indexes(self, x: float, y: float, theta: float) -> tuple:
+    def coords_to_indices(self, x: float, y: float, theta: float) -> tuple:
         """
         convert coordinates into indices_to_coords in PhaseSpace
         :param x: x position of CM in cm
@@ -333,8 +326,8 @@ class PhaseSpace(object):
         :param theta: orientation of axis in radian
         :return: (xi, yi, thetai)
         """
-        return self.coordinate_to_index(0, x), self.coordinate_to_index(1, y), \
-               self.coordinate_to_index(2, theta % (2 * np.pi))
+        return self.coords_to_index(0, x), self.coords_to_index(1, y), \
+               self.coords_to_index(2, theta % (2 * np.pi))
 
     def calculate_boundary(self, new2021=False, point_particle=False) -> None:
         if self.space is None:
@@ -385,7 +378,7 @@ class PhaseSpace(object):
         """
         print('Dilating space...')
         struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
-        return np.array(~ndimage.binary_dilation(~space, structure=struct), dtype=bool)
+        return np.array(ndimage.binary_dilation(space, structure=struct), dtype=bool)
 
     @staticmethod
     def erode(space, radius: int) -> np.array:
@@ -398,7 +391,7 @@ class PhaseSpace(object):
         print('Eroding space...')
 
         def erode_space(space, struct):
-            return ~ndimage.binary_erosion(~space, structure=struct)
+            return ndimage.binary_erosion(space, structure=struct)
             # return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=bool)
 
         struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
@@ -409,7 +402,7 @@ class PhaseSpace(object):
         space2 = erode_space(np.concatenate([space[:, :, slice:], space[:, :, :slice]], axis=2), struct)
         space2 = np.concatenate([space2[:, :, slice:], space2[:, :, :slice]], axis=2)
 
-        return np.logical_and(space1, space2)
+        return np.logical_or(space1, space2)  # have to check, if its really a logical or...
 
     def split_connected_components(self, space: np.array) -> (list, list):
         """
@@ -421,8 +414,7 @@ class PhaseSpace(object):
         ps_states = []
         letters = list(string.ascii_lowercase)
         centroids = np.empty((0, 3))
-        labels, number_cc = cc3d.connected_components(np.invert(np.array(space, dtype=bool)),
-                                                      connectivity=6, return_N=True)
+        labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
         cc_to_keep = 10  # becuase we want to have 8 states, but two are then are split because of peridicity
@@ -437,12 +429,13 @@ class PhaseSpace(object):
 
                 border_bottom = np.any(ps.space[:, :, 0])
                 border_top = np.any(ps.space[:, :, -1])
+
                 if (border_bottom and not border_top) or (border_top and not border_bottom):
                     index = np.where(np.abs(centroid[0] - centroids[:, 0]) < 0.1)[0]
                     if len(index) > 0:
-                        ps_states[index[0]].space = np.array(np.logical_or(ps_states[index[0]].space, ps.space),
-                                                             dtype=int)
+                        ps_states[index[0]].space = np.logical_or(ps_states[index[0]].space, ps.space)
                         centroids[index[0]][-1] = 0
+
                     else:
                         ps_states.append(ps)
                         centroids = np.vstack([centroids, centroid])
@@ -711,8 +704,8 @@ class PhaseSpace_Labeled(PhaseSpace):
         we use this function.
         :return:
         """
-        return self.coords_to_indexes(0, (self.extent['y'][1] / 21.3222222), 0)[1]
-        # return int(np.ceil(self.coords_to_indexes(0, 0.9, 0)[0]))
+        return self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
+        # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)

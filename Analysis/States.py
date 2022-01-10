@@ -13,7 +13,7 @@ class States:
         :return: list of strings with labels
         """
         self.time_step = step/x.fps
-        indices = [conf_space_labeled.coords_to_indexes(*coords) for coords in x.iterate_coords(step=step)]
+        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=step)]
         self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
         self.interpolate_zeros()
         self.permitted_transitions = {'a': ['a', 'b', 'd'], 'b': ['b', 'a'], 'd': ['d', 'a', 'f', 'e'],

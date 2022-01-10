@@ -26,7 +26,7 @@ def maze_corners(maze):
     return corners + list(np.resize(maze.slitpoints, (16, 2)))
 
 
-def contact_loop_phase_space(load, maze) -> bool:
+def possible_configuration(load, maze) -> bool:
     """
     this function takes a list of corners (lists have to list rectangles in sets of 4 corners)
     and checks, whether a rectangle from the load overlaps with a rectangle from the maze boundary
@@ -37,10 +37,10 @@ def contact_loop_phase_space(load, maze) -> bool:
 
     if approximate_extent + 0.1 < load.position.x < min(maze.slits) - approximate_extent - 0.1 and \
             approximate_extent + 0.1 < load.position.y < maze.arena_height - approximate_extent - 0.1:
-        return False
+        return True
 
     elif max(maze.slits) + approximate_extent + 0.1 < load.position.x:
-        return False
+        return True
 
     # if we are close enough to a boundary then we have to calculate all the vertices.
     load_corners = flatten(loops(load))
@@ -56,8 +56,8 @@ def contact_loop_phase_space(load, maze) -> bool:
                 for ii in range(4):
                     if intersect(load_vertices_list[i], load_vertices_list[i + 1],
                                  maze_vertices_list[ii], maze_vertices_list[ii + 1]):
-                        return True
-    return False
+                        return False
+    return True
     # return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
 
 

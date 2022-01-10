@@ -266,8 +266,8 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # ====Set Initial parameters====
     d_star_lite = D_star_lite(
-        starting_node=conf_space.coords_to_indexes(*starting_point),
-        ending_node=conf_space.coords_to_indexes(*ending_point),
+        starting_node=conf_space.coords_to_indices(*starting_point),
+        ending_node=conf_space.coords_to_indices(*ending_point),
         average_radius=Maze(size, shape, solver).average_radius(),
         conf_space=conf_space,
         known_conf_space=known_conf_space,
