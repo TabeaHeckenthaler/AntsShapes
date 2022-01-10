@@ -722,9 +722,10 @@ class PhaseSpace_Labeled(PhaseSpace):
 
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
-        def calculate_label(ind: tuple):
+        def assign_label(ind: tuple):
             """
-            :param ind: indices of phase space
+            Assign label to node in space.
+            :param ind: indices of node in configuration space
             :return:
             """
             # everything not in self.space.
@@ -743,7 +744,7 @@ class PhaseSpace_Labeled(PhaseSpace):
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
         print('Iterating over every node and calculating space')
-        [calculate_label(indices) for indices in self.iterate_space_index()]
+        [assign_label(indices) for indices in self.iterate_space_index()]
 
 
 if __name__ == '__main__':
