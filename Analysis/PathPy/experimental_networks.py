@@ -3,18 +3,14 @@ from Analysis.PathPy.network_functions import *
 
 
 if __name__ == '__main__':
-    solver = 'human'
-    size = 'Large'
-    shape = 'SPT'
+    solver, size, shape = 'human', 'Large', 'SPT'
 
-    print(solver, size)
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
     conf_space_labeled.load_labeled_space()
 
-    conf_space_labeled.visualize_states(reduction=4)
-    conf_space_labeled.visualize_labels(reduction=4)
+    # conf_space_labeled.visualize_states()
+    conf_space_labeled.visualize_transitions()
     print(conf_space_labeled.check_labels())
-
 
     # trajectories = get_trajectories(solver=solver, size=size, shape=shape, number=20)
     #

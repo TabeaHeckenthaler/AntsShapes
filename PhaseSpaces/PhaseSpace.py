@@ -180,7 +180,7 @@ class PhaseSpace(object):
         # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
         return summer(reshape(space)) / (reduction ** space.ndim)
 
-    def visualize_space(self, reduction=1, fig=None, colormap='Greys', space=None) -> None:
+    def visualize_space(self, reduction=1, fig=None, colormap='Greys', space: np.ndarray =None) -> None:
         if fig is None and (self.fig is None or not self.fig.running):
             self.fig = self.new_fig()
         else:
@@ -596,7 +596,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         """
         path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021,
                        erosion_radius=self.erosion_radius)
-
+        print('Loading labeled from ', path, '...')
         if os.path.exists(path):
             # self.space_labeled = pickle.load(open(path, 'rb'))
             self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(path, 'rb'))
@@ -606,22 +606,23 @@ class PhaseSpace_Labeled(PhaseSpace):
             # self.visualize_states(reduction=5)
             self.label_space()
             self.save_labeled()
+        print('Finished loading')
 
     def check_labels(self) -> list:
         """
-        I want to check, whether there are labels, that I dont want to have.
+        I want to check, whether there are labels, that I don't want to have.
         :return: list of all the labels that are not labels I wanted to have
         """
         states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
-        forbidden_transition_attempts = ['be', 'bf',
+        forbidden_transition_attempts = ['be', 'bf', 'bg',
                                          'di',
                                          'eb', 'ei',
                                          'fb', 'fi',
-                                         'gf', 'ge', 'gj',
+                                         'gf', 'ge', 'gj', 'gb',
                                          'id', 'ie', 'if']
         allowed_transition_attempts = ['ab', 'ad',
                                        'ba',
-                                       'de', 'df', 'da'
+                                       'de', 'df', 'da',
                                        'ed', 'eg',
                                        'fd', 'fg',
                                        'gf', 'ge', 'gj',
@@ -687,7 +688,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
 
-    def visualize_labels(self, fig=None, reduction: int = 1) -> None:
+    def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
 
         :param fig: mylab figure reference
@@ -703,14 +704,17 @@ class PhaseSpace_Labeled(PhaseSpace):
 
         idx = 0
         for label in np.unique(self.space_labeled):
-            if len(label) > 2:
+            # TODO: for some strange reason, transition from a to b is everywhere
+            if len(label) > 1 and label != 'ab':
                 if idx % 2 == 0:
-                    colormap = 'reds'
+                    colormap = 'Reds'
                 else:
-                    colormap = 'purples'
+                    colormap = 'Purples'
                 space = self.space_labeled == label
+                centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
                 self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
-                mlab.text3d(*(np.array(np.where(space))[:, 0] * [1, 1, self.average_radius]), label, scale=2)
+                mlab.text3d(*(a*b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
+                idx += 1
 
     def save_labeled(self, path=None) -> None:
         if path is None:
@@ -752,11 +756,13 @@ class PhaseSpace_Labeled(PhaseSpace):
             # everything not in self.space.
             if self.space[ind]:
                 self.space_labeled[ind] = '0'
+                return
 
             # everything in self.ps_states.
             for i, ps in enumerate(self.ps_states):
                 if ps.space[ind]:
                     self.space_labeled[ind] = ps.name
+                    return
 
             # in eroded space
             # self.visualize_states()
