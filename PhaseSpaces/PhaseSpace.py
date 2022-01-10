@@ -229,10 +229,10 @@ class PhaseSpace(object):
         """
         :return: iterator over the indices_to_coords of self.space
         """
-        for x_i, y_i, theta_i in itertools.product(range(self.space.shape[0]),
-                                                   range(self.space.shape[1]),
-                                                   range(self.space.shape[2])):
-            yield x_i, y_i, theta_i
+        for x_i in tqdm(range(self.space.shape[0])):
+            for y_i, theta_i in itertools.product(range(self.space.shape[1]),
+                                                  range(self.space.shape[2])):
+                yield x_i, y_i, theta_i
 
     def iterate_coordinates(self, x0: int = 0, x1: int = -1) -> iter:
         r"""
@@ -264,7 +264,10 @@ class PhaseSpace(object):
     #                 color=color, tube_radius=0.045, colormap='Spectral')
     #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
-    def save_space(self, path=None):
+    def invert_space(self):
+        self.space = ~np.array(self.space, dtype=bool)
+
+    def save_space(self, path=None, inverted=True, boolean=True):
         """
         Pickle the numpy array in given path, or in default path. If default path exists, add a string for time, in
         order not to overwrite the old .pkl file.
@@ -272,7 +275,7 @@ class PhaseSpace(object):
         :return:
         """
         if path is None:
-            path = ps_path(self.size, self.shape, self.solver, boolean=True)
+            path = ps_path(self.size, self.shape, self.solver, boolean=boolean, inverted=inverted)
             if os.path.exists(path):
                 now = datetime.now()
                 date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
@@ -282,13 +285,13 @@ class PhaseSpace(object):
                      np.array(self.space_boundary, dtype=bool),
                      self.extent), open(path, 'wb'))
 
-    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_space(self, point_particle: bool = False, new2021: bool = False, boolean=False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=True)
+        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021, boolean=boolean)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
@@ -743,7 +746,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
-        print('Iterating over every node and calculating space')
+        print('Iterating over every node and assigning label')
         [assign_label(indices) for indices in self.iterate_space_index()]
 
 

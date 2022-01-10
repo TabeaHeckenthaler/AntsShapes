@@ -30,7 +30,7 @@ maze_dimension_directory = path.join(home, 'Setup')
 
 
 def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
-            erosion_radius: int = None, addition: str = '', boolean=False):
+            erosion_radius: int = None, addition: str = '', boolean=False, inverted=False):
     """
     where the phase space is saved
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
@@ -43,6 +43,9 @@ def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, ne
 
     if boolean:  # I changed to saving only boolean arrays, because they take less memory in storage.
         filename = filename + '_boolean'
+
+    if inverted:  # I changed to saving only boolean arrays, because they take less memory in storage.
+        filename = filename + '_inverted'
 
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, shape, filename + '_pp.pkl')

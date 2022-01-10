@@ -23,6 +23,10 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'humanhand': ''}
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
+exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']},
+             'H': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
+             'I': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
+             'T': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']}}
 
 length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'ps_simulation': 'cm'}
 
