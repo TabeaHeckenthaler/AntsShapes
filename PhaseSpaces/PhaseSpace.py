@@ -465,7 +465,7 @@ class PS_Area(PhaseSpace):
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-        phi = np.array((~np.array(self.space, dtype=bool)), dtype=int)
+        phi = np.array(~self.space, dtype=int)
         masked_phi = np.ma.MaskedArray(phi, mask=mask)
         self.distance = distance(masked_phi, periodic=(0, 0, 1))
 
@@ -710,7 +710,7 @@ class PhaseSpace_Labeled(PhaseSpace):
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
-        [ps_state.calculate_distance(dilated_space) for ps_state in tqdm(self.ps_states)]
+        [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
 
         far_away = (0 == distance_stack) & (distance_stack > self.space.shape[1] / 2)

@@ -144,7 +144,7 @@ class D_star_lite:
         phi = np.ones_like(conf_space.space)
 
         # mask
-        mask = conf_space.space == 1
+        mask = conf_space.space is False
         # phi.data should contain -1s and 1s and phi.mask should contain a boolean array
         phi = np.ma.MaskedArray(phi, mask)
 
@@ -185,9 +185,7 @@ class D_star_lite:
         finds the indices_to_coords of (x, y, theta) in conf_space,
         where angles go from (0 to 2pi)
         """
-        if self.conf_space.space[node.xi, node.yi, node.thetai]:  # if there is a 1, we collide
-            return True  # collision
-        return False  # no collision
+        return not self.conf_space.space[node.xi, node.yi, node.thetai]
 
     def into_trajectory(self, size='XL', shape='SPT', solver='ps_simulation', filename='Dlite'):
         path = self.generate_path()

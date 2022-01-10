@@ -62,16 +62,9 @@ def higher_order_networks(paths):
 
 
 if __name__ == '__main__':
-    not_done = {'ant': ['S'], 'human': ['Large', 'Medium', 'Small Far']}
-
-    solvers = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
-    shape = 'SPT'
-
-    # results = pd.DataFrame()
-    # for solver, sizes in solvers.items():
-
     solver = 'human'
     size = 'Large'
+    shape = 'SPT'
 
     print(solver, size)
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
