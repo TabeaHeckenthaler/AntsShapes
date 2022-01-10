@@ -30,8 +30,16 @@ maze_dimension_directory = path.join(home, 'Setup')
 
 
 def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
-            erosion_radius: int = None, addition: str = ''):
+            erosion_radius: int = None, addition: str = '', small=False):
     """
+    :param new2021:
+    :param addition:
+    :param erosion_radius:
+    :param size:
+    :param shape:
+    :param solver:
+    :param point_particle:
+    :param small: if you want only the labeled configuration space
     where the phase space is saved
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
@@ -42,10 +50,15 @@ def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, ne
     filename = size + '_' + shape
 
     if point_particle:
-        return path.join(PhaseSpaceDirectory, solver, shape, filename + '_pp.pkl')
+        return path.join(PhaseSpaceDirectory, solver, shape, filename + addition + '_pp.pkl')
     if erosion_radius is not None:
-        return path.join(PhaseSpaceDirectory, solver, shape, filename + '_labeled_erosion_' + str(erosion_radius) + '.pkl')
-    return path.join(PhaseSpaceDirectory, solver, shape, filename + '.pkl')
+        return path.join(PhaseSpaceDirectory, solver, shape, filename + '_labeled_erosion_' + str(erosion_radius) +
+                         addition + '.pkl')
+
+    path_ = path.join(PhaseSpaceDirectory, solver, shape, filename + addition + '.pkl')
+    if small:
+        path_ = path_[:-4] + '_small' + '.pkl'
+    return path_
 
 
 def SetupDirectories():

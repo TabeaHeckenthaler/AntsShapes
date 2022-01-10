@@ -608,6 +608,23 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.save_labeled()
         print('Finished loading')
 
+    def load_small_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+        """
+        Load Phase Space pickle.
+        :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
+        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
+        """
+        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021,
+                       erosion_radius=self.erosion_radius, small=True)
+
+        print('Loading labeled from ', path, '...')
+        if os.path.exists(path):
+            # self.space_labeled = pickle.load(open(path, 'rb'))
+            self.space_labeled = pickle.load(open(path, 'rb'))
+        else:
+            print(path, 'not found')
+        print('Finished loading')
+
     def check_labels(self) -> list:
         """
         I want to check, whether there are labels, that I don't want to have.
@@ -704,28 +721,34 @@ class PhaseSpace_Labeled(PhaseSpace):
 
         idx = 0
         for label in np.unique(self.space_labeled):
-            # TODO: for some strange reason, transition from a to b is everywhere
             if len(label) > 1 and label != 'ab':
                 if idx % 2 == 0:
                     colormap = 'Reds'
                 else:
                     colormap = 'Purples'
-                space = self.space_labeled == label
+                space = np.array(self.space_labeled == label, dtype=bool)
                 centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
                 self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
                 mlab.text3d(*(a*b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
                 idx += 1
 
-    def save_labeled(self, path=None) -> None:
+    def save_labeled(self, path=None, date_string='') -> None:
         if path is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
                            erosion_radius=self.erosion_radius, addition=date_string)
+
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
-        # pickle.dump(self.space_labeled, open(path, 'wb'))
-        print('Finished saving ' + self.name + ' in path: ' + path)
+
+        # Actually, I dont really need all this information.  self.space_labeled should be enough
+        path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
+                       erosion_radius=self.erosion_radius, addition=date_string, small=True)
+
+        print('Saving reduced in' + self.name + ' in path: ' + path)
+        pickle.dump(self.space_labeled, open(path, 'wb'))
+        print('Finished saving')
 
     def erosion_radius_default(self) -> int:
         """

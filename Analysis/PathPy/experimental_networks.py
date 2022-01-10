@@ -7,6 +7,7 @@ if __name__ == '__main__':
 
     conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
     conf_space_labeled.load_labeled_space()
+    # TODO: Save small version of ... Load and save...
 
     # conf_space_labeled.visualize_states()
     conf_space_labeled.visualize_transitions()
