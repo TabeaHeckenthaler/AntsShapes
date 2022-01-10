@@ -60,7 +60,7 @@ class PhaseSpace(object):
         self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
         self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
 
-        self.space = None  # True, if there is a collision with the wall
+        self.space = None  # True, if there is a collision with the wall; False, if there is no collision
         self.space_boundary = None
         self.fig = None
 
@@ -427,7 +427,7 @@ class PhaseSpace(object):
 
         for label in range(1, number_cc):
             if stats['voxel_counts'][label] > min:
-                ps = PS_Area(self, np.int8(labels == label), letters.pop(0))
+                ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
 
                 # if this is part of a another ps that is split by 0 or 2pi
                 centroid = np.array(self.indices_to_coords(*np.floor(stats['centroids'][label])))
@@ -741,6 +741,8 @@ class PhaseSpace_Labeled(PhaseSpace):
         print('Iterating over every node and calculating space')
         for indices in self.iterate_space_index():
             if indices == (279, 109, 293):
+                # indices are in space (False collision),
+                # TODO: Why is self.ps_states not boolean?
                 DEBUG = 1  # Here, the label should be 'i', but instead it was 'ef'
             self.space_labeled[indices] = calculate_label()
         return
