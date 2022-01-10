@@ -623,7 +623,6 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
             print(path, 'not found')
-        print('Finished loading')
 
     def check_labels(self) -> list:
         """
