@@ -716,36 +716,34 @@ class PhaseSpace_Labeled(PhaseSpace):
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         [ps_state.calculate_distance(dilated_space) for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+
+        far_away = (0 == distance_stack) & (distance_stack > self.space.shape[1] / 2)
+        distance_stack[far_away] = np.inf
+
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
-        def calculate_label() -> str:
+        def calculate_label(ind: tuple):
             """
-            :return: label.
+            :param ind: indices of phase space
+            :return:
             """
             # everything not in self.space.
-            if self.space[indices]:
-                return '0'
+            if self.space[ind]:
+                self.space_labeled[ind] = '0'
 
             # everything in self.ps_states.
             for i, ps in enumerate(self.ps_states):
-                if ps.space[indices]:
-                    return ps.name
+                if ps.space[ind]:
+                    self.space_labeled[ind] = ps.name
 
             # in eroded space
             # self.visualize_states()
-            # self.draw(self.indices_to_coords(*indices)[:2], self.indices_to_coords(*indices)[2])
-            mask = (0 < distance_stack[indices]) & (distance_stack[indices] < self.space.shape[1]/2)
-            return ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[indices][mask])[:2]])
+            # self.draw_ind(indices)
+            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
         print('Iterating over every node and calculating space')
-        for indices in self.iterate_space_index():
-            if indices == (279, 109, 293):
-                # indices are in space (False collision),
-                # TODO: Why is self.ps_states not boolean?
-                DEBUG = 1  # Here, the label should be 'i', but instead it was 'ef'
-            self.space_labeled[indices] = calculate_label()
-        return
+        [calculate_label(indices) for indices in self.iterate_space_index()]
 
 
 if __name__ == '__main__':
