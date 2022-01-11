@@ -312,9 +312,10 @@ class PhaseSpace(object):
     def coords_to_index(self, axis: int, value):
         if value is None:
             return None
-        res = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}
-        value_i = min(int(np.round((value - list(self.extent.values())[axis][0]) / res[axis])),
+        resolut = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}[axis]
+        value_i = min(int(np.round((value - list(self.extent.values())[axis][0]) / resolut)),
                       self.space.shape[axis] - 1)
+
         if value_i >= self.space.shape[axis] or value_i <= -1:
             print('check', list(self.extent.keys())[axis])
         return value_i
@@ -685,7 +686,8 @@ class PhaseSpace_Labeled(PhaseSpace):
         else:
             self.fig = fig
 
-        for centroid, ps_state in zip(self.centroids, self.ps_states):
+        print('Draw ps_states')
+        for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
             # ps_state.extent = self.extent # This was only becaus I had made a mistake
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
@@ -752,10 +754,10 @@ class PhaseSpace_Labeled(PhaseSpace):
         """
         maze = Maze(solver=self.solver, size=self.size, shape=self.shape)
         if self.shape == 'SPT':
-            distance_cm = (maze.slits[1] - maze.slits[0]) / 4
+            distance_cm = (maze.slits[1] - maze.slits[0]) / 3
         else:
             distance_cm = maze.exit_size / 2
-        return self.coords_to_indices(distance_cm, 0, 0)[0]
+        return self.coords_to_index(0, distance_cm) + self.erosion_radius * 2
 
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)

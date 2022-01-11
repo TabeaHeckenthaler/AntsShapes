@@ -1,4 +1,5 @@
 from itertools import groupby
+import numpy as np
 
 states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
 
@@ -48,8 +49,21 @@ class States:
         :param state_series: series to be mashed
         :return: state_series with combined transitions
         """
-        # TODO
-        return []
+        state_series = [''.join(sorted(state)) for state in state_series]
+        mask = [True] + [sorted(state1) != sorted(state2) for state1, state2 in zip(state_series, state_series[1:])]
+        return np.array(state_series)[mask].tolist()
+
+    @staticmethod
+    def cut_at_end(time_series) -> list:
+        """
+        After state 'j' appears, cut off series
+        :param state_series: series to be mashed
+        :return: state_series with combined transitions
+        """
+        if 'j' not in time_series:
+            return time_series
+        first_appearance = np.where(np.array(time_series) == 'j')[0][0]
+        return time_series[:first_appearance+1]
 
     def interpolate_zeros(self) -> None:
         """
