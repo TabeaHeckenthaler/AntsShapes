@@ -16,6 +16,7 @@ from skfmm import distance
 from tqdm import tqdm
 from copy import copy
 from matplotlib import pyplot as plt
+from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -270,7 +271,7 @@ class PhaseSpace(object):
             path = ps_path(self.size, self.shape, self.solver)
             if os.path.exists(path):
                 now = datetime.now()
-                date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
+                date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
                 path = ps_path(self.size, self.shape, self.solver, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((np.array(self.space, dtype=bool),
@@ -588,17 +589,17 @@ class PhaseSpace_Labeled(PhaseSpace):
         self.ps_states = self.centroids = None
         self.space_labeled = None
 
-    def load_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_eroded_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
-        Load Phase Space pickle.
+        Load Phase Space pickle. Load both eroded space, and ps_states, centroids and everything
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
         path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021,
                        erosion_radius=self.erosion_radius)
-        print('Loading labeled from ', path, '...')
+
         if os.path.exists(path):
-            # self.space_labeled = pickle.load(open(path, 'rb'))
+            print('Loading labeled from ', path, '...')
             self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(path, 'rb'))
         else:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
@@ -608,7 +609,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.save_labeled()
         print('Finished loading')
 
-    def load_small_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
@@ -622,28 +623,13 @@ class PhaseSpace_Labeled(PhaseSpace):
             # self.space_labeled = pickle.load(open(path, 'rb'))
             self.space_labeled = pickle.load(open(path, 'rb'))
         else:
-            print(path, 'not found')
+            self.load_eroded_labeled_space()
 
     def check_labels(self) -> list:
         """
         I want to check, whether there are labels, that I don't want to have.
         :return: list of all the labels that are not labels I wanted to have
         """
-        states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
-        forbidden_transition_attempts = ['be', 'bf', 'bg',
-                                         'di',
-                                         'eb', 'ei',
-                                         'fb', 'fi',
-                                         'gf', 'ge', 'gj', 'gb',
-                                         'id', 'ie', 'if']
-        allowed_transition_attempts = ['ab', 'ad',
-                                       'ba',
-                                       'de', 'df', 'da',
-                                       'ed', 'eg',
-                                       'fd', 'fg',
-                                       'gf', 'ge', 'gj',
-                                       'ij',
-                                       'jg', 'ji']
         return [label for label in np.unique(self.space_labeled) if label not in
                 states + forbidden_transition_attempts + allowed_transition_attempts]
 
@@ -719,12 +705,14 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.fig = fig
 
         idx = 0
-        for label in np.unique(self.space_labeled):
-            if len(label) > 1 and label != 'ab':
-                if idx % 2 == 0:
+        for label in tqdm(np.unique(self.space_labeled)):
+            if len(label) > 1:
+                if idx % 3 == 0:
                     colormap = 'Reds'
-                else:
+                elif idx % 3 == 1:
                     colormap = 'Purples'
+                else:
+                    colormap = 'Greens'
                 space = np.array(self.space_labeled == label, dtype=bool)
                 centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
                 self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
@@ -758,13 +746,24 @@ class PhaseSpace_Labeled(PhaseSpace):
         return self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
+    def max_distance_for_transition(self):
+        """
+        :return: maximum distance so that it is noted as transition area
+        """
+        maze = Maze(solver=self.solver, size=self.size, shape=self.shape)
+        if self.shape == 'SPT':
+            distance_cm = (maze.slits[1] - maze.slits[0]) / 4
+        else:
+            distance_cm = maze.exit_size / 2
+        return self.coords_to_indices(distance_cm, 0, 0)[0]
+
     def label_space(self) -> None:
         print('Calculating distances for the different states in', self.name)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
 
-        far_away = (0 == distance_stack) & (distance_stack > self.space.shape[1] / 2)
+        far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
@@ -776,20 +775,21 @@ class PhaseSpace_Labeled(PhaseSpace):
             :return:
             """
             # everything not in self.space.
-            if self.space[ind]:
+            if not self.space[ind]:
                 self.space_labeled[ind] = '0'
                 return
 
             # everything in self.ps_states.
-            for i, ps in enumerate(self.ps_states):
-                if ps.space[ind]:
-                    self.space_labeled[ind] = ps.name
+            for i, ps_state in enumerate(self.ps_states):
+                if ps_state.space[ind]:
+                    self.space_labeled[ind] = ps_state.name
                     return
 
             # in eroded space
             # self.visualize_states()
             # self.draw_ind(indices)
-            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]])
+            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+                                               if distance_stack[ind].data[ii] < np.inf])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')

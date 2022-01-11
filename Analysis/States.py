@@ -1,5 +1,23 @@
 from itertools import groupby
 
+states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
+
+forbidden_transition_attempts = ['be', 'bf', 'bg',
+                                 'di',
+                                 'eb', 'ei',
+                                 'fb', 'fi',
+                                 'gf', 'ge', 'gj', 'gb',
+                                 'id', 'ie', 'if']
+
+allowed_transition_attempts = ['ab', 'ad',
+                               'ba',
+                               'de', 'df', 'da',
+                               'ed', 'eg',
+                               'fd', 'fg',
+                               'gf', 'ge', 'gj',
+                               'ij',
+                               'jg', 'ji']
+
 
 class States:
     """
@@ -16,13 +34,22 @@ class States:
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=step)]
         self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
         self.interpolate_zeros()
-        self.permitted_transitions = {'a': ['a', 'b', 'd'], 'b': ['b', 'a'], 'd': ['d', 'a', 'f', 'e'],
-                                      'e': ['e', 'd', 'g'], 'f': ['f', 'd', 'g'], 'g': ['g', 'f', 'j'], 'i': ['i', 'j'],
-                                      'j': ['j', 'i', 'g']}
         self.state_series = self.calculate_state_series()
-        if len(self.transitions_forbidden()) > 0:
-            print('Forbidden:', self.transitions_forbidden(), 'in', x.filename)
-            print('You might want to decrease your step size, because you might be skipping state transitions.')
+
+        if len(self.forbidden_attempts()) > 0:
+            print('forbidden_attempts:', self.forbidden_attempts(), 'in', x.filename)
+
+            # print('You might want to decrease your step size, because you might be skipping state transitions.')
+
+    @staticmethod
+    def combine_transitions(state_series) -> list:
+        """
+        I want to combine states, that are [.... 'gb' 'bg'...] to [... 'gb'...]
+        :param state_series: series to be mashed
+        :return: state_series with combined transitions
+        """
+        # TODO
+        return []
 
     def interpolate_zeros(self) -> None:
         """
@@ -36,13 +63,17 @@ class States:
             if l == '0':
                 self.time_series[i] = self.time_series[i - 1]
 
-    def transitions_forbidden(self) -> list:
+    def forbidden_attempts(self) -> list:
         """
         Check whether the permitted transitions are all allowed
         :return: boolean, whether all transitions are allowed
         """
-        return [str(l0) + ' to ' + str(l1) for l0, l1 in zip(self.time_series, self.time_series[1:])
-                if l1 not in self.permitted_transitions[l0]]
+        allowed = {el[0]: [] for el in allowed_transition_attempts}
+        [allowed[origin].append(goal) for [origin, goal] in allowed_transition_attempts]
+        # TODO
+        # return [str(l0) + ' to ' + str(l1) for l0, l1 in zip(self.time_series, self.time_series[1:])
+        #         if l1 not in allowed[l0]]
+        return []
 
     def calculate_state_series(self):
         """

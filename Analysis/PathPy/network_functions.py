@@ -23,7 +23,7 @@ def create_higher_order_network(paths, k=2) -> pp.Network:
     return hon
 
 
-def get_trajectories(solver='human', size='Large', shape='SPT', number: int = 10) -> list:
+def get_trajectories(solver='human', size='Large', shape='SPT', number: int = None) -> list:
     """
     Get trajectories based on the trajectories saved in myDataFrame.
     :param number: How many trajectories do you want to have in your list?
@@ -45,10 +45,15 @@ def get_trajectories(solver='human', size='Large', shape='SPT', number: int = 10
 def plot_transition_matrix(T, state_order):
     fig, ax = plt.subplots(1, 1)
     img = ax.imshow(T)
-    ax.set_xticks([0, 1, 2, 3, 4, 5, 6, 7])
-    ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7])
+
+    ax.set_xticks(range(len(state_order)))
+    ax.set_yticks(range(len(state_order)))
     ax.set_xticklabels(state_order)
     ax.set_yticklabels(state_order)
+
+
+sizes = {1: 10.0, 2: 5.0}
+colors = {1: 'red', 2: 'blue'}
 
 
 def Network2igraph(network):
@@ -74,19 +79,23 @@ def plot_network(n: pp.Network, name: str = 'network') -> None:
     :param name: name, under which the .html will be saved
     """
     g1 = Network2igraph(n)
-    visual_style = {"layout": g1.layout_auto(), "vertex_label": g1.vs["name"], "edge_label": g1.es["weight"],
+    visual_style = {"layout": g1.layout_auto(),
+                    "vertex_label": g1.vs["name"],
+                    "edge_label": g1.es["weight"],
                     "width": 3200, "height": 3200,
                     # "d3js_path": # TODO
                     # "edge_width": 1
                     "label_color": "#010101",
                     # "edge_color": "#010101"
+                    "node_size": {name: sizes[len(name)] for name in g1.vs["name"]},
+                    "node_color": {name: colors[len(name)] for name in g1.vs["name"]},
                     }
     export_html(n, path.join(network_dir, name + '.html'), **visual_style)
 
 
-def pathpy_network(list_of_states) -> (pp.Paths, pp.Network):
+def pathpy_network(state_series) -> (pp.Paths, pp.Network):
     # create paths and network
-    paths = create_paths([states.state_series for states in list_of_states])
+    paths = create_paths(state_series)
     n = pp.Network.from_paths(paths)
     plot_network(n)
 
