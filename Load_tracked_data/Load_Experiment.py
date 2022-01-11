@@ -13,7 +13,15 @@ from copy import copy
 from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 import numpy as np
 
-def find_unpickled(solver, size, shape, no_part2=True):
+
+def is_extension(name) -> bool:
+    if 'part' not in name:
+        return False
+    if int(name.split('part ')[1][0]) > 1:
+        return True
+
+
+def find_unpickled(solver, size, shape):
     """
     find the .mat files, which are not pickled yet.
     :return: list of un-pickled .mat file names (without .mat extension)
@@ -23,10 +31,11 @@ def find_unpickled(solver, size, shape, no_part2=True):
         expORsim = 'exp'
     else:
         expORsim = 'sim'
-    mat_files = listdir(MatlabFolder(solver, size, shape))
-    unpickled = [mat_file[:-4] for mat_file in mat_files
-                 if (NewFileName(mat_file, solver, size, shape, expORsim) not in set(pickled)
-                     and ('part 2' not in mat_file or not no_part2))]
+
+    mat_files = [mat_file[:-4] for mat_file in listdir(MatlabFolder(solver, size, shape))]
+    new_names = [NewFileName(mat_file, solver, size, shape, expORsim) for mat_file in mat_files]
+
+    unpickled = [new_name for new_name in new_names if (new_name not in set(pickled) and not is_extension(new_name))]
     return unpickled
 
 
@@ -78,7 +87,7 @@ def part2_filename(part1_filename):
 
 
 if __name__ == '__main__':
-    solver, shape = 'human', 'SPT'
+    solver, shape = 'ant', 'SPT'
     if solver == 'human':
         fps = 30
     elif solver == 'ant':
@@ -86,7 +95,7 @@ if __name__ == '__main__':
     else:
         fps = np.NaN
     # for size in sizes[solver]:
-    for size in ['Large']:
+    for size in ['XL']:
         for filename in tqdm(find_unpickled(solver, size, shape)):
             print('\n' + filename)
             winner = bool(input('winner? '))
@@ -98,7 +107,7 @@ if __name__ == '__main__':
                 con = SmoothConnector(part1, part2, con_frames=1000)
                 x = part1 + con + part2
             x.play(step=20)
-            save = 1
+            DEBUG = 1
             # TODO: Check that the winner is correctly saved!!
             # TODO: add new file to contacts json file
             x.save()

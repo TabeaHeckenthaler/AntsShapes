@@ -126,7 +126,7 @@ def NewFileName(old_filename: str, solver: str, size: str, shape: str, expORsim:
             return filename.replace(old_filename.split('_')[0], size + '_' + shape)
 
         else:
-            if solver == 'ants':
+            if solver == 'ant':
                 if size + shape in filename or size + '_' + shape in filename:
                     return filename.replace(size + shape, size + '_' + shape)
                 else:
