@@ -22,7 +22,7 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
 
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
-exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']},
+exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far', 'Small Near']},
              'H': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
              'I': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
              'T': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']}}

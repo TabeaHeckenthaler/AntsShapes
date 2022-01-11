@@ -686,7 +686,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         else:
             self.fig = fig
 
-        print('Draw ps_states')
+        print('Draw states')
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
             # ps_state.extent = self.extent # This was only becaus I had made a mistake
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
@@ -706,6 +706,7 @@ class PhaseSpace_Labeled(PhaseSpace):
         else:
             self.fig = fig
 
+        print('Draw transitions')
         idx = 0
         for label in tqdm(np.unique(self.space_labeled)):
             if len(label) > 1:
@@ -763,8 +764,9 @@ class PhaseSpace_Labeled(PhaseSpace):
         print('Calculating distances for the different states in', self.name)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
-        distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
 
+        distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
@@ -792,6 +794,8 @@ class PhaseSpace_Labeled(PhaseSpace):
             # self.draw_ind(indices)
             self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
                                                if distance_stack[ind].data[ii] < np.inf])
+            if len(self.space_labeled[ind]) == 0:
+                self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
         self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')

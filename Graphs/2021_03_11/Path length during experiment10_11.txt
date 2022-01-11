@@ -1,5 +1,0 @@
-Path length in experiment counted in the first 30 minutes of the experiment
-Path length calculation smooths trajectory with Savitzky-Golay (order 2) with window size 1s.
-Path length calculation with rot = True as rot. distance * aver_radius
-Normalized by maze exit size
-Only winners

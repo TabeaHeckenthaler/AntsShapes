@@ -1,2 +1,0 @@
-only x velocity
-trajectory smoothed with Gaussian (over 1 seconds)

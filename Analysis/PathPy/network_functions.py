@@ -7,6 +7,8 @@ from pathpy.visualisation import export_html
 from Directories import network_dir
 from os import path
 from Analysis.PathPy.AbsorbingMarkovChain import *
+from Analysis.GeneralFunctions import graph_dir
+import os
 
 
 def create_paths(labels) -> pp.paths:
@@ -42,7 +44,7 @@ def get_trajectories(solver='human', size='Large', shape='SPT', number: int = No
     return [get(filename) for filename in filenames]
 
 
-def plot_transition_matrix(T, state_order):
+def plot_transition_matrix(T: np.array, state_order: list, name: str = 'transition_matrix'):
     fig, ax = plt.subplots(1, 1)
     img = ax.imshow(T)
 
@@ -50,10 +52,11 @@ def plot_transition_matrix(T, state_order):
     ax.set_yticks(range(len(state_order)))
     ax.set_xticklabels(state_order)
     ax.set_yticklabels(state_order)
+    plt.gcf().savefig(graph_dir() + os.path.sep + name + '.pdf')
 
 
-sizes = {1: 10.0, 2: 5.0}
-colors = {1: 'red', 2: 'blue'}
+sizes = {0: 5.0, 1: 10.0, 2: 5.0}
+colors = {0: 'black', 1: 'red', 2: 'blue'}
 
 
 def Network2igraph(network):
@@ -97,7 +100,6 @@ def pathpy_network(state_series) -> (pp.Paths, pp.Network):
     # create paths and network
     paths = create_paths(state_series)
     n = pp.Network.from_paths(paths)
-    plot_network(n)
 
     state_order = ['b', 'a', 'd', 'e', 'f', 'g', 'j']
     # state_dict = {v: n.node_to_name_map()[v] for v in state_order if v in n.node_to_name_map().keys()}
@@ -125,8 +127,6 @@ def Markovian_analysis(n) -> np.array:
     D = np.eye(len(n.degrees())) * np.array(n.degrees())
     L = n.laplacian_matrix(n.degrees()).toarray()
     T = n.transition_matrix().toarray()
-    plot_transition_matrix(T, list(n.node_to_name_map().keys()) + ['i'])
-
     EV = n.leading_eigenvector(n.adjacency_matrix())
     return T
 

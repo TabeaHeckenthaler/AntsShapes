@@ -33,7 +33,6 @@ colors = {'H': 'k', 'I': 'b', 'T': 'c', 'SPT': 'r',
           False: 'r', True: 'k'}
 
 
-
 def graph_dir():
     direct = path.abspath(path.join(home, 'Graphs',
                                     datetime.datetime.now().strftime("%Y") + '_' +
