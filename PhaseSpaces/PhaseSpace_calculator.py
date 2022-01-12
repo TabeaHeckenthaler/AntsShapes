@@ -1,15 +1,15 @@
 from PhaseSpaces import PhaseSpace
+from trajectory_inheritance.trajectory import exp_types
 
-
-solver = 'human'
-sizes = ['Small Far']
-# sizes = ['Large', 'Medium', 'Small Far']
 shape = 'SPT'
+solver = 'ant'
+sizes = ['Small Far']
 new2021 = True
 
-for size in sizes:
-    conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=new2021)
-    conf_space_labeled.load_eroded_labeled_space(new2021=new2021)
+for size in exp_types[shape][solver]:
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, new2021=new2021)
+    conf_space.calculate_boundary(new2021=new2021)
+    conf_space.save_space()
     # conf_space_labeled.visualize_states(reduction=10)
     # conf_space_labeled.visualize_transitions(reduction=10)
 
