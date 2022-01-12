@@ -20,4 +20,5 @@ for size in exp_types[shape][solver]:
 #  Can I put the two together?
 #  When I display the movies, does if help if I shift the center of mass?
 #  If it does, you have to recalculate the Phase Space.
+#  submit the movies for image analysis.
 
