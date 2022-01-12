@@ -57,12 +57,15 @@ class D_star_lite:
         self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
         # Set current node as the start node.
-        self.start = Node_ind(*starting_node, self.conf_space, average_radius)
+        self.start = Node_ind(*starting_node, self.conf_space.space.shape, average_radius)
+
         if self.collision(self.start):
             raise Exception('Your start is not in configuration space')
-        self.end = Node_ind(*ending_node, self.conf_space, average_radius)
+        self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
+
         if self.collision(self.end):
-            raise Exception('Your end_screen is not in configuration space')
+            print('Your end is not in configuration space')
+            self.end = Node_ind(*self.end.find_closest_possible_conf(conf_space), self.conf_space.space.shape, average_radius)
 
         self.current = self.start
         self.winner = False
@@ -95,7 +98,8 @@ class D_star_lite:
         # _ = self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
 
         for ii, _ in enumerate(range(self.max_iter)):
-            if self.current.xi < self.end.xi:
+            # if self.current.xi < self.end.xi:  # TODO: more general....
+            if self.current.ind() != self.end.ind():
                 if self.current.distance == np.inf:
                     return None  # cannot find path
 
@@ -163,19 +167,25 @@ class D_star_lite:
         return
 
     def find_greedy_node(self, conf_space):
+        """
+        Find the node with the smallest distance from self.end, that is bordering the self.current.
+        :param conf_space:
+        :return:
+        """
         connected = self.current.connected(conf_space)
+
         while True:
             list_distances = [self.distance[node_indices] for node_indices in connected]
 
             if len(list_distances) == 0:
                 raise Exception('Not able to find a path')
 
-            greedy = np.where(list_distances == np.array(list_distances).min())[0][0]
-            # greedy = np.random.choice(np.where(list_distances == np.array(list_distances).min())[0])
-            greedy_node_ind = connected[greedy]
+            minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
+            greedy_one = np.random.choice(minimal_nodes)
+            greedy_node_ind = connected[greedy_one]
 
             if np.sum(np.logical_and(~self.current.surrounding(conf_space, greedy_node_ind), voxel)) > 0:
-                node = Node_ind(*greedy_node_ind, conf_space, self.average_radius)
+                node = Node_ind(*greedy_node_ind, conf_space.space.shape, self.average_radius)
                 return node
             else:
                 connected.remove(greedy_node_ind)
@@ -260,7 +270,9 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # 2) dilated version of the conf_space
 
-    known_conf_space = conf_space.dilate(space=conf_space, radius=dil_radius)
+    known_conf_space = copy(conf_space)
+    if dil_radius > 0:
+        known_conf_space = known_conf_space.dilate(space=conf_space.space, radius=dil_radius)
 
     # ====Set Initial parameters====
     d_star_lite = D_star_lite(
@@ -284,7 +296,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     if show_animation:
         d_star_lite_finished.show_animation(save=save)
 
-    # ====Turn this into trajectory_inheritance object====
+    # ==== Turn this into trajectory_inheritance object ====
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='ps_simulation', filename=filename)
     x.play(wait=200)
     if save:

@@ -12,6 +12,8 @@ from tqdm import tqdm
 from copy import copy
 from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 import numpy as np
+import json
+from trajectory_inheritance.trajectory import exp_types
 
 
 def is_extension(name) -> bool:
@@ -32,10 +34,12 @@ def find_unpickled(solver, size, shape):
     else:
         expORsim = 'sim'
 
-    mat_files = [mat_file[:-4] for mat_file in listdir(MatlabFolder(solver, size, shape))]
-    new_names = [NewFileName(mat_file, solver, size, shape, expORsim) for mat_file in mat_files]
+    mat_files = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape))]
+    new_names = [NewFileName(mat_file[:-4], solver, size, shape, expORsim) for mat_file in mat_files]
 
-    unpickled = [new_name for new_name in new_names if (new_name not in set(pickled) and not is_extension(new_name))]
+    unpickled = [mat_file
+                 for new_name, mat_file in zip(new_names, mat_files)
+                 if (new_name not in set(pickled) and not is_extension(new_name))]
     return unpickled
 
 
@@ -86,6 +90,40 @@ def part2_filename(part1_filename):
     return ''.join(l[:1]) + '_' + str(int(l[1]) + 1) + '_' + '_'.join(l[2:-1]) + "_" + l[-1].replace('1', '2')
 
 
+def continue_winner_dict(solver, shape):
+    with open('winner_dictionary.txt', 'r') as json_file:
+        winner_dict = json.load(json_file)
+
+    for size in exp_types[shape][solver]:
+        print(size)
+        unpickled = find_unpickled(solver, size, shape)
+        new = {name: bool(input(name + '   winner? ')) for name in unpickled if name not in winner_dict.keys()}
+
+        if len(new) > 0:
+            winner_dict.update(new)
+            with open('winner_dictionary.txt', 'w') as json_file:
+                json.dump(winner_dict, json_file)
+    return
+
+
+def extension_exists(filename) -> list:
+    """
+    :return: list with candidates for being an extension.
+    """
+    movie_number = str(int(filename.split('_')[1]) + 1)
+    part_number = str(int(filename.split('part ')[1][0]) + 1)
+
+    same_movie = '_'.join(filename.split('_')[:2])
+    next_movie = '_'.join(filename.split('_')[:1] + [movie_number])
+
+    extension_candidates = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape))
+                            if
+                            ((same_movie in mat_file or next_movie in mat_file) and 'part ' + part_number in mat_file)]
+    if len(extension_candidates) > 1:
+        input('to many extensions')
+    return extension_candidates
+
+
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     if solver == 'human':
@@ -94,20 +132,33 @@ if __name__ == '__main__':
         fps = 50
     else:
         fps = np.NaN
-    # for size in sizes[solver]:
-    for size in ['XL']:
+
+    for size in exp_types[shape][solver]:
+
+        with open('winner_dictionary.txt', 'r') as json_file:
+            winner_dict = json.load(json_file)
+
         for filename in tqdm(find_unpickled(solver, size, shape)):
+            if filename not in winner_dict.keys():
+                continue_winner_dict(solver, shape)
+
+            winner = winner_dict[filename]
+
             print('\n' + filename)
-            winner = bool(input('winner? '))
             x = Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
-            if 'force_vector 1' in filename:
-                part1 = copy(x)
-                print('\n' + part2_filename(filename))
-                part2 = Load_Experiment(solver, part2_filename(filename), [], winner, fps, size=size, shape=shape)
-                con = SmoothConnector(part1, part2, con_frames=1000)
-                x = part1 + con + part2
+            last_filename = filename
+
+            if 'part ' in filename:
+                while extension_exists(last_filename):
+                    extension = extension_exists(last_filename)[0]
+                    part1 = copy(x)
+                    print('\n' + extension)
+                    part2 = Load_Experiment(solver, extension, [], winner, fps, size=size, shape=shape)
+                    con = SmoothConnector(part1, part2, con_frames=1000)
+                    x = part1 + con + part2
+
             x.play(step=20)
-            DEBUG = 1
+
             # TODO: Check that the winner is correctly saved!!
             # TODO: add new file to contacts json file
             x.save()

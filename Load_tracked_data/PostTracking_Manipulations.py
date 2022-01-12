@@ -36,11 +36,11 @@ def SmoothConnector(file1, file2, con_frames: int =None):
     shortest_path = main(size=file1.size,
                          shape=file1.shape,
                          solver=file1.solver,
-                         sensing_radius=10,
+                         sensing_radius=100,
                          dil_radius=0,
                          filename='shortest_path',
                          starting_point=[file1.position[-1][0], file1.position[-1][1], file1.angle[-1]],
-                         ending_point=[file2.position[-1][0], file2.position[-1][1], file2.angle[-1]],
+                         ending_point=[file2.position[0][0], file2.position[0][1], file2.angle[0]],
                          )
 
     connector_load.angle = connector_load.frames = np.ndarray([con_frames])

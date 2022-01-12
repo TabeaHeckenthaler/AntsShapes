@@ -77,7 +77,7 @@ class RRT:
             print('Your start is not in conf_space!')
         self.end = Node(*end)
         if self.collision(self.end.x, self.end.y, self.end.theta):
-            print('Your end_screen is not in conf_space!')
+            print('Your end is not in conf_space!')
 
     def planning(self, animation=True, fig=None):
         """

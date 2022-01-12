@@ -15,8 +15,8 @@ from joblib import Parallel, delayed
 from skfmm import distance
 from tqdm import tqdm
 from copy import copy
-from matplotlib import pyplot as plt
 from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
+from matplotlib import pyplot as plt
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -331,7 +331,7 @@ class PhaseSpace(object):
         return self.coords_to_index(0, x), self.coords_to_index(1, y), \
                self.coords_to_index(2, theta % (2 * np.pi))
 
-    def calculate_boundary(self, new2021=False, point_particle=False) -> None:
+    def calculate_boundary(self, new2021=True, point_particle=False) -> None:
         if self.space is None:
             self.calculate_space(point_particle=point_particle, new2021=new2021)
         self.space_boundary = np.zeros(
@@ -446,6 +446,9 @@ class PhaseSpace(object):
                     centroids = np.vstack([centroids, centroid])
         return ps_states, centroids
 
+    def overlapping(self, ps_area):
+        return np.any(self.space[ps_area.space])
+
 
 class PS_Area(PhaseSpace):
     def __init__(self, ps: PhaseSpace, space: np.array, name: str):
@@ -455,8 +458,6 @@ class PS_Area(PhaseSpace):
         self.name: str = name
         self.distance: np.array = None
 
-    def overlapping(self, ps_area):
-        return np.any(self.space[ps_area.space])
 
     def calculate_distance(self, mask: np.array) -> np.array:
         """
@@ -530,6 +531,24 @@ class Node:
     def draw(self, ps):
         ps.draw_ind(self.indices)
 
+    def find_closest_state(self, ps_states: list) -> int:
+        """
+        :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
+        """
+        for radius in range(1, 50):
+            print(radius)
+            ps_mask = PS_Mask(ps_states[0])
+            ps_mask.add_circ_mask(radius, self.indices)
+
+            for ps_state in ps_states:
+                if ps_state.overlapping(ps_mask):
+                    print(ps_state.name)
+                    # self.visualize_space()
+                    # ps_state.visualize_space(self.fig)
+                    # ps_mask.visualize_space(self.fig, colormap='Oranges')
+                    return ps_state.name
+        return 0
+
     def find_closest_states(self, ps_states: list, N: int = 1) -> list:
         """
         :param N: how many of the closest states do you want to find?
@@ -537,28 +556,10 @@ class Node:
         :return: name of the closest PhaseSpace
         """
 
-        def find_closest_state() -> int:
-            """
-            :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
-            """
-            for radius in range(1, 50):
-                print(radius)
-                ps_mask = PS_Mask(ps_states[0])
-                ps_mask.add_circ_mask(radius, self.indices)
-
-                for ps_state in ps_states:
-                    if ps_state.overlapping(ps_mask):
-                        print(ps_state.name)
-                        # self.visualize_space()
-                        # ps_state.visualize_space(self.fig)
-                        # ps_mask.visualize_space(self.fig, colormap='Oranges')
-                        return ps_state.name
-            return 0
-
         state_order = []  # carries the names of the closest states, from closest to farthest
 
         for i in range(N):
-            closest = find_closest_state()
+            closest = self.find_closest_state(ps_states)
             state_order.append(closest)
             [ps_states.remove(ps_state) for ps_state in ps_states if ps_state.name == closest]
         return state_order
@@ -726,14 +727,14 @@ class PhaseSpace_Labeled(PhaseSpace):
         if path is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-            path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
+            path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=True,
                            erosion_radius=self.erosion_radius, addition=date_string)
 
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
 
         # Actually, I dont really need all this information.  self.space_labeled should be enough
-        path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=False,
+        path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=True,
                        erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
         print('Saving reduced in' + self.name + ' in path: ' + path)

@@ -2,6 +2,7 @@ import math
 from mayavi import mlab
 import numpy as np
 from copy import copy
+from PhaseSpaces.PhaseSpace import PS_Mask
 
 
 class Node_ind:
@@ -29,26 +30,30 @@ class Node_ind:
         else:
             return self.xi, self.yi, self.thetai % self.conf_space_shape[2]
 
-    def connected(self, conf_space):
+    def connected(self, conf_space) -> list:
+        """
+        Return all the options of next nodes, that are in possible conconf_space.space
+        :param conf_space: PhaseSpace
+        :return:
+        """
         nn = []
         for xi, yi, thetai in self.iterate_surroundings(conf_space):
-            if not conf_space.space[xi, yi, thetai]:
+            if conf_space.space[xi, yi, thetai]:
                 nn.append((xi, yi, thetai))
 
         if self.ind() not in nn:
-            print('you came from false node')
+            raise ValueError('You came from false node')
         else:
             nn.remove(self.ind())
 
-        #  What if you get into a Sackgasse, because you are dont know Phase space fully,
-        #  and then you cannot step on your old path...  I think, I have to take out the condition,
-        #  that you cannot step on your old path...
-        # parent = self.parent
-        # while parent is not None:
+        #  TODO: What if you get into a one-way-street, because you are dont know Phase space fully,
+        #    and then you cannot step on your old path...  I think, I have to take out the condition,
+        #    that you cannot step on your old path...
+        #    parent = self.parent
+        #    while parent is not None:
         #     if parent.ind() in nn:
         #         nn.remove(parent.ind())
         #     parent = parent.parent
-
         return nn
 
     def iterate_surroundings(self, conf_space):
@@ -97,6 +102,17 @@ class Node_ind:
             for xi in [self.xi, max(0, self.xi - 1), min(conf_space.space.shape[0] - 1, self.xi + 1)]:
                 for yi in [self.yi, max(0, self.yi - 1), min(conf_space.space.shape[1] - 1, self.yi + 1)]:
                     yield xi, yi, thetai
+
+    def find_closest_possible_conf(self, conf_space) -> tuple:
+        """
+        :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
+        """
+        for radius in range(1, 100):
+            ps_mask = PS_Mask(conf_space)
+            ps_mask.add_circ_mask(radius, self.ind())
+
+            if conf_space.overlapping(ps_mask):
+                return np.array(np.where(np.logical_and(conf_space.space, ps_mask.space)))[:, 0]
 
     @staticmethod
     def surrounding(conf_space, ind, radius=1):

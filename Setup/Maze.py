@@ -61,7 +61,7 @@ def end(size, shape, solver):
 
 class Maze(b2World):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', free=False, position=None, angle=0,
-                 point_particle=False, new2021=False, i=0):
+                 point_particle=False, new2021=True, i=0):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
@@ -97,7 +97,7 @@ class Maze(b2World):
             return
 
         else:
-            if self.solver == 'ant' and self.new2021:
+            if self.solver in ['ant', 'ps_simulation'] and self.new2021:
                 df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_new2021_ant.xlsx'), engine='openpyxl')
             elif self.solver in ['sim', 'gillespie']:
                 df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_ant.xlsx'), engine='openpyxl')
