@@ -1,5 +1,5 @@
 from PhaseSpaces import PhaseSpace
-from trajectory_inheritance.trajectory import exp_types
+from trajectory_inheritance.exp_types import exp_types
 
 shape = 'SPT'
 solver = 'ant'

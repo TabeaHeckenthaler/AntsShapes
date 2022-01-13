@@ -1,7 +1,7 @@
 from PhaseSpaces import PhaseSpace
 from Analysis.PathPy.network_functions import *
 from Analysis.States import States
-from trajectory_inheritance.trajectory import exp_types
+from trajectory_inheritance.exp_types import exp_types
 import pandas as pd
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 from PhaseSpaces import PhaseSpace
-from trajectory_inheritance.trajectory import get, exp_types
+from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.exp_types import exp_types
 from Analysis.States import States
 import numpy as np
 from Directories import ps_path
@@ -8,9 +9,10 @@ import os
 
 
 def mask_around_tunnel(conf_space):
-    mask = np.zeros((293, 192, 454), dtype=bool)
-    center = (147, 63, 150)
-    radiusx, radiusy, radiusz = 10, 15, 15
+    factor = 1
+    mask = np.zeros((factor * 293, factor * 192, factor * 454), dtype=bool)
+    center = (factor * 147, factor * 63, factor * 150)
+    radiusx, radiusy, radiusz = factor * 10, factor * 15, factor * 15
     mask[center[0] - radiusx:center[0] + radiusx,
          center[1] - radiusy:center[1] + radiusy,
          center[2] - radiusz:center[2] + radiusz] = True
@@ -19,7 +21,7 @@ def mask_around_tunnel(conf_space):
 
 if __name__ == '__main__':
     # only part of the shape
-    solver, size, shape = 'ant', 'XL', 'SPT'
+    solver, size, shape = 'human', 'XL', 'SPT'
     conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
     conf_space_part.load_space()
     mask = mask_around_tunnel(conf_space_part)
@@ -27,7 +29,6 @@ if __name__ == '__main__':
 
     conf_space_part.visualize_space()
     conf_space_part.visualize_space(space=mask, colormap='Oranges')
-
 
 
 # for shape, solvers in exp_types.items():

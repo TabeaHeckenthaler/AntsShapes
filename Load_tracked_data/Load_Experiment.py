@@ -13,7 +13,7 @@ from copy import copy
 from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 import numpy as np
 import json
-from trajectory_inheritance.trajectory import exp_types
+from trajectory_inheritance.exp_types import exp_types
 
 
 def is_extension(name) -> bool:

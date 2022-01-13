@@ -7,6 +7,7 @@ from Directories import maze_dimension_directory
 from PhysicsEngine.drawables import Polygon, Point, Circle, colors
 from copy import copy
 from os import path
+from trajectory_inheritance.exp_types import exp_types
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
@@ -76,9 +77,18 @@ class Maze(b2World):
                 angle = x.angle[i]
 
         else:
-            self.shape = shape  # loadshape (maybe this will become name of the maze...)
-            self.size = size  # size
-            self.solver = solver
+            if shape in exp_types.keys():
+                self.shape = shape  # load shape (maybe this will become name of the maze...)
+            else:
+                raise ValueError('Shape ' + shape + ' is not valid.')
+            if solver in exp_types[shape].keys():
+                self.solver = solver  # load shape (maybe this will become name of the maze...)
+            else:
+                raise ValueError('Solver ' + solver + ' is not valid.')
+            if exp_types[shape][solver]:
+                self.size = size
+            else:
+                raise ValueError('Size ' + size + ' is not valid.')
 
         self.free = free
         self.new2021 = new2021  # TODO: At some point, this might have to become a filename, that carries the
@@ -645,19 +655,26 @@ class Maze(b2World):
         return np.array(
             [np.array(self.bodies[-1].GetWorldPoint(b2Vec2(r))) for r in positions])  # r vectors in the lab frame
 
-    def draw(self, display):
+    def draw(self, display=None):
+        if display is None:
+            from PhysicsEngine.Display import Display
+            d = Display('', self)
+        else:
+            d = display
         for body in self.bodies:
             for fixture in body.fixtures:
                 if str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2PolygonShape'>":
                     vertices = [(body.transform * v) for v in fixture.shape.vertices]
-                    Polygon(vertices, color=colors[body.userData]).draw(display)
+                    Polygon(vertices, color=colors[body.userData]).draw(d)
 
                 elif str(type(fixture.shape)) == "<class 'Box2D.Box2D.b2CircleShape'>":
                     position = body.position + fixture.shape.pos
-                    Circle(position, fixture.shape.radius, color=colors[body.userData]).draw(display)
+                    Circle(position, fixture.shape.radius, color=colors[body.userData]).draw(d)
 
             if body.userData == 'load':
-                Point(np.array(body.position)).draw(display)
+                Point(np.array(body.position)).draw(d)
+        if display is None:
+            d.display()
 
     def average_radius(self):
         r = ResizeFactors[self.solver][self.size]

@@ -217,13 +217,18 @@ class PhaseSpace(object):
         if reduction > 1:
             space = self.reduced_resolution(space, reduction)
 
+        def prune(array1, array2):
+            for axis in range(array1.ndim):
+                if array2.shape[axis] > array1.shape[axis]:
+                    array2 = array2.take(indices=range(array1.shape[axis]), axis=axis)
+                elif array2.shape[axis] < array1.shape[axis]:
+                    array1 = array1.take(indices=range(array2.shape[axis]), axis=axis)
+            return array1, array2
+
         if x.shape != space.shape:
-            x = x.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
-                indices=range(space.shape[2]), axis=2)
-            y = y.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
-                indices=range(space.shape[2]), axis=2)
-            theta = theta.take(indices=range(space.shape[0]), axis=0).take(indices=range(space.shape[1]), axis=1).take(
-                indices=range(space.shape[2]), axis=2)
+            x, space = prune(x, space)
+            y, space = prune(y, space)
+            theta, space = prune(theta, space)
 
         cont = mlab.contour3d(x, y, theta,
                               space[:x.shape[0], :x.shape[1], :x.shape[2]],
