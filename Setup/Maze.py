@@ -512,14 +512,14 @@ class Maze(b2World):
         if self.solver in ant_dimensions:
             resize_factor = ResizeFactors[self.solver][self.size]
             shape_sizes = {'H': [5.6, 7.2, 1.6],
-                           'SPT': [4.85, 9.65, 0.85],
+                           'SPT': [4.85, 9.55, 0.85],  # 0.85 to 0.1 (otherwise, they are not able to solve... ) # 9.65 to 9.55
                            'LASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                            'RASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                            'I': [5.5, 1.75, 1.75],
                            'T': [5.4, 5.6, 1.6]
                            }
             if short_edge:
-                shape_sizes['SPT'] = [4.85, 9.65, 0.85, 4.85 * SPT_RATIO]  # 9.65 to 9.55
+                shape_sizes['SPT'] = shape_sizes['SPT'] + [shape_sizes['SPT'][0] * SPT_RATIO]  # 9.65 to 9.55
             # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
             dimensions = [i * resize_factor for i in shape_sizes[self.shape]]
 

@@ -93,11 +93,15 @@ class PhaseSpace(object):
         load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
-        self.space = np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
-                              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
-                              int(np.ceil(
-                                  (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
-                              dtype=bool)
+        if mask is not None:
+            self.space = np.zeros_like(mask, dtype=bool)
+
+        else:
+            self.space = np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
+                                  int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
+                                  int(np.ceil(
+                                      (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
+                                  dtype=bool)
         print("PhaseSpace: Calculating space " + self.name)
 
         # how to iterate over phase space
@@ -225,14 +229,20 @@ class PhaseSpace(object):
         cont.actor.actor.scale = [1, 1, self.average_radius]
         mlab.view(-90, 90)
 
-    def iterate_space_index(self) -> iter:
+    def iterate_space_index(self, mask) -> iter:
         """
         :return: iterator over the indices_to_coords of self.space
         """
-        for x_i in tqdm(range(self.space.shape[0])):
-            for y_i, theta_i in itertools.product(range(self.space.shape[1]),
-                                                  range(self.space.shape[2])):
-                yield x_i, y_i, theta_i
+        if mask is None:
+            for x_i in tqdm(range(self.space.shape[0])):
+                for y_i, theta_i in itertools.product(range(self.space.shape[1]),
+                                                      range(self.space.shape[2])):
+                    yield x_i, y_i, theta_i
+        else:
+            for x_i in tqdm(tqdm(range(np.array(np.where(mask))[:, 0][0], np.array(np.where(mask))[:, -1][0]))):
+                for y_i, theta_i in itertools.product(range(self.space.shape[1]),
+                                                      range(self.space.shape[2])):
+                    yield x_i, y_i, theta_i
 
     def iterate_coordinates(self, mask=None) -> iter:
         r"""
@@ -360,7 +370,7 @@ class PhaseSpace(object):
             (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))))
-        for ix, iy, itheta in self.iterate_space_index():
+        for ix, iy, itheta in self.iterate_space_index(mask=mask):
             if self._is_boundary_cell(ix, iy, itheta):
                 self.space_boundary[ix, iy, itheta] = 1
 

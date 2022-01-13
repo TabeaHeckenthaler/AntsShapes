@@ -8,23 +8,26 @@ import os
 
 
 def mask_around_tunnel(conf_space):
-    part = np.zeros_like(conf_space.space, dtype=bool)
+    mask = np.zeros((293, 192, 461), dtype=bool)
     center = (147, 63, 150)
-    radiusx, radiusy, radiusz = 10, 12, 12
-    part[center[0] - radiusx:center[0] + radiusx, center[1] - radiusy:center[1] + radiusy,
-    center[2] - radiusz:center[2] + radiusz] = True
-    return part
+    radiusx, radiusy, radiusz = 7, 12, 12
+    mask[center[0] - radiusx:center[0] + radiusx,
+         center[1] - radiusy:center[1] + radiusy,
+         center[2] - radiusz:center[2] + radiusz] = True
+    return mask
 
 
 if __name__ == '__main__':
-
+    # only part of the shape
     solver, size, shape = 'ant', 'XL', 'SPT'
     conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
     conf_space_part.load_space()
-    conf_space_part.calculate_boundary(mask=mask_around_tunnel(conf_space_part))
+    mask = mask_around_tunnel(conf_space_part)
+    conf_space_part.calculate_boundary(mask=mask)
 
     conf_space_part.visualize_space()
-    conf_space_part.visualize_space(colormap='Oranges')
+    conf_space_part.visualize_space(space=mask, colormap='Oranges')
+
 
 
 # for shape, solvers in exp_types.items():
