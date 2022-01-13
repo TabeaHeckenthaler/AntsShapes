@@ -87,66 +87,70 @@ class PhaseSpace(object):
         self.space[:, 0, :] = False
         self.space[:, -1, :] = False
 
-    def calculate_space(self, new2021: bool = False, point_particle=False, parallel=False) -> None:
+    def calculate_space(self, new2021: bool = False, point_particle=False, parallel=False, mask=None) -> None:
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
-        self.space = np.ones((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
+        self.space = np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
                               int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
                               int(np.ceil(
                                   (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
-                             dtype=bool)
+                              dtype=bool)
         print("PhaseSpace: Calculating space " + self.name)
 
         # how to iterate over phase space
-        def ps_calc(x0, x1):
+        def ps_calc():
             """
             param x0: index of x array to start with
             param x1: index of x array to end with
             :return: iterator"""
 
-            space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]], dtype=bool)
-            for x, y, theta in self.iterate_coordinates(x0=x0, x1=x1):
+            # space = np.zeros_like(self.space.shape, dtype=bool)
+            # with np.nditer(a, op_flags=['readwrite']) as it:
+            #     for _ in it:
+            #         load.position, load.angle = [x, y], float(theta)
+            #         self.space[...] = 2 * possible_configuration(load, maze)
+
+            for x, y, theta in self.iterate_coordinates(mask=mask):
                 load.position, load.angle = [x, y], float(theta)
                 coord = self.coords_to_indices(x, y, theta)
-                space[coord] = possible_configuration(load, maze)
-            return space
+                self.space[coord] = possible_configuration(load, maze)
 
         # how to iterate over phase space
-        def ps_calc_parallel(iterate: iter, space: np.array, load, maze, coords):
-            """
-            param iterate: index of x array to start with
-            param space: index of x array to end with
-            :return: space
-            """
-            for (x, y, theta), coord in zip(iterate, coords):
-                load.position, load.angle = [x, y], float(theta)
-                space[coord] = possible_configuration(load, maze)
-            return space
+        # def ps_calc_parallel(iterate: iter, space: np.array, load, maze, coords):
+        #     """
+        #     param iterate: index of x array to start with
+        #     param space: index of x array to end with
+        #     :return: space
+        #     """
+        #     for (x, y, theta), coord in zip(iterate, coords):
+        #         load.position, load.angle = [x, y], float(theta)
+        #         space[coord] = possible_configuration(load, maze)
+        #     return space
 
         # iterate using parallel processing
-        if parallel:
-            n_jobs = 5
-            x_index_first = int(np.floor(self.space.shape[0] / n_jobs))
-            split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs - 1)]
-            split_list.append((split_list[-1][-1], self.space.shape[0]))
+        # if parallel:
+        #     n_jobs = 5
+        #     x_index_first = int(np.floor(self.space.shape[0] / n_jobs))
+        #     split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs - 1)]
+        #     split_list.append((split_list[-1][-1], self.space.shape[0]))
+        #
+        #     list_of_jobs = []
+        #     for x0, x1 in split_list:  # split_list
+        #         space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
+        #         coords = [self.coords_to_indices(x, y, theta)
+        #                   for x, y, theta in self.iterate_coordinates()]
+        #         iterator = self.iterate_coordinates()
+        #         list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
+        #         # m = ps_calc_parallel(iterator, space, copy(load), copy(maze))
+        #
+        #     matrices = Parallel(n_jobs=n_jobs, prefer='threads')(list_of_jobs)
+        #     self.space = np.concatenate(matrices, axis=0)
 
-            list_of_jobs = []
-            for x0, x1 in split_list:  # split_list
-                space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
-                coords = [self.coords_to_indices(x, y, theta)
-                          for x, y, theta in self.iterate_coordinates(x0=0, x1=x1 - x0)]
-                iterator = self.iterate_coordinates(x0=x0, x1=x1)
-                list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
-                # m = ps_calc_parallel(iterator, space, copy(load), copy(maze))
-
-            matrices = Parallel(n_jobs=n_jobs, prefer='threads')(list_of_jobs)
-            self.space = np.concatenate(matrices, axis=0)
-
-        else:
-            self.space = ps_calc(0, self.space.shape[0])
+        # else:
+        ps_calc()
 
     def new_fig(self) -> mlab.figure:
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
@@ -230,17 +234,28 @@ class PhaseSpace(object):
                                                   range(self.space.shape[2])):
                 yield x_i, y_i, theta_i
 
-    def iterate_coordinates(self, x0: int = 0, x1: int = -1) -> iter:
+    def iterate_coordinates(self, mask=None) -> iter:
         r"""
         param x0: index to start with
         param x1: index to end with
         :return: iterator
         """
-        x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)[x0:x1]
-        for x in tqdm(x_iter):
-            for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
-                for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
-                    yield x, y, theta
+        if mask is None:
+            x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)
+            for x in tqdm(x_iter):
+                for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
+                    for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
+                        yield x, y, theta
+        else:
+            x0, _, _ = np.array(np.where(mask))[:, 0]
+            x1, _, _ = np.array(np.where(mask))[:, -1]
+            for x in tqdm(np.arange(self.indices_to_coords(x0, 0, 0)[0],
+                                    self.indices_to_coords(x1, 0, 0)[0],
+                                    self.pos_resolution)):
+                for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
+                    for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
+                        if mask[self.coords_to_indices(x, y, theta)]:
+                            yield x, y, theta
 
     def iterate_neighbours(self, ix, iy, itheta) -> iter:
         for dx, dy, dtheta in itertools.product([-1, 0, 1], repeat=3):
@@ -331,9 +346,16 @@ class PhaseSpace(object):
         return self.coords_to_index(0, x), self.coords_to_index(1, y), \
                self.coords_to_index(2, theta % (2 * np.pi))
 
-    def calculate_boundary(self, new2021=True, point_particle=False) -> None:
-        if self.space is None:
-            self.calculate_space(point_particle=point_particle, new2021=new2021)
+    def calculate_boundary(self, new2021=True, point_particle=False, mask=None) -> None:
+        """
+
+        :param new2021: What dimensions to use
+        :param point_particle:
+        :param mask: Where to calculate space (usefull just for testing)
+        :return:
+        """
+        if self.space is None or mask is not None:
+            self.calculate_space(point_particle=point_particle, new2021=new2021, mask=mask)
         self.space_boundary = np.zeros(
             (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
              int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
