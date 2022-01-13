@@ -67,7 +67,7 @@ class Trajectory_gillespie(Trajectory):
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         if display:
             from PhysicsEngine.Display import Display
-            self.run_trj(maze, display=Display(self, maze))
+            self.run_trj(maze, display=Display(self.filename, maze))
         else:
             self.run_trj(maze)
 

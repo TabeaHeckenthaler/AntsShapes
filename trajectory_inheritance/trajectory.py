@@ -148,7 +148,7 @@ class Trajectory:
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))
 
     def save(self, address=None) -> None:
         """

@@ -239,4 +239,4 @@ class Trajectory_ant(Trajectory):
         x.frames = x.frames[f1:f2:step]
 
         my_maze = Maze(x, new2021=self.new2021())
-        return x.run_trj(my_maze, display=Display(x, my_maze, wait=wait, ps=ps, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))

@@ -8,9 +8,9 @@ import os
 
 
 def mask_around_tunnel(conf_space):
-    mask = np.zeros((293, 192, 461), dtype=bool)
+    mask = np.zeros((293, 192, 454), dtype=bool)
     center = (147, 63, 150)
-    radiusx, radiusy, radiusz = 7, 12, 12
+    radiusx, radiusy, radiusz = 10, 15, 15
     mask[center[0] - radiusx:center[0] + radiusx,
          center[1] - radiusy:center[1] + radiusy,
          center[2] - radiusz:center[2] + radiusz] = True

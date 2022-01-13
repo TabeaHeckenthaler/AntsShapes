@@ -7,14 +7,14 @@ import cv2
 import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
-# from mayavi import mlab
+from mayavi import mlab
 from os import path
 
 
 class Display:
-    def __init__(self, x, my_maze, wait=0, ps=None, i=0, videowriter=True):
+    def __init__(self, name: str, my_maze, wait=0, ps=None, i=0, videowriter=True, config=None):
         self.my_maze = my_maze
-        self.filename = x.filename
+        self.filename = name
         self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
         self.width = 1100
@@ -25,14 +25,17 @@ class Display:
         #                 'width': int(Tk().winfo_screenwidth() * 0.9), 'height': int(Tk().winfo_screenheight() * 0.8)}
         self.monitor = {'left': 0, 'top': 0,
                         'width': self.width, 'height': self.height}
-        self.screen = self.create_screen(x)
+        self.screen = self.create_screen()
         self.arrows = []
         self.circles = []
         self.polygons = []
         self.points = []
         self.wait = wait
         self.i = i
-        my_maze.set_configuration(x.position[i], x.angle[i])
+
+        if config is not None:
+            my_maze.set_configuration(config[0], config[1])
+
         self.renew_screen()
         self.ps = ps
         if videowriter:
@@ -46,14 +49,15 @@ class Display:
                                                cv2.VideoWriter_fourcc(*'DIVX'), 20,
                                                (self.VideoShape[1], self.VideoShape[0]))
 
-    def create_screen(self, x, caption=str()) -> pygame.surface:
+    def create_screen(self, caption=str(), free=False) -> pygame.surface:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
 
-        if hasattr(x, 'free') and x.free:  # screen size dependent on trajectory_inheritance
-            self.ppm = int(1000 / (np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10))  # pixels per meter
-            self.width = int((np.max(x.position[:, 0]) - np.min(x.position[:, 0]) + 10) * self.ppm)
-            self.height = int((np.max(x.position[:, 1]) - np.min(x.position[:, 1]) + 10) * self.ppm)
+        if free:  # screen size dependent on trajectory_inheritance
+            position = None # TODO
+            self.ppm = int(1000 / (np.max(position[:, 0]) - np.min(position[:, 0]) + 10))  # pixels per meter
+            self.width = int((np.max(position[:, 0]) - np.min(position[:, 0]) + 10) * self.ppm)
+            self.height = int((np.max(position[:, 1]) - np.min(position[:, 1]) + 10) * self.ppm)
 
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (self.monitor['left'], self.monitor['top'])
         screen = pygame.display.set_mode((self.width, self.height), 0, 32)

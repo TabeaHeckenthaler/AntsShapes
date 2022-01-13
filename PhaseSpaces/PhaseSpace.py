@@ -118,7 +118,12 @@ class PhaseSpace(object):
             #         self.space[...] = 2 * possible_configuration(load, maze)
 
             for x, y, theta in self.iterate_coordinates(mask=mask):
-                load.position, load.angle = [x, y], float(theta)
+                maze.set_configuration([x, y], float(theta))
+                # load.position, load.angle = [x, y], float(theta)
+                # from PhysicsEngine.Display import Display
+                # display = Display('', maze)
+                # maze.draw(display)
+                # display.display()
                 coord = self.coords_to_indices(x, y, theta)
                 self.space[coord] = possible_configuration(load, maze)
 
@@ -257,13 +262,17 @@ class PhaseSpace(object):
                     for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
                         yield x, y, theta
         else:
-            x0, _, _ = np.array(np.where(mask))[:, 0]
-            x1, _, _ = np.array(np.where(mask))[:, -1]
+            x0, y0, theta0 = np.array(np.where(mask))[:, 0]
+            x1, y1, theta1 = np.array(np.where(mask))[:, -1]
             for x in tqdm(np.arange(self.indices_to_coords(x0, 0, 0)[0],
                                     self.indices_to_coords(x1, 0, 0)[0],
                                     self.pos_resolution)):
-                for y in np.arange(self.extent['y'][0], self.extent['y'][1], self.pos_resolution):
-                    for theta in np.arange(self.extent['theta'][0], self.extent['theta'][1], self.theta_resolution):
+                for y in np.arange(self.indices_to_coords(0, y0, 0)[1],
+                                   self.indices_to_coords(0, y1, 0)[1],
+                                   self.pos_resolution):
+                    for theta in np.arange(self.indices_to_coords(0, 0, theta0)[2],
+                                           self.indices_to_coords(0, 0, theta1)[2],
+                                           self.theta_resolution):
                         if mask[self.coords_to_indices(x, y, theta)]:
                             yield x, y, theta
 

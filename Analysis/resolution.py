@@ -23,7 +23,7 @@ def resolution(size, solver):
     if solver == 'human':
         Res = {'Large': 0.1, 'L': 0.1, 'Medium': 0.07, 'M': 0.07, 'Small Far': 0.02, 'Small Near': 0.02, 'S': 0.02}
         return Res[size] * 0.5  # had to add twice the resolution, because the fast marching method was not able to pass
-    return 0.1 * ResizeFactors[solver][size]
+    return 0.1 * ResizeFactors[solver][size]  # used to be 0.1
 
 
 def noise(values):

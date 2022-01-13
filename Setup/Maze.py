@@ -14,7 +14,7 @@ ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 ASSYMETRIC_H_SHIFT = 1.22 * 2
-SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
+# SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
 centerOfMass_shift = - 0.10880829015544041  # shift of the center of mass away from the center of the load.
 
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -409,7 +409,7 @@ class Maze(b2World):
                 ((-shape_height + shape_thickness) / 2 + h, shape_thickness / 2)], density=1, friction=0, restitution=0)
 
         if self.shape == 'SPT':  # This is the Special T
-            [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim(short_edge=True)
+            [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim()
 
             # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the
             # long middle
@@ -508,19 +508,27 @@ class Maze(b2World):
             )
         return my_load
 
-    def getLoadDim(self, short_edge=False):
+    def getLoadDim(self):
         if self.solver in ant_dimensions:
             resize_factor = ResizeFactors[self.solver][self.size]
             shape_sizes = {'H': [5.6, 7.2, 1.6],
-                           'SPT': [4.85, 9.55, 0.85],  # 0.85 to 0.1 (otherwise, they are not able to solve... ) # 9.65 to 9.55
+                           # 'SPT': [4.79, 9.55, 0.85], #  0.85 to 0.1 (otherwise, they are not able to solve... ) # 9.65 to 9.55
                            'LASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                            'RASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
                            'I': [5.5, 1.75, 1.75],
                            'T': [5.4, 5.6, 1.6]
                            }
-            if short_edge:
-                shape_sizes['SPT'] = shape_sizes['SPT'] + [shape_sizes['SPT'][0] * SPT_RATIO]  # 9.65 to 9.55
+            # if short_edge:
+            #     shape_sizes['SPT'] = shape_sizes['SPT'] + [shape_sizes['SPT'][0] * SPT_RATIO]  # 9.65 to 9.55
             # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
+
+            if self.shape == 'SPT':
+                df = read_excel(path.join(maze_dimension_directory, 'LoadDimensions_new2021_ant.xlsx'), engine='openpyxl')
+                d = df.loc[df['Name'] == self.size + '_' + self.shape]
+                dimensions = [d['long edge'].values[0], d['length'].values[0],
+                              d['width'].values[0], d['short edge'].values[0]]
+                return dimensions
+
             dimensions = [i * resize_factor for i in shape_sizes[self.shape]]
 
             if (resize_factor == 1) and self.shape[1:] == 'ASH':  # for XL ASH
@@ -531,21 +539,14 @@ class Maze(b2World):
 
         elif self.solver == 'human':
             # [shape_height, shape_width, shape_thickness, short_edge]
-            if short_edge:
-                SPT_Human_sizes = {'S': [0.805, 1.56, 0.125, 0.405],  # 1.61 to 1.56
-                                   'M': [1.59, 3.18, 0.230, 0.795],   # 0.24 to 0.23
-                                   'L': [3.2, 6.38, 0.51, 1.585]}
-            else:
-                SPT_Human_sizes = {'S': [0.805, 1.56, 0.125],
-                                   'M': [1.59, 3.18, 0.230],
-                                   'L': [3.2, 6.38, 0.51]}
+            SPT_Human_sizes = {'S': [0.805, 1.56, 0.125, 0.405],  # 1.61 to 1.56
+                               'M': [1.59, 3.18, 0.230, 0.795],   # 0.24 to 0.23
+                               'L': [3.2, 6.38, 0.51, 1.585]}
             return SPT_Human_sizes[self.size[0]]
 
         elif self.solver == 'humanhand':
             # [shape_height, shape_width, shape_thickness, short_edge]
             SPT_Human_sizes = [6, 12.9, 0.9, 3]
-            if not short_edge:
-                SPT_Human_sizes = SPT_Human_sizes[:3]
             return SPT_Human_sizes
 
     def force_attachment_positions_in_trajectory(self, x, reference_frame='maze'):
@@ -572,7 +573,7 @@ class Maze(b2World):
         from trajectory_inheritance.humans import participant_number
         if self.solver == 'human' and self.size == 'Medium' and self.shape == 'SPT':
             # Aviram went counter clockwise in his analysis. I fix this using Medium_id_correction_dict
-            [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim(short_edge=True)
+            [shape_height, shape_width, shape_thickness, _] = self.getLoadDim()
             x29, x38, x47 = (shape_width - 2 * shape_thickness) / 4, 0, -(shape_width - 2 * shape_thickness) / 4
 
             # (0, 0) is the middle of the shape
@@ -588,7 +589,7 @@ class Maze(b2World):
             h = centerOfMass_shift * shape_width
 
         elif self.solver == 'human' and self.size == 'Large' and self.shape == 'SPT':
-            [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim(short_edge=True)
+            [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim()
 
             xMNOP = -shape_width / 2
             xLQ = xMNOP + shape_thickness / 2
@@ -669,7 +670,10 @@ class Maze(b2World):
         return radii[self.shape]
 
     def circumference(self):
-        shape_height, shape_width, shape_thickness = self.getLoadDim()
+        if self.shape == 'SPT':
+            shape_height, shape_width, shape_thickness, shape_height_short_edge = self.getLoadDim()
+        else:
+            shape_height, shape_width, shape_thickness = self.getLoadDim()
 
         if self.shape.endswith('ASH'):
             print('I dont know circumference of ASH!!!')
@@ -677,7 +681,7 @@ class Maze(b2World):
         cir = {'H': 4 * shape_height - 2 * shape_thickness + 2 * shape_width,
                'I': 2 * shape_height + 2 * shape_width,
                'T': 2 * shape_height + 2 * shape_width,
-               'SPT': 2 * shape_height * SPT_RATIO +
+               'SPT': 2 * shape_height_short_edge +
                       2 * shape_height -
                       2 * shape_thickness +
                       2 * shape_width,
