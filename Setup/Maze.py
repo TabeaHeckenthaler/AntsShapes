@@ -7,7 +7,7 @@ from Directories import maze_dimension_directory
 from PhysicsEngine.drawables import Polygon, Point, Circle, colors
 from copy import copy
 from os import path
-from trajectory_inheritance.exp_types import exp_types
+from trajectory_inheritance.exp_types import is_exp_valid
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
@@ -77,18 +77,10 @@ class Maze(b2World):
                 angle = x.angle[i]
 
         else:
-            if shape in exp_types.keys():
-                self.shape = shape  # load shape (maybe this will become name of the maze...)
-            else:
-                raise ValueError('Shape ' + shape + ' is not valid.')
-            if solver in exp_types[shape].keys():
-                self.solver = solver  # load shape (maybe this will become name of the maze...)
-            else:
-                raise ValueError('Solver ' + solver + ' is not valid.')
-            if exp_types[shape][solver]:
-                self.size = size
-            else:
-                raise ValueError('Size ' + size + ' is not valid.')
+            is_exp_valid(shape, solver, size)
+            self.shape = shape  # load shape (maybe this will become name of the maze...)
+            self.solver = solver  # load shape (maybe this will become name of the maze...)
+            self.size = size
 
         self.free = free
         self.new2021 = new2021  # TODO: At some point, this might have to become a filename, that carries the

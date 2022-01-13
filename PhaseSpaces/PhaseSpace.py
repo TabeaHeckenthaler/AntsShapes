@@ -72,9 +72,9 @@ class PhaseSpace(object):
 
     def number_of_points(self) -> dict:
         # x_num = np.ceil(self.extent['x'][1]/resolution)
-        y_num = np.ceil(self.extent['y'][1] / resolution(self.size, self.solver))
-        theta_num = np.ceil(
-            self.extent['theta'][1] * self.average_radius / resolution(self.size, self.solver))
+        res = resolution(self.size, self.solver, self.shape)
+        y_num = np.ceil(self.extent['y'][1] / res)
+        theta_num = np.ceil(self.extent['theta'][1] * self.average_radius / res)
         return {'x': None, 'y': y_num, 'theta': theta_num}
 
     def initialize_maze_edges(self) -> None:
@@ -93,15 +93,7 @@ class PhaseSpace(object):
         load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
-        if mask is not None:
-            self.space = np.zeros_like(mask, dtype=bool)
-
-        else:
-            self.space = np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
-                                  int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
-                                  int(np.ceil(
-                                      (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
-                                  dtype=bool)
+        self.space = self.empty_space()
         print("PhaseSpace: Calculating space " + self.name)
 
         # how to iterate over phase space
@@ -370,6 +362,12 @@ class PhaseSpace(object):
         return self.coords_to_index(0, x), self.coords_to_index(1, y), \
                self.coords_to_index(2, theta % (2 * np.pi))
 
+    def empty_space(self) -> np.array:
+        return np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
+             int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
+             int(np.ceil((self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
+                        dtype=bool)
+
     def calculate_boundary(self, new2021=True, point_particle=False, mask=None) -> None:
         """
 
@@ -380,10 +378,8 @@ class PhaseSpace(object):
         """
         if self.space is None or mask is not None:
             self.calculate_space(point_particle=point_particle, new2021=new2021, mask=mask)
-        self.space_boundary = np.zeros(
-            (int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
-             int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
-             int(np.ceil((self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))))
+        self.space_boundary = self.empty_space()
+        print("PhaseSpace: Calculating boundaries " + self.name)
         for ix, iy, itheta in self.iterate_space_index(mask=mask):
             if self._is_boundary_cell(ix, iy, itheta):
                 self.space_boundary[ix, iy, itheta] = 1
@@ -504,7 +500,6 @@ class PS_Area(PhaseSpace):
         self.name: str = name
         self.distance: np.array = None
 
-
     def calculate_distance(self, mask: np.array) -> np.array:
         """
         Calculate the distance to every other node in the array.
@@ -529,7 +524,7 @@ class PS_Area(PhaseSpace):
 
 class PS_Mask(PS_Area):
     def __init__(self, ps):
-        space = np.zeros(ps.space.shape, dtype=bool)
+        space = np.zeros_like(ps.space, dtype=bool)
         super().__init__(ps, space, 'mask')
 
     @staticmethod
@@ -844,7 +839,7 @@ class PhaseSpace_Labeled(PhaseSpace):
             if len(self.space_labeled[ind]) == 0:
                 self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
-        self.space_labeled = np.zeros([*self.space.shape], dtype=np.dtype('U2'))
+        self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
         [assign_label(indices) for indices in self.iterate_space_index()]
 

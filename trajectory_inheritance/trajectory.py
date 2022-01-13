@@ -14,6 +14,7 @@ from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from scipy.signal import savgol_filter
 from Analysis.Velocity import velocity
+from trajectory_inheritance.exp_types import is_exp_valid
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -31,6 +32,7 @@ def length_unit_func(solver):
 
 class Trajectory:
     def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool):
+        is_exp_valid(shape, solver, size)
         self.shape = shape  # shape (maybe this will become name of the maze...) (H, I, T, SPT)
         self.size = size  # size (XL, SL, L, M, S, XS)
         self.solver = solver  # ant, human, sim, humanhand

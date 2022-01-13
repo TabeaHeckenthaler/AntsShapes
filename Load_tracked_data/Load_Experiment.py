@@ -14,6 +14,8 @@ from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 import numpy as np
 import json
 from trajectory_inheritance.exp_types import exp_types
+from trajectory_inheritance.trajectory_human import Trajectory_human
+from trajectory_inheritance.trajectory_ant import Trajectory_ant
 
 
 def is_extension(name) -> bool:
@@ -55,7 +57,6 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
     fsp: frames per second of the camera
     """
     if solver == 'ant':
-        from trajectory_inheritance.trajectory_ant import Trajectory_ant
         x = Trajectory_ant(size=size, shape=shape, old_filename=filename, free=free, winner=winner,
                            fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
                            falseTracking=[falseTracking])
@@ -64,7 +65,6 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
 
     elif solver == 'human':
         shape = 'SPT'
-        from trajectory_inheritance.trajectory_human import Trajectory_human
         x = Trajectory_human(size=size, shape=shape, filename=filename, winner=winner,
                              fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
                              falseTracking=falseTracking)

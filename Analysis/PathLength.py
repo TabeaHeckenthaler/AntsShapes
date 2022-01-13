@@ -74,7 +74,7 @@ class PathLength:
         path_length = 0
         for i in range(len(unwrapped_angle)):
             d = MeasureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
-            if d < resolution(self.x.size, self.x.solver):
+            if d < resolution(self.x.size, self.x.solver, self.x.shape):
                 pass
             else:
                 path_length += MeasureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)

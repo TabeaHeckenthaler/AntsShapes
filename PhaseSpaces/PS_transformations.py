@@ -10,9 +10,9 @@ import os
 
 def mask_around_tunnel(conf_space):
     factor = 1
-    mask = np.zeros((factor * 293, factor * 192, factor * 454), dtype=bool)
+    mask = conf_space.empty_space()
     center = (factor * 147, factor * 63, factor * 150)
-    radiusx, radiusy, radiusz = factor * 10, factor * 15, factor * 15
+    radiusx, radiusy, radiusz = factor * 20, factor * 20, factor * 20
     mask[center[0] - radiusx:center[0] + radiusx,
          center[1] - radiusy:center[1] + radiusy,
          center[2] - radiusz:center[2] + radiusz] = True
@@ -21,14 +21,17 @@ def mask_around_tunnel(conf_space):
 
 if __name__ == '__main__':
     # only part of the shape
-    solver, size, shape = 'human', 'XL', 'SPT'
+    solver, size, shape = 'ant', 'XL', 'SPT'
     conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
-    conf_space_part.load_space()
-    mask = mask_around_tunnel(conf_space_part)
-    conf_space_part.calculate_boundary(mask=mask)
+    conf_space_part.space = conf_space_part.empty_space()
+    # conf_space_part.load_space()
+    # mask = mask_around_tunnel(conf_space_part)
+    # conf_space_part.calculate_boundary(mask=mask)
+    conf_space_part.calculate_space()
+    conf_space_part.calculate_boundary()
 
     conf_space_part.visualize_space()
-    conf_space_part.visualize_space(space=mask, colormap='Oranges')
+    # conf_space_part.visualize_space(space=mask, colormap='Oranges')
 
 
 # for shape, solvers in exp_types.items():
