@@ -87,7 +87,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = False
         self.space[:, -1, :] = False
 
-    def calculate_space(self, new2021: bool = False, point_particle=False, parallel=False, mask=None) -> None:
+    def calculate_space(self, new2021: bool = True, point_particle=False, parallel=False, mask=None) -> None:
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -376,7 +376,7 @@ class PhaseSpace(object):
         :param mask: Where to calculate space (usefull just for testing)
         :return:
         """
-        if self.space is None or mask is not None:
+        if self.space is None:
             self.calculate_space(point_particle=point_particle, new2021=new2021, mask=mask)
         self.space_boundary = self.empty_space()
         print("PhaseSpace: Calculating boundaries " + self.name)

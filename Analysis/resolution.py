@@ -10,24 +10,19 @@ from Setup.Maze import ResizeFactors
 # What is the dependency on size?
 # Give an upper boundary on the noise for XL and recalculate for size.
 
-if __name__ == '__main__':
-    df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
-    df_dir = home + 'Analysis\\resolution_noise_exp'
-# StartedScripts: resolution dependent on object size
 
-# x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')
-# x.play(10, 'Display')
-
-specific_resolution = 5
+specific_resolution = 1
 
 
 def resolution(size, solver, shape):
     if solver == 'human':
         Res = {'Large': 0.1, 'L': 0.1, 'Medium': 0.07, 'M': 0.07, 'Small Far': 0.02, 'Small Near': 0.02, 'S': 0.02}
         return Res[size] * 0.5  # had to add twice the resolution, because the fast marching method was not able to pass
+
     # print('My resolution is to high')
     if shape == 'SPT':
         return specific_resolution * 0.1 * ResizeFactors[solver][size]  # used to be 0.1
+
     return 0.1 * ResizeFactors[solver][size]
 
 
@@ -61,3 +56,25 @@ def noise(values):
 #             df_noise.to_json(df_dir + '.json')
 #
 # l
+
+if __name__ == '__main__':
+    df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
+    df_dir = home + 'Analysis\\resolution_noise_exp'
+# StartedScripts: resolution dependent on object size
+
+# x = Get('M_SPT_4340004_MSpecialT_3_ants (part 1)', 'ant')
+# x.play(10, 'Display')
+
+
+
+
+
+
+
+
+
+
+
+
+
+

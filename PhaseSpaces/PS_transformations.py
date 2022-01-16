@@ -6,13 +6,15 @@ import numpy as np
 from Directories import ps_path
 from matplotlib import pyplot as plt
 import os
+from copy import copy
+from Analysis.resolution import specific_resolution
 
 
-def mask_around_tunnel(conf_space):
-    factor = 1
+def mask_around_tunnel(conf_space: PhaseSpace):
+    factor = int(specific_resolution)
     mask = conf_space.empty_space()
     center = (factor * 147, factor * 63, factor * 150)
-    radiusx, radiusy, radiusz = factor * 20, factor * 20, factor * 20
+    radiusx, radiusy, radiusz = factor * 9, factor * 12, factor * 10
     mask[center[0] - radiusx:center[0] + radiusx,
          center[1] - radiusy:center[1] + radiusy,
          center[2] - radiusz:center[2] + radiusz] = True
@@ -23,14 +25,18 @@ if __name__ == '__main__':
     # only part of the shape
     solver, size, shape = 'ant', 'XL', 'SPT'
     conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
-    conf_space_part.space = conf_space_part.empty_space()
-    # conf_space_part.load_space()
-    # mask = mask_around_tunnel(conf_space_part)
-    # conf_space_part.calculate_boundary(mask=mask)
-    conf_space_part.calculate_space()
-    conf_space_part.calculate_boundary()
 
+    mask = mask_around_tunnel(conf_space_part)
+    conf_space_part.calculate_space(mask=mask)
+    # conf_space_part.calculate_boundary(mask=mask)
+
+    new_space = copy(conf_space_part.space)
+
+    conf_space_part.load_space()
     conf_space_part.visualize_space()
+    conf_space_part.visualize_space(space=new_space)
+    # conf_space_part.save_space()
+    DEBUG = 1
     # conf_space_part.visualize_space(space=mask, colormap='Oranges')
 
 
