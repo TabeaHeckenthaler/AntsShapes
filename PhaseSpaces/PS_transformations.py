@@ -23,7 +23,7 @@ def mask_around_tunnel(conf_space: PhaseSpace):
 
 if __name__ == '__main__':
     # only part of the shape
-    solver, size, shape = 'ant', 'M', 'SPT'
+    solver, size, shape = 'ant', 'L', 'SPT'
     conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
 
     mask = mask_around_tunnel(conf_space_part)
@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     new_space = copy(conf_space_part.space)
 
-    conf_space_part.load_space()
-    conf_space_part.visualize_space()
+    # conf_space_part.load_space()
+    # conf_space_part.visualize_space()
     conf_space_part.visualize_space(space=new_space)
     # conf_space_part.save_space()
     DEBUG = 1
