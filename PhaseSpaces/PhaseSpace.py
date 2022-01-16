@@ -24,7 +24,7 @@ except:
 try:
     import cc3d
 except:
-    print('No cc3d')
+    print('cc3d not installed')
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)

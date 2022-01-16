@@ -12,8 +12,7 @@ from os import path
 try:
     from mayavi import mlab
 except:
-    print('No mayavi')
-
+    pass
 
 class Display:
     def __init__(self, name: str, my_maze, wait=0, ps=None, i=0, videowriter=True, config=None):
