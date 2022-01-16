@@ -7,8 +7,12 @@ import cv2
 import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
-from mayavi import mlab
 from os import path
+
+try:
+    from mayavi import mlab
+except:
+    print('No mayavi')
 
 
 class Display:

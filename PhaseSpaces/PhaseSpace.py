@@ -1,9 +1,5 @@
 import numpy as np
 import pickle
-try:
-    from mayavi import mlab
-except:
-    print('No mayavi')
 from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
@@ -11,15 +7,24 @@ from Setup.Maze import Maze
 from Directories import ps_path
 from Analysis.PathLength import resolution
 from scipy import ndimage
-import cc3d
 from datetime import datetime
 import string
-from joblib import Parallel, delayed
 from skfmm import distance
 from tqdm import tqdm
-from copy import copy
 from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
+from joblib import Parallel, delayed
 from matplotlib import pyplot as plt
+from copy import copy
+
+try:
+    from mayavi import mlab
+except:
+    print('mayavi not installed')
+
+try:
+    import cc3d
+except:
+    print('No cc3d')
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -156,7 +161,7 @@ class PhaseSpace(object):
         # else:
         ps_calc()
 
-    def new_fig(self) -> mlab.figure:
+    def new_fig(self):
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
         return fig
 
