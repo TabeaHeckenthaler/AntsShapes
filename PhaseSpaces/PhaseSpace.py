@@ -1,6 +1,9 @@
 import numpy as np
 import pickle
-from mayavi import mlab
+try:
+    from mayavi import mlab
+except:
+    print('No mayavi')
 from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
