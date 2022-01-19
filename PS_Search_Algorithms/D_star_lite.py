@@ -10,9 +10,9 @@ import numpy as np
 from Analysis.GeneralFunctions import graph_dir
 from skfmm import travel_time  # use this! https://pythonhosted.org/scikit-fmm/
 from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-from PS_Search_Algorithms.Dstar_functions import voxel
-from scipy.ndimage.measurements import label
 from Directories import ps_path
+from scipy.ndimage.measurements import label
+from PS_Search_Algorithms.Dstar_functions import voxel
 
 structure = np.ones((3, 3, 3), dtype=int)
 
@@ -29,6 +29,7 @@ class D_star_lite:
                  known_conf_space,
                  max_iter=100000,
                  average_radius=None,
+                 display_cs=False
                  ):
         r"""
         Setting Parameter
@@ -64,9 +65,10 @@ class D_star_lite:
             raise Exception('Your start is not in configuration space')
         self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
 
-        self.conf_space.visualize_space()
-        self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
-        self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+        if display_cs:
+            self.conf_space.visualize_space()
+            self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+            self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
         if self.collision(self.end):
             print('Your end is not in configuration space')
@@ -75,7 +77,7 @@ class D_star_lite:
         self.current = self.start
         self.winner = False
 
-    def planning(self, sensing_radius=7):
+    def planning(self, sensing_radius=7, display_cs=False):
         r"""
         d star path planning
         While the current node is not the end_screen node, and we have iterated more than max_iter
@@ -104,7 +106,8 @@ class D_star_lite:
 
         for ii, _ in enumerate(range(self.max_iter)):
             # if self.current.xi < self.end.xi:  # TODO: more general....
-            self.current.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
+            if display_cs:
+                self.current.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
             if self.current.ind() != self.end.ind():
                 if self.current.distance == np.inf:
                     return None  # cannot find path
@@ -307,7 +310,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
         d_star_lite_finished.show_animation(save=save)
 
     # ==== Turn this into trajectory_inheritance object ====
-    x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver='ps_simulation', filename=filename)
+    x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver=solver, filename=filename)
     x.play(wait=200)
     if save:
         x.save()

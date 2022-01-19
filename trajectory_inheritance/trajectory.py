@@ -11,6 +11,7 @@ import pickle
 from Directories import SaverDirectories, work_dir, mini_SaverDirectories
 from copy import deepcopy
 from Setup.Maze import Maze
+from Setup.Load import periodicity
 from PhysicsEngine.Display import Display
 from scipy.signal import savgol_filter
 from Analysis.Velocity import velocity
@@ -170,6 +171,29 @@ class Trajectory:
         pickle.dump((self.shape, self.size, self.solver, self.filename, self.fps,
                      self.position, self.angle, self.frames, self.winner),
                     open(mini_SaverDirectories[self.solver] + path.sep + self.filename, 'wb'))
+
+    def stretch(self, frame_number: int) -> None:
+        """
+        I have to interpolate a trajectory. I know the frame number and a few points, that the shape should walk
+        through.
+        I have to stretch the path to these points over the given number of frames.
+        :param frame_number:
+        :return:
+        """
+        discont = np.pi / periodicity[self.shape]
+        self.angle = np.unwrap(self.angle, discont=discont)
+        stretch_factor = int(np.floor(frame_number/len(self.frames)))
+
+        stretched_position = []
+        stretched_angle = []
+
+        for i, frame in enumerate(range(len(self.frames) - 1)):
+            stretched_position += np.linspace(self.position[i], self.position[i+1], stretch_factor, endpoint=False).tolist()
+            stretched_angle += np.linspace(self.angle[i], self.angle[i+1], stretch_factor, endpoint=False).tolist()
+
+        self.position, self.angle = np.array(stretched_position), np.array(stretched_angle)
+        self.frames = [0, self.angle.shape[0]]
+        return
 
     def load_participants(self):
         pass

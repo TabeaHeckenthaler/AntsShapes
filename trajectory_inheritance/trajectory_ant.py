@@ -4,6 +4,7 @@ from copy import deepcopy
 import numpy as np
 import scipy.io as sio
 from os import path
+from Setup.Load import periodicity
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 
@@ -44,7 +45,6 @@ class Trajectory_ant(Trajectory):
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}
-        from Setup.Load import periodicity
         if not (self.shape == file2.shape) or not (self.size == file2.size):
             print('It seems, that these files should not be joined together.... Please break... ')
             breakpoint()
@@ -55,9 +55,14 @@ class Trajectory_ant(Trajectory):
             breakpoint()
 
         file12 = deepcopy(self)
-        file12.x_error = self.x_error + file2.x_error  # these are lists that we want to join together
-        file12.y_error = self.y_error + file2.y_error  # these are lists that we want to join together
-        file12.angle_error = self.angle_error + file2.angle_error  # these are lists that we want to join together
+        # if not hasattr(file2, 'x_error'):  # if for example this is from simulations.
+        #     file2.x_error = 0
+        #     file2.y_error = 0
+        #     file2.angle_error = 0
+        #
+        # file12.x_error = [self.x_error, file2.x_error]  # these are lists that we want to join together
+        # file12.y_error = [self.y_error, file2.y_error]  # these are lists that we want to join together
+        # file12.angle_error = [self.angle_error, file2.angle_error]  # these are lists that we want to join together
 
         file12.position = np.vstack((self.position, file2.position))
 
@@ -69,7 +74,7 @@ class Trajectory_ant(Trajectory):
 
         if not self.free:
             # file12.contact = self.contact + file2.contact  # We are combining two lists here...
-            file12.state = np.hstack((np.squeeze(self.state), np.squeeze(file2.state)))
+            # file12.state = np.hstack((np.squeeze(self.state), np.squeeze(file2.state)))
             file12.winner = file2.winner  # The success of the attempt is determined, by the fact that the last file
             # is either winner or looser.
 
@@ -122,7 +127,7 @@ class Trajectory_ant(Trajectory):
             # if 'Direction' not in file.keys():
             #     file['Direction'] = 'R2L'
             #     print('Direction = R2L')
-                # file['Direction'] = None
+            # file['Direction'] = None
 
             if self.shape.endswith('ASH') and 'R2L' == file['Direction']:
                 if self.shape == 'LASH':

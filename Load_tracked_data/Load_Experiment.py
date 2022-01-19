@@ -10,12 +10,13 @@ from Directories import MatlabFolder
 from Directories import NewFileName
 from tqdm import tqdm
 from copy import copy
-from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
+# from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
 import numpy as np
 import json
 from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
+from PS_Search_Algorithms.D_star_lite import main
 
 
 def is_extension(name) -> bool:
@@ -154,8 +155,20 @@ if __name__ == '__main__':
                     part1 = copy(x)
                     print('\n' + extension)
                     part2 = Load_Experiment(solver, extension, [], winner, fps, size=size, shape=shape)
-                    con = SmoothConnector(part1, part2, con_frames=1000)
-                    x = part1 + con + part2
+                    connector_load = main(size=part1.size,
+                                          shape=part1.shape,
+                                          solver=part1.solver,
+                                          sensing_radius=100,
+                                          dil_radius=0,
+                                          filename='shortest_path',
+                                          starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
+                                          ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
+                                          )
+                    connector_load.stretch(17580)
+                    connector_load.tracked_frames = connector_load.frames
+                    connector_load.falseTracking = []
+                    connector_load.free = part1.free
+                    x = part1 + connector_load + part2
 
             x.play(step=20)
 
