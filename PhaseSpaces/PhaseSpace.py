@@ -306,6 +306,10 @@ class PhaseSpace(object):
         :param path: Where you would like to save.
         :return:
         """
+        if not hasattr(self, 'space'):
+            self.calculate_space()
+        if not hasattr(self, 'space_boundary'):
+            self.calculate_boundary()
         if path is None:
             path = ps_path(self.size, self.shape, self.solver)
             if os.path.exists(path):

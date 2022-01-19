@@ -47,6 +47,7 @@ class D_star_lite:
         self.max_iter = max_iter
 
         self.conf_space = conf_space  # 1, if there is a collision, otherwise 0
+
         self.known_conf_space = known_conf_space
         self.known_conf_space.initialize_maze_edges()
         self.distance = None
@@ -62,6 +63,10 @@ class D_star_lite:
         if self.collision(self.start):
             raise Exception('Your start is not in configuration space')
         self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
+
+        self.conf_space.visualize_space()
+        self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+        self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
         if self.collision(self.end):
             print('Your end is not in configuration space')
@@ -93,24 +98,25 @@ class D_star_lite:
         #  accuracy of greedy node, add stochastic behaviour
         #  false walls because of limited resolution
 
-        self.compute_distances(self.known_conf_space)
+        self.compute_distances()
         # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
         # _ = self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
 
         for ii, _ in enumerate(range(self.max_iter)):
             # if self.current.xi < self.end.xi:  # TODO: more general....
+            self.current.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
             if self.current.ind() != self.end.ind():
                 if self.current.distance == np.inf:
                     return None  # cannot find path
 
-                greedy_node = self.find_greedy_node(self.known_conf_space)
+                greedy_node = self.find_greedy_node()
                 if not self.collision(greedy_node):
                     greedy_node.parent = copy(self.current)
                     self.current = greedy_node
 
                 else:
                     self.add_knowledge(greedy_node, sensing_radius=sensing_radius)
-                    self.compute_distances(self.known_conf_space)
+                    self.compute_distances()
             else:
                 self.winner = True
                 return self
@@ -140,25 +146,26 @@ class D_star_lite:
         # update_screen known_conf_space by using known_conf_space_rolled and rolling back
         self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
-    def compute_distances(self, conf_space):
+    def compute_distances(self):
         r"""
         Computes distance of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
-        phi = np.ones_like(conf_space.space)
+        phi = np.ones_like(self.known_conf_space.space)
 
         # mask
-        mask = conf_space.space is False
+        mask = self.known_conf_space.space is False
         # phi.data should contain -1s and 1s and phi.mask should contain a boolean array
         phi = np.ma.MaskedArray(phi, mask)
 
         # here the finish line is set to 0
-        phi[self.end.xi, :, :] = 0
+        phi[self.end.ind()] = 0
 
         # calculate the distances from the goal position
         # self.distance = distance(phi, periodic=(0, 0, 1)).data this is the easiest, if the speed is uniform
 
         # if the speed is not uniform:
+        print('Recompute distances')
         self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
 
         # how to plot your results in 2D in a certain plane
@@ -166,13 +173,13 @@ class D_star_lite:
         # plot_distances(self, index=self.current.xi, plane='x')
         return
 
-    def find_greedy_node(self, conf_space):
+    def find_greedy_node(self):
         """
         Find the node with the smallest distance from self.end, that is bordering the self.current.
         :param conf_space:
         :return:
         """
-        connected = self.current.connected(conf_space)
+        connected = self.current.connected(self.conf_space)
 
         while True:
             list_distances = [self.distance[node_indices] for node_indices in connected]
@@ -183,12 +190,15 @@ class D_star_lite:
             minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
             greedy_one = np.random.choice(minimal_nodes)
             greedy_node_ind = connected[greedy_one]
+            return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
 
-            if np.sum(np.logical_and(~self.current.surrounding(conf_space, greedy_node_ind), voxel)) > 0:
-                node = Node_ind(*greedy_node_ind, conf_space.space.shape, self.average_radius)
-                return node
-            else:
-                connected.remove(greedy_node_ind)
+            # I think I added this, because they were sometimes stuck in positions impossible to exit.
+            # But, I don't understand anymore.
+            # if np.sum(np.logical_and(~self.current.surrounding(self.conf_space, greedy_node_ind), voxel)) > 0:
+            #     node = Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+            #     return node
+            # else:
+            #     connected.remove(greedy_node_ind)
 
     def collision(self, node):
         """
@@ -254,7 +264,7 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
          save=False, starting_point=None, ending_point=None):
     print('Calculating: ' + filename)
 
-    # ====Search Path with RRT====
+    # ====somethin====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
     conf_space.load_space()
 
@@ -308,7 +318,6 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 if __name__ == '__main__':
     size = 'S'
     solver = 'ant'
-
 
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)

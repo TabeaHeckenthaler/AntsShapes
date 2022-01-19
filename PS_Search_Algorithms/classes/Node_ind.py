@@ -116,6 +116,13 @@ class Node_ind:
 
     @staticmethod
     def surrounding(conf_space, ind, radius=1):
+        """
+
+        :param conf_space:
+        :param ind:
+        :param radius:
+        :return:
+        """
         rolled = np.roll(conf_space.space, -(ind[2] - radius), axis=2)
         return np.array(rolled[ind[0] - radius:ind[0] + radius + 1,
                                ind[1] - radius:ind[1] + radius + 1,
