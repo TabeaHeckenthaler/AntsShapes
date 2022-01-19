@@ -44,7 +44,7 @@ class Trajectory_ant(Trajectory):
                        for new_starting_condition in new_starting_conditions])
 
     def __add__(self, file2):
-        max_distance_for_connecting = {'XS': 0.8, 'S': 0.2, 'M': 0.2, 'L': 0.2, 'SL': 0.2, 'XL': 0.2}
+        max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}
         if not (self.shape == file2.shape) or not (self.size == file2.size):
             print('It seems, that these files should not be joined together.... Please break... ')
             breakpoint()
@@ -52,7 +52,7 @@ class Trajectory_ant(Trajectory):
         if abs(self.position[-1, 0] - file2.position[0, 0]) > max_distance_for_connecting[self.size] or \
                 abs(self.position[-1, 1] - file2.position[0, 1]) > max_distance_for_connecting[self.size]:
             print('does not belong together')
-            breakpoint()
+            # breakpoint()
 
         file12 = deepcopy(self)
         # if not hasattr(file2, 'x_error'):  # if for example this is from simulations.

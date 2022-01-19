@@ -1,4 +1,4 @@
-from PS_Search_Algorithms.D_star_lite import main
+from PS_Search_Algorithms.D_star_lite import run_dstar
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from trajectory_inheritance.trajectory import get
 import numpy as np
@@ -45,7 +45,7 @@ from Analysis.Velocity import velocity
 #     con_frames: Number of frames to interpolate over
 #     """
 #
-#     connector_load = main(size=file1.size,
+#     connector_load = run_dstar(size=file1.size,
 #                           shape=file1.shape,
 #                           solver=file1.solver,
 #                           sensing_radius=100,

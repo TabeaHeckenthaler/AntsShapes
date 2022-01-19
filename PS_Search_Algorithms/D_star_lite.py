@@ -8,11 +8,16 @@ from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
-from skfmm import travel_time  # use this! https://pythonhosted.org/scikit-fmm/
+from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
 from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
 from Directories import ps_path
 from scipy.ndimage.measurements import label
 from PS_Search_Algorithms.Dstar_functions import voxel
+
+try:
+    import cc3d
+except:
+    print('cc3d not installed')
 
 structure = np.ones((3, 3, 3), dtype=int)
 
@@ -62,7 +67,9 @@ class D_star_lite:
         self.start = Node_ind(*starting_node, self.conf_space.space.shape, average_radius)
 
         if self.collision(self.start):
-            raise Exception('Your start is not in configuration space')
+            print('Your start is not in configuration space')
+            self.start = Node_ind(*self.start.find_closest_possible_conf(conf_space), self.conf_space.space.shape,
+                                  average_radius)
         self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
 
         if display_cs:
@@ -72,7 +79,8 @@ class D_star_lite:
 
         if self.collision(self.end):
             print('Your end is not in configuration space')
-            self.end = Node_ind(*self.end.find_closest_possible_conf(conf_space), self.conf_space.space.shape, average_radius)
+            self.end = Node_ind(*self.end.find_closest_possible_conf(conf_space), self.conf_space.space.shape,
+                                average_radius)
 
         self.current = self.start
         self.winner = False
@@ -149,30 +157,57 @@ class D_star_lite:
         # update_screen known_conf_space by using known_conf_space_rolled and rolling back
         self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
+    def unnecessary_space(self, buffer=5):
+        unnecessary = np.ones_like(self.conf_space.space, dtype=bool)
+        unnecessary[np.min([self.start.ind()[0] - buffer, self.end.ind()[0] - buffer]):
+                    np.max([self.start.ind()[0] + buffer, self.end.ind()[0] + buffer]),
+                    np.min([self.start.ind()[1] - buffer, self.end.ind()[1] - buffer]):
+                    np.max([self.start.ind()[1] + buffer, self.end.ind()[1] + buffer])] = False
+
+        return unnecessary
+
     def compute_distances(self):
         r"""
         Computes distance of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
-        phi = np.ones_like(self.known_conf_space.space)
+        phi = np.ones_like(self.known_conf_space.space, dtype=int)
 
         # mask
-        mask = self.known_conf_space.space is False
-        # phi.data should contain -1s and 1s and phi.mask should contain a boolean array
+        mask = ~self.known_conf_space.space
+
+        # this is to reduce computing power: we don't have to calculate distance in all space, just in small space
+        # TODO: increase in a while loop
+        # space = np.logical_and(~self.unnecessary_space(buffer=5), self.known_conf_space.space)
+        # labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
+        # if labels[self.end.ind()] == labels[self.start.ind()]:
+        #     mask = mask or self.unnecessary_space()
+        #
+        # else:
+        #     space = np.logical_and(~self.unnecessary_space(buffer=50), self.known_conf_space.space)
+        #     labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
+        #     if labels[self.end.ind()] == labels[self.start.ind()]:
+        #         mask = np.logical_or(mask, self.unnecessary_space())
+
+        # phi.data should contain -1s and 1s and zeros and phi.mask should contain a boolean array
         phi = np.ma.MaskedArray(phi, mask)
+        phi.data[self.end.ind()] = 0
 
-        # here the finish line is set to 0
-        phi[self.end.ind()] = 0
-
-        # calculate the distances from the goal position
-        # self.distance = distance(phi, periodic=(0, 0, 1)).data this is the easiest, if the speed is uniform
+        # calculate the distances from the goal position, this is the easiest, if the speed is uniform
+        print('Recompute distances')
+        # self.distance = distance(phi, periodic=(0, 0, 1)).data
+        # in order to mask the 'unreachable' nodes (diagonal or outside of conf_space), set distance there to inf.
+        dist = distance(phi, periodic=(0, 0, 1))
+        dist_data = dist.data
+        dist_data[dist.mask] = np.inf
+        self.distance = dist_data
 
         # if the speed is not uniform:
-        print('Recompute distances')
-        self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
+        # self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
 
         # how to plot your results in 2D in a certain plane
-        # plot_distances(self, index=self.current.yi, plane='y')
+        # self.conf_space.visualize_space()
+        # self.conf_space.visualize_space(space=self.distance, colormap='Oranges')
         # plot_distances(self, index=self.current.xi, plane='x')
         return
 
@@ -193,15 +228,15 @@ class D_star_lite:
             minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
             greedy_one = np.random.choice(minimal_nodes)
             greedy_node_ind = connected[greedy_one]
-            return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+            # loop: (115, 130, 383), (116, 130, 382), (117, 129, 381), (116, 131, 381)
+            # return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
 
             # I think I added this, because they were sometimes stuck in positions impossible to exit.
-            # But, I don't understand anymore.
-            # if np.sum(np.logical_and(~self.current.surrounding(self.conf_space, greedy_node_ind), voxel)) > 0:
-            #     node = Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
-            #     return node
-            # else:
-            #     connected.remove(greedy_node_ind)
+            if np.sum(np.logical_and(self.current.surrounding(self.conf_space, greedy_node_ind), voxel)) > 0:
+                node = Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+                return node
+            else:
+                connected.remove(greedy_node_ind)
 
     def collision(self, node):
         """
@@ -223,13 +258,13 @@ class D_star_lite:
         x.frames = np.array([i for i in range(x.position.shape[0])])
         return x
 
-    def draw_conf_space_and_path(self, conf_space, fig_name):
-        fig = conf_space.visualize_space(name=fig_name)
-        self.start.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
-        self.end.draw_node(conf_space, fig=fig, scale_factor=0.5, color=(0, 0, 0))
+    def draw_conf_space_and_path(self, fig_name):
+        fig = self.conf_space.visualize_space()
+        self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+        self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
         path = self.generate_path()
-        conf_space.draw(fig, path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
+        self.conf_space.draw(fig, path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
         return fig
 
     def generate_path(self, length=np.infty, ind=False):
@@ -251,8 +286,8 @@ class D_star_lite:
         return np.array(path)
 
     def show_animation(self, save=False):
-        conf_space_fig = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
-        known_conf_space_fig = self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
+        conf_space_fig = self.draw_conf_space_and_path(self.conf_space)
+        known_conf_space_fig = self.draw_conf_space_and_path(self.known_conf_space)
         if save:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg',
                          magnification=4,
@@ -263,8 +298,8 @@ class D_star_lite:
             # mlab.close()
 
 
-def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False, filename='test',
-         save=False, starting_point=None, ending_point=None):
+def run_dstar(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False, filename='test',
+              starting_point=None, ending_point=None):
     print('Calculating: ' + filename)
 
     # ====somethin====
@@ -282,7 +317,6 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
     # known_conf_space.load_space(path=ps_path(size, shape, solver, point_particle=True))
 
     # 2) dilated version of the conf_space
-
     known_conf_space = copy(conf_space)
     if dil_radius > 0:
         known_conf_space = known_conf_space.dilate(space=conf_space.space, radius=dil_radius)
@@ -294,10 +328,11 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
         average_radius=Maze(size, shape, solver).average_radius(),
         conf_space=conf_space,
         known_conf_space=known_conf_space,
+        display_cs=True
     )
 
     # ====Calculate the trajectory_inheritance the solver takes====
-    d_star_lite_finished = d_star_lite.planning(sensing_radius=sensing_radius)
+    d_star_lite_finished = d_star_lite.planning(sensing_radius=sensing_radius, display_cs=True)
     path = d_star_lite_finished.generate_path()
 
     if not d_star_lite_finished.winner:
@@ -307,14 +342,10 @@ def main(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, s
 
     # === Draw final path ===
     if show_animation:
-        d_star_lite_finished.show_animation(save=save)
+        d_star_lite_finished.show_animation()
 
     # ==== Turn this into trajectory_inheritance object ====
     x = d_star_lite_finished.into_trajectory(size=size, shape=shape, solver=solver, filename=filename)
-    x.play(wait=200)
-    if save:
-        x.save()
-        return
     return x
 
 
@@ -322,21 +353,25 @@ if __name__ == '__main__':
     size = 'S'
     solver = 'ant'
 
+
     def calc(sensing_radius, dil_radius, shape):
         filename = filename_dstar(size, shape, dil_radius, sensing_radius)
 
         if filename in os.listdir(SaverDirectories['ps_simulation']):
             pass
         else:
-            main(size=size,
-                 shape=shape,
-                 solver=solver,
-                 sensing_radius=sensing_radius,
-                 dil_radius=dil_radius,
-                 filename=filename,
-                 starting_point=None,
-                 ending_point=None,
-                 )
+            x = run_dstar(size=size,
+                          shape=shape,
+                          solver=solver,
+                          sensing_radius=sensing_radius,
+                          dil_radius=dil_radius,
+                          filename=filename,
+                          starting_point=None,
+                          ending_point=None,
+                          )
+            x.play(wait=200)
+            x.save()
+
 
     # === For parallel processing multiple trajectories on multiple cores of your computer ===
     # Parallel(n_jobs=6)(delayed(calc)(sensing_radius, dil_radius, shape)

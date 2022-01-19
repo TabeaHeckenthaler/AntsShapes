@@ -460,10 +460,11 @@ class PhaseSpace(object):
 
         return np.logical_or(space1, space2)  # have to check, if its really a logical or...
 
-    def split_connected_components(self, space: np.array) -> (list, list):
+    def split_connected_components(self, space: np.array, cc_to_keep=10) -> (list, list):
         """
         from self find connected components
         Take into account periodicity
+        :param cc_to_keep: how many connected components to keep (10 for SPT)
         :param space: which space should be split
         :return: list of ps spaces, that have only single connected components
         """
@@ -473,7 +474,6 @@ class PhaseSpace(object):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = 10  # becuase we want to have 8 states, but two are then are split because of peridicity
         min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1)
 
         for label in range(1, number_cc):

@@ -16,7 +16,7 @@ import json
 from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
-from PS_Search_Algorithms.D_star_lite import main
+from PS_Search_Algorithms.D_star_lite import run_dstar
 
 
 def is_extension(name) -> bool:
@@ -147,23 +147,24 @@ if __name__ == '__main__':
 
             print('\n' + filename)
             x = Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
-            last_filename = filename
+
+            last_attached = filename
 
             if 'part ' in filename:
-                while extension_exists(last_filename):
-                    extension = extension_exists(last_filename)[0]
+                while extension_exists(last_attached):
+                    last_attached = extension_exists(last_attached)[0]
                     part1 = copy(x)
-                    print('\n' + extension)
-                    part2 = Load_Experiment(solver, extension, [], winner, fps, size=size, shape=shape)
-                    connector_load = main(size=part1.size,
-                                          shape=part1.shape,
-                                          solver=part1.solver,
-                                          sensing_radius=100,
-                                          dil_radius=0,
-                                          filename='shortest_path',
-                                          starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
-                                          ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
-                                          )
+                    print('\n' + last_attached)
+                    part2 = Load_Experiment(solver, last_attached, [], winner, fps, size=size, shape=shape)
+                    connector_load = run_dstar(size=part1.size,
+                                               shape=part1.shape,
+                                               solver=part1.solver,
+                                               sensing_radius=100,
+                                               dil_radius=0,
+                                               filename='shortest_path',
+                                               starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
+                                               ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
+                                               )
                     connector_load.stretch(17580)
                     connector_load.tracked_frames = connector_load.frames
                     connector_load.falseTracking = []
@@ -171,7 +172,10 @@ if __name__ == '__main__':
                     x = part1 + connector_load + part2
 
             x.play(step=20)
+            x.save()
+            file_object = open('check_trajectories.txt', 'a')
+            file_object.write(x.filename + '\n')
+            file_object.close()
 
             # TODO: Check that the winner is correctly saved!!
             # TODO: add new file to contacts json file
-            x.save()
