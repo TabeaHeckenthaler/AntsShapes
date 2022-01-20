@@ -99,10 +99,10 @@ class Maze(b2World):
             return
 
         else:
-            if self.solver in ['ant', 'ps_simulation'] and self.new2021:
+            if self.solver in ['ant', 'ps_simulation', 'gillespie'] and self.new2021:
                 df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_new2021_ant.xlsx'), engine='openpyxl')
-            elif self.solver in ['sim', 'gillespie']:
-                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_ant.xlsx'), engine='openpyxl')
+            # elif self.solver in ['sim']:
+            #     df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_ant.xlsx'), engine='openpyxl')
             else:
                 df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_' + self.solver + '.xlsx'), engine='openpyxl')
 

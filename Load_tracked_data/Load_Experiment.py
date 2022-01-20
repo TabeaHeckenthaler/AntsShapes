@@ -17,6 +17,7 @@ from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from PS_Search_Algorithms.D_star_lite import run_dstar
+from datetime import datetime
 
 
 def is_extension(name) -> bool:
@@ -42,7 +43,9 @@ def find_unpickled(solver, size, shape):
 
     unpickled = [mat_file
                  for new_name, mat_file in zip(new_names, mat_files)
-                 if (new_name not in set(pickled) and not is_extension(new_name))]
+                 if (new_name not in set(pickled)
+                     and not is_extension(new_name)
+                     and not mat_file.startswith('SSPT_45100'))]
     return unpickled
 
 
@@ -107,6 +110,45 @@ def continue_winner_dict(solver, shape):
     return
 
 
+def continue_time_dict(solver, shape):
+    """
+    Saves the length of experiments in seconds. I need this because I am missing part of my trajectories.
+    :param solver:
+    :param shape:
+    :return:
+    """
+    def delta_t(name):
+        """
+        :return: in seconds
+        """
+        print(name)
+        l = name.split('_')
+        name = str(int(l[1]))[-2:]
+        start_string = input(name + '  start: ')
+        start_string = (start_string.split('.')[0].lstrip('0') or '0') + '.' \
+                       + (start_string.split('.')[1].lstrip('0') or '0')
+
+        end_string = input(name + '  end: ')
+        end_string = (end_string.split('.')[0].lstrip('0') or '0') + '.' \
+                     + (end_string.split('.')[1].lstrip('0') or '0')
+        return int((datetime.strptime(end_string, '%H.%M') - datetime.strptime(start_string, '%H.%M')).total_seconds())
+
+    with open('time_dictionary.txt', 'r') as json_file:
+        time_dict = json.load(json_file)
+
+    for size in exp_types[shape][solver]:
+        to_save = [unpickled for unpickled in find_unpickled(solver, size, shape)
+                   if unpickled not in time_dict.keys()]
+        while to_save:
+            name = to_save[0]
+            time_dict.update({name: delta_t(name)})
+            with open('time_dictionary.txt', 'w') as json_file:
+                json.dump(time_dict, json_file)
+            to_save.remove(name)
+
+    return
+
+
 def extension_exists(filename) -> list:
     """
     :return: list with candidates for being an extension.
@@ -127,6 +169,11 @@ def extension_exists(filename) -> list:
 
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
+    continue_time_dict(solver, shape)
+
+    with open('time_dictionary.txt', 'r') as json_file:
+        time_dict = json.load(json_file)
+
     if solver == 'human':
         fps = 30
     elif solver == 'ant':
@@ -165,7 +212,9 @@ if __name__ == '__main__':
                                                starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
                                                ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
                                                )
-                    connector_load.stretch(17580)
+
+                    frames_missing = time_dict[filename] * x.fps
+                    connector_load.stretch(frames_missing)
                     connector_load.tracked_frames = connector_load.frames
                     connector_load.falseTracking = []
                     connector_load.free = part1.free

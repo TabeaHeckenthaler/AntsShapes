@@ -38,7 +38,7 @@ scale = 5
 
 
 class PhaseSpace(object):
-    def __init__(self, solver: str, size: str, shape: str, name="", new2021: bool = False):
+    def __init__(self, solver: str, size: str, shape: str, name="", new2021: bool = True):
         """
         :param board_coords:
         :param load_coords:
@@ -859,11 +859,13 @@ class PhaseSpace_Labeled(PhaseSpace):
 if __name__ == '__main__':
     shape = 'SPT'
     size = 'M'
-    point_particle = False
     solver = 'ant'
 
     ps = PhaseSpace(solver, size, shape)
-    ps.load_space()
-    ps.visualize_space()
+    ps.calculate_space()
+    ps.calculate_boundary()
+
+    ps.save_space()
+    # ps.visualize_space()
 
     DEBUG = 1
