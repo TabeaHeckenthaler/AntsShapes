@@ -16,8 +16,10 @@ from PS_Search_Algorithms.Dstar_functions import voxel
 
 try:
     import cc3d
-except:
+finally:
     print('cc3d not installed')
+
+# TODO: Load the rest of your tracked data.
 
 structure = np.ones((3, 3, 3), dtype=int)
 

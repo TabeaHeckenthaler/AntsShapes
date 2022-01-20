@@ -19,7 +19,7 @@ def mask_around_tunnel(conf_space: PhaseSpace):
 
     else:
         center = (factor * 147, factor * 63, factor * 150)
-        radiusx, radiusy, radiusz = factor * 9, factor * 12, factor * 10
+        radiusx, radiusy, radiusz = factor * 12, factor * 15, factor * 15
     mask[center[0] - radiusx:center[0] + radiusx,
          center[1] - radiusy:center[1] + radiusy,
          center[2] - radiusz:center[2] + radiusz] = True
@@ -29,7 +29,7 @@ def mask_around_tunnel(conf_space: PhaseSpace):
 if __name__ == '__main__':
     # only part of the shape
     solver, shape = 'ant', 'SPT'
-    for size in ['XL', 'L', 'M', 'S']:
+    for size in ['L']:
         conf_space_part = PhaseSpace.PhaseSpace(solver, size, shape, name='')
 
         # mask = mask_around_tunnel(conf_space_part)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         conf_space_part.calculate_space()
         conf_space_part.calculate_boundary()
         conf_space_part.save_space()
-
+    # TODO: recalculate L SPT ant.
     DEBUG = 1
 
 

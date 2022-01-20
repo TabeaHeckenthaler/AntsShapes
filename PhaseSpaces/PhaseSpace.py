@@ -857,17 +857,13 @@ class PhaseSpace_Labeled(PhaseSpace):
 
 
 if __name__ == '__main__':
-    shape = 'H'
-    size = 'XL'
+    shape = 'SPT'
+    size = 'M'
     point_particle = False
     solver = 'ant'
 
-    name = size + '_' + shape
-
-    if point_particle:
-        name = name + '_pp'
-
-    ps = PhaseSpace(solver, size, shape, name=name)
+    ps = PhaseSpace(solver, size, shape)
     ps.load_space()
     ps.visualize_space()
-    k = 1
+
+    DEBUG = 1
