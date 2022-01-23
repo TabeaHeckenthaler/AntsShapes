@@ -278,6 +278,9 @@ class Trajectory_part(Trajectory):
         self.position = parent_traj.position[frames[0]:frames[-1]]
         self.angle = parent_traj.angle[frames[0]:frames[-1]]
 
+    def is_connector(self):
+        return 'CONNECTOR' in self.VideoChain[-1]
+
 
 def get(filename) -> Trajectory:
     import os

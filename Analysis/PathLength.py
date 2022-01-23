@@ -96,8 +96,8 @@ class PathLength:
         if frames is None:
             frames = [0, -1]
 
-        # the connector parts have to short of a pathlength.
-        if isinstance(self.x, Trajectory_part) and 'CONNECTOR' in self.x.VideoChain[-1]:
+        # the connector parts have to short of a path length.
+        if isinstance(self.x, Trajectory_part) and self.x.is_connector():
             return np.NaN
 
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
