@@ -167,6 +167,40 @@ def extension_exists(filename) -> list:
     return extension_candidates
 
 
+def parts(filename):
+    VideoChain = [filename]
+    if 'part ' in filename:
+        while extension_exists(VideoChain[-1]):
+            VideoChain.append(extension_exists(VideoChain[-1])[0])
+    return VideoChain
+
+
+def load(filename, winner=None):
+    if winner is None:
+        if filename not in winner_dict.keys():
+            continue_winner_dict(solver, shape)
+        winner = winner_dict[filename]
+    print('\n' + filename)
+    return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
+
+
+def connector(part1, part2, frames_missing):
+    connector_load = run_dstar(size=part1.size,
+                               shape=part1.shape,
+                               solver=part1.solver,
+                               sensing_radius=100,
+                               dil_radius=0,
+                               filename=part1.filename + '_CONNECTOR_' + part2.filename,
+                               starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
+                               ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
+                               )
+    connector_load.stretch(frames_missing)
+    connector_load.tracked_frames = connector_load.frames
+    connector_load.falseTracking = []
+    connector_load.free = part1.free
+    return connector_load
+
+
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     continue_time_dict(solver, shape)
@@ -186,41 +220,21 @@ if __name__ == '__main__':
         with open('winner_dictionary.txt', 'r') as json_file:
             winner_dict = json.load(json_file)
 
-        for filename in tqdm(find_unpickled(solver, size, shape)):
-            if filename not in winner_dict.keys():
-                continue_winner_dict(solver, shape)
+        for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+            x = load(mat_filename)
+            chain = [x] + [load(filename, winner=x.winner) for filename in parts(mat_filename)[1:]]
+            total_time_seconds = np.sum([traj.timer() for traj in chain])
 
-            winner = winner_dict[filename]
+            frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
 
-            print('\n' + filename)
-            x = Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
+            for part in chain[1:]:
+                frames_missing_per_movie = int(frames_missing / (len(chain)-1))
+                if frames_missing_per_movie > 10 * x.fps:
+                    connection = connector(x, part, frames_missing_per_movie)
+                    x = x + connection
+                x = x + part
 
-            last_attached = filename
-
-            if 'part ' in filename:
-                while extension_exists(last_attached):
-                    last_attached = extension_exists(last_attached)[0]
-                    part1 = copy(x)
-                    print('\n' + last_attached)
-                    part2 = Load_Experiment(solver, last_attached, [], winner, fps, size=size, shape=shape)
-                    connector_load = run_dstar(size=part1.size,
-                                               shape=part1.shape,
-                                               solver=part1.solver,
-                                               sensing_radius=100,
-                                               dil_radius=0,
-                                               filename='shortest_path',
-                                               starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
-                                               ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
-                                               )
-
-                    frames_missing = time_dict[filename] * x.fps
-                    connector_load.stretch(frames_missing)
-                    connector_load.tracked_frames = connector_load.frames
-                    connector_load.falseTracking = []
-                    connector_load.free = part1.free
-                    x = part1 + connector_load + part2
-
-            x.play(step=20)
+            # x.play(step=20)
             x.save()
             file_object = open('check_trajectories.txt', 'a')
             file_object.write(x.filename + '\n')

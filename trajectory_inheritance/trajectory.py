@@ -88,6 +88,10 @@ class Trajectory:
                     np.array([np.linspace(self.angle[indices[0] - 1], self.angle[indices[1] + 1], num=con_frames)])))
 
     def timer(self):
+        """
+
+        :return: time in seconds
+        """
         return (len(self.frames) - 1) / self.fps
 
     def iterate_coords(self, step=1) -> iter:

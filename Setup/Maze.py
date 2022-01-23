@@ -16,7 +16,9 @@ ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 ASSYMETRIC_H_SHIFT = 1.22 * 2
 # SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
-centerOfMass_shift = - 0.10880829015544041  # shift of the center of mass away from the center of the load.
+centerOfMass_shift = - 0.08  # shift of the center of mass away from the center of the load. # careful!
+# My PS are still for the original value below!!
+# centerOfMass_shift = - 0.10880829015544041  # shift of the center of mass away from the center of the load.
 
 size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],

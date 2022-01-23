@@ -18,12 +18,12 @@ from copy import copy
 
 try:
     from mayavi import mlab
-except:
+finally:
     print('mayavi not installed')
 
 try:
     import cc3d
-except:
+finally:
     print('cc3d not installed')
 
 traj_color = (1.0, 0.0, 0.0)

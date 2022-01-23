@@ -7,7 +7,6 @@ periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 
 # somehow these contain the same information
 SPT_ratio = 2.44 / 4.82
-centerOfMass_shift = - 0.10880829015544041
 
 
 # I multiply all these values with 2, because I got them in L, but want to state them in XL.
