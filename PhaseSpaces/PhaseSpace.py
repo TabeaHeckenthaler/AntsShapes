@@ -322,7 +322,7 @@ class PhaseSpace(object):
                      self.extent),
                     open(path, 'wb'))
 
-    def load_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_space(self, point_particle: bool = False, new2021: bool = True) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.

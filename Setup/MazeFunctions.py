@@ -76,21 +76,6 @@ def PlotPolygon(body, arena_height, color, *vargs):
             # I think matplotlib.patches woudl be useful here
 
 
-def MeasureDistance(position1, position2, angle1, angle2, averRad, rot=True, **kwargs):  # returns distance in cm.
-    archlength = 0
-    if position1.ndim == 1:  # For comparing only two positions
-        translation = np.linalg.norm(position1[:2] - position2[:2])
-        if rot:
-            archlength = abs(angle1 - angle2) * averRad
-
-    else:  # For comparing more than 2 positions
-        # translation = np.sqrt(np.sum(np.power((position1[:, :2] - position2[:, :2]), 2), axis=1))
-        translation = np.linalg.norm(position1[:, :2] - position2[:, :2])
-        if rot:
-            archlength = abs(angle1[:] - angle2[:]) * averRad
-    return translation + archlength
-
-
 def ClosestCorner(vertices, gravCenter):
     flattened_vert = flatten(vertices)
     corners = np.array([flattened_vert[0].x, flattened_vert[0].y])

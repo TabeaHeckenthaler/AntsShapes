@@ -190,12 +190,12 @@ def connector(part1, part2, frames_missing):
                                solver=part1.solver,
                                sensing_radius=100,
                                dil_radius=0,
-                               filename=part1.filename + '_CONNECTOR_' + part2.filename,
+                               filename=part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename,
                                starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
                                ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
                                )
     connector_load.stretch(frames_missing)
-    connector_load.tracked_frames = connector_load.frames
+    connector_load.tracked_frames = [connector_load.frames[0], connector_load.frames[-1]]
     connector_load.falseTracking = []
     connector_load.free = part1.free
     return connector_load
@@ -215,10 +215,10 @@ if __name__ == '__main__':
     else:
         fps = np.NaN
 
-    for size in exp_types[shape][solver]:
+    with open('winner_dictionary.txt', 'r') as json_file:
+        winner_dict = json.load(json_file)
 
-        with open('winner_dictionary.txt', 'r') as json_file:
-            winner_dict = json.load(json_file)
+    for size in exp_types[shape][solver]:
 
         for mat_filename in tqdm(find_unpickled(solver, size, shape)):
             x = load(mat_filename)
@@ -242,3 +242,4 @@ if __name__ == '__main__':
 
             # TODO: Check that the winner is correctly saved!!
             # TODO: add new file to contacts json file
+            # TODO: add new file to pandas DataFrame

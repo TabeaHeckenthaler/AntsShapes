@@ -32,13 +32,16 @@ def length_unit_func(solver):
 
 
 class Trajectory:
-    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool):
+    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, VideoChain=None):
         is_exp_valid(shape, solver, size)
         self.shape = shape  # shape (maybe this will become name of the maze...) (H, I, T, SPT)
         self.size = size  # size (XL, SL, L, M, S, XS)
         self.solver = solver  # ant, human, sim, humanhand
         self.filename = filename  # filename: shape, size, path length, sim/ants, counter
-        self.VideoChain = [self.filename]
+        if VideoChain is None:
+            self.VideoChain = [self.filename]
+        else:
+            self.VideoChain = VideoChain
         self.fps = fps  # frames per second
         self.position = np.empty((1, 2), float)  # np.array of x and y positions of the centroid of the shape
         self.angle = np.empty((1, 1), float)  # np.array of angles while the shape is moving
@@ -86,6 +89,23 @@ class Trajectory:
                      np.linspace(self.position[indices[0] - 1][1], self.position[indices[1] + 1][1], num=con_frames)]))
                 self.angle[indices[0] - 1: indices[1] + 1] = np.squeeze(np.transpose(
                     np.array([np.linspace(self.angle[indices[0] - 1], self.angle[indices[1] + 1], num=con_frames)])))
+
+    def divide_into_parts(self) -> list:
+        """
+        In order to treat the connections different than the actually tracked part, this function will split a single
+        trajectory object into multiple trajectory objects.
+        :return:
+        """
+        frame_dividers = [-1] + \
+                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if f2 < f1] + \
+                         [len(self.frames)]
+
+        if len(frame_dividers)-1 != len(self.VideoChain):
+            raise Exception('Why are your frames not matching your VideoChain?')
+
+        parts = [Trajectory_part(self, [chain_element], [fr1+1, fr2+1])
+                 for chain_element, fr1, fr2 in zip(self.VideoChain, frame_dividers, frame_dividers[1:])]
+        return parts
 
     def timer(self):
         """
@@ -152,12 +172,17 @@ class Trajectory:
         my_maze = Maze(x)
         return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))
 
+    def check(self):
+        if self.frames.shape != self.angle.shape:
+            raise Exception('Your frame shape does not match your angle shape!')
+
     def save(self, address=None) -> None:
         """
         1. save a pickle of the object
         2. save a pickle of a tuple of attributes of the object, in case I make a mistake one day, and change attributes
         in the class and then am incapable of unpickling my files.
         """
+        self.check()
         if address is None:
             address = SaverDirectories[self.solver] + path.sep + self.filename
 
@@ -196,7 +221,7 @@ class Trajectory:
             stretched_angle += np.linspace(self.angle[i], self.angle[i+1], stretch_factor, endpoint=False).tolist()
 
         self.position, self.angle = np.array(stretched_position), np.array(stretched_angle)
-        self.frames = [0, self.angle.shape[0]]
+        self.frames = np.array([i for i in range(self.angle.shape[0])])
         return
 
     def load_participants(self):
@@ -234,6 +259,24 @@ class Trajectory:
 
     def communication(self):
         return False
+
+
+class Trajectory_part(Trajectory):
+    def __init__(self, parent_traj, VideoChain: list, frames: list):
+        """
+
+        :param parent_traj:
+        :param VideoChain:
+        :param frames: []
+        """
+        super().__init__(size=parent_traj.size, shape=parent_traj.shape, solver=parent_traj.solver,
+                         filename=parent_traj.filename, fps=parent_traj.fps, winner=parent_traj.winner,
+                         VideoChain=VideoChain)
+        self.parent_traj = parent_traj
+        self.frames_of_parent = frames
+        self.frames = parent_traj.frames[frames[0]:frames[-1]]
+        self.position = parent_traj.position[frames[0]:frames[-1]]
+        self.angle = parent_traj.angle[frames[0]:frames[-1]]
 
 
 def get(filename) -> Trajectory:
