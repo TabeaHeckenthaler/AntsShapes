@@ -29,30 +29,24 @@ def mask_around_center(conf_space: PhaseSpace, center_function=tunnel_center):
 
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
-    for size in ["S"]:
+    for size in ['L', 'S']:
         conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
 
+        # conf_space.load_space()
+        # conf_space.visualize_space()
+        #
         # for center in [tunnel_center, disconnect_center]:
         #     mask = mask_around_center(conf_space, center)
         #     conf_space.calculate_space(mask=mask)
         #     new_space = copy(conf_space.space)
         #     conf_space.visualize_space(space=new_space)
         #     conf_space.visualize_space(space=mask, colormap='Oranges')
-
-        # conf_space.load_space()
-        # conf_space.visualize_space()
+        #
+        # DEBUG = 1
 
         conf_space.calculate_space()
         conf_space.calculate_boundary()
         conf_space.save_space()
-
-
-# for shape, solvers in exp_types.items():
-#     for solver, sizes in solvers.items():
-#         for size in sizes:
-#             conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
-#             conf_space.load_space()
-#             conf_space.visualize_space(colormap='Greys')
 
 # conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
 # conf_space_labeled.load_space()

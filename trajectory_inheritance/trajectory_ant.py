@@ -224,7 +224,7 @@ class Trajectory_ant(Trajectory):
         self.load_participants()
         self.participants.averageCarrierNumber()
 
-    def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
+    def play(self, wait=0, ps=None, step=1, videowriter=False, frames=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -236,10 +236,11 @@ class Trajectory_ant(Trajectory):
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if indices is None:
-            indices = [0, -2]
+        if frames is None:
+            f1, f2 = 0, -1
+        else:
+            f1, f2 = frames[0], frames[1]
 
-        f1, f2 = int(indices[0]), int(indices[1]) + 1
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 

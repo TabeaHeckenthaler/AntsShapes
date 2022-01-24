@@ -6,6 +6,17 @@ from scipy.ndimage import gaussian_filter
 from Setup.Load import periodicity
 from Analysis.Velocity import velocity
 
+interpolate_list = ['M_SPT_4690009_MSpecialT_1_ants',
+                    'M_SPT_4700022_MSpecialT_2_ants (part 1)',
+                    'S_SPT_4720005_SSpecialT_1_ants (part 1)',
+                    'S_SPT_4720014_SSpecialT_1_ants',
+                    'S_SPT_4750005_SSpecialT_1_ants (part 1)',
+                    'S_SPT_4750014_SSpecialT_1_ants (part 1)',
+                    'S_SPT_4750016_SSpecialT_1_ants',
+                    'S_SPT_4770012_SSpecialT_1_ants (part 1)',
+                    'S_SPT_4780002_SSpecialT_1_ants',
+                    'S_SPT_4790005_SSpecialT_1_ants (part 1)']
+
 
 # def Connector_straight_line(file1, file2, con_frames: int = None):
 #     # Instantiate a new load which has the right starting position
@@ -57,7 +68,7 @@ from Analysis.Velocity import velocity
 #     return connector_load
 
 
-def PostTracking_Manipulations_shell(filename):
+def postTracking_Manipulations_shell(filename):
     def FalseTracking_Smooth():
         x = get(filename)
         if not (hasattr(x, 'falseTracking')):
@@ -103,20 +114,23 @@ def PostTracking_Manipulations_shell(filename):
         x.save()
         print(x)
 
-    print('0 = no corrections')
-    print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
-    print('3 = Smooth out the trajectory_inheritance')
-    print('Connecting to another movie requieres x + y')
+    def print_options():
+        print('0 = no corrections')
+        print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
+        print('3 = Smooth out the trajectory')
+        print('Connecting to another movie requieres x + y')
+
+    print_options()
     manipulation = int(input('Want to correct something??  '))
     while manipulation != 0:
         if manipulation == 1:
             CutFalseTracking_Free()
-
         if manipulation == 3:
             FalseTracking_Smooth()
-
-        print('\n 0 = no corrections')
-        print('1 = Cut False tracking (if there are issues in the beginning or the end_screen in the free motion)')
-        print('3 = Smooth out the trajectory_inheritance')
-        print('Connecting to another movie requires x + y')
+        print_options()
         manipulation = int(input('Want to correct something else??'))
+
+
+if __name__ == '__main__':
+    for filename in interpolate_list:
+        postTracking_Manipulations_shell(filename)

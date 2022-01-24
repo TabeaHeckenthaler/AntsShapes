@@ -117,6 +117,7 @@ def continue_time_dict(solver, shape):
     :param shape:
     :return:
     """
+
     def delta_t(name):
         """
         :return: in seconds
@@ -201,9 +202,11 @@ def connector(part1, part2, frames_missing):
     return connector_load
 
 
+special_list = ['MSPT_4700003_MSpecialT_1_ants (part 1).mat']
+
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
-    continue_time_dict(solver, shape)
+    # continue_time_dict(solver, shape)
 
     with open('time_dictionary.txt', 'r') as json_file:
         time_dict = json.load(json_file)
@@ -218,9 +221,11 @@ if __name__ == '__main__':
     with open('winner_dictionary.txt', 'r') as json_file:
         winner_dict = json.load(json_file)
 
-    for size in exp_types[shape][solver]:
+    # for size in exp_types[shape][solver]:
+    for mat_filename, size in zip(special_list, ['M']):
 
-        for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+        # for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+        # for mat_filename in tqdm(special_list):
             x = load(mat_filename)
             chain = [x] + [load(filename, winner=x.winner) for filename in parts(mat_filename)[1:]]
             total_time_seconds = np.sum([traj.timer() for traj in chain])
@@ -228,10 +233,10 @@ if __name__ == '__main__':
             frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
 
             for part in chain[1:]:
-                frames_missing_per_movie = int(frames_missing / (len(chain)-1))
-                if frames_missing_per_movie > 10 * x.fps:
-                    connection = connector(x, part, frames_missing_per_movie)
-                    x = x + connection
+                # frames_missing_per_movie = int(frames_missing / (len(chain)-1))
+                # if frames_missing_per_movie > 10 * x.fps:
+                #     connection = connector(x, part, frames_missing_per_movie)
+                #     x = x + connection
                 x = x + part
 
             # x.play(step=20)

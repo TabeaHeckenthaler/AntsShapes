@@ -1,112 +1,26 @@
-XL_SPT_4630002_XLSpecialT_1_ants (part 1)
-XL_SPT_4630002_XLSpecialT_1_ants (part 1)
-XL_SPT_4630005_XLSpecialT_1_ants (part 1)
-XL_SPT_4630007_XLSpecialT_1_ants (part 1)
-XL_SPT_4630010_XLSpecialT_1_ants
-XL_SPT_4630011_XLSpecialT_1_ants
-XL_SPT_4630012_XLSpecialT_1_ants (part 1)
-XL_SPT_4630014_XLSpecialT_1_ants
-XL_SPT_4630015_XLSpecialT_1_ants
-XL_SPT_4630017_XLSpecialT_1_ants
-XL_SPT_4630018_XLSpecialT_1_ants
-XL_SPT_4630019_XLSpecialT_1_ants
-XL_SPT_4640001_XLSpecialT_1_ants (part 1)
-XL_SPT_4640005_XLSpecialT_1_ants (part 1)
-XL_SPT_4640007_XLSpecialT_1_ants (part 1)
-XL_SPT_4640009_XLSpecialT_1_ants (part 1)
-XL_SPT_4640012_XLSpecialT_1_ants
-XL_SPT_4640013_XLSpecialT_1_ants
-XL_SPT_4640014_XLSpecialT_1_ants
-XL_SPT_4640015_XLSpecialT_1_ants
-XL_SPT_4640016_XLSpecialT_1_ants (part 1)
-XL_SPT_4640018_XLSpecialT_1_ants
-XL_SPT_4640020_XLSpecialT_1_ants
-XL_SPT_4640021_XLSpecialT_1_ants (part 1)
-XL_SPT_4640023_XLSpecialT_1_ants
-XL_SPT_4640024_XLSpecialT_1_ants (part 1)
-L_SPT_4650005_LSpecialT_1_ants (part 1)
-L_SPT_4650007_LSpecialT_1_ants (part 1)
-L_SPT_4650010_LSpecialT_1_ants (part 1)
-L_SPT_4650012_LSpecialT_1_ants
-L_SPT_4650013_LSpecialT_1_ants
-L_SPT_4650014_LSpecialT_1_ants
-L_SPT_4650015_LSpecialT_1_ants (part 1)
-L_SPT_4650017_LSpecialT_1_ants (part 1)
-L_SPT_4660001_LSpecialT_1_ants (part 1)
-L_SPT_4660003_LSpecialT_1_ants
-L_SPT_4660004_LSpecialT_1_ants (part 1)
-L_SPT_4660006_LSpecialT_1_ants (part 1)
-L_SPT_4660008_LSpecialT_1_ants
-L_SPT_4660009_LSpecialT_1_ants
-L_SPT_4660010_LSpecialT_1_ants
-L_SPT_4660011_LSpecialT_1_ants
-L_SPT_4660012_LSpecialT_1_ants
-L_SPT_4660014_LSpecialT_1_ants
-L_SPT_4660016_LSpecialT_1_ants (part 1)
-L_SPT_4660018_LSpecialT_1_ants (part 1)
-L_SPT_4660021_LSpecialT_1_ants (part 1)
-L_SPT_4670001_LSpecialT_1_ants (part 1)
-L_SPT_4670004_LSpecialT_1_ants (part 1)
-L_SPT_4670006_LSpecialT_1_ants (part 1)
-L_SPT_4670008_LSpecialT_1_ants (part 1)
-L_SPT_4670011_LSpecialT_1_ants
-L_SPT_4670013_LSpecialT_1_ants
-M_SPT_4680005_MSpecialT_1_ants
-M_SPT_4680008_MSpecialT_1_ants (part 1)
-M_SPT_4690001_MSpecialT_1_ants
-M_SPT_4690006_MSpecialT_1_ants
-M_SPT_4690009_MSpecialT_1_ants
-M_SPT_4690010_MSpecialT_1_ants
-M_SPT_4690011_MSpecialT_1_ants
-M_SPT_4690012_MSpecialT_1_ants
-M_SPT_4690013_MSpecialT_1_ants
-M_SPT_4700001_MSpecialT_1_ants
-M_SPT_4700003_MSpecialT_1_ants (part 1)
-M_SPT_4700005_MSpecialT_1_ants
-M_SPT_4700006_MSpecialT_1_ants
-M_SPT_4700007_MSpecialT_1_ants
-M_SPT_4700008_MSpecialT_1_ants
-M_SPT_4700009_MSpecialT_1_ants
-M_SPT_4700010_MSpecialT_1_ants (part 1)
-M_SPT_4700012_MSpecialT_1_ants
-M_SPT_4700013_MSpecialT_1_ants
-M_SPT_4700014_MSpecialT_1_ants
-M_SPT_4700015_MSpecialT_1_ants
-M_SPT_4700016_MSpecialT_1_ants (part 1)
-M_SPT_4700018_MSpecialT_1_ants
-M_SPT_4700021_MSpecialT_1_ants
-M_SPT_4700022_MSpecialT_1_ants
-M_SPT_4700022_MSpecialT_2_ants (part 1)
-M_SPT_4710001_MSpecialT_1_ants
-M_SPT_4710003_MSpecialT_1_ants
-M_SPT_4710004_MSpecialT_1_ants
-S_SPT_4710013_SSpecialT_1_ants
-S_SPT_4710014_SSpecialT_1_ants (part 1)
-S_SPT_4720002_SSpecialT_1_ants (part 1)
-S_SPT_4720005_SSpecialT_1_ants (part 1)
-S_SPT_4720014_SSpecialT_1_ants
-S_SPT_4720016_SSpecialT_1_ants
-S_SPT_4720017_SSpecialT_1_ants
-S_SPT_4730013_SSpecialT_1_ants (part 1)
-S_SPT_4740002_SSpecialT_1_ants (part 1)
-S_SPT_4740004_SSpecialT_1_ants
-S_SPT_4740008_SSpecialT_1_ants (part 1)
-S_SPT_4750002_SSpecialT_1_ants (part 1)
-S_SPT_4750004_SSpecialT_1_ants
-S_SPT_4750005_SSpecialT_1_ants (part 1)
-S_SPT_4750007_SSpecialT_1_ants (part 1)
-S_SPT_4750009_SSpecialT_2_ants (part 1)
-S_SPT_4750014_SSpecialT_1_ants (part 1)
-S_SPT_4750016_SSpecialT_1_ants
-S_SPT_4760017_SSpecialT_1_ants (part 1)
-S_SPT_4760019_SSpecialT_1_ants (part 1)
-S_SPT_4770001_SSpecialT_1_ants (part 1)
-S_SPT_4770003_SSpecialT_1_ants (part 1)
-S_SPT_4770005_SSpecialT_1_ants (part 1)
-S_SPT_4770007_SSpecialT_1_ants (part 1)
-S_SPT_4770012_SSpecialT_1_ants (part 1)
-S_SPT_4780002_SSpecialT_1_ants
-S_SPT_4780007_SSpecialT_1_ants (part 1)
-S_SPT_4780009_SSpecialT_1_ants (part 1)
-S_SPT_4790005_SSpecialT_1_ants (part 1)
-S_SPT_4800009_SSpecialT_1_ants (part 1)
+M_SPT_4690009_MSpecialT_1_ants: Bad image recognition
+M_SPT_4700022_MSpecialT_2_ants (part 1): Bad image recognition
+S_SPT_4720005_SSpecialT_1_ants (part 1): Bad image recognition
+S_SPT_4720014_SSpecialT_1_ants: Bad image recognition
+S_SPT_4750005_SSpecialT_1_ants (part 1): Bad image recognition
+S_SPT_4750014_SSpecialT_1_ants (part 1): Bad image recognition
+S_SPT_4750016_SSpecialT_1_ants: Bad image recognition
+S_SPT_4770012_SSpecialT_1_ants (part 1): Bad image recognition
+S_SPT_4780002_SSpecialT_1_ants: Bad image recognition
+S_SPT_4790005_SSpecialT_1_ants (part 1): Bad image recognition
+
+XL_SPT_4640005_XLSpecialT_1_ants (part 1): Walks through the walls
+XL_SPT_4640007_XLSpecialT_1_ants (part 1): Walks through the walls
+XL_SPT_4640009_XLSpecialT_1_ants (part 1): Walks through the walls
+XL_SPT_4640024_XLSpecialT_1_ants (part 1): Walks through the walls (End frame is not behind the wall.)
+S_SPT_4760017_SSpecialT_1_ants (part 1): Walks through the walls
+S_SPT_4770007_SSpecialT_1_ants (part 1): Walks through the walls (wrong Configuration Space)
+S_SPT_4780009_SSpecialT_1_ants (part 1): Bad image recognition, Walks through the walls (wrong Configuration Space)
+
+L_SPT_4650005_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4660004_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4660016_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4660018_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4660021_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4670001_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
+L_SPT_4670008_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect

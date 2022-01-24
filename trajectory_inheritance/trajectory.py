@@ -16,6 +16,7 @@ from PhysicsEngine.Display import Display
 from scipy.signal import savgol_filter
 from Analysis.Velocity import velocity
 from trajectory_inheritance.exp_types import is_exp_valid
+from copy import copy
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -138,9 +139,11 @@ class Trajectory:
     def velocity(self, second_smooth, *args):
         return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
 
-    def play(self, indices=None, wait=0, ps=None, step=1, videowriter=False):
+    def play(self, wait=0, ps=None, step=1, videowriter=False, frames=None):
         """
         Displays a given trajectory_inheritance (self)
+        :param videowriter:
+        :param frames:
         :param indices: which slice of frames would you like to display
         :param wait: how many milliseconds should we wait between displaying steps
         :param ps: Configuration space
@@ -154,10 +157,10 @@ class Trajectory:
         if x.frames.size == 0:
             x.frames = np.array([fr for fr in range(x.angle.size)])
 
-        if indices is None:
-            indices = [0, -2]
-
-        f1, f2 = int(indices[0]), int(indices[1]) + 1
+        if frames is None:
+            f1, f2 = 0, -1
+        else:
+            f1, f2 = frames[0], frames[1]
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 
@@ -175,6 +178,13 @@ class Trajectory:
     def check(self):
         if self.frames.shape != self.angle.shape:
             raise Exception('Your frame shape does not match your angle shape!')
+
+    def cut_off(self, frames: list):
+        new = copy(self)
+        new.frames = self.frames[frames[0]:frames[1]]
+        new.position = self.position[frames[0]:frames[1]]
+        new.angle = self.angle[frames[0]:frames[1]]
+        return new
 
     def save(self, address=None) -> None:
         """

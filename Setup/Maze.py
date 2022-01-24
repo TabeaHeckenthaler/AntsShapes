@@ -177,7 +177,7 @@ class Maze(b2World):
         if self.shape == 'LongT':
             pass
             # self.slitpoints[i]
-        if self.shape == 'SPT':
+        if self.shape == 'SPT' and not self.new2021:
             if self.size == 'L' and self.solver == 'ant':
                 slitLength = 4.1
                 # this is the left (inside), bottom Slit
