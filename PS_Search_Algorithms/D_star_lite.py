@@ -1,4 +1,4 @@
-from PhaseSpaces import PhaseSpace, PS_transformations
+from PhaseSpaces import PhaseSpace, check_critical_points_in_CS
 from trajectory_inheritance.trajectory import Trajectory
 from Directories import SaverDirectories
 from Setup.Maze import start, end, Maze
@@ -16,7 +16,7 @@ from PS_Search_Algorithms.Dstar_functions import voxel
 
 try:
     import cc3d
-finally:
+except:
     print('cc3d not installed')
 
 # TODO: Load the rest of your tracked data.
@@ -330,7 +330,7 @@ def run_dstar(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius
         average_radius=Maze(size, shape, solver).average_radius(),
         conf_space=conf_space,
         known_conf_space=known_conf_space,
-        display_cs=True
+        display_cs=False
     )
 
     # ====Calculate the trajectory_inheritance the solver takes====

@@ -1,4 +1,4 @@
-from PhaseSpaces import PhaseSpace, PS_transformations
+from PhaseSpaces import PhaseSpace, check_critical_points_in_CS
 from trajectory_inheritance.trajectory import get
 from copy import copy
 

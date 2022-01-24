@@ -18,12 +18,12 @@ from copy import copy
 
 try:
     from mayavi import mlab
-finally:
+except:
     print('mayavi not installed')
 
 try:
     import cc3d
-finally:
+except:
     print('cc3d not installed')
 
 traj_color = (1.0, 0.0, 0.0)
@@ -412,9 +412,9 @@ class PhaseSpace(object):
                       color=color
                       )
 
-    def draw_ind(self, indices):
+    def draw_ind(self, indices, scale_factor=0.2):
         coords = self.indices_to_coords(*indices)
-        self.draw(coords[:2], coords[2])
+        self.draw(coords[:2], coords[2], scale_factor=scale_factor)
 
     def trim(self, borders) -> None:
         [[x_min, x_max], [y_min, y_max]] = borders

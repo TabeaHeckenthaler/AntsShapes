@@ -55,7 +55,6 @@ def noise(values):
 #
 #             df_noise.to_json(df_dir + '.json')
 #
-# l
 
 if __name__ == '__main__':
     df = pd.read_json(data_home + 'DataFrame\\data_frame.json')
