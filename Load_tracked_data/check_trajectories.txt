@@ -1,4 +1,3 @@
-M_SPT_4690009_MSpecialT_1_ants: Bad image recognition
 M_SPT_4700022_MSpecialT_2_ants (part 1): Bad image recognition
 S_SPT_4720005_SSpecialT_1_ants (part 1): Bad image recognition
 S_SPT_4720014_SSpecialT_1_ants: Bad image recognition

@@ -169,11 +169,11 @@ def extension_exists(filename, size=None) -> list:
     return extension_candidates
 
 
-def parts(filename):
+def parts(filename, size):
     VideoChain = [filename]
     if 'part ' in filename:
-        while extension_exists(VideoChain[-1]):
-            VideoChain.append(extension_exists(VideoChain[-1])[0])
+        while extension_exists(VideoChain[-1], size=size):
+            VideoChain.append(extension_exists(VideoChain[-1], size=size)[0])
     return VideoChain
 
 
@@ -232,27 +232,24 @@ if __name__ == '__main__':
         winner_dict = json.load(json_file)
 
     # for size in exp_types[shape][solver]:
-    for filename in special_list:
-        print(filename)
-        # for mat_filename in tqdm(find_unpickled(solver, size, shape)):
-        # x = load(mat_filename)
-        # chain = [x] + [load(filename, winner=x.winner) for filename in parts(mat_filename)[1:]]
-        # total_time_seconds = np.sum([traj.timer() for traj in chain])
-        #
-        # frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
-        #
-        # for part in chain[1:]:
-        #     frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
-        #     if frames_missing_per_movie > 10 * x.fps:
-        #         connection = connector(x, part, frames_missing_per_movie)
-        #         x = x + connection
-        #     x = x + part
+    # for filename in special_list:
+    #     print(filename)
+    size = 'M'
+    for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+        x = load(mat_filename, size=size)
+        chain = [x] + [load(filename, winner=x.winner, size=size) for filename in parts(mat_filename, size)[1:]]
+        total_time_seconds = np.sum([traj.timer() for traj in chain])
 
-        x = get(filename)
-        x.play(step=1)
+        frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
 
+        for part in chain[1:]:
+            frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+            if frames_missing_per_movie > 10 * x.fps:
+                connection = connector(x, part, frames_missing_per_movie)
+                x = x + connection
+            x = x + part
 
-        # x.save()
+        x.save()
         # file_object = open('check_trajectories.txt', 'a')
         # file_object.write(x.filename + '\n')
         # file_object.close()
