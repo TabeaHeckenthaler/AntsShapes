@@ -18,6 +18,7 @@ from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from PS_Search_Algorithms.D_star_lite import run_dstar
 from datetime import datetime
+from trajectory_inheritance.trajectory import get
 
 
 def is_extension(name) -> bool:
@@ -150,7 +151,7 @@ def continue_time_dict(solver, shape):
     return
 
 
-def extension_exists(filename) -> list:
+def extension_exists(filename, size=None) -> list:
     """
     :return: list with candidates for being an extension.
     """
@@ -176,7 +177,7 @@ def parts(filename):
     return VideoChain
 
 
-def load(filename, winner=None):
+def load(filename, winner=None, size=None):
     if winner is None:
         if filename not in winner_dict.keys():
             continue_winner_dict(solver, shape)
@@ -202,7 +203,16 @@ def connector(part1, part2, frames_missing):
     return connector_load
 
 
-special_list = ['MSPT_4700003_MSpecialT_1_ants (part 1).mat']
+special_list = ['M_SPT_4690009_MSpecialT_1_ants',
+                'M_SPT_4700022_MSpecialT_2_ants (part 1)',
+                'S_SPT_4720005_SSpecialT_1_ants (part 1)',
+                'S_SPT_4720014_SSpecialT_1_ants',
+                'S_SPT_4750005_SSpecialT_1_ants (part 1)',
+                'S_SPT_4750014_SSpecialT_1_ants (part 1)',
+                'S_SPT_4750016_SSpecialT_1_ants',
+                'S_SPT_4770012_SSpecialT_1_ants (part 1)',
+                'S_SPT_4780002_SSpecialT_1_ants',
+                'S_SPT_4790005_SSpecialT_1_ants (part 1)', ]
 
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
@@ -222,29 +232,31 @@ if __name__ == '__main__':
         winner_dict = json.load(json_file)
 
     # for size in exp_types[shape][solver]:
-    for mat_filename, size in zip(special_list, ['M']):
-
+    for filename in special_list:
+        print(filename)
         # for mat_filename in tqdm(find_unpickled(solver, size, shape)):
-        # for mat_filename in tqdm(special_list):
-            x = load(mat_filename)
-            chain = [x] + [load(filename, winner=x.winner) for filename in parts(mat_filename)[1:]]
-            total_time_seconds = np.sum([traj.timer() for traj in chain])
+        # x = load(mat_filename)
+        # chain = [x] + [load(filename, winner=x.winner) for filename in parts(mat_filename)[1:]]
+        # total_time_seconds = np.sum([traj.timer() for traj in chain])
+        #
+        # frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
+        #
+        # for part in chain[1:]:
+        #     frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+        #     if frames_missing_per_movie > 10 * x.fps:
+        #         connection = connector(x, part, frames_missing_per_movie)
+        #         x = x + connection
+        #     x = x + part
 
-            frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
+        x = get(filename)
+        x.play(step=1)
 
-            for part in chain[1:]:
-                # frames_missing_per_movie = int(frames_missing / (len(chain)-1))
-                # if frames_missing_per_movie > 10 * x.fps:
-                #     connection = connector(x, part, frames_missing_per_movie)
-                #     x = x + connection
-                x = x + part
 
-            # x.play(step=20)
-            x.save()
-            file_object = open('check_trajectories.txt', 'a')
-            file_object.write(x.filename + '\n')
-            file_object.close()
+        # x.save()
+        # file_object = open('check_trajectories.txt', 'a')
+        # file_object.write(x.filename + '\n')
+        # file_object.close()
 
-            # TODO: Check that the winner is correctly saved!!
-            # TODO: add new file to contacts json file
-            # TODO: add new file to pandas DataFrame
+        # TODO: Check that the winner is correctly saved!!
+        # TODO: add new file to contacts json file
+        # TODO: add new file to pandas DataFrame

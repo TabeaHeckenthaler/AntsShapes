@@ -9,7 +9,6 @@ from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 
 length_unit = 'cm'
-
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
 

@@ -32,8 +32,8 @@ if __name__ == '__main__':
     for size in ['L', 'S']:
         conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
 
-        # conf_space.load_space()
-        # conf_space.visualize_space()
+        conf_space.load_space()
+        conf_space.visualize_space()
         #
         # for center in [tunnel_center, disconnect_center]:
         #     mask = mask_around_center(conf_space, center)
@@ -42,11 +42,11 @@ if __name__ == '__main__':
         #     conf_space.visualize_space(space=new_space)
         #     conf_space.visualize_space(space=mask, colormap='Oranges')
         #
-        # DEBUG = 1
+        DEBUG = 1
 
-        conf_space.calculate_space()
-        conf_space.calculate_boundary()
-        conf_space.save_space()
+        # conf_space.calculate_space()
+        # conf_space.calculate_boundary()
+        # conf_space.save_space()
 
 # conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(conf_space)
 # conf_space_labeled.load_space()

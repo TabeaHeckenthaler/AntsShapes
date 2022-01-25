@@ -16,11 +16,3 @@ XL_SPT_4640024_XLSpecialT_1_ants (part 1): Walks through the walls (End frame is
 S_SPT_4760017_SSpecialT_1_ants (part 1): Walks through the walls
 S_SPT_4770007_SSpecialT_1_ants (part 1): Walks through the walls (wrong Configuration Space)
 S_SPT_4780009_SSpecialT_1_ants (part 1): Bad image recognition, Walks through the walls (wrong Configuration Space)
-
-L_SPT_4650005_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4660004_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4660016_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4660018_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4660021_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4670001_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
-L_SPT_4670008_LSpecialT_1_ants (part 1): Wrong PhaseSpace used to connect
