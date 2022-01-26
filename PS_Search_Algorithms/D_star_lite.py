@@ -66,23 +66,29 @@ class D_star_lite:
         self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
         # Set current node as the start node.
-        self.start = Node_ind(*starting_node, self.conf_space.space.shape, average_radius)
+        self.start = Node_ind(*starting_node, self.conf_space, average_radius)
 
         if self.collision(self.start):
+            self.end.draw_maze()
             print('Your start is not in configuration space')
-            self.start = Node_ind(*self.start.find_closest_possible_conf(conf_space), self.conf_space.space.shape,
-                                  average_radius)
-        self.end = Node_ind(*ending_node, self.conf_space.space.shape, average_radius)
+            if bool(input('Move back? ')):
+                self.start = self.start.find_closest_possible_conf(note='backward')
+            else:
+                self.start = self.start.find_closest_possible_conf()
+
+        self.end = Node_ind(*ending_node, self.conf_space, average_radius)
+        if self.collision(self.end):
+            self.end.draw_maze()
+            print('Your end is not in configuration space')
+            if bool(input('Move back? ')):
+                self.end = self.end.find_closest_possible_conf(note='backward')
+            else:
+                self.end = self.end.find_closest_possible_conf()
 
         if display_cs:
             self.conf_space.visualize_space()
             self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
             self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
-
-        if self.collision(self.end):
-            print('Your end is not in configuration space')
-            self.end = Node_ind(*self.end.find_closest_possible_conf(conf_space), self.conf_space.space.shape,
-                                average_radius)
 
         self.current = self.start
         self.winner = False
@@ -235,7 +241,7 @@ class D_star_lite:
 
             # I think I added this, because they were sometimes stuck in positions impossible to exit.
             if np.sum(np.logical_and(self.current.surrounding(self.conf_space, greedy_node_ind), voxel)) > 0:
-                node = Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+                node = Node_ind(*greedy_node_ind, self.conf_space, self.average_radius)
                 return node
             else:
                 connected.remove(greedy_node_ind)
@@ -304,7 +310,7 @@ def run_dstar(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius
               starting_point=None, ending_point=None):
     print('Calculating: ' + filename)
 
-    # ====somethin====
+    # ====something====
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
     conf_space.load_space()
 

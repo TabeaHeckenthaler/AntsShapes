@@ -1,14 +1,11 @@
 S_SPT_4720005_SSpecialT_1_ants (part 1): Bad image recognition
 S_SPT_4720014_SSpecialT_1_ants: Bad image recognition
-S_SPT_4750005_SSpecialT_1_ants (part 1): Bad image recognition
 S_SPT_4750014_SSpecialT_1_ants (part 1): Bad image recognition
 S_SPT_4750016_SSpecialT_1_ants: Bad image recognition
 S_SPT_4770012_SSpecialT_1_ants (part 1): Bad image recognition
 S_SPT_4780002_SSpecialT_1_ants: Bad image recognition
 S_SPT_4790005_SSpecialT_1_ants (part 1): Bad image recognition
 
-XL_SPT_4640005_XLSpecialT_1_ants (part 1): Walks through the walls
-XL_SPT_4640007_XLSpecialT_1_ants (part 1): Walks through the walls
 XL_SPT_4640009_XLSpecialT_1_ants (part 1): Walks through the walls
 XL_SPT_4640024_XLSpecialT_1_ants (part 1): Walks through the walls (End frame is not behind the wall.)
 S_SPT_4760017_SSpecialT_1_ants (part 1): Walks through the walls

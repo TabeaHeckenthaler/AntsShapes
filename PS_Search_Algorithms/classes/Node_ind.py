@@ -3,6 +3,8 @@ from mayavi import mlab
 import numpy as np
 from copy import copy
 from PhaseSpaces.PhaseSpace import PS_Mask
+from Setup.Maze import Maze
+from PhysicsEngine.Display import Display
 
 
 class Node_ind:
@@ -10,7 +12,7 @@ class Node_ind:
     DeLiteNode Node
     """
 
-    def __init__(self, xi, yi, thetai, conf_space_shape, average_radius):
+    def __init__(self, xi, yi, thetai, conf_space, average_radius):
         self.xi = xi
         self.yi = yi
         self.thetai = thetai  # this takes values between 0 and 2*np.pi
@@ -18,7 +20,7 @@ class Node_ind:
         self.path_yi = []
         self.path_thetai = []  # this takes values between 0 and 2*np.pi
         self.parent = None
-        self.conf_space_shape = conf_space_shape
+        self.conf_space = conf_space
         self.average_radius = average_radius
 
     def __str__(self):
@@ -28,7 +30,15 @@ class Node_ind:
         if self.thetai is None:
             return self.xi, self.yi, self.thetai
         else:
-            return self.xi, self.yi, self.thetai % self.conf_space_shape[2]
+            return self.xi, self.yi, self.thetai % self.conf_space.space.shape[2]
+
+    def draw_maze(self):
+        maze = Maze(size=self.conf_space.size, shape=self.conf_space.shape, solver=self.conf_space.solver, new2021=True)
+        x, y, theta = self.conf_space.indices_to_coords(*self.ind())
+        maze.set_configuration([x, y], float(theta))
+        display = Display('', maze)
+        maze.draw(display)
+        display.display()
 
     def connected(self, conf_space) -> list:
         """
@@ -103,16 +113,23 @@ class Node_ind:
                 for yi in [self.yi, max(0, self.yi - 1), min(conf_space.space.shape[1] - 1, self.yi + 1)]:
                     yield xi, yi, thetai
 
-    def find_closest_possible_conf(self, conf_space) -> tuple:
+    def find_closest_possible_conf(self, note: str = None):
         """
+        :param note: can be backward right now. (relevant if experimental data suggests intersection with the wall)
         :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
         """
         for radius in range(1, 100):
-            ps_mask = PS_Mask(conf_space)
+            ps_mask = PS_Mask(self.conf_space)
             ps_mask.add_circ_mask(radius, self.ind())
 
-            if conf_space.overlapping(ps_mask):
-                return np.array(np.where(np.logical_and(conf_space.space, ps_mask.space)))[:, 0]
+            if self.conf_space.overlapping(ps_mask):
+                indices = np.array(np.where(np.logical_and(self.conf_space.space, ps_mask.space)))[:, 0]
+                new = Node_ind(*indices, self.conf_space, self.average_radius)
+                if note == 'backward' and new.ind()[0] < self.ind()[0]:
+                    new.draw_maze()
+                    return new
+                if note != 'backward':
+                    return new
 
     @staticmethod
     def surrounding(conf_space, ind, radius=1):

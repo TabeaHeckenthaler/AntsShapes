@@ -151,7 +151,7 @@ def continue_time_dict(solver, shape):
     return
 
 
-def extension_exists(filename, size=None) -> list:
+def extension_exists(filename, solver, size, shape) -> list:
     """
     :return: list with candidates for being an extension.
     """
@@ -169,15 +169,22 @@ def extension_exists(filename, size=None) -> list:
     return extension_candidates
 
 
-def parts(filename, size):
+def parts(filename, solver, size, shape):
     VideoChain = [filename]
     if 'part ' in filename:
-        while extension_exists(VideoChain[-1], size=size):
-            VideoChain.append(extension_exists(VideoChain[-1], size=size)[0])
+        while extension_exists(VideoChain[-1], solver, size, shape):
+            VideoChain.append(extension_exists(VideoChain[-1], solver, size, shape)[0])
     return VideoChain
 
 
-def load(filename, winner=None, size=None):
+def load(filename, solver, size, shape, winner=None):
+    if solver == 'human':
+        fps = 30
+    elif solver == 'ant':
+        fps = 50
+    else:
+        fps = np.NaN
+
     if winner is None:
         if filename not in winner_dict.keys():
             continue_winner_dict(solver, shape)
@@ -186,13 +193,16 @@ def load(filename, winner=None, size=None):
     return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
 
 
-def connector(part1, part2, frames_missing):
+def connector(part1, part2, frames_missing, filename=None):
+    if filename is None:
+        filename = part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename
+
     connector_load = run_dstar(size=part1.size,
                                shape=part1.shape,
                                solver=part1.solver,
                                sensing_radius=100,
                                dil_radius=0,
-                               filename=part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename,
+                               filename=filename,
                                starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
                                ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
                                )
@@ -203,41 +213,26 @@ def connector(part1, part2, frames_missing):
     return connector_load
 
 
-special_list = ['M_SPT_4690009_MSpecialT_1_ants',
-                'M_SPT_4700022_MSpecialT_2_ants (part 1)',
-                'S_SPT_4720005_SSpecialT_1_ants (part 1)',
-                'S_SPT_4720014_SSpecialT_1_ants',
-                'S_SPT_4750005_SSpecialT_1_ants (part 1)',
-                'S_SPT_4750014_SSpecialT_1_ants (part 1)',
-                'S_SPT_4750016_SSpecialT_1_ants',
-                'S_SPT_4770012_SSpecialT_1_ants (part 1)',
-                'S_SPT_4780002_SSpecialT_1_ants',
-                'S_SPT_4790005_SSpecialT_1_ants (part 1)', ]
+with open('time_dictionary.txt', 'r') as json_file:
+    time_dict = json.load(json_file)
+
+with open('winner_dictionary.txt', 'r') as json_file:
+    winner_dict = json.load(json_file)
+
 
 if __name__ == '__main__':
+
     solver, shape = 'ant', 'SPT'
     # continue_time_dict(solver, shape)
-
-    with open('time_dictionary.txt', 'r') as json_file:
-        time_dict = json.load(json_file)
-
-    if solver == 'human':
-        fps = 30
-    elif solver == 'ant':
-        fps = 50
-    else:
-        fps = np.NaN
-
-    with open('winner_dictionary.txt', 'r') as json_file:
-        winner_dict = json.load(json_file)
 
     # for size in exp_types[shape][solver]:
     # for filename in special_list:
     #     print(filename)
     size = 'M'
     for mat_filename in tqdm(find_unpickled(solver, size, shape)):
-        x = load(mat_filename, size=size)
-        chain = [x] + [load(filename, winner=x.winner, size=size) for filename in parts(mat_filename, size)[1:]]
+        x = load(mat_filename, solver, size, shape)
+        chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
+                       for filename in parts(mat_filename, solver, size, shape)[1:]]
         total_time_seconds = np.sum([traj.timer() for traj in chain])
 
         frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps

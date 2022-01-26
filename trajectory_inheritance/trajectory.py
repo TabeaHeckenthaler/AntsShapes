@@ -191,20 +191,21 @@ class Trajectory:
         new.angle = self.angle[frames[0]:frames[1]]
         return new
 
-    def interpolate(self, frames):
+    def interpolate(self, frames_list: list):
         """
 
-        :param frames: frame indices (not the yellow numbers on top)
+        :param frames_list: list of lists of frame indices (not the yellow numbers on top)
         :return:
         """
         from Load_tracked_data.Load_Experiment import connector
         new = copy(self)
-
-        con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1]-frames[0])
-        extra_position = np.vstack([con.position[-1] for _ in range(frames[1]-frames[0] - con.position.shape[0])])
-        extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1]-frames[0] - con.angle.shape[0])])
-        new.position[frames[0]:frames[1]] = np.vstack([con.position, extra_position])
-        new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
+        for frames in frames_list:
+            con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1]-frames[0],
+                            filename=self.filename + '_interpolation_' + str(frames[0]) + '_' + str(frames[1]))
+            extra_position = np.vstack([con.position[-1] for _ in range(frames[1]-frames[0] - con.position.shape[0])])
+            extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1]-frames[0] - con.angle.shape[0])])
+            new.position[frames[0]:frames[1]] = np.vstack([con.position, extra_position])
+            new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
         return new
 
     def save(self, address=None) -> None:
