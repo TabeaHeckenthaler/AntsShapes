@@ -39,16 +39,17 @@ class Node_ind:
         display = Display('', maze)
         maze.draw(display)
         display.display()
+        return display
 
-    def connected(self, conf_space) -> list:
+    def connected(self) -> list:
         """
-        Return all the options of next nodes, that are in possible conconf_space.space
+        Return all the options of next nodes, that are in possible conf_space.space
         :param conf_space: PhaseSpace
         :return:
         """
         nn = []
-        for xi, yi, thetai in self.iterate_surroundings(conf_space):
-            if conf_space.space[xi, yi, thetai]:
+        for xi, yi, thetai in self.iterate_surroundings():
+            if self.conf_space.space[xi, yi, thetai]:
                 nn.append((xi, yi, thetai))
 
         if self.ind() not in nn:
@@ -66,13 +67,13 @@ class Node_ind:
         #     parent = parent.parent
         return nn
 
-    def iterate_surroundings(self, conf_space):
+    def iterate_surroundings(self):
         # I want the walker to prefer not to wobble back and forth, so I sort the order I want to ...
-        thetai = [(self.thetai - 1) % conf_space.space.shape[2],
+        thetai = [(self.thetai - 1) % self.conf_space.space.shape[2],
                   self.thetai,
-                  (self.thetai + 1) % conf_space.space.shape[2]]
-        xi = [max(0, self.xi - 1), self.xi, min(conf_space.space.shape[0] - 1, self.xi + 1)]
-        yi = [max(0, self.yi - 1), self.yi, min(conf_space.space.shape[1] - 1, self.yi + 1)]
+                  (self.thetai + 1) % self.conf_space.space.shape[2]]
+        xi = [max(0, self.xi - 1), self.xi, min(self.conf_space.space.shape[0] - 1, self.xi + 1)]
+        yi = [max(0, self.yi - 1), self.yi, min(self.conf_space.space.shape[1] - 1, self.yi + 1)]
 
         yield xi[1], yi[1], thetai[1]
         yield xi[0], yi[1], thetai[1]
@@ -105,12 +106,12 @@ class Node_ind:
         yield xi[2], yi[1], thetai[2]
         yield xi[2], yi[2], thetai[2]
 
-    def iterate_surroundings2(self, conf_space):
+    def iterate_surroundings2(self):
         for thetai in [self.thetai,
-                       (self.thetai - 1) % conf_space.space.shape[2],
-                       (self.thetai + 1) % conf_space.space.shape[2]]:
-            for xi in [self.xi, max(0, self.xi - 1), min(conf_space.space.shape[0] - 1, self.xi + 1)]:
-                for yi in [self.yi, max(0, self.yi - 1), min(conf_space.space.shape[1] - 1, self.yi + 1)]:
+                       (self.thetai - 1) % self.conf_space.space.shape[2],
+                       (self.thetai + 1) % self.conf_space.space.shape[2]]:
+            for xi in [self.xi, max(0, self.xi - 1), min(self.conf_space.space.shape[0] - 1, self.xi + 1)]:
+                for yi in [self.yi, max(0, self.yi - 1), min(self.conf_space.space.shape[1] - 1, self.yi + 1)]:
                     yield xi, yi, thetai
 
     def find_closest_possible_conf(self, note: str = None):
@@ -123,42 +124,53 @@ class Node_ind:
             ps_mask.add_circ_mask(radius, self.ind())
 
             if self.conf_space.overlapping(ps_mask):
-                indices = np.array(np.where(np.logical_and(self.conf_space.space, ps_mask.space)))[:, 0]
-                new = Node_ind(*indices, self.conf_space, self.average_radius)
-                if note == 'backward' and new.ind()[0] < self.ind()[0]:
-                    new.draw_maze()
-                    return new
-                if note != 'backward':
-                    return new
+                indice_list = np.array(np.where(np.logical_and(self.conf_space.space, ps_mask.space))).transpose()
+                options = [Node_ind(*indices, self.conf_space, self.average_radius) for indices in indice_list]
+                if note == 'backward':
+                    options = [new for new in options if new.ind()[0] < self.ind()[0]]
+                    # self.conf_space.visualize_space()
+                    # self.conf_space.visualize_space(space=ps_mask.space, colormap='Oranges')
+                    # [option.draw_node() for option in options]
+                    if options:
+                        display = options[0].draw_maze()
+                        display.end_screen()
+                        return options[0]
+                else:
+                    display = options[0].draw_maze()
+                    display.end_screen()
+                    return options[0]
 
-    @staticmethod
-    def surrounding(conf_space, ind, radius=1):
+    def surrounding(self, ind, radius=1):
         """
 
-        :param conf_space:
         :param ind:
         :param radius:
         :return:
         """
-        rolled = np.roll(conf_space.space, -(ind[2] - radius), axis=2)
+        rolled = np.roll(self.conf_space.space, -(ind[2] - radius), axis=2)
         return np.array(rolled[ind[0] - radius:ind[0] + radius + 1,
                                ind[1] - radius:ind[1] + radius + 1,
                                : 2 * radius + 1],
                         dtype=bool)
 
-    def coord(self, conf_space):
-        return conf_space.indices_to_coords(*self.ind())
+    def coord(self):
+        return self.conf_space.indices_to_coords(*self.ind())
 
-    def distance(self, node, conf_space):
-        coo_self = self.coord(conf_space)
-        coo_node = node.coord(conf_space)
+    def distance(self, node) -> float:
+        """
+
+        :param node: other node
+        :return: distance of self to other node.
+        """
+        coo_self = self.coord()
+        coo_node = node.coord()
         return np.sqrt((coo_node[0] - coo_self[0]) ** 2 +
                        (coo_node[1] - coo_self[1]) ** 2 +
                        (((coo_node[2] - coo_self[2] + np.pi) % (2 * np.pi) - np.pi) * self.average_radius) ** 2)
 
-    def calc_distance_and_angles(self, to_node, conf_space):
-        coo_self = self.coord(conf_space)
-        coo_to_node = to_node.coord(conf_space)
+    def calc_distance_and_angles(self, to_node):
+        coo_self = self.coord()
+        coo_to_node = to_node.coord()
 
         dx = coo_to_node[0] - coo_self[0]
         dy = coo_to_node[1] - coo_self[1]
@@ -175,17 +187,17 @@ class Node_ind:
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, conf_space, fig=None, scale_factor=0.2, color=(0, 0, 0)):
-        coo = self.coord(conf_space)
+    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
+        coo = self.coord()
         mlab.points3d(coo[0], coo[1], coo[2] * self.average_radius,
                       figure=fig,
                       scale_factor=scale_factor,
                       color=color,
                       )
 
-    def draw_line(self, node, conf_space, fig=None, line_width=0.2, color=(0, 0, 0)):
-        coo_self = self.coord(conf_space)
-        coo_node = node.coord(conf_space)
+    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
+        coo_self = self.coord()
+        coo_node = node.coord()
 
         if abs(coo_node[2] - coo_self[2]) > np.pi:
             if coo_node[2] > coo_self[2]:

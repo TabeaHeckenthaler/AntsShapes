@@ -24,13 +24,12 @@ def to_interpolate():
 
 def faulty_connection():
     solver, shape = 'ant', 'SPT'
-    conn_dict = ['XLSPT_4640009_XLSpecialT_1_ants (part 1).mat',
-                 'XLSPT_4640024_XLSpecialT_1_ants (part 1).mat',
+    conn_dict = ['XLSPT_4640024_XLSpecialT_1_ants (part 1).mat',
                  'SSPT_4760017_SSpecialT_1_ants (part 1).mat',
                  'SSPT_4770007_SSpecialT_1_ants (part 1).mat',
                  'SSPT_4780009_SSpecialT_1_ants (part 1).mat']
 
-    for mat_filename, size in zip(conn_dict, ['XL' for _ in range(4)] + ['S' for _ in range(3)]):
+    for mat_filename, size in zip(conn_dict, ['XL' for _ in range(1)] + ['S' for _ in range(3)]):
         x = load(mat_filename, solver, size, shape)
         chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
                        for filename in parts(mat_filename, solver, size, shape)[1:]]

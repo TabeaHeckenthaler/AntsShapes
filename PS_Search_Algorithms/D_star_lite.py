@@ -67,19 +67,19 @@ class D_star_lite:
 
         # Set current node as the start node.
         self.start = Node_ind(*starting_node, self.conf_space, average_radius)
+        self.end = Node_ind(*ending_node, self.conf_space, average_radius)
 
         if self.collision(self.start):
-            self.end.draw_maze()
             print('Your start is not in configuration space')
+            self.start.draw_maze()
             if bool(input('Move back? ')):
                 self.start = self.start.find_closest_possible_conf(note='backward')
             else:
                 self.start = self.start.find_closest_possible_conf()
 
-        self.end = Node_ind(*ending_node, self.conf_space, average_radius)
         if self.collision(self.end):
-            self.end.draw_maze()
             print('Your end is not in configuration space')
+            self.end.draw_maze()
             if bool(input('Move back? ')):
                 self.end = self.end.find_closest_possible_conf(note='backward')
             else:
@@ -87,8 +87,8 @@ class D_star_lite:
 
         if display_cs:
             self.conf_space.visualize_space()
-            self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
-            self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+            self.start.draw_node(fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
+            self.end.draw_node(fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
         self.current = self.start
         self.winner = False
@@ -123,7 +123,7 @@ class D_star_lite:
         for ii, _ in enumerate(range(self.max_iter)):
             # if self.current.xi < self.end.xi:  # TODO: more general....
             if display_cs:
-                self.current.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
+                self.current.draw_node(fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
             if self.current.ind() != self.end.ind():
                 if self.current.distance == np.inf:
                     return None  # cannot find path
@@ -225,7 +225,7 @@ class D_star_lite:
         :param conf_space:
         :return:
         """
-        connected = self.current.connected(self.conf_space)
+        connected = self.current.connected()
 
         while True:
             list_distances = [self.distance[node_indices] for node_indices in connected]
@@ -240,7 +240,7 @@ class D_star_lite:
             # return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
 
             # I think I added this, because they were sometimes stuck in positions impossible to exit.
-            if np.sum(np.logical_and(self.current.surrounding(self.conf_space, greedy_node_ind), voxel)) > 0:
+            if np.sum(np.logical_and(self.current.surrounding(greedy_node_ind), voxel)) > 0:
                 node = Node_ind(*greedy_node_ind, self.conf_space, self.average_radius)
                 return node
             else:
@@ -266,8 +266,8 @@ class D_star_lite:
         x.frames = np.array([i for i in range(x.position.shape[0])])
         return x
 
-    def draw_conf_space_and_path(self, fig_name):
-        fig = self.conf_space.visualize_space()
+    def draw_conf_space_and_path(self, space=None):
+        fig = self.conf_space.visualize_space(space=space)
         self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
         self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
@@ -281,12 +281,12 @@ class D_star_lite:
         Returns an numpy array with the x, y, and theta coordinates of the path,
         starting with the initial node and ending with the current node.
         """
-        path = [self.current.coord(self.conf_space)]
+        path = [self.current.coord()]
         node = self.current
         i = 0
         while node.parent is not None and i < length:
             if not ind:
-                path.insert(0, node.parent.coord(self.conf_space))
+                path.insert(0, node.parent.coord())
             else:
                 path.append(node.parent.ind())
             node = node.parent
@@ -294,8 +294,8 @@ class D_star_lite:
         return np.array(path)
 
     def show_animation(self, save=False):
-        conf_space_fig = self.draw_conf_space_and_path(self.conf_space)
-        known_conf_space_fig = self.draw_conf_space_and_path(self.known_conf_space)
+        conf_space_fig = self.draw_conf_space_and_path()
+        known_conf_space_fig = self.draw_conf_space_and_path(space=known_conf_space)
         if save:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg',
                          magnification=4,

@@ -14,8 +14,9 @@ try:
 except:
     pass
 
+
 class Display:
-    def __init__(self, name: str, my_maze, wait=0, ps=None, i=0, videowriter=True, config=None):
+    def __init__(self, name: str, my_maze, wait=0, ps=None, i=0, videowriter=False, config=None):
         self.my_maze = my_maze
         self.filename = name
         self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter

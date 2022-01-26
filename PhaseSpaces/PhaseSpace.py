@@ -574,7 +574,7 @@ class PS_Mask(PS_Area):
 
         loc = (-radius + indices[0], -radius + indices[1], 0)
         self.paste(self.space, circ_mask(), loc)
-        self.space = np.roll(self.space, indices[2], axis=2)
+        self.space = np.roll(self.space, -radius + indices[2], axis=2)
 
 
 class Node:
