@@ -169,6 +169,14 @@ class Maze(b2World):
             self.CreateSlitObject(my_maze)
         return my_maze
 
+    def corners(self):
+        corners = [[0, 0],
+                   [0, self.arena_height],
+                   [self.slits[-1] + 20, self.arena_height],
+                   [self.slits[-1] + 20, 0],
+                   ]
+        return np.array(corners + list(np.resize(self.slitpoints, (16, 2))))
+
     def CreateSlitObject(self, my_maze):
         # # The x and y position describe the point, where the middle (in x direction) of the top edge (y direction)
         # of the lower wall of the slit is...

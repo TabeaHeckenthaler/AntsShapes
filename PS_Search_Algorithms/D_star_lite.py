@@ -72,7 +72,9 @@ class D_star_lite:
         if self.collision(self.start):
             print('Your start is not in configuration space')
             self.start.draw_maze()
-            if bool(input('Move back? ')):
+
+            # if bool(input('Move back? ')):
+            if False:
                 self.start = self.start.find_closest_possible_conf(note='backward')
             else:
                 self.start = self.start.find_closest_possible_conf()
@@ -80,7 +82,8 @@ class D_star_lite:
         if self.collision(self.end):
             print('Your end is not in configuration space')
             self.end.draw_maze()
-            if bool(input('Move back? ')):
+            # if bool(input('Move back? ')):
+            if False:
                 self.end = self.end.find_closest_possible_conf(note='backward')
             else:
                 self.end = self.end.find_closest_possible_conf()

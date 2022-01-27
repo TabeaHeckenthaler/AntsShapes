@@ -3,6 +3,7 @@ from Setup.MazeFunctions import BoxIt
 import numpy as np
 from Setup.Load import loops
 from Analysis.GeneralFunctions import flatten
+import itertools
 
 # maximum distance between fixtures to have a contact (in cm)
 distance_upper_bound = 0.04
@@ -17,47 +18,27 @@ def intersect(A, B, C, D):
     return ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)
 
 
-def maze_corners(maze):
-    corners = [[0, 0],
-               [0, maze.arena_height],
-               [maze.slits[-1] + 20, maze.arena_height],
-               [maze.slits[-1] + 20, 0],
-               ]
-    return corners + list(np.resize(maze.slitpoints, (16, 2)))
-
-
-def possible_configuration(load, maze) -> bool:
+def possible_configuration(load, maze_corners, former_found) -> tuple:
     """
     this function takes a list of corners (lists have to list rectangles in sets of 4 corners)
     and checks, whether a rectangle from the load overlaps with a rectangle from the maze boundary
     :return: bool, whether the shape intersects the maze
     """
-    # first check, whether we are in the middle of the maze, where there is no need for heavy calculations
-    approximate_extent = np.max([2 * np.max(np.abs(np.array(list(fix.shape)))) for fix in load.fixtures])
+    i, ii = former_found
+    load_corners = np.array(flatten(loops(load)))
+    loop_indices = [0, 1, 2, 3, 0]
+    for load_vertices_list in np.array_split(load_corners, int(load_corners.shape[0]/4)):
+        for maze_vertices_list in maze_corners:
 
-    if approximate_extent + 0.1 < load.position.x < min(maze.slits) - approximate_extent - 0.1 and \
-            approximate_extent + 0.1 < load.position.y < maze.arena_height - approximate_extent - 0.1:
-        return True
+            if intersect(load_vertices_list[i], load_vertices_list[loop_indices[i + 1]],
+                         maze_vertices_list[ii], maze_vertices_list[loop_indices[ii + 1]]):
+                return False, (i, ii)
 
-    elif max(maze.slits) + approximate_extent + 0.1 < load.position.x:
-        return True
-
-    # if we are close enough to a boundary then we have to calculate all the vertices.
-    load_corners = flatten(loops(load))
-    maze_corners1 = maze_corners(maze)
-    for load_NumFixture in range(int(len(load_corners) / 4)):
-        load_vertices_list = load_corners[load_NumFixture * 4:(load_NumFixture + 1) * 4] \
-                             + [load_corners[load_NumFixture * 4]]
-
-        for maze_NumFixture in range(int(len(maze_corners1) / 4)):
-            maze_vertices_list = maze_corners1[maze_NumFixture * 4:(maze_NumFixture + 1) * 4] \
-                                 + [maze_corners1[maze_NumFixture * 4]]
-            for i in range(4):
-                for ii in range(4):
-                    if intersect(load_vertices_list[i], load_vertices_list[i + 1],
-                                 maze_vertices_list[ii], maze_vertices_list[ii + 1]):
-                        return False
-    return True
+            for i, ii in itertools.product(range(len(loop_indices)-1), range(len(loop_indices)-1)):
+                if intersect(load_vertices_list[loop_indices[i]], load_vertices_list[loop_indices[i + 1]],
+                             maze_vertices_list[loop_indices[ii]], maze_vertices_list[loop_indices[ii + 1]]):
+                    return False, (i, ii)
+    return True, (0, 0)
     # return np.any([f.TestPoint(load.position) for f in maze.body.fixtures])
 
 

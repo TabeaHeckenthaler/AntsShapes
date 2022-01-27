@@ -228,8 +228,9 @@ if __name__ == '__main__':
     # for size in exp_types[shape][solver]:
     # for filename in special_list:
     #     print(filename)
-    size = 'M'
+    size = 'S'
     for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+        print(mat_filename)
         x = load(mat_filename, solver, size, shape)
         chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
                        for filename in parts(mat_filename, solver, size, shape)[1:]]

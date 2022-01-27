@@ -202,10 +202,26 @@ class Trajectory:
         for frames in frames_list:
             con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1]-frames[0],
                             filename=self.filename + '_interpolation_' + str(frames[0]) + '_' + str(frames[1]))
-            extra_position = np.vstack([con.position[-1] for _ in range(frames[1]-frames[0] - con.position.shape[0])])
-            extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1]-frames[0] - con.angle.shape[0])])
-            new.position[frames[0]:frames[1]] = np.vstack([con.position, extra_position])
-            new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
+            if frames[1]-frames[0] != con.position.shape[0]:
+                extra_position = np.vstack([con.position[-1] for _ in range(frames[1]-frames[0] - con.position.shape[0])])
+                extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1]-frames[0] - con.angle.shape[0])])
+                new.position[frames[0]:frames[1]] = np.vstack([con.position, extra_position])
+                new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
+            else:
+                new.position[frames[0]:frames[1]] = con.position
+                new.angle[frames[0]:frames[1]] = con.angle  # TODO: why do I need squeeze here?
+        return new
+
+    def easy_interpolate(self, frames_list: list):
+        """
+
+        :param frames_list: list of lists of frame indices (not the yellow numbers on top)
+        :return:
+        """
+        new = copy(self)
+        for frames in frames_list:
+            new.position[frames[0]:frames[1]] = np.vstack([new.position[frames[0]] for _ in range(frames[1]-frames[0])])
+            new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1]-frames[0])])
         return new
 
     def save(self, address=None) -> None:
@@ -247,12 +263,15 @@ class Trajectory:
 
         stretched_position = []
         stretched_angle = []
+        if len(self.frames) == 1:
+            stretched_position = np.vstack([self.position for _ in range(frame_number)])
+            stretched_angle = np.vstack([self.angle for _ in range(frame_number)]).squeeze()
 
         for i, frame in enumerate(range(len(self.frames) - 1)):
             stretched_position += np.linspace(self.position[i], self.position[i+1], stretch_factor, endpoint=False).tolist()
             stretched_angle += np.linspace(self.angle[i], self.angle[i+1], stretch_factor, endpoint=False).tolist()
 
-        self.position, self.angle = np.array(stretched_position), np.array(stretched_angle)
+        self.position, self.angle = np.array(stretched_position), np.array(stretched_angle).squeeze()
         self.frames = np.array([i for i in range(self.angle.shape[0])])
         return
 

@@ -3,13 +3,14 @@ from trajectory_inheritance.exp_types import exp_types
 
 shape = 'SPT'
 solver = 'ant'
-sizes = ['Small Far']
+sizes = ['XL']
 new2021 = True
 
 for size in exp_types[shape][solver]:
     conf_space = PhaseSpace.PhaseSpace(solver, size, shape, new2021=new2021)
-    conf_space.calculate_boundary(new2021=new2021)
-    conf_space.save_space()
+    conf_space.calculate_space(new2021=new2021)
+    # conf_space.calculate_boundary(new2021=new2021)
+    # conf_space.save_space()
     # conf_space_labeled.visualize_states(reduction=10)
     # conf_space_labeled.visualize_transitions(reduction=10)
 

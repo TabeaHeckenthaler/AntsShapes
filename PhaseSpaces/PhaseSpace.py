@@ -95,7 +95,7 @@ class PhaseSpace(object):
         self.space[:, 0, :] = False
         self.space[:, -1, :] = False
 
-    def calculate_space(self, new2021: bool = True, point_particle=False, parallel=False, mask=None) -> None:
+    def calculate_space(self, new2021: bool = True, point_particle=False, mask=None) -> None:
         # TODO: implement point particles
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
         load = maze.bodies[-1]
@@ -110,55 +110,17 @@ class PhaseSpace(object):
             param x0: index of x array to start with
             param x1: index of x array to end with
             :return: iterator"""
-
-            # space = np.zeros_like(self.space.shape, dtype=bool)
-            # with np.nditer(a, op_flags=['readwrite']) as it:
-            #     for _ in it:
-            #         load.position, load.angle = [x, y], float(theta)
-            #         self.space[...] = 2 * possible_configuration(load, maze)
-
+            maze_corners = np.array_split(maze.corners(), int(maze.corners().shape[0] / 4))
+            former_found = (0, 0)
             for x, y, theta in self.iterate_coordinates(mask=mask):
+                indices = self.coords_to_indices(x, y, theta)
                 maze.set_configuration([x, y], float(theta))
+                self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
                 # load.position, load.angle = [x, y], float(theta)
                 # from PhysicsEngine.Display import Display
                 # display = Display('', maze)
                 # maze.draw(display)
                 # display.display()
-                coord = self.coords_to_indices(x, y, theta)
-                self.space[coord] = possible_configuration(load, maze)
-
-        # how to iterate over phase space
-        # def ps_calc_parallel(iterate: iter, space: np.array, load, maze, coords):
-        #     """
-        #     param iterate: index of x array to start with
-        #     param space: index of x array to end with
-        #     :return: space
-        #     """
-        #     for (x, y, theta), coord in zip(iterate, coords):
-        #         load.position, load.angle = [x, y], float(theta)
-        #         space[coord] = possible_configuration(load, maze)
-        #     return space
-
-        # iterate using parallel processing
-        # if parallel:
-        #     n_jobs = 5
-        #     x_index_first = int(np.floor(self.space.shape[0] / n_jobs))
-        #     split_list = [(i * x_index_first, (i + 1) * x_index_first) for i in range(n_jobs - 1)]
-        #     split_list.append((split_list[-1][-1], self.space.shape[0]))
-        #
-        #     list_of_jobs = []
-        #     for x0, x1 in split_list:  # split_list
-        #         space = np.zeros([x1 - x0, self.space.shape[1], self.space.shape[2]])
-        #         coords = [self.coords_to_indices(x, y, theta)
-        #                   for x, y, theta in self.iterate_coordinates()]
-        #         iterator = self.iterate_coordinates()
-        #         list_of_jobs.append(delayed(ps_calc_parallel)(iterator, space, copy(load), copy(maze), coords))
-        #         # m = ps_calc_parallel(iterator, space, copy(load), copy(maze))
-        #
-        #     matrices = Parallel(n_jobs=n_jobs, prefer='threads')(list_of_jobs)
-        #     self.space = np.concatenate(matrices, axis=0)
-
-        # else:
         ps_calc()
 
     def new_fig(self):
