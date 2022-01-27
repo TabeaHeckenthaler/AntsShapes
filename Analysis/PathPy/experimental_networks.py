@@ -6,8 +6,9 @@ import pandas as pd
 
 if __name__ == '__main__':
     solver, shape = 'human', 'SPT'
+    geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
     for size in exp_types[shape][solver][-1:]:
-        conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, new2021=True)
+        conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, geometry)
         conf_space_labeled.load_labeled_space()
 
         # conf_space_labeled.visualize_states()

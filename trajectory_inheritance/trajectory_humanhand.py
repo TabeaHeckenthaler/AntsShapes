@@ -43,6 +43,9 @@ class Trajectory_humanhand(Trajectory):
     def averageCarrierNumber(self):
         return 1
 
+    def geometry(self) -> tuple:
+        return 'MazeDimensions_humanhand.xlsx', ''
+
 
 class Humanhand:
     def __init__(self, filename):

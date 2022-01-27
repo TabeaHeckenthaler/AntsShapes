@@ -29,7 +29,7 @@ network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
 maze_dimension_directory = path.join(home, 'Setup')
 
 
-def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, new2021: bool = True,
+def ps_path(size: str, shape: str, solver: str, geometry: tuple, point_particle: bool = False,
             erosion_radius: int = None, addition: str = '', small=False):
     """
     :param new2021:
@@ -44,10 +44,10 @@ def ps_path(size: str, shape: str, solver: str, point_particle: bool = False, ne
     If an erosion_radius is given, we are dealing with a labeled Phase Space.
     """
 
-    if size in ['Small Far', 'Small Near']: # both have same dimensions
+    if size in ['Small Far', 'Small Near']:  # both have same dimensions
         size = 'Small'
 
-    filename = size + '_' + shape
+    filename = size + '_' + shape + '_' + geometry[0][:-5]
 
     if point_particle:
         return path.join(PhaseSpaceDirectory, solver, shape, filename + addition + '_pp.pkl')

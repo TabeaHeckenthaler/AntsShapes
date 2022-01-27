@@ -27,20 +27,30 @@ class Trajectory_ant(Trajectory):
         self.tracked_frames = []
         self.free = free
         self.state = np.empty((1, 1), int)
-        self.different_dimensions = 'L_I_425' in self.filename
 
     # def __del__(self):
     #     remove(ant_address(self.filename))
 
-    def new2021(self):
+    def geometry(self) -> tuple:
         """
         I restarted experiments and altered the maze dimensions for the S, M, L and XL SPT.
         I am keeping track of the movies, that have these altered maze dimensions.
-        :return: bool.
+
+        :return: name of the relevant excel file with the correct dimensions.
         """
+        if 'L_I_425' in self.filename:  # This was a single day with these dimensions
+            return 'MazeDimensions_ant_L_I_425.xlsx', 'LoadDimensions_new2021_ant.xlsx'
+
+        if self.shape != 'SPT':
+            return 'MazeDimensions_ant_old.xlsx', 'LoadDimensions_ant.xlsx'
+
         new_starting_conditions = [str(x) for x in range(46300, 48100, 100)]
-        return np.any([new_starting_condition in self.filename
-                       for new_starting_condition in new_starting_conditions])
+        if np.any([new_starting_condition in self.filename
+                   for new_starting_condition in new_starting_conditions]):
+            return 'MazeDimensions_new2021_ant.xlsx', 'LoadDimensions_new2021_ant.xlsx'
+        else:
+            print('You are using old dimensions!, and maybe inaccurate LoadDimensions')
+            return 'MazeDimensions_ant_old.xlsx', 'LoadDimensions_new2021_ant.xlsx'
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}
@@ -243,5 +253,5 @@ class Trajectory_ant(Trajectory):
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 
-        my_maze = Maze(x, new2021=self.new2021())
+        my_maze = Maze(x)
         return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))

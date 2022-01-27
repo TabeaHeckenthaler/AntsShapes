@@ -26,7 +26,10 @@ class Trajectory_human(Trajectory):
         self.state = np.empty((1, 1), int)
         self.VideoChain = VideoChain  # this is an evil artifact. I don't want to have this attribute
         self.communication = self.communication()
-        self.forcemeter = self.has_forcemeter() # TODO: this is always false currently...
+        self.forcemeter = self.has_forcemeter()  # TODO: this is always false currently...
+
+    def geometry(self) -> tuple:
+        return 'MazeDimensions_human.xlsx', ''
 
     def has_forcemeter(self) -> bool:
         """

@@ -109,19 +109,19 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        self['fps'] = self['filename'].progress_apply(lambda x: int(get(x).fps))
+        self['geometry'] = self['filename'].progress_apply(lambda x: int(get(x).geometry()))
 
 
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
-    # myDataFrame.add_column()
+    myDataFrame.add_column()
     # myDataFrame.save()
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
 
     # how_many_experiments(myDataFrame)
 
-    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+    for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
         myDataFrame = myDataFrame + new_experiment
         myDataFrame.save()

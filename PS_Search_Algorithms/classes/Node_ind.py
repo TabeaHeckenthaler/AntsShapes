@@ -33,7 +33,7 @@ class Node_ind:
             return self.xi, self.yi, self.thetai % self.conf_space.space.shape[2]
 
     def draw_maze(self):
-        maze = Maze(size=self.conf_space.size, shape=self.conf_space.shape, solver=self.conf_space.solver, new2021=True)
+        maze = Maze(size=self.conf_space.size, shape=self.conf_space.shape, solver=self.conf_space.solver, geometry=self.conf_space.geometry)
         x, y, theta = self.conf_space.indices_to_coords(*self.ind())
         maze.set_configuration([x, y], float(theta))
         display = Display('', maze)

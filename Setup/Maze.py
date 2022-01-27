@@ -64,11 +64,11 @@ def end(size, shape, solver):
 
 class Maze(b2World):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', free=False, position=None, angle=0,
-                 point_particle=False, new2021=True, i=0):
+                 point_particle=False, geometry: tuple = None, i=0):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                         'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory']:
+                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory']:
             x = args[0]
             self.shape = x.shape  # loadshape (maybe this will become name of the maze...)
             self.size = x.size  # size
@@ -77,22 +77,29 @@ class Maze(b2World):
                 position = x.position[i]
             if angle is None:
                 angle = x.angle[i]
+            self.excel_file_maze, self.excel_file_load = x.geometry()
 
         else:
             is_exp_valid(shape, solver, size)
             self.shape = shape  # load shape (maybe this will become name of the maze...)
             self.solver = solver  # load shape (maybe this will become name of the maze...)
             self.size = size
+            if geometry is None:
+                raise ValueError('You have to pass a geometry')
+            self.excel_file_maze, self.excel_file_load = geometry
 
         self.free = free
-        self.new2021 = new2021  # TODO: At some point, this might have to become a filename, that carries the
-        # relevant sizes
-        self.statenames = StateNames[shape]
-        self.getMazeDim()
-        self.body = self.CreateMaze()
+        self.arena_length = float()
+        self.arena_height = float()
+        self.exit_size = float()
+        self.wallthick = float()
+        self.slits = list()
+        self.slitpoints = np.array([])
+        self.slitTree = list()
+        self.body = self.create_Maze()
         self.get_zone()
 
-        self.create_Load(position=position, angle=angle, point_particle=point_particle)
+        self.create_Load(position=position, angle=angle, point_particle=point_particle)  # TODO: Use the string
 
     def getMazeDim(self):
         if self.free:
@@ -101,28 +108,27 @@ class Maze(b2World):
             return
 
         else:
-            if self.solver in ['ant', 'ps_simulation', 'gillespie'] and self.new2021:
-                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_new2021_ant.xlsx'), engine='openpyxl')
-            # elif self.solver in ['sim']:
-            #     df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_ant.xlsx'), engine='openpyxl')
-            else:
-                df = read_excel(path.join(maze_dimension_directory, 'MazeDimensions_' + self.solver + '.xlsx'), engine='openpyxl')
+            df = read_excel(path.join(maze_dimension_directory, self.excel_file_maze), engine='openpyxl')
 
             if self.solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # all measurements in cm
                 d = df.loc[df['Name'] == self.size + '_' + self.shape]
-                if hasattr(self, 'different_dimensions') and self.different_dimensions:
-                    d = df.loc[df['Name'] == 'L_I1']  # these are special maze dimensions
-
                 self.arena_length = d['arena_length'].values[0]
                 self.arena_height = d['arena_height'].values[0]
                 self.exit_size = d['exit_size'].values[0]
                 self.wallthick = d['wallthick'].values[0]
                 if type(d['slits'].values[0]) == str:
-                    # self.slits = [float(s) for s in d['slits'].values[0].split(', ')] # TODO: correct this!!!
                     self.slits = [[float(s) for s in d['slits'].values[0].split(', ')][0],
                                   [float(s) for s in d['slits'].values[0].split(', ')][1]]
                 else:
                     self.slits = [d['slits'].values[0]]
+
+            elif self.solver == 'humanhand':  # only SPT
+                d = df.loc[df['Name'] == self.solver]
+                self.arena_length = d['arena_length'].values[0]
+                self.arena_height = d['arena_height'].values[0]
+                self.exit_size = d['exit_size'].values[0]
+                self.wallthick = d['wallthick'].values[0]
+                self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
 
             elif self.solver == 'human':  # all measurements in meters
                 # StartedScripts: measure the slits again...
@@ -141,17 +147,10 @@ class Maze(b2World):
                 self.slits = [(E[0] + self.wallthick / 2),
                               (C[0] + self.wallthick / 2)]  # These are the x positions at which the slits are positions
 
-            elif self.solver == 'humanhand':  # only SPT
-                d = df.loc[df['Name'] == self.solver]
-                self.arena_length = d['arena_length'].values[0]
-                self.arena_height = d['arena_height'].values[0]
-                self.exit_size = d['exit_size'].values[0]
-                self.wallthick = d['wallthick'].values[0]
-                self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
-
             self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
 
-    def CreateMaze(self):
+    def create_Maze(self):
+        self.getMazeDim()
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
 
         if self.free:
@@ -159,13 +158,9 @@ class Maze(b2World):
                 vertices=[(0, 0), (0, self.arena_height * 3), (self.arena_length * 3, self.arena_height * 3),
                           (self.arena_length * 3, 0)])
         else:
-
             my_maze.CreateLoopFixture(
-                vertices=[(0, 0),
-                          (0, self.arena_height),
-                          (self.arena_length, self.arena_height),
-                          (self.arena_length, 0),
-                          ])
+                vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
+                          (self.arena_length, 0)])
             self.CreateSlitObject(my_maze)
         return my_maze
 
@@ -180,78 +175,77 @@ class Maze(b2World):
     def CreateSlitObject(self, my_maze):
         # # The x and y position describe the point, where the middle (in x direction) of the top edge (y direction)
         # of the lower wall of the slit is...
-        """ We need a special case for L_SPT because in the manufacturing the slits were not vertically glued. """
-
         if self.shape == 'LongT':
+            # TODO
             pass
-            # self.slitpoints[i]
-        if self.shape == 'SPT' and not self.new2021:
-            if self.size == 'L' and self.solver == 'ant':
-                slitLength = 4.1
-                # this is the left (inside), bottom Slit
-                self.slitpoints[0] = np.array([[self.slits[0], 0],
-                                               [self.slits[0], slitLength],
-                                               [self.slits[0] + self.wallthick, slitLength],
-                                               [self.slits[0] + self.wallthick, 0]]
-                                              )
-                # this is the left (inside), upper Slit
-                self.slitpoints[1] = np.array([[self.slits[0] - 0.05, slitLength + self.exit_size],
-                                               [self.slits[0] + 0.1, self.arena_height],
-                                               [self.slits[0] + self.wallthick + 0.1, self.arena_height],
-                                               [self.slits[0] + self.wallthick - 0.05, slitLength + self.exit_size]]
-                                              )
 
-                # this is the right (outside), lower Slit
-                self.slitpoints[2] = np.array([[self.slits[1], 0],
-                                               [self.slits[1] + 0.1, slitLength],
-                                               [self.slits[1] + self.wallthick + 0.1, slitLength],
-                                               [self.slits[1] + self.wallthick, 0]]
-                                              )
-                # this is the right (outside), upper Slit
-                self.slitpoints[3] = np.array([[self.slits[1] + 0.2, slitLength + self.exit_size],
-                                               [self.slits[1] + 0.2, self.arena_height],
-                                               [self.slits[1] + self.wallthick + 0.2, self.arena_height],
-                                               [self.slits[1] + self.wallthick + 0.2, slitLength + self.exit_size]]
-                                              )
+        # We need a special case for L_SPT because in the manufacturing the slits were not vertically glued
+        if self.size == 'L' and self.shape == 'SPT' and self.excel_file_maze == 'MazeDimensions_ant_old.xlsx':
+            slitLength = 4.1
+            # this is the left (inside), bottom Slit
+            self.slitpoints[0] = np.array([[self.slits[0], 0],
+                                           [self.slits[0], slitLength],
+                                           [self.slits[0] + self.wallthick, slitLength],
+                                           [self.slits[0] + self.wallthick, 0]]
+                                          )
+            # this is the left (inside), upper Slit
+            self.slitpoints[1] = np.array([[self.slits[0] - 0.05, slitLength + self.exit_size],
+                                           [self.slits[0] + 0.1, self.arena_height],
+                                           [self.slits[0] + self.wallthick + 0.1, self.arena_height],
+                                           [self.slits[0] + self.wallthick - 0.05, slitLength + self.exit_size]]
+                                          )
 
-            # elif size == 'M' or size == 'XL'
-            else:
-                slitLength = (self.arena_height - self.exit_size) / 2
-                # this is the left (inside), bottom Slit
-                self.slitpoints[0] = np.array([[self.slits[0], 0],
-                                               [self.slits[0], slitLength],
-                                               [self.slits[0] + self.wallthick, slitLength],
-                                               [self.slits[0] + self.wallthick, 0]]
-                                              )
-                # this is the left (inside), upper Slit
-                self.slitpoints[1] = np.array([[self.slits[0], slitLength + self.exit_size],
-                                               [self.slits[0], self.arena_height],
-                                               [self.slits[0] + self.wallthick, self.arena_height],
-                                               [self.slits[0] + self.wallthick, slitLength + self.exit_size]]
-                                              )
+            # this is the right (outside), lower Slit
+            self.slitpoints[2] = np.array([[self.slits[1], 0],
+                                           [self.slits[1] + 0.1, slitLength],
+                                           [self.slits[1] + self.wallthick + 0.1, slitLength],
+                                           [self.slits[1] + self.wallthick, 0]]
+                                          )
+            # this is the right (outside), upper Slit
+            self.slitpoints[3] = np.array([[self.slits[1] + 0.2, slitLength + self.exit_size],
+                                           [self.slits[1] + 0.2, self.arena_height],
+                                           [self.slits[1] + self.wallthick + 0.2, self.arena_height],
+                                           [self.slits[1] + self.wallthick + 0.2, slitLength + self.exit_size]]
+                                          )
 
-                # this is the right (outside), lower Slit
-                self.slitpoints[2] = np.array([[self.slits[1], 0],
-                                               [self.slits[1], slitLength],
-                                               [self.slits[1] + self.wallthick, slitLength],
-                                               [self.slits[1] + self.wallthick, 0]]
-                                              )
-                # this is the right (outside), upper Slit
-                self.slitpoints[3] = np.array([[self.slits[1], slitLength + self.exit_size],
-                                               [self.slits[1], self.arena_height],
-                                               [self.slits[1] + self.wallthick, self.arena_height],
-                                               [self.slits[1] + self.wallthick, slitLength + self.exit_size]]
-                                              )
+        # I am not sure, that I need this.
+        # # elif size == 'M' or size == 'XL'
+        # elif self.shape == 'SPT':
+        #     slitLength = (self.arena_height - self.exit_size) / 2
+        #     # this is the left (inside), bottom Slit
+        #     self.slitpoints[0] = np.array([[self.slits[0], 0],
+        #                                    [self.slits[0], slitLength],
+        #                                    [self.slits[0] + self.wallthick, slitLength],
+        #                                    [self.slits[0] + self.wallthick, 0]]
+        #                                   )
+        #     # this is the left (inside), upper Slit
+        #     self.slitpoints[1] = np.array([[self.slits[0], slitLength + self.exit_size],
+        #                                    [self.slits[0], self.arena_height],
+        #                                    [self.slits[0] + self.wallthick, self.arena_height],
+        #                                    [self.slits[0] + self.wallthick, slitLength + self.exit_size]]
+        #                                   )
+        #
+        #     # this is the right (outside), lower Slit
+        #     self.slitpoints[2] = np.array([[self.slits[1], 0],
+        #                                    [self.slits[1], slitLength],
+        #                                    [self.slits[1] + self.wallthick, slitLength],
+        #                                    [self.slits[1] + self.wallthick, 0]]
+        #                                   )
+        #     # this is the right (outside), upper Slit
+        #     self.slitpoints[3] = np.array([[self.slits[1], slitLength + self.exit_size],
+        #                                    [self.slits[1], self.arena_height],
+        #                                    [self.slits[1] + self.wallthick, self.arena_height],
+        #                                    [self.slits[1] + self.wallthick, slitLength + self.exit_size]]
+        #                                   )
+        #
+        #     # slit_up
+        #     my_maze.CreatePolygonFixture(vertices=self.slitpoints[0].tolist())
+        #     my_maze.CreatePolygonFixture(vertices=self.slitpoints[2].tolist())
+        #
+        #     # slit_down
+        #     my_maze.CreatePolygonFixture(vertices=self.slitpoints[1].tolist())
+        #     my_maze.CreatePolygonFixture(vertices=self.slitpoints[3].tolist())
 
-            # slit_up
-            my_maze.CreatePolygonFixture(vertices=self.slitpoints[0].tolist())
-            my_maze.CreatePolygonFixture(vertices=self.slitpoints[2].tolist())
-
-            # slit_down
-            my_maze.CreatePolygonFixture(vertices=self.slitpoints[1].tolist())
-            my_maze.CreatePolygonFixture(vertices=self.slitpoints[3].tolist())
-
-        # this is for all the 'normal SPT Mazes', that have no manufacturing mistakes            
         else:
             self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
             for i, slit in enumerate(self.slits):
@@ -274,17 +268,17 @@ class Maze(b2World):
 
                 my_maze.CreatePolygonFixture(vertices=self.slitpoints[2 * i + 1].tolist())
 
-        # I dont want to have the vertical line at the first exit
-        self.slitTree = BoxIt(np.array([[0, 0],
-                                        [0, self.arena_height],
-                                        [self.slits[-1], self.arena_height],
-                                        [self.slits[-1], 0]]),
-                              0.1, without='right')
+            # I dont want to have the vertical line at the first exit
+            self.slitTree = BoxIt(np.array([[0, 0],
+                                            [0, self.arena_height],
+                                            [self.slits[-1], self.arena_height],
+                                            [self.slits[-1], 0]]),
+                                  0.1, without='right')
 
-        for slit_points in self.slitpoints:
-            self.slitTree = np.vstack((self.slitTree, BoxIt(slit_points, 0.01)))
+            for slit_points in self.slitpoints:
+                self.slitTree = np.vstack((self.slitTree, BoxIt(slit_points, 0.01)))
 
-        self.slitTree = cKDTree(self.slitTree)
+            self.slitTree = cKDTree(self.slitTree)
 
     def get_zone(self):
         if self.free:
@@ -521,27 +515,13 @@ class Maze(b2World):
         return my_load
 
     def getLoadDim(self):
-        if self.solver in ant_dimensions:
+        df = read_excel(path.join(maze_dimension_directory, self.excel_file_load), engine='openpyxl')  # TODO
+
+        if self.shape != 'SPT' and self.solver in ant_dimensions:
+            d = df.loc[df['Name'] == self.shape]
+            shape_sizes = [d['height'].values[0], d['width'].values[0], d['thickness'].values[0]]
             resize_factor = ResizeFactors[self.solver][self.size]
-            shape_sizes = {'H': [5.6, 7.2, 1.6],
-                           # 'SPT': [4.79, 9.55, 0.85], #  0.85 to 0.1 (otherwise, they are not able to solve... ) # 9.65 to 9.55
-                           'LASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
-                           'RASH': [5.24 * 2, 3.58 * 2, 0.8 * 2],
-                           'I': [5.5, 1.75, 1.75],
-                           'T': [5.4, 5.6, 1.6]
-                           }
-            # if short_edge:
-            #     shape_sizes['SPT'] = shape_sizes['SPT'] + [shape_sizes['SPT'][0] * SPT_RATIO]  # 9.65 to 9.55
-            # dimensions = [shape_height, shape_width, shape_thickness, optional: long_edge/short_edge]
-
-            if self.shape == 'SPT':
-                df = read_excel(path.join(maze_dimension_directory, 'LoadDimensions_new2021_ant.xlsx'), engine='openpyxl')
-                d = df.loc[df['Name'] == self.size + '_' + self.shape]
-                dimensions = [d['long edge'].values[0], d['length'].values[0],
-                              d['width'].values[0], d['short edge'].values[0]]
-                return dimensions
-
-            dimensions = [i * resize_factor for i in shape_sizes[self.shape]]
+            dimensions = [i * resize_factor for i in shape_sizes]
 
             if (resize_factor == 1) and self.shape[1:] == 'ASH':  # for XL ASH
                 dimensions = [le * resize_factor for le in [8.14, 5.6, 1.2]]
@@ -549,17 +529,20 @@ class Maze(b2World):
                 dimensions = [le * resize_factor for le in [9, 6.2, 1.2]]
             return dimensions
 
+        if self.solver in ant_dimensions:
+            d = df.loc[df['Name'] == self.size + '_' + self.shape]
+
         elif self.solver == 'human':
-            # [shape_height, shape_width, shape_thickness, short_edge]
-            SPT_Human_sizes = {'S': [0.805, 1.56, 0.125, 0.405],  # 1.61 to 1.56
-                               'M': [1.59, 3.18, 0.230, 0.795],   # 0.24 to 0.23
-                               'L': [3.2, 6.38, 0.51, 1.585]}
-            return SPT_Human_sizes[self.size[0]]
+            d = df.loc[df['Name'] == self.size[0]]
 
         elif self.solver == 'humanhand':
-            # [shape_height, shape_width, shape_thickness, short_edge]
-            SPT_Human_sizes = [6, 12.9, 0.9, 3]
-            return SPT_Human_sizes
+            d = df.loc[0]
+        else:
+            raise ValueError('Unclear Load dimensions')
+
+        dimensions = [d['long edge'].values[0], d['length'].values[0], d['width'].values[0],
+                      d['short edge'].values[0]]
+        return dimensions
 
     def force_attachment_positions_in_trajectory(self, x, reference_frame='maze'):
         """

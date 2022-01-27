@@ -224,6 +224,9 @@ class Trajectory:
             new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1]-frames[0])])
         return new
 
+    def geometry(self):
+        pass
+
     def save(self, address=None) -> None:
         """
         1. save a pickle of the object

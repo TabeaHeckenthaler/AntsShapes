@@ -38,7 +38,7 @@ scale = 5
 
 
 class PhaseSpace(object):
-    def __init__(self, solver: str, size: str, shape: str, name="", new2021: bool = True):
+    def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name=""):
         """
         :param board_coords:
         :param load_coords:
@@ -46,9 +46,8 @@ class PhaseSpace(object):
         # :param theta_resolution: theta replace
         # :param x_range: tuple of the x-space range, in the coords units
         # :param y_range: tuple of the y-space range, in the coords units
-        # :param new2021: whether these are new dimensions for SSPT maze after we made it smaller in 2021
         """
-        maze = Maze(size=size, shape=shape, solver=solver, new2021=new2021)
+        maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
 
         if len(name) == 0:
             name = size + '_' + shape
@@ -57,6 +56,7 @@ class PhaseSpace(object):
         self.solver = solver
         self.shape = shape
         self.size = size
+        self.geometry: tuple = geometry
 
         x_range = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
         y_range = (0, maze.arena_height)
@@ -95,9 +95,9 @@ class PhaseSpace(object):
         self.space[:, 0, :] = False
         self.space[:, -1, :] = False
 
-    def calculate_space(self, new2021: bool = True, point_particle=False, mask=None) -> None:
+    def calculate_space(self, point_particle=False, mask=None) -> None:
         # TODO: implement point particles
-        maze = Maze(size=self.size, shape=self.shape, solver=self.solver, new2021=new2021)
+        maze = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry)
         load = maze.bodies[-1]
 
         # initialize 3d map for the phase_space
@@ -273,31 +273,30 @@ class PhaseSpace(object):
         if not hasattr(self, 'space_boundary'):
             self.calculate_boundary()
         if path is None:
-            path = ps_path(self.size, self.shape, self.solver)
+            path = ps_path(self.size, self.shape, self.solver, self.geometry)
             if os.path.exists(path):
                 now = datetime.now()
                 date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-                path = ps_path(self.size, self.shape, self.solver, addition=date_string)
+                path = ps_path(self.size, self.shape, self.solver, self.geometry, addition=date_string)
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((np.array(self.space, dtype=bool),
                      np.array(self.space_boundary, dtype=bool),
                      self.extent),
                     open(path, 'wb'))
 
-    def load_space(self, point_particle: bool = False, new2021: bool = True) -> None:
+    def load_space(self, point_particle: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
-        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021)
+        path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=point_particle)
         if os.path.exists(path):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
         else:
-            self.calculate_boundary(point_particle=point_particle, new2021=new2021)
+            self.calculate_boundary(point_particle=point_particle)
             self.save_space()
         return
 
@@ -342,16 +341,15 @@ class PhaseSpace(object):
              int(np.ceil((self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
                         dtype=bool)
 
-    def calculate_boundary(self, new2021=True, point_particle=False, mask=None) -> None:
+    def calculate_boundary(self, point_particle=False, mask=None) -> None:
         """
 
-        :param new2021: What dimensions to use
         :param point_particle:
         :param mask: Where to calculate space (usefull just for testing)
         :return:
         """
         if self.space is None:
-            self.calculate_space(point_particle=point_particle, new2021=new2021, mask=mask)
+            self.calculate_space(point_particle=point_particle, mask=mask)
         self.space_boundary = self.empty_space()
         print("PhaseSpace: Calculating boundaries " + self.name)
         for ix, iy, itheta in self.iterate_space_index(mask=mask):
@@ -468,7 +466,7 @@ class PhaseSpace(object):
 
 class PS_Area(PhaseSpace):
     def __init__(self, ps: PhaseSpace, space: np.array, name: str):
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=True)
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=self.geometry)
         self.space: np.array = space
         self.fig = ps.fig
         self.name: str = name
@@ -594,11 +592,11 @@ class PhaseSpace_Labeled(PhaseSpace):
         n_2 describes the state you are
     """
 
-    def __init__(self, solver, size, shape, ps: PhaseSpace = None, new2021=True):
+    def __init__(self, solver, size, shape, geometry, ps: PhaseSpace = None):
         if ps is None:
-            ps = PhaseSpace(solver, size, shape, name='', new2021=new2021)
-            ps.load_space(new2021=new2021)
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, new2021=new2021)
+            ps = PhaseSpace(solver, size, shape, geometry, name='')
+            ps.load_space()
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=geometry)
         self.space = ps.space  # True, if there is collision. False, if it is an allowed configuration
 
         self.eroded_space = None
@@ -606,14 +604,13 @@ class PhaseSpace_Labeled(PhaseSpace):
         self.ps_states = self.centroids = None
         self.space_labeled = None
 
-    def load_eroded_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_eroded_labeled_space(self, point_particle: bool = False) -> None:
         """
         Load Phase Space pickle. Load both eroded space, and ps_states, centroids and everything
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
-        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021,
-                       erosion_radius=self.erosion_radius)
+        path = ps_path(self.size, self.shape, self.solver, self.geometry,
+                       point_particle=point_particle, erosion_radius=self.erosion_radius)
 
         if os.path.exists(path):
             print('Loading labeled from ', path, '...')
@@ -626,13 +623,13 @@ class PhaseSpace_Labeled(PhaseSpace):
             self.save_labeled()
         print('Finished loading')
 
-    def load_labeled_space(self, point_particle: bool = False, new2021: bool = False) -> None:
+    def load_labeled_space(self, point_particle: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
-        :param new2021: for the small Special T, used in 2021, the maze had different geometry than before.
         """
-        path = ps_path(self.size, self.shape, self.solver, point_particle=point_particle, new2021=new2021,
+        path = ps_path(self.size, self.shape, self.solver, self.geometry,
+                       point_particle=point_particle,
                        erosion_radius=self.erosion_radius, small=True)
 
         print('Loading labeled from ', path, '...')
@@ -742,14 +739,14 @@ class PhaseSpace_Labeled(PhaseSpace):
         if path is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-            path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=True,
+            path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=False,
                            erosion_radius=self.erosion_radius, addition=date_string)
 
         print('Saving ' + self.name + ' in path: ' + path)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
 
         # Actually, I dont really need all this information.  self.space_labeled should be enough
-        path = ps_path(self.size, self.shape, self.solver, point_particle=False, new2021=True,
+        path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=False,
                        erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
         print('Saving reduced in' + self.name + ' in path: ' + path)
