@@ -6,8 +6,8 @@ solver = 'ant'
 sizes = ['XL']
 
 for size in exp_types[shape][solver]:
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, ('MazeDimensions_new2021_ant.xlsx',
-                                                             'LoadDimensions_new2021_ant.xlsx'))
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, ('MazeDimensions_new2021_SPT_ant.xlsx',
+                                                             'LoadDimensions_new2021_SPT_ant.xlsx'))
     conf_space.calculate_space()
     # conf_space.calculate_boundary()
     # conf_space.save_space()

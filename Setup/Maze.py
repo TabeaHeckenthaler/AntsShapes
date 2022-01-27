@@ -515,7 +515,7 @@ class Maze(b2World):
         return my_load
 
     def getLoadDim(self):
-        df = read_excel(path.join(maze_dimension_directory, self.excel_file_load), engine='openpyxl')  # TODO
+        df = read_excel(path.join(maze_dimension_directory, self.excel_file_load), engine='openpyxl')
 
         if self.shape != 'SPT' and self.solver in ant_dimensions:
             d = df.loc[df['Name'] == self.shape]

@@ -44,7 +44,7 @@ class Trajectory_humanhand(Trajectory):
         return 1
 
     def geometry(self) -> tuple:
-        return 'MazeDimensions_humanhand.xlsx', ''
+        return 'MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx'
 
 
 class Humanhand:

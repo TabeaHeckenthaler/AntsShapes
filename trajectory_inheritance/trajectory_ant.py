@@ -39,7 +39,7 @@ class Trajectory_ant(Trajectory):
         :return: name of the relevant excel file with the correct dimensions.
         """
         if 'L_I_425' in self.filename:  # This was a single day with these dimensions
-            return 'MazeDimensions_ant_L_I_425.xlsx', 'LoadDimensions_new2021_ant.xlsx'
+            return 'MazeDimensions_ant_L_I_425.xlsx', 'LoadDimensions_ant.xlsx'
 
         if self.shape != 'SPT':
             return 'MazeDimensions_ant_old.xlsx', 'LoadDimensions_ant.xlsx'
@@ -47,10 +47,10 @@ class Trajectory_ant(Trajectory):
         new_starting_conditions = [str(x) for x in range(46300, 48100, 100)]
         if np.any([new_starting_condition in self.filename
                    for new_starting_condition in new_starting_conditions]):
-            return 'MazeDimensions_new2021_ant.xlsx', 'LoadDimensions_new2021_ant.xlsx'
+            return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
         else:
             print('You are using old dimensions!, and maybe inaccurate LoadDimensions')
-            return 'MazeDimensions_ant_old.xlsx', 'LoadDimensions_new2021_ant.xlsx'
+            return 'MazeDimensions_ant_old.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
 
     def __add__(self, file2):
         max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}

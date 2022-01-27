@@ -29,7 +29,7 @@ class Trajectory_human(Trajectory):
         self.forcemeter = self.has_forcemeter()  # TODO: this is always false currently...
 
     def geometry(self) -> tuple:
-        return 'MazeDimensions_human.xlsx', ''
+        return 'MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'
 
     def has_forcemeter(self) -> bool:
         """
