@@ -29,41 +29,6 @@ network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
 maze_dimension_directory = path.join(home, 'Setup')
 
 
-def ps_path(size: str, shape: str, solver: str, geometry: tuple, point_particle: bool = False,
-            erosion_radius: int = None, addition: str = '', small=False):
-    """
-    :param new2021:
-    :param addition:
-    :param erosion_radius:
-    :param size:
-    :param shape:
-    :param solver:
-    :param point_particle:
-    :param small: if you want only the labeled configuration space
-    where the phase space is saved
-    If an erosion_radius is given, we are dealing with a labeled Phase Space.
-    """
-
-    if size in ['Small Far', 'Small Near']:  # both have same dimensions
-        size = 'Small'
-
-    filename = size + '_' + shape + '_' + geometry[0][:-5]
-
-    if point_particle:
-        return path.join(PhaseSpaceDirectory, solver, shape, filename + addition + '_pp.pkl')
-    if erosion_radius is not None:
-        path_ = path.join(PhaseSpaceDirectory, solver, shape, filename + '_labeled_erosion_' + str(erosion_radius) +
-                          addition + '.pkl')
-        if small:
-            path_ = path_[:-4] + '_small' + '.pkl'
-        return path_
-
-    path_ = path.join(PhaseSpaceDirectory, solver, shape, filename + addition + '.pkl')
-    if small:
-        path_ = path_[:-4] + '_small' + '.pkl'
-    return path_
-
-
 def SetupDirectories():
     if not (path.isdir(SaverDirectories['ant'])):
         if not path.isdir('\\\\' + SaverDirectories['ant'].split('\\')[2]):

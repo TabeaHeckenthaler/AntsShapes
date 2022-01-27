@@ -4,7 +4,7 @@ from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
 from Setup.Maze import Maze
-from Directories import ps_path
+from Directories import PhaseSpaceDirectory
 from Analysis.PathLength import resolution
 from scipy import ndimage
 from datetime import datetime
@@ -77,6 +77,37 @@ class PhaseSpace(object):
         # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
+
+    def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '', small=False):
+        """
+        :param addition:
+        :param erosion_radius:
+        :param point_particle:
+        :param small: if you want only the labeled configuration space
+        where the phase space is saved
+        If an erosion_radius is given, we are dealing with a labeled Phase Space.
+        """
+
+        if self.size in ['Small Far', 'Small Near']:  # both have same dimensions
+            size = 'Small'
+        else:
+            size = self.size
+
+        filename = size + '_' + self.shape + '_' + self.geometry[0][:-5]
+
+        if point_particle:
+            return os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + addition + '_pp.pkl')
+        if erosion_radius is not None:
+            path_ = os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + '_labeled_erosion_'
+                                 + str(erosion_radius) + addition + '.pkl')
+            if small:
+                path_ = path_[:-4] + '_small' + '.pkl'
+            return path_
+
+        path_ = os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + addition + '.pkl')
+        if small:
+            path_ = path_[:-4] + '_small' + '.pkl'
+        return path_
 
     def number_of_points(self) -> dict:
         # x_num = np.ceil(self.extent['x'][1]/resolution)
@@ -261,9 +292,9 @@ class PhaseSpace(object):
     #                 color=color, tube_radius=0.045, colormap='Spectral')
     #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
-    def save_space(self, path=None):
+    def save_space(self, directory=None):
         """
-        Pickle the numpy array in given path, or in default path. If default path exists, add a string for time, in
+        Pickle the numpy array in given path, or in default path. If default directory exists, add a string for time, in
         order not to overwrite the old .pkl file.
         :param path: Where you would like to save.
         :return:
@@ -272,26 +303,25 @@ class PhaseSpace(object):
             self.calculate_space()
         if not hasattr(self, 'space_boundary'):
             self.calculate_boundary()
-        if path is None:
-            path = ps_path(self.size, self.shape, self.solver, self.geometry)
-            if os.path.exists(path):
+        if directory is None:
+            if os.path.exists(self.directory()):
                 now = datetime.now()
                 date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-                path = ps_path(self.size, self.shape, self.solver, self.geometry, addition=date_string)
-        print('Saving ' + self.name + ' in path: ' + path)
+                directory = self.directory(addition=date_string)
+        print('Saving ' + self.name + ' in path: ' + directory)
         pickle.dump((np.array(self.space, dtype=bool),
                      np.array(self.space_boundary, dtype=bool),
                      self.extent),
-                    open(path, 'wb'))
+                    open(directory, 'wb'))
 
     def load_space(self, point_particle: bool = False) -> None:
         """
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
-        path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=point_particle)
-        if os.path.exists(path):
-            (self.space, self.space_boundary, self.extent) = pickle.load(open(path, 'rb'))
+        directory = self.directory(point_particle=point_particle)
+        if os.path.exists(directory):
+            (self.space, self.space_boundary, self.extent) = pickle.load(open(directory, 'rb'))
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
@@ -609,12 +639,11 @@ class PhaseSpace_Labeled(PhaseSpace):
         Load Phase Space pickle. Load both eroded space, and ps_states, centroids and everything
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
-        path = ps_path(self.size, self.shape, self.solver, self.geometry,
-                       point_particle=point_particle, erosion_radius=self.erosion_radius)
+        directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius)
 
-        if os.path.exists(path):
-            print('Loading labeled from ', path, '...')
-            self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(path, 'rb'))
+        if os.path.exists(directory):
+            print('Loading labeled from ', directory, '...')
+            self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
             self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
@@ -628,14 +657,12 @@ class PhaseSpace_Labeled(PhaseSpace):
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
-        path = ps_path(self.size, self.shape, self.solver, self.geometry,
-                       point_particle=point_particle,
-                       erosion_radius=self.erosion_radius, small=True)
+        directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius, small=True)
 
-        print('Loading labeled from ', path, '...')
-        if os.path.exists(path):
+        print('Loading labeled from ', directory, '...')
+        if os.path.exists(directory):
             # self.space_labeled = pickle.load(open(path, 'rb'))
-            self.space_labeled = pickle.load(open(path, 'rb'))
+            self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
             self.load_eroded_labeled_space()
 
@@ -735,22 +762,21 @@ class PhaseSpace_Labeled(PhaseSpace):
                 mlab.text3d(*(a*b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
                 idx += 1
 
-    def save_labeled(self, path=None, date_string='') -> None:
-        if path is None:
+    def save_labeled(self, directory=None, date_string='') -> None:
+        if directory is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-            path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=False,
-                           erosion_radius=self.erosion_radius, addition=date_string)
+            directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string)
 
-        print('Saving ' + self.name + ' in path: ' + path)
+        print('Saving ' + self.name + ' in path: ' + directory)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
 
         # Actually, I dont really need all this information.  self.space_labeled should be enough
-        path = ps_path(self.size, self.shape, self.solver, self.geometry, point_particle=False,
-                       erosion_radius=self.erosion_radius, addition=date_string, small=True)
+        directory = self.directory(point_particle=False,
+                                   erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
-        print('Saving reduced in' + self.name + ' in path: ' + path)
-        pickle.dump(self.space_labeled, open(path, 'wb'))
+        print('Saving reduced in' + self.name + ' in path: ' + directory)
+        pickle.dump(self.space_labeled, open(directory, 'wb'))
         print('Finished saving')
 
     def erosion_radius_default(self) -> int:
@@ -816,15 +842,15 @@ class PhaseSpace_Labeled(PhaseSpace):
 
 
 if __name__ == '__main__':
-    shape = 'SPT'
-    size = 'M'
-    solver = 'ant'
+    # shape = 'SPT'
+    # size = 'M'
+    # solver = 'ant'
 
-    ps = PhaseSpace(solver, size, shape)
-    ps.calculate_space()
-    ps.calculate_boundary()
-
-    ps.save_space()
+    # ps = PhaseSpace(solver, size, shape)
+    # ps.calculate_space()
+    # ps.calculate_boundary()
+    #
+    # ps.save_space()
     # ps.visualize_space()
 
     DEBUG = 1

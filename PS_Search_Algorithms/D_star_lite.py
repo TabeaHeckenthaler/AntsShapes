@@ -10,7 +10,6 @@ import numpy as np
 from Analysis.GeneralFunctions import graph_dir
 from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
 from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-from Directories import ps_path
 from scipy.ndimage.measurements import label
 from PS_Search_Algorithms.Dstar_functions import voxel
 
