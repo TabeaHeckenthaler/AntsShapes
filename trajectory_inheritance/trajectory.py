@@ -98,11 +98,11 @@ class Trajectory:
         :return:
         """
         frame_dividers = [-1] + \
-                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if f2 < f1] + \
+                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 == f2-1] + \
                          [len(self.frames)]
 
         if len(frame_dividers)-1 != len(self.VideoChain):
-            raise Exception('Why are your frames not matching your VideoChain?')
+            raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
 
         parts = [Trajectory_part(self, [chain_element], [fr1+1, fr2+1])
                  for chain_element, fr1, fr2 in zip(self.VideoChain, frame_dividers, frame_dividers[1:])]

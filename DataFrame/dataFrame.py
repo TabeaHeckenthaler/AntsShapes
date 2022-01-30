@@ -5,8 +5,7 @@ from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Attempts import Attempts
 from tqdm import tqdm
-
-tqdm.pandas()
+pd.options.mode.chained_assignment = None
 
 
 def get_filenames(solver, size='', shape='', free=False):
@@ -26,7 +25,7 @@ def get_filenames(solver, size='', shape='', free=False):
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]', 'force meter', 'fps', 'geometry'],
+                    'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions'],
                    dtype='object')
 
 
@@ -57,7 +56,7 @@ class SingleExperiment(pd.DataFrame):
         self['Attempts'] = Attempts(x, 'extend')
         self['initial condition'] = str(x.initial_cond())
         self['force meter'] = bool(x.has_forcemeter())  # TODO
-        self['geometry'] = x.geometry()
+        self['maze dimensions'], self['load dimensions'] = x.geometry()
 
         # self = self[list_of_columns]
 
@@ -111,13 +110,22 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        self['geometry'] = self['filename'].progress_apply(lambda x: get(x).geometry())
+        self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
+
+    def fill_column(self):
+        for i, row in tqdm(self.iterrows()):
+            if row['maze dimensions'] is None:
+                geometry = get(row.filename).geometry()
+                self.at[i, 'maze dimensions'] = geometry[0]
+                self.at[i, 'load dimensions'] = geometry[1]
 
 
+tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
     # myDataFrame.add_column()
+    # myDataFrame.fill_column()
     # myDataFrame.save()
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
@@ -125,5 +133,6 @@ if __name__ == '__main__':
     # how_many_experiments(myDataFrame)
 
     for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
+        print(new_experiment['filename'])
         myDataFrame = myDataFrame + new_experiment
         myDataFrame.save()
