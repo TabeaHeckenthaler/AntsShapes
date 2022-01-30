@@ -98,8 +98,8 @@ class Ants(Participants):
 
         return self
 
-    def get_angles(self) -> np.ndarray:
-        return np.array([fr.angle for fr in self.frames])
+    def get_angles(self) -> list:
+        return [fr.angle for fr in self.frames]
 
-    def get_positions(self) -> np.ndarray:
-        return np.array([fr.position for fr in self.frames])
+    def get_positions(self) -> list:
+        return [fr.position for fr in self.frames]

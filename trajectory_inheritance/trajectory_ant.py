@@ -225,13 +225,14 @@ class Trajectory_ant(Trajectory):
             for index in range(index1, index2):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
-    def load_participants(self):
+    def load_participants(self) -> None:
         from trajectory_inheritance.ants import Ants
-        self.participants = Ants(self)
+        if not hasattr(self, 'participants') or self.participants is None:
+            self.participants = Ants(self)
 
-    def averageCarrierNumber(self):
+    def averageCarrierNumber(self) -> float:
         self.load_participants()
-        self.participants.averageCarrierNumber()
+        return self.participants.averageCarrierNumber()
 
     def play(self, wait=0, ps=None, step=1, videowriter=False, frames=None):
         """

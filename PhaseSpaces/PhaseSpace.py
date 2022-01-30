@@ -32,7 +32,6 @@ scale = 5
 
 
 # TODO: fix the x.winner attribute
-# TODO: fix, that there are different geometries
 
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 

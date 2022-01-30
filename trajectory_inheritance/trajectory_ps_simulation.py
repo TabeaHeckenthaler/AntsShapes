@@ -22,6 +22,12 @@ class Trajectory_ps_simulation(Trajectory):
     def averageCarrierNumber(self):
         return 1
 
+    def geometry(self):
+        if self.shape != 'SPT':
+            return 'MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx'
+        else:
+            return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
+
 
 class PS_simulation:
     def __init__(self, filename):

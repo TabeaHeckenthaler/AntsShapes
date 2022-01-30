@@ -3,7 +3,6 @@ from os import listdir
 from Directories import SaverDirectories, df_dir
 from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
-from Setup.Maze import Maze
 from Setup.Attempts import Attempts
 from tqdm import tqdm
 
@@ -27,7 +26,7 @@ def get_filenames(solver, size='', shape='', free=False):
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]', 'force meter', 'fps'],
+                    'minimal path length [length unit]', 'force meter', 'fps', 'geometry'],
                    dtype='object')
 
 
@@ -47,15 +46,18 @@ class SingleExperiment(pd.DataFrame):
         self['fps'] = int(x.fps)
         self['communication'] = bool(x.communication)
         self['length unit'] = str(length_unit_func(x.solver))
-        self['exit size [length unit]'] = float(Maze(x).exit_size)  # TODO: I don't think I need this anymore
         self['maze size'] = str(x.size[0])
         self['path length [length unit]'] = float(PathLength(x).per_experiment())
-        self['path length during attempts [length unit]'] = PathLength(x).during_attempts()
+
+        if x.shape != 'SPT':
+            self['path length during attempts [length unit]'] = PathLength(x).during_attempts()
+
         self['minimal path length [length unit]'] = PathLength(x).minimal()
         self['average Carrier Number'] = float(x.averageCarrierNumber())
         self['Attempts'] = Attempts(x, 'extend')
         self['initial condition'] = str(x.initial_cond())
-        self['force meter'] = bool(x.has_forcemeter() if x.solver == 'human' else False)  # TODO
+        self['force meter'] = bool(x.has_forcemeter())  # TODO
+        self['geometry'] = x.geometry()
 
         # self = self[list_of_columns]
 
@@ -109,13 +111,13 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        self['geometry'] = self['filename'].progress_apply(lambda x: int(get(x).geometry()))
+        self['geometry'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
 
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
-    myDataFrame.add_column()
+    # myDataFrame.add_column()
     # myDataFrame.save()
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments

@@ -1,5 +1,6 @@
 
-exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far', 'Small Near']},
+exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far', 'Small Near'],
+                     'ps_simulation': ['XL', 'L', 'M', 'S']},
              'H': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
              'I': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
              'T': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']}}

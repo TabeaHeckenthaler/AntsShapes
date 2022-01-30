@@ -24,13 +24,14 @@ class PathLength:
     def __init__(self, x):
         self.x = copy(x)
 
-    # def during_attempts(self, *args, attempts=None, **kwargs):
+    def during_attempts(self, *args, attempts=None, **kwargs):
+        return None
+    #     # TODO
     #     """
     #     Path length is calculated during attempts.
     #     End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
     #     """
     #     return None
-    #     # TODO
     #     total = 0
     #
     #     if attempts is None:

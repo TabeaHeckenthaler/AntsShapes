@@ -1,12 +1,12 @@
 from PhaseSpaces import PhaseSpace
 from trajectory_inheritance.exp_types import exp_types
 
-shape = 'I'
-solver = 'ant'
+shape = 'SPT'
+solver = 'human'
 sizes = ['XL']
 
 for size in exp_types[shape][solver]:
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx'))
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     conf_space.load_space()
     conf_space.visualize_space()
     # conf_space.calculate_space()

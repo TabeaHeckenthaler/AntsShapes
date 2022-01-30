@@ -136,6 +136,9 @@ class Trajectory:
             i += 1
         return contact
 
+    def has_forcemeter(self):
+        return False
+
     def velocity(self, second_smooth, *args):
         return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
 
@@ -334,6 +337,9 @@ class Trajectory_part(Trajectory):
 
     def is_connector(self):
         return 'CONNECTOR' in self.VideoChain[-1]
+
+    def geometry(self):
+        return self.parent_traj.geometry()
 
 
 def get(filename) -> Trajectory:

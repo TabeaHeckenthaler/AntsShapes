@@ -68,7 +68,8 @@ class Maze(b2World):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory']:
+                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
+                                                        'Trajectory_part']:
             x = args[0]
             self.shape = x.shape  # loadshape (maybe this will become name of the maze...)
             self.size = x.size  # size
@@ -99,7 +100,7 @@ class Maze(b2World):
         self.body = self.create_Maze()
         self.get_zone()
 
-        self.create_Load(position=position, angle=angle, point_particle=point_particle)  # TODO: Use the string
+        self.create_Load(position=position, angle=angle, point_particle=point_particle)
 
     def getMazeDim(self):
         if self.free:
