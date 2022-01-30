@@ -5,6 +5,7 @@ from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Attempts import Attempts
 from tqdm import tqdm
+
 pd.options.mode.chained_assignment = None
 
 
@@ -25,7 +26,8 @@ def get_filenames(solver, size='', shape='', free=False):
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions'],
+                    'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
+                    'comment'],
                    dtype='object')
 
 
@@ -55,7 +57,7 @@ class SingleExperiment(pd.DataFrame):
         self['average Carrier Number'] = float(x.averageCarrierNumber())
         self['Attempts'] = Attempts(x, 'extend')
         self['initial condition'] = str(x.initial_cond())
-        self['force meter'] = bool(x.has_forcemeter())  # TODO
+        self['force meter'] = bool(x.has_forcemeter())
         self['maze dimensions'], self['load dimensions'] = x.geometry()
 
         # self = self[list_of_columns]
@@ -89,7 +91,7 @@ class DataFrame(pd.DataFrame):
         self.reset_index(drop=True, inplace=True)
 
     def save(self, name=df_dir):
-        # self.to_json(df_dir + ' - backup.json')
+        # myDataFrame.to_json(df_dir + ' - backup.json')
         self.to_json(name)
 
     def new_experiments(self, solver: str = 'ant', size: str = '', shape: str = '', free=False):
@@ -136,3 +138,12 @@ if __name__ == '__main__':
         print(new_experiment['filename'])
         myDataFrame = myDataFrame + new_experiment
         myDataFrame.save()
+
+    # TODO
+    # for i in [114, 120]:
+    ## L_SPT_4080033_SpecialT_1_ants (part 1)
+    ## L_SPT_4090010_SpecialT_1_ants (part 1)
+    #     myDataFrame.at[i, 'initial condition'] = 'front'
+    #     myDataFrame.at[i, 'comment'] = 'Here the beginning of the movie is cut out. ' \
+    #                                    'I suspect it started in front, not the back. ' \
+    #                                    'Maybe, I should add a smooth connector.'

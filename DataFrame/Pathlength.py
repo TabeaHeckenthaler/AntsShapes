@@ -3,62 +3,46 @@ import numpy as np
 from trajectory_inheritance.trajectory import sizes
 from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
-from trajectory_inheritance.trajectory import solvers
+from trajectory_inheritance.trajectory import solvers, get
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from DataFrame.dataFrame import myDataFrame as df
 
+color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
+plot_group_size_seperately = {'ant': [1], 'human': [2]}
 
-def path_length(df, solver, shape, ax, marker='.'):
-    colors = {0: 'red', 1: 'blue'}
-    df_shape = df[df['shape'] == shape]
-    df_solver = df_shape.groupby('solver').get_group(solver)[
-        ['maze size', 'communication', 'path length [length unit]', 'minimal path length [length unit]',
-         'average Carrier Number']]
-    df_solver['path length/minimal path length[]'] = df_solver['path length [length unit]'] / \
-                                                     df_solver['minimal path length [length unit]']
 
+def plot_path_length(df, solver, ax, marker='.'):
     for communication in [0, 1]:
+        df_solver_comm = df[df['communication'] == communication]
 
-        df_solver_comm = df_solver[df_solver['communication'] == communication]
+        seperate_group_df = \
+            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
+        not_seperate_group_df = \
+            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
 
-        seperate_group = None
-        if solver == 'ant':
-            colors[communication] = 'black'
-            seperate_group = 1
-        if solver == 'human':
-            seperate_group = 2
-
-        seperate_group_df = df_solver_comm[df_solver_comm['average Carrier Number'] == seperate_group]
-        not_seperate_group_df = df_solver_comm[df_solver_comm['average Carrier Number'] != seperate_group]
-
-        for group in [seperate_group_df, not_seperate_group_df]:
-            group = group.groupby(by=['maze size', 'communication'])
-            means = group.mean()
-            sem = group.sem()
+        for part in [seperate_group_df, not_seperate_group_df]:
+            groups = part.groupby(by=['size'])
+            means = groups.mean()
+            sem = groups.sem()
+            # std = groups.std()
 
             means.plot.scatter(x='average Carrier Number',
                                y='path length/minimal path length[]',
                                label='comm: ' + str(communication),
                                xerr=sem['average Carrier Number'],
                                yerr=sem['path length/minimal path length[]'],
-                               c=colors[communication],
+                               c=color[solver][communication],
                                ax=ax,
                                marker=marker,
                                s=150)
 
+            if len(means) > 1:
+                xs = list(means['average Carrier Number'] + 0.5)
+                ys = list(means['path length/minimal path length[]'] + 0.5)
+                for txt, x, y in zip(list(means.index), xs, ys):
+                    ax.annotate(txt, (x, y), fontsize=13)
+
     reduce_legend()
-
-
-fig, ax = plt.subplots(1, 1)
-# df = df[df['winner']]
-init_cond = 'back'
-df = df[df['initial condition'] == init_cond]
-path_length(df, 'ant', 'SPT', ax, marker='*')
-path_length(df, 'human', 'SPT', ax, marker='.')
-ax.set_xscale('log')
-# ax.set_ylim(0, 25)
-
-save_fig(fig, init_cond)
 
 
 def SPT_figure(df, ax):
@@ -125,11 +109,6 @@ def SPT_figure(df, ax):
     ax.set_xlabel('average Carrier Number')
     ax.set_ylabel('path length/minimal path length[]')
 
-#
-# fig, ax = plt.subplots(1, 1)
-# SPT_figure(df, ax)
-# save_fig(fig, 'SPT_different_solver')
-
 
 def ant_HIT_figure_path_length(df_gr_solver):
     """
@@ -171,3 +150,57 @@ def ant_HIT_figure_path_length(df_gr_solver):
         ax.set_ylabel(means.columns[0][0])
         ax.set_xlabel('average Carrier Number')
         save_fig(fig, 'ants_' + y)
+
+
+def choose_relevant_experiments(df, shape, solver, winner='True', init_cond='back'):
+    """
+    Reduce df to relevant experiments
+    :param df: dataFrame
+    :param shape: shape of the load ('H', 'I', 'SPT'...)
+    :param solver: ('human', 'ant', ...)
+    :param winner: Do you want to include only successful trajectories?
+    :param init_cond: Do you want to restrict the included experiments only to a specific initial condition?
+    (front, back or None)
+    :return: DataFrame with relevant experiments
+    """
+    df = df[df['shape'] == shape]
+    df = df[df['solver'] == solver]
+    if winner:
+        df = df[df['winner']]
+    if init_cond == 'back':
+        df = df[df['initial condition'] == init_cond]
+    return df
+
+
+def relevant_columns(df):
+    columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]', 'minimal path length [length unit]',
+               'average Carrier Number']
+    df = df[columns]
+    df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
+    return df
+
+
+def adjust_figure():
+    ax.set_ylim(0, 35)
+    # ax.set_xscale('log')
+    # ax.set_ylim(0, 25)
+    plt.show()
+
+
+if __name__ == '__main__':
+
+    fig, ax = plt.subplots(1, 1)
+    shape = 'SPT'
+    solvers = ['ant']
+
+    for solver in solvers:
+        df = choose_relevant_experiments(df, shape, solver, init_cond='back', winner='True')
+        df = relevant_columns(df)
+        plot_path_length(df, solver, ax, marker='*')
+
+    adjust_figure()
+    save_fig(fig, 'back_path_length')
+
+    # fig, ax = plt.subplots(1, 1)
+    # SPT_figure(df, ax)
+    # save_fig(fig, 'SPT_different_solver')
