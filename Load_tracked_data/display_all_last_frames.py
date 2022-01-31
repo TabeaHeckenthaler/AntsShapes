@@ -66,3 +66,4 @@ if __name__ == '__main__':
 # TODO: Extend trajectories:
 # M_SPT_4700022_MSpecialT_1_ants
 # L_SPT_4080033_SpecialT_1_ants (part 1)
+# L_SPT_4090010_SpecialT_1_ants (part 1)

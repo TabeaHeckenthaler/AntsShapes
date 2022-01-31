@@ -142,7 +142,6 @@ if __name__ == '__main__':
 
     DEBUG = 1
 
-
     # how_many_experiments(myDataFrame)
 
     for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):

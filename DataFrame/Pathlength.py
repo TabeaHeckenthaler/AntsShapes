@@ -193,15 +193,14 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1, 1)
     shape = 'SPT'
-    solvers = ['ant']
+    solvers = ['ant', 'human']
 
     for solver in solvers:
-        df = choose_relevant_experiments(df, shape, solver, winner=True, init_cond='back')
-        df = relevant_columns(df)
-        plot_path_length(df, solver, ax, marker='*')
+        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, winner=True, init_cond='back')
+        plot_path_length(relevant_columns(df_relevant_exp), solver, ax, marker='*')
 
     adjust_figure()
-    save_fig(fig, 'back_path_length')
+    save_fig(fig, 'back_path_length_with_humans')
 
     # fig, ax = plt.subplots(1, 1)
     # SPT_figure(df, ax)

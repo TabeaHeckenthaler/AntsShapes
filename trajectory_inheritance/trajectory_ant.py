@@ -230,6 +230,9 @@ class Trajectory_ant(Trajectory):
         if not hasattr(self, 'participants') or self.participants is None:
             self.participants = Ants(self)
 
+    def communication(self):
+        return False
+
     def averageCarrierNumber(self) -> float:
         self.load_participants()
         return self.participants.averageCarrierNumber()
