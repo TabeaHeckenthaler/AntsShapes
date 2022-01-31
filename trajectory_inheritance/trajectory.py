@@ -139,6 +139,11 @@ class Trajectory:
     def has_forcemeter(self):
         return False
 
+    def old_filenames(self, i: int):
+        if i > 0:
+            raise Exception('only one old filename available')
+        return self.filename
+
     def velocity(self, second_smooth, *args):
         return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
 

@@ -13,6 +13,8 @@ plot_group_size_seperately = {'ant': [1], 'human': [2]}
 
 def plot_path_length(df, solver, ax, marker='.'):
     for communication in [0, 1]:
+        if communication == 0:
+            DEBUG = 1
         df_solver_comm = df[df['communication'] == communication]
 
         seperate_group_df = \
@@ -152,7 +154,7 @@ def ant_HIT_figure_path_length(df_gr_solver):
         save_fig(fig, 'ants_' + y)
 
 
-def choose_relevant_experiments(df, shape, solver, winner='True', init_cond='back'):
+def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back'):
     """
     Reduce df to relevant experiments
     :param df: dataFrame
@@ -165,8 +167,8 @@ def choose_relevant_experiments(df, shape, solver, winner='True', init_cond='bac
     """
     df = df[df['shape'] == shape]
     df = df[df['solver'] == solver]
-    if winner:
-        df = df[df['winner']]
+    if winner is not None:
+        df = df[df['winner'] == winner]
     if init_cond == 'back':
         df = df[df['initial condition'] == init_cond]
     return df
@@ -194,7 +196,7 @@ if __name__ == '__main__':
     solvers = ['ant']
 
     for solver in solvers:
-        df = choose_relevant_experiments(df, shape, solver, init_cond='back', winner='True')
+        df = choose_relevant_experiments(df, shape, solver, winner=True, init_cond='back')
         df = relevant_columns(df)
         plot_path_length(df, solver, ax, marker='*')
 

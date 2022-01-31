@@ -5,6 +5,7 @@ from trajectory_inheritance.trajectory import get, length_unit_func
 from Analysis.PathLength import PathLength
 from Setup.Attempts import Attempts
 from tqdm import tqdm
+from copy import copy
 
 pd.options.mode.chained_assignment = None
 
@@ -45,7 +46,7 @@ class SingleExperiment(pd.DataFrame):
         self['shape'] = str(x.shape)
         self['winner'] = bool(x.winner)
         self['fps'] = int(x.fps)
-        self['communication'] = bool(x.communication)
+        self['communication'] = bool(x.communication())
         self['length unit'] = str(length_unit_func(x.solver))
         self['maze size'] = str(x.size[0])
         self['path length [length unit]'] = float(PathLength(x).per_experiment())
@@ -74,6 +75,9 @@ class DataFrame(pd.DataFrame):
     def __add__(self, df_2):
         return DataFrame(pd.concat([self, df_2], ignore_index=True))
 
+    def clone(self):
+        return copy(self)
+
     def drop_non_existent(self):
         self.drop_duplicates(subset=['filename'], ignore_index=True)
         self.reset_index(inplace=True, drop=True)
@@ -91,8 +95,11 @@ class DataFrame(pd.DataFrame):
         self.reset_index(drop=True, inplace=True)
 
     def save(self, name=df_dir):
-        # myDataFrame.to_json(df_dir + ' - backup.json')
         self.to_json(name)
+
+    def back_up(self):
+        if input(bool(int('Check the DataFrame carefully!'))):
+            self.to_json(df_dir + ' - backup.json')
 
     def new_experiments(self, solver: str = 'ant', size: str = '', shape: str = '', free=False):
         to_load = set(get_filenames(solver, size=size, shape=shape)) - set(self['filename'].unique())
@@ -125,12 +132,16 @@ class DataFrame(pd.DataFrame):
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
+
 if __name__ == '__main__':
     # myDataFrame.add_column()
     # myDataFrame.fill_column()
     # myDataFrame.save()
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
+
+    DEBUG = 1
+
 
     # how_many_experiments(myDataFrame)
 
