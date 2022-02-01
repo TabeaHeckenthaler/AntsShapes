@@ -64,7 +64,7 @@ def end(size, shape, solver):
 
 class Maze(b2World):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', free=False, position=None, angle=0,
-                 point_particle=False, geometry: tuple = None, i=0):
+                 point_particle=False, geometry: tuple = None, i=0, bb: bool = False):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
@@ -100,7 +100,7 @@ class Maze(b2World):
         self.body = self.create_Maze()
         self.get_zone()
 
-        self.create_Load(position=position, angle=angle, point_particle=point_particle)
+        self.create_Load(position=position, angle=angle, point_particle=point_particle, bb=bb)
 
     def getMazeDim(self):
         if self.free:
@@ -331,7 +331,8 @@ class Maze(b2World):
         p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
         return p.values[0][0]
 
-    def create_Load(self, position=None, angle=0, point_particle=False):
+    def create_Load(self, position=None, angle=0, point_particle=False, bb: bool = False):
+
         if position is None:
             position = [0, 0]
         self.CreateBody(b2BodyDef(position=(float(position[0]), float(position[1])),
@@ -345,9 +346,9 @@ class Maze(b2World):
                         friction=0,
                         )
 
-        self.addLoadFixtures(point_particle=point_particle)
+        self.addLoadFixtures(point_particle=point_particle, bb=bb)
 
-    def addLoadFixtures(self, point_particle=False):
+    def addLoadFixtures(self, point_particle=False, bb: bool = False):
         if point_particle:
             return
 
@@ -417,11 +418,16 @@ class Maze(b2World):
 
         if self.shape == 'SPT':  # This is the Special T
             [shape_height, shape_width, shape_thickness, short_edge] = self.getLoadDim()
-
-            # h = SPT_centroid_shift * ResizeFactors[x.size]  # distance of the centroid away from the center of the
-            # long middle
             h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle
-            # force_vector of the T. (1.445 calculated)
+            if bb:
+                my_load.CreatePolygonFixture(vertices=[
+                    (shape_width / 2 - h, shape_height / 2),
+                    (shape_width / 2 - h, -shape_height / 2),
+                    (-shape_width / 2 - h, -shape_height / 2),
+                    (-shape_width / 2 - h, shape_height / 2)],
+                    density=1, friction=0, restitution=0,
+                )
+                return
 
             # This is the connecting middle piece
             my_load.CreatePolygonFixture(vertices=[

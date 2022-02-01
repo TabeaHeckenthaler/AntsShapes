@@ -130,6 +130,9 @@ class PhaseSpace(object):
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry)
         load = maze.bodies[-1]
 
+        maze_bb = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry, bb=True)
+        load_bb = maze_bb.bodies[-1]
+
         # initialize 3d map for the phase_space
         self.space = self.empty_space()
         print("PhaseSpace: Calculating space " + self.name)
@@ -144,8 +147,15 @@ class PhaseSpace(object):
             former_found = (0, 0)
             for x, y, theta in self.iterate_coordinates(mask=mask):
                 indices = self.coords_to_indices(x, y, theta)
-                maze.set_configuration([x, y], float(theta))
-                self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
+
+                # first check the bounding box
+                maze_bb.set_configuration([x, y], float(theta))
+                if possible_configuration(load_bb, maze_corners, former_found)[0]:
+                    self.space[indices], former_found = possible_configuration(load_bb, maze_corners, former_found)
+
+                else:
+                    maze.set_configuration([x, y], float(theta))
+                    self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
                 # load.position, load.angle = [x, y], float(theta)
                 # from PhysicsEngine.Display import Display
                 # display = Display('', maze)
