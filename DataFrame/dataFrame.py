@@ -145,12 +145,9 @@ class DataFrame(pd.DataFrame):
         new_data_frame = new_data_frame + single
         return new_data_frame
 
+
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
-
-filename = 'M_SPT_4700022_MSpecialT_1_ants'
-new_data_frame = myDataFrame.recalculate_experiment(filename)
-DEBUG = 1
 
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
@@ -161,12 +158,3 @@ if __name__ == '__main__':
         print(new_experiment['filename'])
         myDataFrame = myDataFrame + new_experiment
         myDataFrame.save()
-
-    # TODO
-    # for i in [114, 120]:
-    ## L_SPT_4080033_SpecialT_1_ants (part 1)
-    ## L_SPT_4090010_SpecialT_1_ants (part 1)
-    #     myDataFrame.at[i, 'initial condition'] = 'front'
-    #     myDataFrame.at[i, 'comment'] = 'Here the beginning of the movie is cut out. ' \
-    #                                    'I suspect it started in front, not the back. ' \
-    #                                    'Maybe, I should add a smooth connector.'

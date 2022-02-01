@@ -93,9 +93,13 @@ def extend_trajectory():
         x_extend.position = np.array([info['configuration'][0]])
         x_extend.angle = np.array([info['configuration'][1]])
         x_extend.frames = np.array([i for i in range(x_extend.position.shape[0])])
+
         if info['where'] == 'end':
             connection = connector(x_cut, x_extend, x_cut.fps * 10)
             x = x_cut + connection
+        elif info['where'] == 'beginning':
+            connection = connector(x_extend, x_cut, x_cut.fps * 10)
+            x = connection + x_cut
 
 
 if __name__ == '__main__':
