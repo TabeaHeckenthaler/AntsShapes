@@ -28,7 +28,7 @@ columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner'
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
                     'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment'],
+                    'comment', 'counted carrier number'],
                    dtype='object')
 
 
@@ -60,6 +60,7 @@ class SingleExperiment(pd.DataFrame):
         self['initial condition'] = str(x.initial_cond())
         self['force meter'] = bool(x.has_forcemeter())
         self['maze dimensions'], self['load dimensions'] = x.geometry()
+        self['counted carrier number'] = None
 
         # self = self[list_of_columns]
 
@@ -98,7 +99,7 @@ class DataFrame(pd.DataFrame):
         self.to_json(name)
 
     def back_up(self):
-        if input(bool(int('Check the DataFrame carefully!'))):
+        if bool(int(input('Check the DataFrame carefully!'))):
             self.to_json(df_dir + ' - backup.json')
 
     def new_experiments(self, solver: str = 'ant', size: str = '', shape: str = '', free=False):
@@ -119,6 +120,13 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
+        # with open('participant_count_dict.txt', 'r') as json_file:
+        #     participant_count_dict = json.load(json_file)
+        #
+        # for i, exp in self.iterrows():
+        #     if exp['filename'] in participant_count_dict.keys():
+        #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
+
         self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
     def fill_column(self):
@@ -128,20 +136,25 @@ class DataFrame(pd.DataFrame):
                 self.at[i, 'maze dimensions'] = geometry[0]
                 self.at[i, 'load dimensions'] = geometry[1]
 
+    def recalculate_experiment(self, filename):
+        x = get(filename)
+        index = myDataFrame[myDataFrame['filename'] == filename].index[0]
+        new_data_frame = DataFrame(self.drop([index]).reset_index(drop=True))
+
+        single = SingleExperiment(filename, x.solver)
+        new_data_frame = new_data_frame + single
+        return new_data_frame
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
+filename = 'M_SPT_4700022_MSpecialT_1_ants'
+new_data_frame = myDataFrame.recalculate_experiment(filename)
+DEBUG = 1
 
 if __name__ == '__main__':
-    # myDataFrame.add_column()
-    # myDataFrame.fill_column()
-    # myDataFrame.save()
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
-
-    DEBUG = 1
-
     # how_many_experiments(myDataFrame)
 
     for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):

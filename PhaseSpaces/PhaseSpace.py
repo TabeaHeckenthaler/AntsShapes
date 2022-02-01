@@ -495,7 +495,7 @@ class PhaseSpace(object):
 
 class PS_Area(PhaseSpace):
     def __init__(self, ps: PhaseSpace, space: np.array, name: str):
-        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=self.geometry)
+        super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=ps.geometry)
         self.space: np.array = space
         self.fig = ps.fig
         self.name: str = name

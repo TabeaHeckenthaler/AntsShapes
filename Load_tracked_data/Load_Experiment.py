@@ -205,6 +205,7 @@ def connector(part1, part2, frames_missing, filename=None):
                                filename=filename,
                                starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
                                ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],
+                               geometry=part1.geometry()
                                )
     connector_load.stretch(frames_missing)
     connector_load.tracked_frames = [connector_load.frames[0], connector_load.frames[-1]]

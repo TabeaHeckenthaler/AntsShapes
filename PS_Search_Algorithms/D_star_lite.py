@@ -308,12 +308,12 @@ class D_star_lite:
             # mlab.close()
 
 
-def run_dstar(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius=7, show_animation=False, filename='test',
-              starting_point=None, ending_point=None):
+def run_dstar(size='XL', shape='SPT', solver='ant', geometry=None, dil_radius=8, sensing_radius=7, show_animation=False,
+              filename='test', starting_point=None, ending_point=None):
     print('Calculating: ' + filename)
 
     # ====something====
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name=size + '_' + shape)
+    conf_space = PhaseSpace.PhaseSpace(solver, size, shape, geometry, name=size + '_' + shape)
     conf_space.load_space()
 
     if starting_point is None:
@@ -335,7 +335,7 @@ def run_dstar(size='XL', shape='SPT', solver='ant', dil_radius=8, sensing_radius
     d_star_lite = D_star_lite(
         starting_node=conf_space.coords_to_indices(*starting_point),
         ending_node=conf_space.coords_to_indices(*ending_point),
-        average_radius=Maze(size, shape, solver).average_radius(),
+        average_radius=Maze(size, shape, solver, geometry=geometry).average_radius(),
         conf_space=conf_space,
         known_conf_space=known_conf_space,
         display_cs=False
@@ -373,6 +373,7 @@ if __name__ == '__main__':
             x = run_dstar(size=size,
                           shape=shape,
                           solver=solver,
+                          geometry=None,  # TODO
                           sensing_radius=sensing_radius,
                           dil_radius=dil_radius,
                           filename=filename,

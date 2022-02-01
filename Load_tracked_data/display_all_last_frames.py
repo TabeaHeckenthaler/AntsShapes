@@ -3,6 +3,9 @@ from trajectory_inheritance.trajectory import get
 from Directories import df_dir
 import json
 
+x = get('S_SPT_4720014_SSpecialT_1_ants')
+x.play()
+
 
 def correct_a_false_winner(filename, winner=False, comment=''):
     x = get(filename)

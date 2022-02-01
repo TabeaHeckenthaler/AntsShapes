@@ -2,6 +2,8 @@ from trajectory_inheritance.trajectory import get
 from Load_tracked_data.Load_Experiment import load, connector, parts, time_dict
 import numpy as np
 import os
+from Setup.Maze import Maze
+from trajectory_inheritance.trajectory_ant import Trajectory_ant
 
 
 def to_interpolate():
@@ -69,5 +71,32 @@ def play_trajectories():
             delete_from_file(trajectories_filename)
 
 
+def test_configuration(x):
+    mymaze = Maze(x)
+    mymaze.set_configuration([15, 4.912207], 0)
+    mymaze.draw()
+
+
+def extend_trajectory():
+    extend_list = {
+        'L_SPT_4080033_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'},
+        'L_SPT_4090010_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'}
+    }
+    # TODO!
+    for filename, info in extend_list.items():
+        x_cut = get(filename)
+        x_extend = Trajectory_ant(size=x_cut.size,
+                                  shape=x_cut.shape,
+                                  old_filename=filename + '_extension',
+                                  winner=x_cut.winner)
+
+        x_extend.position = np.array([info['configuration'][0]])
+        x_extend.angle = np.array([info['configuration'][1]])
+        x_extend.frames = np.array([i for i in range(x_extend.position.shape[0])])
+        if info['where'] == 'end':
+            connection = connector(x_cut, x_extend, x_cut.fps * 10)
+            x = x_cut + connection
+
+
 if __name__ == '__main__':
-    to_interpolate()
+    extend_trajectory()

@@ -6,6 +6,7 @@ from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers, get
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from DataFrame.dataFrame import myDataFrame as df
+import json
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
 plot_group_size_seperately = {'ant': [1], 'human': [2]}
@@ -13,8 +14,6 @@ plot_group_size_seperately = {'ant': [1], 'human': [2]}
 
 def plot_path_length(df, solver, ax, marker='.'):
     for communication in [0, 1]:
-        if communication == 0:
-            DEBUG = 1
         df_solver_comm = df[df['communication'] == communication]
 
         seperate_group_df = \
@@ -38,7 +37,7 @@ def plot_path_length(df, solver, ax, marker='.'):
                                marker=marker,
                                s=150)
 
-            if len(means) > 1:
+            if len(means) > 0:
                 xs = list(means['average Carrier Number'] + 0.5)
                 ys = list(means['path length/minimal path length[]'] + 0.5)
                 for txt, x, y in zip(list(means.index), xs, ys):
@@ -154,7 +153,7 @@ def ant_HIT_figure_path_length(df_gr_solver):
         save_fig(fig, 'ants_' + y)
 
 
-def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back'):
+def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back', size=None):
     """
     Reduce df to relevant experiments
     :param df: dataFrame
@@ -167,6 +166,8 @@ def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_con
     """
     df = df[df['shape'] == shape]
     df = df[df['solver'] == solver]
+    if size is not None:
+        df = df[df['size'] == size]
     if winner is not None:
         df = df[df['winner'] == winner]
     if init_cond == 'back':
@@ -183,8 +184,9 @@ def relevant_columns(df):
 
 
 def adjust_figure():
-    ax.set_ylim(0, 35)
-    # ax.set_xscale('log')
+    ax.set_ylim(0, 50)
+    ax.set_xscale('log')
+    # ax.set_yscale('log')
     # ax.set_ylim(0, 25)
     plt.show()
 
@@ -196,11 +198,12 @@ if __name__ == '__main__':
     solvers = ['ant', 'human']
 
     for solver in solvers:
-        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, winner=True, init_cond='back')
+        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver,
+                                                      winner=True, init_cond='back')
         plot_path_length(relevant_columns(df_relevant_exp), solver, ax, marker='*')
 
     adjust_figure()
-    save_fig(fig, 'back_path_length_with_humans')
+    save_fig(fig, 'back_path_length_humans')
 
     # fig, ax = plt.subplots(1, 1)
     # SPT_figure(df, ax)
