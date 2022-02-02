@@ -1,6 +1,5 @@
 from PhaseSpaces import PhaseSpace
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
-from Directories import SaverDirectories
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node_ind import Node_ind
 from copy import copy
@@ -8,17 +7,17 @@ from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
-from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
 from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
 from scipy.ndimage.measurements import label
 from PS_Search_Algorithms.Dstar_functions import voxel
+from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
+from Directories import SaverDirectories
 
 try:
     import cc3d
 except:
     print('cc3d not installed')
 
-# TODO: Load the rest of your tracked data.
 structure = np.ones((3, 3, 3), dtype=int)
 
 
@@ -26,13 +25,14 @@ class D_star_lite:
     def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
                  ending_point: tuple, max_iter: int = 100000) -> None:
         """
-
-        :param x:
-        :param sensing_radius:
-        :param dilation_radius:
-        :param starting_point:
-        :param ending_point:
-        :param max_iter:
+        Initialize the D_star_lite solver.
+        :param x: Trajectory_ps_simulation object, that stores information on the maze dimensions.
+        :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
+        conf_space
+        :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
+        :param starting_point: coordinates of starting point (in cm or m)
+        :param ending_point: coordinates of ending point (in cm or m)
+        :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
         """
         self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
         self.conf_space.load_space()
@@ -48,8 +48,7 @@ class D_star_lite:
         self.average_radius = Maze(x).average_radius()
         self.distance = None
         self.winner = False
-        self.end, self.start = None, None
-        self.define_starting_and_ending(starting_point, ending_point)
+        self.end, self.start = self.define_starting_and_ending(starting_point, ending_point)
         self.current = self.start
 
         # self.draw_conf_space_and_path()
@@ -57,32 +56,38 @@ class D_star_lite:
         # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
         # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
-    def define_starting_and_ending(self, starting_point, ending_point) -> None:
+    def define_starting_and_ending(self, starting_point, ending_point) -> tuple:
+        """
+        Define the starting and ending point of the solver.
+        :param starting_point: coordinates of starting point (in cm or m)
+        :param ending_point: coordinates of ending point (in cm or m)
+        """
         if starting_point is None:
             starting_point = start(x)
         if ending_point is None:
             ending_point = end(x)
-        self.start = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
-        self.end = Node_ind(*self.conf_space.coords_to_indices(*ending_point), self.conf_space, self.average_radius)
+        start_ = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
+        end_ = Node_ind(*self.conf_space.coords_to_indices(*ending_point), self.conf_space, self.average_radius)
 
         if self.collision(self.start):
             print('Your start is not in configuration space')
-            self.start.draw_maze()
+            # start.draw_maze()
 
             # if bool(input('Move back? ')):
             if False:
-                self.start = self.start.find_closest_possible_conf(note='backward')
+                start_ = self.start.find_closest_possible_conf(note='backward')
             else:
-                self.start = self.start.find_closest_possible_conf()
+                start_ = self.start.find_closest_possible_conf()
 
         if self.collision(self.end):
             print('Your end is not in configuration space')
             self.end.draw_maze()
             # if bool(input('Move back? ')):
             if False:
-                self.end = self.end.find_closest_possible_conf(note='backward')
+                end_ = self.end.find_closest_possible_conf(note='backward')
             else:
-                self.end = self.end.find_closest_possible_conf()
+                end_ = self.end.find_closest_possible_conf()
+        return start_, end_
 
     def path_planning(self, display_cs=True) -> None:
         """
@@ -93,7 +98,7 @@ class D_star_lite:
         current node with the minimal distance (+cost) (next_node).
         If you are able to walk to next_node is, make next_node your current_node.
         Else, recompute your distances.
-        :param display_cs:
+        :param display_cs: Whether the path should be displayed during run time.
         """
         self.compute_distances()
         # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
@@ -118,11 +123,11 @@ class D_star_lite:
         if self.current.ind() == self.end.ind():
             self.winner = True
 
-    def add_knowledge(self, central_node) -> None:
+    def add_knowledge(self, central_node: Node_ind) -> None:
         """
         Adds knowledge to the known configuration space of the solver with a certain sensing_radius around
         the central node, which is the point of interception
-        :param central_node:
+        :param central_node: point of impact, which is the center of where the maze will be updated
         """
         # roll the array
         rolling_indices = [- max(central_node.xi - self.sensing_radius, 0),
@@ -143,7 +148,7 @@ class D_star_lite:
         # update_screen known_conf_space by using known_conf_space_rolled and rolling back
         self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
-    def unnecessary_space(self, buffer=5):
+    def unnecessary_space(self, buffer: int = 5):
         unnecessary = np.ones_like(self.conf_space.space, dtype=bool)
         unnecessary[np.min([self.start.ind()[0] - buffer, self.end.ind()[0] - buffer]):
                     np.max([self.start.ind()[0] + buffer, self.end.ind()[0] + buffer]),
@@ -220,21 +225,23 @@ class D_star_lite:
             else:
                 connected.remove(greedy_node_ind)
 
-    def collision(self, node) -> bool:
+    def collision(self, node: Node_ind, space: np.array = None) -> bool:
         """
-        finds the indices_to_coords of (x, y, theta) in conf_space,
-        where angles go from (0 to 2pi)
+        :param space: space, which
+        :param node: Node, which should be checked, whether in space.
         """
-        return not self.conf_space.space[node.xi, node.yi, node.thetai]
+        if space is None:
+            space = self.conf_space.space
+        return not space[node.xi, node.yi, node.thetai]
 
     def generate_path(self, length=np.infty, ind=False) -> np.array:
         """
         Generates path from current node, its parent node, and parents parents node etc.
         Returns an numpy array with the x, y, and theta coordinates of the path,
         starting with the initial node and ending with the current node.
-        :param length:
+        :param length: maximum length of generated path
         :param ind:
-        :return:
+        :return: np.array with [[x1, y1, angle1], [x2, y2, angle2], ... ] of the path
         """
         path = [self.current.coord()]
         node = self.current
@@ -250,9 +257,9 @@ class D_star_lite:
 
     def into_trajectory(self, x: Trajectory_ps_simulation) -> Trajectory_ps_simulation:
         """
-
-        :param x:
-        :return:
+        Turn a D_star_lite object into the corresponding Trajectory object.
+        :param x: Trajectory without position and angle etc.
+        :return: Trajectory with position and angle
         """
         path = self.generate_path()
         if not self.winner:
@@ -267,9 +274,8 @@ class D_star_lite:
 
     def draw_conf_space_and_path(self, space=None) -> None:
         """
-
-        :param space:
-        :return:
+        Draw the configuration space and the path.
+        :param space: space to draw
         """
         self.conf_space.visualize_space(space=space)
         self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
@@ -278,11 +284,10 @@ class D_star_lite:
         path = self.generate_path()
         self.conf_space.draw(path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
 
-    def show_animation(self, save=False):
+    def show_animation(self, save=False) -> None:
         """
-
-        :param save:
-        :return:
+        Show an animation of the solver
+        :param save: Whether to save the image
         """
         self.draw_conf_space_and_path()
         self.draw_conf_space_and_path(space=self.known_conf_space)
@@ -292,47 +297,40 @@ class D_star_lite:
             # mlab.close()
 
 
-def run_dstar(shape, size, solver, dilation_radius=8, sensing_radius=7, filename=None, show_animation=False,
-              starting_point=None, ending_point=None, geometry=None):
+def run_dstar(shape: str, size: str, solver: str, dilation_radius: int = 8, sensing_radius: int = 7,
+              filename: str = None, show_animation: bool = False, starting_point: tuple = None,
+              ending_point: tuple = None, geometry: tuple = None) -> Trajectory_ps_simulation:
     """
-
-    :param shape:
-    :param size:
-    :param solver:
-    :param dilation_radius:
-    :param sensing_radius:
-    :param filename:
-    :param show_animation:
-    :param starting_point:
-    :param ending_point:
-    :param geometry:
-    :return:
+    Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.
+    :param shape: shape of the load, that moves through the maze
+    :param size: size of the load
+    :param solver: type of solver
+    :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
+    conf_space
+    :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
+    :param filename: Name of the trajectory
+    :param show_animation: show animation
+    :param starting_point: point (in real world coordinates) that the solver starts at
+    :param ending_point: point (in real world coordinates) that the solver is aiming to reach
+    :param geometry: geometry of the maze
+    :return: trajectory object.
     """
-
     if filename is None:
         filename = filename_dstar(size, shape, dilation_radius, sensing_radius)
-    elif filename in os.listdir(SaverDirectories['ps_simulation']):
-        return
-
+    # elif filename in os.listdir(SaverDirectories['ps_simulation']):
+    #     return
+    print('Calculating: ' + filename)
     x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
-    print('Calculating: ' + x.filename)
-
-    # ==== Run the solver ====
     d_star_lite = D_star_lite(x, sensing_radius=sensing_radius, dilation_radius=dilation_radius,
                               starting_point=starting_point, ending_point=ending_point)
     d_star_lite.path_planning()
-
-    # === Draw final path ===
     if show_animation:
         d_star_lite.show_animation()
-
-    # ==== Turn this into trajectory_inheritance object ====
-    x = d_star_lite.into_trajectory(x)
-    return x
+    return d_star_lite.into_trajectory(x)
 
 
 if __name__ == '__main__':
-    x = run_dstar('SPT', 'S', 'ant', 100, 0)
+    x = run_dstar('SPT', 'S', 'ps_simulation', 100, 0)
     x.play(wait=200)
     x.save()
 
