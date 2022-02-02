@@ -197,11 +197,11 @@ def connector(part1, part2, frames_missing, filename=None):
     if filename is None:
         filename = part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename
 
-    connector_load = run_dstar(size=part1.size,
-                               shape=part1.shape,
+    connector_load = run_dstar(shape=part1.shape,
+                               size=part1.size,
                                solver=part1.solver,
                                sensing_radius=100,
-                               dil_radius=0,
+                               dilation_radius=0,
                                filename=filename,
                                starting_point=[part1.position[-1][0], part1.position[-1][1], part1.angle[-1]],
                                ending_point=[part2.position[0][0], part2.position[0][1], part2.angle[0]],

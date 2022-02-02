@@ -47,18 +47,17 @@ for solver in ant_dimensions:
 # there are a few I mazes, which have a different exit size,
 
 # x, y, theta
-def start(size, shape, solver):
-    maze = Maze(size=size, shape=shape, solver=solver)
-
-    if shape == 'SPT':
+def start(x):
+    maze = Maze(x)
+    if x.shape == 'SPT':
         # return [(maze.slits[0] - maze.slits[-1]) / 2 + maze.slits[-1] - 0.5, maze.arena_height / 2, 0]
         return [maze.slits[0] * 0.5, maze.arena_height / 2, 0]
-    elif shape in ['H', 'I', 'T', 'RASH', 'LASH']:
+    elif x.shape in ['H', 'I', 'T', 'RASH', 'LASH']:
         return [maze.slits[0] - 5, maze.arena_height / 2, np.pi - 0.1]
 
 
-def end(size, shape, solver):
-    maze = Maze(size=size, shape=shape, solver=solver)
+def end(x):
+    maze = Maze(x)
     return [maze.slits[-1] + 5, maze.arena_height / 2, 0]
 
 

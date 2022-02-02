@@ -7,10 +7,16 @@ def filename_dstar(size, shape, dil_radius, sensing_radius):
 
 class Trajectory_ps_simulation(Trajectory):
 
-    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool):
+    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, geometry=None):
         super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
         self.sensing = int()
         self.dilation = int()
+
+        # to not overwrite names
+        if geometry is None:
+            self.g = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+        else:
+            self.g = geometry
 
     def load_participants(self):
         self.participants = PS_simulation(self)
@@ -23,13 +29,10 @@ class Trajectory_ps_simulation(Trajectory):
         return 1
 
     def geometry(self):
-        if self.shape != 'SPT':
-            return 'MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx'
-        else:
-            return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
+        # At the moment I am only using the human dimensions
+        return self.g
 
 
 class PS_simulation:
     def __init__(self, filename):
         self.filename = filename
-        return

@@ -1,6 +1,6 @@
 """
 
-Path planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
+Path path_planning Sample Code with Randomized Rapidly-Exploring Random Trees (RRT)
 
 author: AtsushiSakai(@Atsushi_twi)
 
@@ -17,7 +17,7 @@ show_animation = True
 
 class RRT:
     """
-    Class for RRT planning
+    Class for RRT path_planning
     """
 
     class Node:
@@ -63,7 +63,7 @@ class RRT:
 
     def planning(self, animation=True):
         """
-        rrt path planning
+        rrt path path_planning
 
         animation: flag for animation on or off
         """

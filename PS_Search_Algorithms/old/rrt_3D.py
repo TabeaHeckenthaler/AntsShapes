@@ -1,6 +1,6 @@
 """
 
-Path planning Sample Code with Randomized Rapidly-Exploring Random
+Path path_planning Sample Code with Randomized Rapidly-Exploring Random
 Trees with sobol low discrepancy sampler(RRTSobol).
 
 The goal of low discrepancy samplers is to generate a sequence of points that
@@ -9,7 +9,7 @@ samples to cover the exploration space in a way that makes the largest
 uncovered area be as small as possible.  This generalizes of the idea of grid
 resolution.  For a grid, the resolution may be selected by defining the step
 size for each axis.  As the step size is decreased, the resolution increases.
-If a grid-based motion planning algorithm can increase the resolution
+If a grid-based motion path_planning algorithm can increase the resolution
 arbitrarily, it becomes resolution complete.  Dispersion can be considered as a
 powerful generalization of the notion of resolution.
 
@@ -39,7 +39,7 @@ show_animation = True
 
 class RRT:
     """
-    Class for RRT planning
+    Class for RRT path_planning
     """
 
     def __init__(self,
@@ -81,7 +81,7 @@ class RRT:
 
     def planning(self, animation=True, fig=None):
         """
-        rrt path planning
+        rrt path path_planning
         Create node list, with only the start,
         iteratively get a random_node,
         find the node nearest to the random_node node in the node_list,
