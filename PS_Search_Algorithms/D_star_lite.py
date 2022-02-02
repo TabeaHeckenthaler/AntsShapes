@@ -105,8 +105,8 @@ class D_star_lite:
         :param display_cs: Whether the path should be displayed during run time.
         """
         self.compute_distances()
-        # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
-        # _ = self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
+        # self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
+        # self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
 
         ii = 0
         while self.current.ind() != self.end.ind() and ii < self.max_iter:
