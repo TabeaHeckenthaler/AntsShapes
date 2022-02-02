@@ -142,31 +142,24 @@ class PhaseSpace(object):
         self.space = self.empty_space()
         print("PhaseSpace: Calculating space " + self.name)
 
-        # how to iterate over phase space
-        def ps_calc():
-            """
-            param x0: index of x array to start with
-            param x1: index of x array to end with
-            :return: iterator"""
-            maze_corners = np.array_split(maze.corners(), int(maze.corners().shape[0] / 4))
-            former_found = (0, 0)
-            for x, y, theta in self.iterate_coordinates(mask=mask):
-                indices = self.coords_to_indices(x, y, theta)
+        maze_corners = np.array_split(maze.corners(), int(maze.corners().shape[0] / 4))
+        former_found = (0, 0)
+        for x, y, theta in self.iterate_coordinates(mask=mask):
+            indices = self.coords_to_indices(x, y, theta)
 
-                # first check the bounding box
-                maze_bb.set_configuration([x, y], float(theta))
-                if possible_configuration(load_bb, maze_corners, former_found)[0]:
-                    self.space[indices], former_found = possible_configuration(load_bb, maze_corners, former_found)
+            # first check the bounding box
+            maze_bb.set_configuration([x, y], float(theta))
+            if possible_configuration(load_bb, maze_corners, former_found)[0]:
+                self.space[indices], former_found = possible_configuration(load_bb, maze_corners, former_found)
 
-                else:
-                    maze.set_configuration([x, y], float(theta))
-                    self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
-                # load.position, load.angle = [x, y], float(theta)
-                # from PhysicsEngine.Display import Display
-                # display = Display('', maze)
-                # maze.draw(display)
-                # display.display()
-        ps_calc()
+            else:
+                maze.set_configuration([x, y], float(theta))
+                self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
+            # load.position, load.angle = [x, y], float(theta)
+            # from PhysicsEngine.Display import Display
+            # display = Display('', maze)
+            # maze.draw(display)
+            # display.display()
 
     def new_fig(self):
         """
@@ -336,15 +329,17 @@ class PhaseSpace(object):
         order not to overwrite the old .pkl file.
         :param directory: Where you would like to save.
         """
-        if not hasattr(self, 'space'):
+        if not hasattr(self, 'space') and self.space is not None:
             self.calculate_space()
-        if not hasattr(self, 'space_boundary'):
+        if not hasattr(self, 'space_boundary') and self.space_boundary is not None:
             self.calculate_boundary()
         if directory is None:
             if os.path.exists(self.directory()):
                 now = datetime.now()
                 date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
                 directory = self.directory(addition=date_string)
+            else:
+                directory = self.directory()
         print('Saving ' + self.name + ' in path: ' + directory)
         pickle.dump((np.array(self.space, dtype=bool),
                      np.array(self.space_boundary, dtype=bool),
