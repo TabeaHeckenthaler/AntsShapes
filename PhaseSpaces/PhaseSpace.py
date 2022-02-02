@@ -12,9 +12,7 @@ import string
 from skfmm import distance
 from tqdm import tqdm
 from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
-from joblib import Parallel, delayed
-from matplotlib import pyplot as plt
-from copy import copy
+
 
 try:
     from mayavi import mlab
@@ -32,19 +30,18 @@ scale = 5
 
 
 # TODO: fix the x.winner attribute
-
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
 
 class PhaseSpace(object):
     def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name=""):
         """
-        :param board_coords:
-        :param load_coords:
-        # :param pos_resolution: load replacement resolution (in in the coords units)
-        # :param theta_resolution: theta replace
-        # :param x_range: tuple of the x-space range, in the coords units
-        # :param y_range: tuple of the y-space range, in the coords units
+
+        :param solver: type of solver (ps_simluation, ant, human, etc.)
+        :param size: size of the maze (XL, L, M, S)
+        :param shape: shape of the load in the maze (SPT, T, H ...)
+        :param geometry: tuple with names of the .xlsx files that contain the relevant dimensions
+        :param name: name of the PhaseSpace.
         """
         maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
 
@@ -77,22 +74,21 @@ class PhaseSpace(object):
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
 
-    def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '', small=False):
+    def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '', small: bool =False) \
+            -> str:
         """
-        :param addition:
-        :param erosion_radius:
-        :param point_particle:
-        :param small: if you want only the labeled configuration space
-        where the phase space is saved
-        If an erosion_radius is given, we are dealing with a labeled Phase Space.
+        Where a PhaseSpace should be saved, or where it can be found.
+        :param erosion_radius: If the PhaseSpace is eroded, this should be added in the filename
+        :param point_particle: not implemented
+        :param addition: If the PhaseSpace already is calculated, it should be saved with a different filename, to not
+        overwrite the old one.
+        :param small: if you want only the labeled configuration space, not all the additional information
+        :return: string with the name of the directory, where the PhaseSpace should be saved.
         """
-
         if self.size in ['Small Far', 'Small Near']:  # both have same dimensions
-            size = 'Small'
+            filename = 'Small' + '_' + self.shape + '_' + self.geometry[0][:-5]
         else:
-            size = self.size
-
-        filename = size + '_' + self.shape + '_' + self.geometry[0][:-5]
+            filename = self.size + '_' + self.shape + '_' + self.geometry[0][:-5]
 
         if point_particle:
             return os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + addition + '_pp.pkl')
@@ -109,6 +105,10 @@ class PhaseSpace(object):
         return path_
 
     def number_of_points(self) -> dict:
+        """
+        How to pixelize the PhaseSpace. How many pixels along every axis.
+        :return: dictionary with integers for every axis.
+        """
         # x_num = np.ceil(self.extent['x'][1]/resolution)
         res = resolution(self.size, self.solver, self.shape)
         y_num = np.ceil(self.extent['y'][1] / res)
@@ -126,7 +126,12 @@ class PhaseSpace(object):
         self.space[:, -1, :] = False
 
     def calculate_space(self, point_particle=False, mask=None) -> None:
-        # TODO: implement point particles
+        """
+        This module calculated a space.
+        :param point_particle:
+        :param mask: If a mask is given only the unmasked area is calcuted. This is used to finetune maze dimensions.
+        :return:
+        """
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry)
         load = maze.bodies[-1]
 
@@ -164,16 +169,20 @@ class PhaseSpace(object):
         ps_calc()
 
     def new_fig(self):
+        """
+        Opening a new figure.
+        :return:
+        """
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
         return fig
 
     @staticmethod
-    def reduced_resolution(space: np.array, reduction: int):
+    def reduced_resolution(space: np.array, reduction: int) -> np.array:
         """
         Reduce the resolution of the PS.
-        :param space: space that you want to reshpe
+        :param space: space that you want to reshape
         :param reduction: By what factor the PS will be reduced.
-        :return:
+        :return: np.array representing the CS with reduced resolution.
         """
         for axis in range(int(space.ndim)):
             space = space.take(indices=range(0, int(space.shape[axis] / reduction) * reduction), axis=axis)
@@ -196,7 +205,14 @@ class PhaseSpace(object):
         # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
         return summer(reshape(space)) / (reduction ** space.ndim)
 
-    def visualize_space(self, reduction=1, fig=None, colormap='Greys', space: np.ndarray =None) -> None:
+    def visualize_space(self, reduction: int = 1, fig=None, colormap: str = 'Greys', space: np.ndarray = None) -> None:
+        """
+        Visualize space using mayavi.
+        :param reduction: if the PS should be displayed with reduced resolution in favor of run time
+        :param fig: figure handle to plt the space in.
+        :param colormap: colors used for plotting
+        :param space: what space is supposed to be plotted. If none is given, self.space is used.
+        """
         if fig is None and (self.fig is None or not self.fig.running):
             self.fig = self.new_fig()
         else:
@@ -220,6 +236,12 @@ class PhaseSpace(object):
             space = self.reduced_resolution(space, reduction)
 
         def prune(array1, array2):
+            """
+            Prune the longer axis, for every axis, when dimensions of arrays are not equal
+            :param array1: first array
+            :param array2: second array
+            :return: array1 and array2 with the same size.
+            """
             for axis in range(array1.ndim):
                 if array2.shape[axis] > array1.shape[axis]:
                     array2 = array2.take(indices=range(array1.shape[axis]), axis=axis)
@@ -241,8 +263,9 @@ class PhaseSpace(object):
         cont.actor.actor.scale = [1, 1, self.average_radius]
         mlab.view(-90, 90)
 
-    def iterate_space_index(self, mask) -> iter:
+    def iterate_space_index(self, mask=None) -> iter:
         """
+        :param mask: If mask is given, only the unmasked areas are iterated over.
         :return: iterator over the indices_to_coords of self.space
         """
         if mask is None:
@@ -257,10 +280,9 @@ class PhaseSpace(object):
                     yield x_i, y_i, theta_i
 
     def iterate_coordinates(self, mask=None) -> iter:
-        r"""
-        param x0: index to start with
-        param x1: index to end with
-        :return: iterator
+        """
+        :param mask: If mask is given, only the unmasked areas are iterated over.
+        :return: iterator over the coords of self.space
         """
         if mask is None:
             x_iter = np.arange(self.extent['x'][0], self.extent['x'][1], self.pos_resolution)
@@ -284,6 +306,13 @@ class PhaseSpace(object):
                             yield x, y, theta
 
     def iterate_neighbours(self, ix, iy, itheta) -> iter:
+        """
+        Iterate over all the neighboring pixels of a given pixel
+        :param ix: index in 0 axis direction
+        :param iy: index in 1 axis direction
+        :param itheta: index in 2 axis direction
+        :return: iterator over the neighbors
+        """
         for dx, dy, dtheta in itertools.product([-1, 0, 1], repeat=3):
             _ix, _iy, _itheta = ix + dx, iy + dx, itheta + dtheta
             if ((_ix >= self.space.shape[0]) or (_ix < 0)
@@ -301,12 +330,11 @@ class PhaseSpace(object):
     #                 color=color, tube_radius=0.045, colormap='Spectral')
     #     mlab.points3d([traj[0, 0]], [traj[1, 0]], [traj[2, 0]])
 
-    def save_space(self, directory=None):
+    def save_space(self, directory: str = None) -> None:
         """
         Pickle the numpy array in given path, or in default path. If default directory exists, add a string for time, in
         order not to overwrite the old .pkl file.
-        :param path: Where you would like to save.
-        :return:
+        :param directory: Where you would like to save.
         """
         if not hasattr(self, 'space'):
             self.calculate_space()
@@ -348,11 +376,24 @@ class PhaseSpace(object):
         return False
 
     def indices_to_coords(self, ix, iy, itheta) -> tuple:
+        """
+        Translating indices to coordinates
+        :param ix: index in axis 0 direction
+        :param iy: index in axis 1 direction
+        :param itheta: index in axis 2 direction
+        :return: set of coordinates (position, angle) that correspond to give indices of PS.
+        """
         return (self.extent['x'][0] + ix * self.pos_resolution,
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
 
     def coords_to_index(self, axis: int, value):
+        """
+        Translating coords to index of axis
+        :param axis: What axis is coordinate describing
+        :param value:
+        :return:
+        """
         if value is None:
             return None
         resolut = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}[axis]
@@ -382,7 +423,7 @@ class PhaseSpace(object):
 
     def calculate_boundary(self, point_particle=False, mask=None) -> None:
         """
-
+        Calculate the boundary of a given PhaseSpace.
         :param point_particle:
         :param mask: Where to calculate space (usefull just for testing)
         :return:
@@ -397,7 +438,7 @@ class PhaseSpace(object):
 
     def draw(self, positions, angles, scale_factor: float = 0.5, color=(1, 0, 0)) -> None:
         """
-        draw positions and angles in 3 dimensional phase space
+        draw positions and angles in 3 dimensional phase space.
         """
         if np.array(positions).ndim == 1:
             positions = np.expand_dims(np.array(positions), axis=0)
@@ -411,11 +452,21 @@ class PhaseSpace(object):
                       color=color
                       )
 
-    def draw_ind(self, indices, scale_factor=0.2):
+    def draw_ind(self, indices: tuple, scale_factor: float = 0.2) -> None:
+        """
+        Draw single indices in a PS
+        :param indices: indices of node to draw
+        :param scale_factor: how much the PhaseSpace has been scaled
+        """
         coords = self.indices_to_coords(*indices)
         self.draw(coords[:2], coords[2], scale_factor=scale_factor)
 
-    def trim(self, borders) -> None:
+    def trim(self, borders: list) -> None:
+        """
+        Trim a phaseSpace down to size given by borders
+        :param borders:
+        :return:
+        """
         [[x_min, x_max], [y_min, y_max]] = borders
         self.extent['x'] = (max(0, x_min), min(self.extent['x'][1], x_max))
         self.extent['y'] = (max(0, y_min), min(self.extent['y'][1], y_max))
@@ -581,6 +632,11 @@ class Node:
         self.indices: tuple = indices
 
     def draw(self, ps):
+        """
+        Draw a node in PhaseSpace
+        :param ps: PhaseSpace
+        :return:
+        """
         ps.draw_ind(self.indices)
 
     def find_closest_state(self, ps_states: list) -> int:
@@ -772,6 +828,12 @@ class PhaseSpace_Labeled(PhaseSpace):
                 idx += 1
 
     def save_labeled(self, directory=None, date_string='') -> None:
+        """
+        Save the labeled PhaseSpace in directory
+        :param directory: where to save PhaseSpace
+        :param date_string:
+        :return:
+        """
         if directory is None:
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
@@ -809,6 +871,10 @@ class PhaseSpace_Labeled(PhaseSpace):
         return self.coords_to_index(0, distance_cm) + self.erosion_radius * 2
 
     def label_space(self) -> None:
+        """
+        Calculate the labeled space.
+        :return:
+        """
         print('Calculating distances for the different states in', self.name)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]

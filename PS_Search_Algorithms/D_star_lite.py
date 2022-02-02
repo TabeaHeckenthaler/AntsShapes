@@ -297,7 +297,7 @@ class D_star_lite:
 
     def show_animation(self, save=False):
         conf_space_fig = self.draw_conf_space_and_path()
-        known_conf_space_fig = self.draw_conf_space_and_path(space=known_conf_space)
+        known_conf_space_fig = self.draw_conf_space_and_path(space=self.known_conf_space)
         if save:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg',
                          magnification=4,
