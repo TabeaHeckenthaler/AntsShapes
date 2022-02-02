@@ -13,6 +13,9 @@ class Collective_Path_Planning(D_star_lite):
     We move according to a single solver.
     Once we encounter a wall, we add knowledge to all solvers with their given locality radius (sensing radius).
     Then we choose a new leader (randomly), which leads the group according to his minimal path.
+
+    Computation time would stay very low (when we calculate the distance matrices),
+    if we left the resolution always low, and just updated possible locations.
     """
     def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
                  ending_point: tuple, max_iter: int = 100000, number_of_solvers: int = 2):
