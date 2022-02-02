@@ -23,29 +23,17 @@ structure = np.ones((3, 3, 3), dtype=int)
 
 
 class D_star_lite:
-    r"""
-    Class for path path_planning
-    """
-
-    def __init__(self, x, sensing_radius, dilation_radius, starting_point, ending_point, max_iter=100000,
-                 display_cs=False):
-        r"""
-        Setting Parameter
-
-        start:Start Position [x,y] (current node will be set to this)
-        end_screen:Goal Position [x,y] (I only take into account the x coordinate in my mazes... its more like a finish line)
-        conf_space:Configuration Space [PhaseSpace]
-        known_conf_space:configuration space according to which the solver plans his path before taking his first step
-
-        Keyword Arguments:
-            * *max_inter* [int] --
-              after how many iterations does the solver stop?
-            * *average_radius* [int] --
-              average radius of the load
+    def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
+                 ending_point: tuple, max_iter: int = 100000) -> None:
         """
-        self.max_iter = max_iter
-        self.sensing_radius = sensing_radius
 
+        :param x:
+        :param sensing_radius:
+        :param dilation_radius:
+        :param starting_point:
+        :param ending_point:
+        :param max_iter:
+        """
         self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
         self.conf_space.load_space()
 
@@ -55,18 +43,27 @@ class D_star_lite:
         self.known_conf_space = known_conf_space
         self.known_conf_space.initialize_maze_edges()
 
-        self.distance = None
+        self.max_iter = max_iter
+        self.sensing_radius = sensing_radius
         self.average_radius = Maze(x).average_radius()
+        self.distance = None
+        self.winner = False
+        self.end, self.start = None, None
+        self.define_starting_and_ending(starting_point, ending_point)
+        self.current = self.start
 
-        # Set current node as the start node.
+        # self.draw_conf_space_and_path()
+        # self.speed = np.ones_like(self.conf_space.space) # just an example of a speed
+        # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
+        # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
+
+    def define_starting_and_ending(self, starting_point, ending_point) -> None:
         if starting_point is None:
             starting_point = start(x)
         if ending_point is None:
             ending_point = end(x)
         self.start = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
         self.end = Node_ind(*self.conf_space.coords_to_indices(*ending_point), self.conf_space, self.average_radius)
-        self.current = self.start
-        self.winner = False
 
         if self.collision(self.start):
             print('Your start is not in configuration space')
@@ -87,15 +84,6 @@ class D_star_lite:
             else:
                 self.end = self.end.find_closest_possible_conf()
 
-        if display_cs:
-            self.conf_space.visualize_space()
-            self.start.draw_node(fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
-            self.end.draw_node(fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
-
-        # # this is just an example for a speed
-        # self.speed = np.ones_like(self.conf_space.space)
-        # self.speed[:, int(self.speed.shape[1] / 2):-1, :] = copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
-
     def path_planning(self, display_cs=True) -> None:
         """
         While the current node is not the end_screen node, and we have iterated more than max_iter
@@ -105,6 +93,7 @@ class D_star_lite:
         current node with the minimal distance (+cost) (next_node).
         If you are able to walk to next_node is, make next_node your current_node.
         Else, recompute your distances.
+        :param display_cs:
         """
         self.compute_distances()
         # _ = self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
@@ -129,10 +118,11 @@ class D_star_lite:
         if self.current.ind() == self.end.ind():
             self.winner = True
 
-    def add_knowledge(self, central_node):
-        r"""
+    def add_knowledge(self, central_node) -> None:
+        """
         Adds knowledge to the known configuration space of the solver with a certain sensing_radius around
         the central node, which is the point of interception
+        :param central_node:
         """
         # roll the array
         rolling_indices = [- max(central_node.xi - self.sensing_radius, 0),
@@ -161,8 +151,8 @@ class D_star_lite:
         np.max([self.start.ind()[1] + buffer, self.end.ind()[1] + buffer])] = False
         return unnecessary
 
-    def compute_distances(self):
-        r"""
+    def compute_distances(self) -> None:
+        """
         Computes distance of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
@@ -204,13 +194,10 @@ class D_star_lite:
         # self.conf_space.visualize_space()
         # self.conf_space.visualize_space(space=self.distance, colormap='Oranges')
         # plot_distances(self, index=self.current.xi, plane='x')
-        return
 
-    def find_greedy_node(self):
+    def find_greedy_node(self) -> Node_ind:
         """
         Find the node with the smallest distance from self.end, that is bordering the self.current.
-        :param conf_space:
-        :return:
         """
         connected = self.current.connected()
 
@@ -233,18 +220,21 @@ class D_star_lite:
             else:
                 connected.remove(greedy_node_ind)
 
-    def collision(self, node):
+    def collision(self, node) -> bool:
         """
         finds the indices_to_coords of (x, y, theta) in conf_space,
         where angles go from (0 to 2pi)
         """
         return not self.conf_space.space[node.xi, node.yi, node.thetai]
 
-    def generate_path(self, length=np.infty, ind=False):
-        r"""
+    def generate_path(self, length=np.infty, ind=False) -> np.array:
+        """
         Generates path from current node, its parent node, and parents parents node etc.
         Returns an numpy array with the x, y, and theta coordinates of the path,
         starting with the initial node and ending with the current node.
+        :param length:
+        :param ind:
+        :return:
         """
         path = [self.current.coord()]
         node = self.current
@@ -258,7 +248,12 @@ class D_star_lite:
             i += 1
         return np.array(path)
 
-    def into_trajectory(self, x: Trajectory_ps_simulation):
+    def into_trajectory(self, x: Trajectory_ps_simulation) -> Trajectory_ps_simulation:
+        """
+
+        :param x:
+        :return:
+        """
         path = self.generate_path()
         if not self.winner:
             print("Cannot find path")
@@ -270,16 +265,25 @@ class D_star_lite:
         x.winner = self.winner
         return x
 
-    def draw_conf_space_and_path(self, space=None):
-        fig = self.conf_space.visualize_space(space=space)
+    def draw_conf_space_and_path(self, space=None) -> None:
+        """
+
+        :param space:
+        :return:
+        """
+        self.conf_space.visualize_space(space=space)
         self.start.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
         self.end.draw_node(self.conf_space, fig=self.conf_space.fig, scale_factor=0.5, color=(0, 0, 0))
 
         path = self.generate_path()
-        self.conf_space.draw(fig, path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
-        return fig
+        self.conf_space.draw(path[:, 0:2], path[:, 2], scale_factor=0.2, color=(1, 0, 0))
 
     def show_animation(self, save=False):
+        """
+
+        :param save:
+        :return:
+        """
         self.draw_conf_space_and_path()
         self.draw_conf_space_and_path(space=self.known_conf_space)
         if save:
@@ -288,8 +292,22 @@ class D_star_lite:
             # mlab.close()
 
 
-def run_dstar(shape, size, solver, dilation_radius=8, sensing_radius=7,
-              filename=None, show_animation=False, starting_point=None, ending_point=None, geometry=None):
+def run_dstar(shape, size, solver, dilation_radius=8, sensing_radius=7, filename=None, show_animation=False,
+              starting_point=None, ending_point=None, geometry=None):
+    """
+
+    :param shape:
+    :param size:
+    :param solver:
+    :param dilation_radius:
+    :param sensing_radius:
+    :param filename:
+    :param show_animation:
+    :param starting_point:
+    :param ending_point:
+    :param geometry:
+    :return:
+    """
 
     if filename is None:
         filename = filename_dstar(size, shape, dilation_radius, sensing_radius)
