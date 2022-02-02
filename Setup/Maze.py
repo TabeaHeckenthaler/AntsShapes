@@ -36,12 +36,12 @@ StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3
               'circle': [0]}
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'ps_simulation': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'human': {'Small Near': 1, 'Small Far': 1, 'S': 1, 'M': 1, 'Medium': 1, 'Large': 1, 'L': 1},
+                 'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
                  'humanhand': {'': 1}}
+ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'])
 
-for solver in ant_dimensions:
-    ResizeFactors[solver] = ResizeFactors['ant']
+# for solver in ant_dimensions:
+#     ResizeFactors[solver] = ResizeFactors['ant']
 
 
 # there are a few I mazes, which have a different exit size,
@@ -110,7 +110,8 @@ class Maze(b2World):
         else:
             df = read_excel(path.join(maze_dimension_directory, self.excel_file_maze), engine='openpyxl')
 
-            if self.solver in ['ant', 'ps_simulation', 'sim', 'gillespie']:  # all measurements in cm
+            if self.excel_file_maze in ['MazeDimensions_ant.xlsx', 'MazeDimensions_ant_L_I_425.xlsx',
+                                        'MazeDimensions_new2021_SPT_ant.xlsx']:  # all measurements in cm
                 d = df.loc[df['Name'] == self.size + '_' + self.shape]
                 self.arena_length = d['arena_length'].values[0]
                 self.arena_height = d['arena_height'].values[0]
@@ -122,7 +123,7 @@ class Maze(b2World):
                 else:
                     self.slits = [d['slits'].values[0]]
 
-            elif self.solver == 'humanhand':  # only SPT
+            elif self.excel_file_maze in ['MazeDimensions_humanhand.xlsx']:  # only SPT
                 d = df.loc[df['Name'] == self.solver]
                 self.arena_length = d['arena_length'].values[0]
                 self.arena_height = d['arena_height'].values[0]
@@ -130,7 +131,7 @@ class Maze(b2World):
                 self.wallthick = d['wallthick'].values[0]
                 self.slits = [float(s) for s in d['slits'].values[0].split(', ')]
 
-            elif self.solver == 'human':  # all measurements in meters
+            elif self.excel_file_maze in ['MazeDimensions_human.xlsx']:  # all measurements in meters
                 # StartedScripts: measure the slits again...
                 # these coordinate values are given inspired from the drawing in \\phys-guru-cs\ants\Tabea\Human
                 # Experiments\ExperimentalSetup
@@ -535,13 +536,14 @@ class Maze(b2World):
                 dimensions = [le * resize_factor for le in [9, 6.2, 1.2]]
             return dimensions
 
-        if self.solver in ant_dimensions:
+        if self.excel_file_load in ['LoadDimensions_ant.xlsx', 'LoadDimensions_ant_L_I_425.xlsx',
+                                    'LoadDimensions_new2021_SPT_ant.xlsx']:
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
-        elif self.solver == 'human':
+        elif self.excel_file_load in ['LoadDimensions_human.xlsx']:
             d = df.loc[df['Name'] == self.size[0]]
 
-        elif self.solver == 'humanhand':
+        elif self.excel_file_load in ['LoadDimensions_humanhand.xlsx']:
             d = df.loc[0]
         else:
             raise ValueError('Unclear Load dimensions')

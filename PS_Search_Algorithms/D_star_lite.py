@@ -330,7 +330,7 @@ def run_dstar(shape: str, size: str, solver: str, dilation_radius: int = 8, sens
 
 
 if __name__ == '__main__':
-    x = run_dstar('SPT', 'S', 'ps_simulation', 100, 0)
+    x = run_dstar('SPT', 'Small Far', 'ps_simulation', 100, 0)
     x.play(wait=200)
     x.save()
 

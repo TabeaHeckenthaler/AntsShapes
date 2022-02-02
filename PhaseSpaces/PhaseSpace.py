@@ -91,15 +91,15 @@ class PhaseSpace(object):
             filename = self.size + '_' + self.shape + '_' + self.geometry[0][:-5]
 
         if point_particle:
-            return os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + addition + '_pp.pkl')
+            return os.path.join(PhaseSpaceDirectory, self.shape, filename + addition + '_pp.pkl')
         if erosion_radius is not None:
-            path_ = os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + '_labeled_erosion_'
+            path_ = os.path.join(PhaseSpaceDirectory, self.shape, filename + '_labeled_erosion_'
                                  + str(erosion_radius) + addition + '.pkl')
             if small:
                 path_ = path_[:-4] + '_small' + '.pkl'
             return path_
 
-        path_ = os.path.join(PhaseSpaceDirectory, self.solver, self.shape, filename + addition + '.pkl')
+        path_ = os.path.join(PhaseSpaceDirectory, self.shape, filename + addition + '.pkl')
         if small:
             path_ = path_[:-4] + '_small' + '.pkl'
         return path_
