@@ -158,8 +158,8 @@ class Display:
     def drawGrid(self):
         block = 2
         block_size = 2 * self.ppm
-        for y in range(np.int(np.ceil(self.height / self.ppm / block) + 1)):
-            for x in range(np.int(np.ceil(self.width / self.ppm / block))):
+        for y in range(int(np.ceil(self.height / self.ppm / block) + 1)):
+            for x in range(int(np.ceil(self.width / self.ppm / block))):
                 rect = pygame.Rect(x * block_size, self.height -
                                    y * block_size, block_size, block_size)
                 pygame.draw.rect(self.screen, colors['grid'], rect, 1)
@@ -201,6 +201,3 @@ class Display:
             img = mpimg.imread(filename)
             plt.imshow(img)
         return
-
-
-

@@ -183,7 +183,11 @@ class Trajectory:
         my_maze = Maze(x)
         return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))
 
-    def check(self):
+    def check(self) -> None:
+        """
+        Simple check, whether the object makes sense. It would be better to create a setter function, that ensures, that
+        all the attributes make sense...
+        """
         if self.frames.shape != self.angle.shape:
             raise Exception('Your frame shape does not match your angle shape!')
 
@@ -217,7 +221,7 @@ class Trajectory:
                 new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
             else:
                 new.position[frames[0]:frames[1]] = con.position
-                new.angle[frames[0]:frames[1]] = con.angle  # TODO: why do I need squeeze here?
+                new.angle[frames[0]:frames[1]] = con.angle
         return new
 
     def easy_interpolate(self, frames_list: list):
@@ -265,8 +269,7 @@ class Trajectory:
         I have to interpolate a trajectory. I know the frame number and a few points, that the shape should walk
         through.
         I have to stretch the path to these points over the given number of frames.
-        :param frame_number:
-        :return:
+        :param frame_number: number of frames the object is supposed to have in the end.
         """
         discont = np.pi / periodicity[self.shape]
         self.angle = np.unwrap(self.angle, discont=discont)
@@ -284,7 +287,6 @@ class Trajectory:
 
         self.position, self.angle = np.array(stretched_position), np.array(stretched_angle).squeeze()
         self.frames = np.array([i for i in range(self.angle.shape[0])])
-        return
 
     def load_participants(self):
         pass
@@ -327,8 +329,8 @@ class Trajectory_part(Trajectory):
     def __init__(self, parent_traj, VideoChain: list, frames: list):
         """
 
-        :param parent_traj:
-        :param VideoChain:
+        :param parent_traj: trajectory that the part is taken from
+        :param VideoChain: list of names of videos that are supposed to be part of the trajectory part
         :param frames: []
         """
         super().__init__(size=parent_traj.size, shape=parent_traj.shape, solver=parent_traj.solver,
@@ -348,6 +350,11 @@ class Trajectory_part(Trajectory):
 
 
 def get(filename) -> Trajectory:
+    """
+    Allows the loading of saved trajectory objects.
+    :param filename: Name of the trajectory that is supposed to be unpickled
+    :return: trajectory object
+    """
     import os
     for root, dirs, files in os.walk(work_dir):
         for dir in dirs:

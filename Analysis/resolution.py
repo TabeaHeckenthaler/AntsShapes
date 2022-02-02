@@ -14,15 +14,14 @@ from Setup.Maze import ResizeFactors
 specific_resolution = 1
 
 
-def resolution(size, solver, shape):
-    if solver == 'human':
+def resolution(geometry: tuple, size: str, shape: str, solver: str):
+    if geometry == ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'):
         Res = {'Large': 0.1, 'L': 0.1, 'Medium': 0.07, 'M': 0.07, 'Small Far': 0.02, 'Small Near': 0.02, 'S': 0.02}
         return Res[size] * 0.5  # had to add twice the resolution, because the fast marching method was not able to pass
 
     # print('My resolution is to high')
     if shape == 'SPT':
         return specific_resolution * 0.1 * ResizeFactors[solver][size]  # used to be 0.1
-
     return 0.1 * ResizeFactors[solver][size]
 
 

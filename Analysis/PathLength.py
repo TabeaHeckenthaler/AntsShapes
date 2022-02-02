@@ -112,7 +112,7 @@ class PathLength:
 
         for i in range(len(unwrapped_angle)):
             d = self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
-            if d > resolution(self.x.size, self.x.solver, self.x.shape):
+            if d > resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape):
                 path_length += self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
                 pos, ang = position[i], unwrapped_angle[i]
         return path_length
@@ -125,7 +125,7 @@ class PathLength:
         pos, ang = self.x.position[0], unwrapped_angle[0]
         for i in range(len(unwrapped_angle)):
             d = self.measureDistance(pos, self.x.position[i], ang, unwrapped_angle[i], self.average_radius(), rot=rot)
-            if d > resolution(self.x.size, self.x.solver, self.x.shape):
+            if d > resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape):
                 pos_list.append(pos)
                 ang_list.append(ang)
         plt.plot(np.array(pos_list)[:, 0], np.array(pos_list)[:, 1], color='k')

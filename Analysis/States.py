@@ -57,8 +57,8 @@ class States:
     def cut_at_end(time_series) -> list:
         """
         After state 'j' appears, cut off series
-        :param state_series: series to be mashed
-        :return: state_series with combined transitions
+        :param time_series: series to be mashed
+        :return: time_series with combined transitions
         """
         if 'j' not in time_series:
             return time_series

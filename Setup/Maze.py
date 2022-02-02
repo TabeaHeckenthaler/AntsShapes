@@ -57,8 +57,12 @@ def start(x):
 
 
 def end(x):
+    """
+    :param x: Trajectory object
+    :return: list with coordinates of end of SPT
+    """
     maze = Maze(x)
-    return [maze.slits[-1] + 5, maze.arena_height / 2, 0]
+    return [maze.slits[-1] * 1.26, maze.arena_height / 2, 0]
 
 
 class Maze(b2World):

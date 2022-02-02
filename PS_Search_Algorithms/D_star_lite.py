@@ -34,8 +34,11 @@ class D_star_lite:
         :param ending_point: coordinates of ending point (in cm or m)
         :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
         """
-        self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
+
+        # TODO: There is something wrong with passing x.solver...
+        self.conf_space = PhaseSpace.PhaseSpace('human', x.size, x.shape, x.geometry())
         self.conf_space.load_space()
+        # self.conf_space.visualize_space()
 
         known_conf_space = copy(self.conf_space)
         if dilation_radius > 0:
@@ -48,7 +51,7 @@ class D_star_lite:
         self.average_radius = Maze(x).average_radius()
         self.distance = None
         self.winner = False
-        self.end, self.start = self.define_starting_and_ending(starting_point, ending_point)
+        self.start, self.end = self.define_starting_and_ending(x, starting_point, ending_point)
         self.current = self.start
 
         # self.draw_conf_space_and_path()
@@ -56,9 +59,11 @@ class D_star_lite:
         # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
         # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
-    def define_starting_and_ending(self, starting_point, ending_point) -> tuple:
+    def define_starting_and_ending(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple) \
+            -> tuple:
         """
         Define the starting and ending point of the solver.
+        :param x: trajectory that carries information on the maze
         :param starting_point: coordinates of starting point (in cm or m)
         :param ending_point: coordinates of ending point (in cm or m)
         """
@@ -69,24 +74,23 @@ class D_star_lite:
         start_ = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
         end_ = Node_ind(*self.conf_space.coords_to_indices(*ending_point), self.conf_space, self.average_radius)
 
-        if self.collision(self.start):
+        if self.collision(start_):
             print('Your start is not in configuration space')
-            # start.draw_maze()
-
+            # start_.draw_maze()
             # if bool(input('Move back? ')):
             if False:
-                start_ = self.start.find_closest_possible_conf(note='backward')
+                start_ = start_.find_closest_possible_conf(note='backward')
             else:
-                start_ = self.start.find_closest_possible_conf()
+                start_ = start_.find_closest_possible_conf()
 
-        if self.collision(self.end):
+        if self.collision(end_):
             print('Your end is not in configuration space')
-            self.end.draw_maze()
+            # end_.draw_maze()
             # if bool(input('Move back? ')):
             if False:
-                end_ = self.end.find_closest_possible_conf(note='backward')
+                end_ = end_.find_closest_possible_conf(note='backward')
             else:
-                end_ = self.end.find_closest_possible_conf()
+                end_ = end_.find_closest_possible_conf()
         return start_, end_
 
     def path_planning(self, display_cs=True) -> None:
@@ -319,7 +323,6 @@ def run_dstar(shape: str, size: str, solver: str, dilation_radius: int = 8, sens
         filename = filename_dstar(size, shape, dilation_radius, sensing_radius)
     # elif filename in os.listdir(SaverDirectories['ps_simulation']):
     #     return
-    print('Calculating: ' + filename)
     x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
     d_star_lite = D_star_lite(x, sensing_radius=sensing_radius, dilation_radius=dilation_radius,
                               starting_point=starting_point, ending_point=ending_point)
@@ -330,7 +333,7 @@ def run_dstar(shape: str, size: str, solver: str, dilation_radius: int = 8, sens
 
 
 if __name__ == '__main__':
-    x = run_dstar('SPT', 'Small Far', 'ps_simulation', 100, 0)
+    x = run_dstar('SPT', 'Small Far', 'ps_simulation', dilation_radius=0, sensing_radius=100)
     x.play(wait=200)
     x.save()
 

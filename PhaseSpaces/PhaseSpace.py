@@ -52,7 +52,7 @@ class PhaseSpace(object):
         self.solver = solver
         self.shape = shape
         self.size = size
-        self.geometry: tuple = geometry
+        self.geometry = geometry
 
         x_range = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
         y_range = (0, maze.arena_height)
@@ -110,7 +110,7 @@ class PhaseSpace(object):
         :return: dictionary with integers for every axis.
         """
         # x_num = np.ceil(self.extent['x'][1]/resolution)
-        res = resolution(self.size, self.solver, self.shape)
+        res = resolution(self.geometry, self.size, self.solver, self.shape)
         y_num = np.ceil(self.extent['y'][1] / res)
         theta_num = np.ceil(self.extent['theta'][1] * self.average_radius / res)
         return {'x': None, 'y': y_num, 'theta': theta_num}
