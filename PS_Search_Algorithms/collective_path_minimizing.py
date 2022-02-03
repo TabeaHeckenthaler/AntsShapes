@@ -6,16 +6,34 @@ from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simula
 
 class Collective_Path_Planning(D_star_lite):
     """
-    We have multiple solvers, meaning multiple sets of resolution?
-    Two ways to distort the CS:
-    1. Dilation
-    2. Decreasing resolution (threshold like 0.5 (?) for a pixel to be a valid configuration)
-    We move according to a single solver.
-    Once we encounter a wall, we add knowledge to all solvers with their given locality radius (sensing radius).
-    Then we choose a new leader (randomly), which leads the group according to his minimal path.
+    Differences from D_star_lite
+    Collective =
+    Multiple solvers, which each have a different resolution.
 
-    Computation time would stay very low (when we calculate the distance matrices),
-    if we left the resolution always low, and just updated possible locations.
+    Distortion of CS in known_phase_space =
+    1. Dilation
+    2. Decreasing resolution (A set of pixels are combined to a big-pixel => resolution).
+    A set of pixels constitute a big pixel. If a valid configuration is found in the set of pixels,
+    the big pixel as a whole is also valid. This way, we will connect areas that beforehand were not connected.
+
+    Path Planning =
+    At the beginning, a solver is chosen randomly as the 'group leader', and his distance matrix is calculated on his
+    low resolution representation of the maze.
+    The solver finds node out of the set of neighboring nodes to his current node, which minimizes the distance to
+    the goal node.
+    We check whether the step is possible, by extracting the high resolution sets of pixels, and seeing wether there is
+    a path from one to the other, only by using these sets of pixels. # TODO not sure how to do this computationally
+    If a step is being chosen, which is impossible (on the high resolution CS), we add this knowledge to all solvers
+    by setting the appropriate connecting pixels to 'False'.  # TODO (not so clear yet)
+    Then we choose a new solver (randomly), which leads the group according to his minimal path.
+
+    Notes =
+    Computation time will stay lower, if we calculate distances on the low resolution CS.
+
+    Question =
+    If we only had two big pixels, the maze would be solved easily. Hence, this only works, if we have a resolution high
+    enough to capture 'the intricacies' of the maze. Something like shortest distance between two states?
+    I am actually not sure about this point.
     """
     def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
                  ending_point: tuple, max_iter: int = 100000, number_of_solvers: int = 2):
