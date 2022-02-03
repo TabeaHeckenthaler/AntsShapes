@@ -133,9 +133,12 @@ class PathLength:
 
     def minimal(self):
         if self.x.shape not in ['RASH', 'LASH']:
+            raise ValueError('You still have to minimal function')
+            # TODO: get the right filename
             ideal_filename = 'XL_' + self.x.shape + '_dil0_sensing1'
             ideal = get(ideal_filename)
-            return PathLength(ideal).per_experiment() * Maze(self.x).exit_size/Maze(ideal).exit_size
+            return PathLength(ideal).per_experiment() * \
+                   Maze(self.x).exit_size/Maze(ideal, geometry=self.x.geometry).exit_size
         else:
             return np.nan
 

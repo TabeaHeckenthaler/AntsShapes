@@ -1,6 +1,6 @@
 from copy import copy
 import numpy as np
-from PS_Search_Algorithms.D_star_lite import D_star_lite
+from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node_ind
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 
 
@@ -10,7 +10,7 @@ class Solver:
         self.distances = np.array([])
 
 
-class Collective_Path_Planning(D_star_lite):
+class Collective_Path_Planning(Path_planning_in_CS):
     """
     Differences from D_star_lite
     Collective =
@@ -43,9 +43,10 @@ class Collective_Path_Planning(D_star_lite):
     Maybe its better to think about whether points are connected via a straight line? Or something like that?
     """
 
-    def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
-                 ending_point: tuple, max_iter: int = 100000, number_of_solvers: int = 2):
-        super().__init__(x, sensing_radius, dilation_radius, starting_point, ending_point, max_iter)
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,
+                 max_iter: int = 100000,
+                 number_of_solvers: int = 2):
+        super().__init__(x, starting_point, ending_point, initial_cond, max_iter)
         self.solvers = [Solver(None) for _ in range(number_of_solvers)]
         self.current_solver = self.choose_solver()
 
@@ -87,10 +88,14 @@ class Collective_Path_Planning(D_star_lite):
         if self.current.ind() == self.end.ind():
             self.winner = True
 
+    def add_knowledge(self, central_node: Node_ind):
+        # TODO
+        pass
 
-def run_collective_path_planning(shape: str, size: str, solver: str, dilation_radius: int = 8, sensing_radius: int = 7,
-                                 filename: str = None, show_animation: bool = False, starting_point: tuple = None,
-                                 ending_point: tuple = None, geometry: tuple = None, number_of_solvers=2) \
+
+def run_collective(shape: str, size: str, solver: str, dilation_radius: int = 8, sensing_radius: int = 7,
+                   filename: str = None, show_animation: bool = False, starting_point: tuple = None,
+                   ending_point: tuple = None, geometry: tuple = None, number_of_solvers=2) \
         -> Trajectory_ps_simulation:
     """
     Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.
@@ -113,9 +118,8 @@ def run_collective_path_planning(shape: str, size: str, solver: str, dilation_ra
     # elif filename in os.listdir(SaverDirectories['ps_simulation']):
     #     return
     x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
-    d_star_lite = Collective_Path_Planning(x, sensing_radius=sensing_radius, dilation_radius=dilation_radius,
-                                           starting_point=starting_point, ending_point=ending_point,
-                                           number_of_solvers=number_of_solvers)
+    d_star_lite = Collective_Path_Planning(x, starting_point=starting_point, ending_point=ending_point,
+                                           initial_cond='back', number_of_solvers=number_of_solvers)
     d_star_lite.path_planning()
     if show_animation:
         d_star_lite.show_animation()
@@ -123,7 +127,6 @@ def run_collective_path_planning(shape: str, size: str, solver: str, dilation_ra
 
 
 if __name__ == '__main__':
-    x = run_collective_path_planning('SPT', 'Small Far', 'ps_simulation', dilation_radius=0, sensing_radius=100,
-                                     number_of_solvers=5)
+    x = run_collective('SPT', 'Small Far', 'ps_simulation', dilation_radius=0, sensing_radius=100, number_of_solvers=5)
     x.play(wait=200)
     x.save()

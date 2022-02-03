@@ -16,7 +16,7 @@ import json
 from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
-from PS_Search_Algorithms.D_star_lite import run_dstar
+from PS_Search_Algorithms.Path_planning_in_CS import run_dstar
 from datetime import datetime
 from trajectory_inheritance.trajectory import get
 

@@ -7,11 +7,8 @@ from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
-from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-from scipy.ndimage.measurements import label
 from PS_Search_Algorithms.Dstar_functions import voxel
 from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
-from Directories import SaverDirectories
 
 try:
     import cc3d
@@ -21,37 +18,31 @@ except:
 structure = np.ones((3, 3, 3), dtype=int)
 
 
-class D_star_lite:
-    def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
-                 ending_point: tuple, max_iter: int = 100000) -> None:
+class Path_planning_in_CS:
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,
+                 max_iter: int = 100000) \
+            -> None:
         """
         Initialize the D_star_lite solver.
         :param x: Trajectory_ps_simulation object, that stores information on the maze dimensions.
-        :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
-        conf_space
-        :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
         :param starting_point: coordinates of starting point (in cm or m)
         :param ending_point: coordinates of ending point (in cm or m)
         :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
         """
 
-        # TODO: There is something wrong with passing x.solver...
         self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
         self.conf_space.load_space()
         # self.conf_space.visualize_space()
 
-        known_conf_space = copy(self.conf_space)
-        if dilation_radius > 0:
-            known_conf_space = known_conf_space.dilate(space=self.conf_space.space, radius=dilation_radius)
-        self.known_conf_space = known_conf_space
+        self.known_conf_space = self.initialize_known_conf_space()
         self.known_conf_space.initialize_maze_edges()
 
         self.max_iter = max_iter
-        self.sensing_radius = sensing_radius
         self.average_radius = Maze(x).average_radius()
         self.distance = None
         self.winner = False
-        self.start, self.end = self.define_starting_and_ending(x, starting_point, ending_point)
+        self.start, self.end = self.define_starting_and_ending(x, starting_point, ending_point,
+                                                               initial_cond=initial_cond)
         self.current = self.start
 
         # self.draw_conf_space_and_path()
@@ -59,14 +50,21 @@ class D_star_lite:
         # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
         # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
-    def define_starting_and_ending(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple) \
+    def initialize_known_conf_space(self) -> np.array:
+        pass
+
+    def define_starting_and_ending(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple,
+                                   initial_cond: str) \
             -> tuple:
         """
         Define the starting and ending point of the solver.
+        :param initial_cond:
         :param x: trajectory that carries information on the maze
         :param starting_point: coordinates of starting point (in cm or m)
         :param ending_point: coordinates of ending point (in cm or m)
         """
+        if initial_cond not in ['back', 'front']:
+            raise ValueError('You initial_cond is not valid.')
         if starting_point is None:
             starting_point = start(x)
         if ending_point is None:
@@ -128,29 +126,7 @@ class D_star_lite:
             self.winner = True
 
     def add_knowledge(self, central_node: Node_ind) -> None:
-        """
-        Adds knowledge to the known configuration space of the solver with a certain sensing_radius around
-        the central node, which is the point of interception
-        :param central_node: point of impact, which is the center of where the maze will be updated
-        """
-        # roll the array
-        rolling_indices = [- max(central_node.xi - self.sensing_radius, 0),
-                           - max(central_node.yi - self.sensing_radius, 0),
-                           - (central_node.thetai - self.sensing_radius)]
-
-        conf_space_rolled = np.roll(self.conf_space.space, rolling_indices, axis=(0, 1, 2))
-        known_conf_space_rolled = np.roll(self.known_conf_space.space, rolling_indices, axis=(0, 1, 2))
-
-        # only the connected component which we sense
-        sr = self.sensing_radius
-        labeled, _ = label(conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], structure)
-        known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr] = \
-            np.logical_or(
-                np.array(known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], dtype=bool),
-                np.array(labeled == labeled[sr, sr, sr])).astype(int)
-
-        # update_screen known_conf_space by using known_conf_space_rolled and rolling back
-        self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
+        pass
 
     def unnecessary_space(self, buffer: int = 5):
         unnecessary = np.ones_like(self.conf_space.space, dtype=bool)
@@ -299,54 +275,4 @@ class D_star_lite:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             # mlab.close()
-
-
-def run_dstar(shape: str, size: str, solver: str, dilation_radius: int = 8, sensing_radius: int = 7,
-              filename: str = None, show_animation: bool = False, starting_point: tuple = None,
-              ending_point: tuple = None, geometry: tuple = None) -> Trajectory_ps_simulation:
-    """
-    Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.
-    :param shape: shape of the load, that moves through the maze
-    :param size: size of the load
-    :param solver: type of solver
-    :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
-    conf_space
-    :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
-    :param filename: Name of the trajectory
-    :param show_animation: show animation
-    :param starting_point: point (in real world coordinates) that the solver starts at
-    :param ending_point: point (in real world coordinates) that the solver is aiming to reach
-    :param geometry: geometry of the maze
-    :return: trajectory object.
-    """
-    if filename is None:
-        filename = filename_dstar(size, shape, dilation_radius, sensing_radius)
-    # elif filename in os.listdir(SaverDirectories['ps_simulation']):
-    #     return
-    x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
-    d_star_lite = D_star_lite(x, sensing_radius=sensing_radius, dilation_radius=dilation_radius,
-                              starting_point=starting_point, ending_point=ending_point)
-    d_star_lite.path_planning()
-    if show_animation:
-        d_star_lite.show_animation()
-    return d_star_lite.into_trajectory(x)
-
-
-if __name__ == '__main__':
-    x = run_dstar('SPT', 'Small Far', 'ps_simulation', dilation_radius=0, sensing_radius=100)
-    x.play(wait=200)
-    x.save()
-
-    # TODO: WAYS TO MAKE LESS EFFICIENT:
-    #  limited memory
-    #  locality (patch size)
-    #  accuracy of greedy node, add stochastic behaviour
-    #  false walls because of limited resolution
-
-    # === For parallel processing multiple trajectories on multiple cores of your computer ===
-    # Parallel(n_jobs=6)(delayed(run_dstar)(sensing_radius, dil_radius, shape)
-    #                    for dil_radius, sensing_radius, shape in
-    #                    itertools.product(range(0, 16, 1), range(1, 16, 1), ['SPT'])
-    #                    # itertools.product([0], [0], ['H', 'I', 'T'])
-    #                    )
 

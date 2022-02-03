@@ -1,10 +1,6 @@
 from trajectory_inheritance.trajectory import Trajectory
 
 
-def filename_dstar(size, shape, dil_radius, sensing_radius):
-    return size + '_' + shape + '_' + 'dil' + str(dil_radius) + '_sensing' + str(sensing_radius)
-
-
 class Trajectory_ps_simulation(Trajectory):
 
     def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, geometry=None):
@@ -30,6 +26,7 @@ class Trajectory_ps_simulation(Trajectory):
 
     def geometry(self):
         # At the moment I am only using the human dimensions
+        # TODO: get the geometry from somewhere... Like the filename?
         return self.g
 
 

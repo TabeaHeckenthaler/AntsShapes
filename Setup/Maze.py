@@ -81,7 +81,10 @@ class Maze(b2World):
                 position = x.position[i]
             if angle is None:
                 angle = x.angle[i]
-            self.excel_file_maze, self.excel_file_load = x.geometry()
+            if geometry is not None:
+                self.excel_file_maze, self.excel_file_load = geometry
+            else:
+                self.excel_file_maze, self.excel_file_load = x.geometry()
 
         else:
             is_exp_valid(shape, solver, size)
