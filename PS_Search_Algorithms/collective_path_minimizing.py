@@ -8,7 +8,7 @@ class Collective_Path_Planning(D_star_lite):
     """
     Differences from D_star_lite
     Collective =
-    Multiple solvers, which each have a different resolution.
+    Multiple solvers, which each have a different resolution. # TODO not sure how to chose the resolutions.
 
     Distortion of CS in known_phase_space =
     1. Dilation
@@ -35,6 +35,7 @@ class Collective_Path_Planning(D_star_lite):
     enough to capture 'the intricacies' of the maze. Something like shortest distance between two states?
     I am actually not sure about this point.
     """
+
     def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
                  ending_point: tuple, max_iter: int = 100000, number_of_solvers: int = 2):
         super().__init__(x, sensing_radius, dilation_radius, starting_point, ending_point, max_iter)
@@ -73,3 +74,44 @@ class Collective_Path_Planning(D_star_lite):
 
         if self.current.ind() == self.end.ind():
             self.winner = True
+
+
+def run_collective_path_planning(shape: str, size: str, solver: str, dilation_radius: int = 8, sensing_radius: int = 7,
+                                 filename: str = None, show_animation: bool = False, starting_point: tuple = None,
+                                 ending_point: tuple = None, geometry: tuple = None, number_of_solvers=2) \
+        -> Trajectory_ps_simulation:
+    """
+    Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.
+    :param number_of_solvers: Number of solvers, which will have different resolutions.
+    :param shape: shape of the load, that moves through the maze
+    :param size: size of the load
+    :param solver: type of solver
+    :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
+    conf_space
+    :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
+    :param filename: Name of the trajectory
+    :param show_animation: show animation
+    :param starting_point: point (in real world coordinates) that the solver starts at
+    :param ending_point: point (in real world coordinates) that the solver is aiming to reach
+    :param geometry: geometry of the maze
+    :return: trajectory object.
+    """
+    if filename is None:
+        filename = 'test'
+    # elif filename in os.listdir(SaverDirectories['ps_simulation']):
+    #     return
+    x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
+    d_star_lite = Collective_Path_Planning(x, sensing_radius=sensing_radius, dilation_radius=dilation_radius,
+                                           starting_point=starting_point, ending_point=ending_point,
+                                           number_of_solvers=number_of_solvers)
+    d_star_lite.path_planning()
+    if show_animation:
+        d_star_lite.show_animation()
+    return d_star_lite.into_trajectory(x)
+
+
+if __name__ == '__main__':
+    x = run_collective_path_planning('SPT', 'Small Far', 'ps_simulation', dilation_radius=0, sensing_radius=100,
+                                     number_of_solvers=5)
+    x.play(wait=200)
+    x.save()
