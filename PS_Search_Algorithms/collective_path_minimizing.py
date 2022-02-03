@@ -4,6 +4,12 @@ from PS_Search_Algorithms.D_star_lite import D_star_lite
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 
 
+class Solver:
+    def __init__(self, resolution):
+        self.resolution = resolution
+        self.distances = np.array([])
+
+
 class Collective_Path_Planning(D_star_lite):
     """
     Differences from D_star_lite
@@ -34,12 +40,17 @@ class Collective_Path_Planning(D_star_lite):
     If we only had two big pixels, the maze would be solved easily. Hence, this only works, if we have a resolution high
     enough to capture 'the intricacies' of the maze. Something like shortest distance between two states?
     I am actually not sure about this point.
+    Maybe its better to think about whether points are connected via a straight line? Or something like that?
     """
 
     def __init__(self, x: Trajectory_ps_simulation, sensing_radius: int, dilation_radius: int, starting_point: tuple,
                  ending_point: tuple, max_iter: int = 100000, number_of_solvers: int = 2):
         super().__init__(x, sensing_radius, dilation_radius, starting_point, ending_point, max_iter)
-        self.number_of_solvers = number_of_solvers
+        self.solvers = [Solver(None) for _ in range(number_of_solvers)]
+        self.current_solver = self.choose_solver()
+
+    def choose_solver(self) -> Solver:
+        return np.random.choice(self.solvers)
 
     def path_planning(self, display_cs=True) -> None:
         """
@@ -70,6 +81,7 @@ class Collective_Path_Planning(D_star_lite):
                 self.current = greedy_node
             else:
                 self.add_knowledge(greedy_node)
+                self.current_solver = self.choose_solver()
                 self.compute_distances()
 
         if self.current.ind() == self.end.ind():

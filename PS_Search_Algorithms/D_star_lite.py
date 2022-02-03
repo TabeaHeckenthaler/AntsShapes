@@ -36,7 +36,7 @@ class D_star_lite:
         """
 
         # TODO: There is something wrong with passing x.solver...
-        self.conf_space = PhaseSpace.PhaseSpace('human', x.size, x.shape, x.geometry())
+        self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
         self.conf_space.load_space()
         # self.conf_space.visualize_space()
 

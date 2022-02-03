@@ -219,33 +219,30 @@ with open('winner_dictionary.txt', 'r') as json_file:
 if __name__ == '__main__':
 
     solver, shape = 'ant', 'SPT'
-    # continue_time_dict(solver, shape)
+    continue_time_dict(solver, shape)
 
-    # for size in exp_types[shape][solver]:
-    # for filename in special_list:
-    #     print(filename)
-    size = 'S'
-    for mat_filename in tqdm(find_unpickled(solver, size, shape)):
-        print(mat_filename)
-        x = load(mat_filename, solver, size, shape)
-        chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
-                       for filename in parts(mat_filename, solver, size, shape)[1:]]
-        total_time_seconds = np.sum([traj.timer() for traj in chain])
+    for size in exp_types[shape][solver]:
+        for mat_filename in tqdm(find_unpickled(solver, size, shape)):
+            print(mat_filename)
+            x = load(mat_filename, solver, size, shape)
+            chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
+                           for filename in parts(mat_filename, solver, size, shape)[1:]]
+            total_time_seconds = np.sum([traj.timer() for traj in chain])
 
-        frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
+            frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
 
-        for part in chain[1:]:
-            frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
-            if frames_missing_per_movie > 10 * x.fps:
-                connection = connector(x, part, frames_missing_per_movie)
-                x = x + connection
-            x = x + part
+            for part in chain[1:]:
+                frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+                if frames_missing_per_movie > 10 * x.fps:
+                    connection = connector(x, part, frames_missing_per_movie)
+                    x = x + connection
+                x = x + part
 
-        x.save()
-        # file_object = open('check_trajectories.txt', 'a')
-        # file_object.write(x.filename + '\n')
-        # file_object.close()
+            x.save()
+            # file_object = open('check_trajectories.txt', 'a')
+            # file_object.write(x.filename + '\n')
+            # file_object.close()
 
-        # TODO: Check that the winner is correctly saved!!
-        # TODO: add new file to contacts json file
-        # TODO: add new file to pandas DataFrame
+            # TODO: Check that the winner is correctly saved!!
+            # TODO: add new file to contacts json file
+            # TODO: add new file to pandas DataFrame
