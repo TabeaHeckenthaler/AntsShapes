@@ -63,10 +63,8 @@ class Path_planning_in_CS:
         :param starting_point: coordinates of starting point (in cm or m)
         :param ending_point: coordinates of ending point (in cm or m)
         """
-        if initial_cond not in ['back', 'front']:
-            raise ValueError('You initial_cond is not valid.')
         if starting_point is None:
-            starting_point = start(x)
+            starting_point = start(x, initial_cond)
         if ending_point is None:
             ending_point = end(x)
         start_ = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
@@ -102,6 +100,7 @@ class Path_planning_in_CS:
         Else, recompute your distances.
         :param display_cs: Whether the path should be displayed during run time.
         """
+        print('Planning the path')
         self.compute_distances()
         # self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
         # self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
@@ -241,6 +240,7 @@ class Path_planning_in_CS:
         :param x: Trajectory without position and angle etc.
         :return: Trajectory with position and angle
         """
+        print('Putting path into trajectory object')
         path = self.generate_path()
         if not self.winner:
             print("Cannot find path")

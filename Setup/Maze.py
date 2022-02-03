@@ -47,11 +47,16 @@ ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['hum
 # there are a few I mazes, which have a different exit size,
 
 # x, y, theta
-def start(x):
+def start(x, initial_cond: str):
+    if initial_cond not in ['back', 'front']:
+        raise ValueError('You initial_cond is not valid.')
     maze = Maze(x)
     if x.shape == 'SPT':
-        # return [(maze.slits[0] - maze.slits[-1]) / 2 + maze.slits[-1] - 0.5, maze.arena_height / 2, 0]
-        return [maze.slits[0] * 0.5, maze.arena_height / 2, 0]
+        if initial_cond == 'back':
+            # return [(maze.slits[0] - maze.slits[-1]) / 2 + maze.slits[-1] - 0.5, maze.arena_height / 2, 0]
+            return [maze.slits[0] * 0.5, maze.arena_height / 2, 0]
+        elif initial_cond == 'front':
+            return [maze.slits[0] + (maze.slits[1] - maze.slits[0]) * 0.4, maze.arena_height / 2, 0]
     elif x.shape in ['H', 'I', 'T', 'RASH', 'LASH']:
         return [maze.slits[0] - 5, maze.arena_height / 2, np.pi - 0.1]
 
