@@ -53,43 +53,20 @@ class Collective_Path_Planning(Path_planning_in_CS):
     def choose_solver(self) -> Solver:
         return np.random.choice(self.solvers)
 
-    def path_planning(self, display_cs=True) -> None:
-        """
-        While the current node is not the end_screen node, and we have iterated more than max_iter
-        compute the distances to the end_screen node (of adjacent nodes).
-        If distance to the end_screen node is inf, break the loop (there is no solution).
-        If distance to end_screen node is finite, find node connected to the
-        current node with the minimal distance (+cost) (next_node).
-        If you are able to walk to next_node is, make next_node your current_node.
-        Else, recompute your distances.
-        :param display_cs: Whether the path should be displayed during run time.
-        """
-        self.compute_distances()
-        # self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
-        # self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
-
-        ii = 0
-        while self.current.ind() != self.end.ind() and ii < self.max_iter:
-            ii += 1
-            if display_cs:
-                self.current.draw_node(fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
-            if self.current.distance == np.inf:
-                return
-
-            greedy_node = self.find_greedy_node()
-            if not self.collision(greedy_node):
-                greedy_node.parent = copy(self.current)
-                self.current = greedy_node
-            else:
-                self.add_knowledge(greedy_node)
-                self.current_solver = self.choose_solver()
-                self.compute_distances()
-
-        if self.current.ind() == self.end.ind():
-            self.winner = True
-
     def add_knowledge(self, central_node: Node_ind):
-        # TODO
+        """
+        Update the low resolution node that was falsely connected (in all solvers)
+        :param central_node:
+        :return:
+        """
+        self.choose_solver()
+        pass
+
+    def initialize_known_conf_space(self) -> np.array:
+        """
+        Depending on the resolution of the solvers, a known_conf_space for every solver is initialized.
+        :return:
+        """
         pass
 
 

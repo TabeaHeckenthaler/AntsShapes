@@ -35,7 +35,7 @@ class Path_planning_in_CS:
         # self.conf_space.visualize_space()
 
         self.known_conf_space = self.initialize_known_conf_space()
-        self.known_conf_space.initialize_maze_edges()
+        # self.known_conf_space.initialize_maze_edges()
 
         self.max_iter = max_iter
         self.average_radius = Maze(x).average_radius()
@@ -114,9 +114,8 @@ class Path_planning_in_CS:
                 return
 
             greedy_node = self.find_greedy_node()
-            if not self.collision(greedy_node):
-                greedy_node.parent = copy(self.current)
-                self.current = greedy_node
+            if not self.possible_step(greedy_node):
+                self.step_to(greedy_node)
             else:
                 self.add_knowledge(greedy_node)
                 self.compute_distances()
@@ -124,8 +123,15 @@ class Path_planning_in_CS:
         if self.current.ind() == self.end.ind():
             self.winner = True
 
+    def step_to(self, greedy_node) -> None:
+        greedy_node.parent = copy(self.current)
+        self.current = greedy_node
+
     def add_knowledge(self, central_node: Node_ind) -> None:
         pass
+
+    def possible_step(self, greedy_node: Node_ind) -> bool:
+        return self.collision(greedy_node)
 
     def unnecessary_space(self, buffer: int = 5):
         unnecessary = np.ones_like(self.conf_space.space, dtype=bool)

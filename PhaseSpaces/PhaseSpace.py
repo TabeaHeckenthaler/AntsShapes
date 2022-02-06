@@ -34,7 +34,7 @@ scale = 5
 
 
 class PhaseSpace(object):
-    def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name=""):
+    def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name="", space=None):
         """
 
         :param solver: type of solver (ps_simluation, ant, human, etc.)
@@ -65,7 +65,7 @@ class PhaseSpace(object):
         self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
         self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
 
-        self.space = None  # True, if configuration is possible; False, if there is a collision with the wall
+        self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
         self.space_boundary = None
         self.fig = None
 
