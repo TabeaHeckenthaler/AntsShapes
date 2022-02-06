@@ -20,16 +20,25 @@ class Binned_PhaseSpace(PhaseSpace):
         return self.space
 
     def bins_connected(self, ind1, ind2) -> bool:
-        # TODO: check whether centers of voxels are connected.
         return self.find_path(ind1, ind2)[0]
 
     def find_path(self, ind1, ind2) -> tuple:
-        # TODO: Write function
+        """
+
+        :param ind1: indices of first node (in high_resolution_space)
+        :param ind2: indices of second node (in high_resolution_space)
+        :return: (boolean (whether a path was found), list (node indices that connect the two indices))
+        """
+        # TODO: check whether centers of voxels are connected.
         path_exists = False
         if not path_exists:
             return False, None
         else:
             return True, [ind1, ind2]
+
+    def coverage(self) -> np.array:
+        # TODO: calculate coverage for binned space
+        return np.array([])
 
 
 class Path_Planning_Rotation_students(Path_planning_in_CS):
@@ -39,14 +48,11 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.dil_radius = dil_radius
         self.speed = self.initialize_speed()
         self.resolution = resolution
-        # TODO Tabea: Is the greedy node on high or low resolution conf_space?
+        # TODO Tabea: Greedy node on high resolution conf_space!!!!
 
     def step_to(self, greedy_node) -> None:
-        greedy_node.parent = copy(self.current)
+        greedy_node.parent = copy([self.known_conf_space.find_path(self.current.ind(), greedy_node.ind())[1]])
         self.current = greedy_node
-
-    def initialize_speed(self) -> np.array:
-        return Binned_PhaseSpace(self.conf_space, self.resolution)
 
     def initialize_known_conf_space(self) -> np.array:
         """
@@ -56,13 +62,29 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.known_conf_space.space = copy(self.conf_space.space)
         if self.dil_radius > 0:
             self.known_conf_space.space = self.conf_space.dilate(self.known_conf_space.space, radius=self.dil_radius)
-        self.known_conf_space.space = Binned_PhaseSpace(self.conf_space, self.resolution)
+        self.known_conf_space.space = Binned_PhaseSpace(self.known_conf_space.space, self.resolution)
+
+    def initialize_speed(self) -> np.array:
+        return 1/Binned_PhaseSpace(self.conf_space, self.resolution).coverage()
 
     def possible_step(self, greedy_node: Node_ind) -> bool:
-        return self.known_conf_space.bins_connected(self.current.ind(), greedy_node.ind())
+        if self.known_conf_space.bins_connected(self.current.ind(), greedy_node.ind()):
+            manage_to_pass = np.random.uniform() > self.known_conf_space.coverage()[greedy_node.ind()]
+            if manage_to_pass:
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def add_knowledge(self, central_node: Node_ind) -> None:
-        pass
+        """
+        No path was found in greedy node, so we need to update our self.speed.
+        Some kind of Bayesian estimation.
+        :param central_node:
+        :return:
+        """
+        # TODO: Some Bayesian estimation update, on the... speed? or Coverage? (Tabea)
 
     def compute_distances(self) -> None:
         """
