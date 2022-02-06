@@ -79,10 +79,9 @@ def test_configuration(x):
 
 def extend_trajectory():
     extend_list = {
-        'L_SPT_4080033_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'},
-        'L_SPT_4090010_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'}
+        # 'L_SPT_4080033_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'},
+        # 'L_SPT_4090010_SpecialT_1_ants (part 1)': {'configuration': ([15, 4.912207], 0), 'where': 'beginning'}
     }
-    # TODO!
     for filename, info in extend_list.items():
         x_cut = get(filename)
         x_extend = Trajectory_ant(size=x_cut.size,
@@ -100,6 +99,7 @@ def extend_trajectory():
         elif info['where'] == 'beginning':
             connection = connector(x_extend, x_cut, x_cut.fps * 10)
             x = connection + x_cut
+        DEBUG = 1
 
 
 if __name__ == '__main__':

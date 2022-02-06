@@ -7,15 +7,17 @@ import os
 
 
 class Path_planning_full_knowledge(Path_planning_in_CS):
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str = '',
                  max_iter: int = 100000):
         super().__init__(x, starting_point, ending_point, initial_cond, max_iter)
         x.filename = self.choose_filename(x, initial_cond)
 
     @staticmethod
-    def choose_filename(x: Trajectory_ps_simulation, initial_cond: str) -> str:
+    def choose_filename(x: Trajectory_ps_simulation, initial_cond: str = '') -> str:
         geometry_string = "_".join([string[:-5] for string in x.geometry()])
-        filename = 'minimal_' + x.size + '_' + x.shape + '_' + initial_cond + '_' + geometry_string
+        if len(initial_cond) > 0:
+            initial_cond = '_' + initial_cond
+        filename = 'minimal_' + x.size + '_' + x.shape + initial_cond + '_' + geometry_string
         if filename in os.listdir(SaverDirectories['ps_simulation']):
             print('You are calculating a trajectory, which you already have saved')
         return filename
@@ -28,7 +30,7 @@ class Path_planning_full_knowledge(Path_planning_in_CS):
 
 
 def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, starting_point: tuple = None,
-                       ending_point: tuple = None, initial_cond: str = None, show_animation: bool = False) \
+                       ending_point: tuple = None, initial_cond: str = '', show_animation: bool = False) \
         -> Trajectory_ps_simulation:
     """
     Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.

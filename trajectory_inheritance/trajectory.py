@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  6 11:24:09 2020
@@ -25,7 +24,7 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
 
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
-length_unit = {'ant': 'cm', 'human': 'm',  'humanhand': 'cm', 'ps_simulation': 'cm'}
+length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
 
 
 def length_unit_func(solver):
@@ -57,13 +56,57 @@ class Trajectory:
         string = '\n' + self.filename
         return string
 
+
+    def __add__(self, file2):
+        #     max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}
+        #     if not (self.shape == file2.shape) or not (self.size == file2.size):
+        #         print('It seems, that these files should not be joined together.... Please break... ')
+        #         breakpoint()
+        #
+        #     if abs(self.position[-1, 0] - file2.position[0, 0]) > max_distance_for_connecting[self.size] or \
+        #             abs(self.position[-1, 1] - file2.position[0, 1]) > max_distance_for_connecting[self.size]:
+        #         print('does not belong together')
+        #         # breakpoint()
+
+        file12 = deepcopy(self)
+        # if not hasattr(file2, 'x_error'):  # if for example this is from simulations.
+        #     file2.x_error = 0
+        #     file2.y_error = 0
+        #     file2.angle_error = 0
+        #
+        # file12.x_error = [self.x_error, file2.x_error]  # these are lists that we want to join together
+        # file12.y_error = [self.y_error, file2.y_error]  # these are lists that we want to join together
+        # file12.angle_error = [self.angle_error, file2.angle_error]  # these are lists that we want to join together
+
+        file12.position = np.vstack((self.position, file2.position))
+
+        per = 2 * np.pi / periodicity[file12.shape]
+        a0 = np.floor(self.angle[-1] / per) * per + np.mod(file2.angle[1], per)
+        file12.angle = np.hstack((self.angle, file2.angle - file2.angle[1] + a0))
+        file12.frames = np.hstack((self.frames, file2.frames))
+        file12.tracked_frames = file12.tracked_frames + file2.tracked_frames
+
+        # if not self.free:
+        #     # file12.contact = self.contact + file2.contact  # We are combining two lists here...
+        #     # file12.state = np.hstack((np.squeeze(self.state), np.squeeze(file2.state)))
+        #     file12.winner = file2.winner  # The success of the attempt is determined, by the fact that the last file
+        #     # is either winner or looser.
+
+        file12.VideoChain = self.VideoChain + file2.VideoChain
+        print(file12.VideoChain, sep="\n")
+
+        file12.falseTracking = self.falseTracking + file2.falseTracking
+
+        # Delete the load of filename
+        return file12
+
     def step(self, my_maze, i, display=None):
         my_maze.set_configuration(self.position[i], self.angle[i])
 
     def smooth(self):
-        self.position[:, 0] = savgol_filter(self.position[:, 0], self.fps+1, 3)
-        self.position[:, 1] = savgol_filter(self.position[:, 1], self.fps+1, 3)
-        self.angle = savgol_filter(np.unwrap(self.angle), self.fps+1, 3) % (2 * np.pi)
+        self.position[:, 0] = savgol_filter(self.position[:, 0], self.fps + 1, 3)
+        self.position[:, 1] = savgol_filter(self.position[:, 1], self.fps + 1, 3)
+        self.angle = savgol_filter(np.unwrap(self.angle), self.fps + 1, 3) % (2 * np.pi)
 
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
@@ -98,13 +141,13 @@ class Trajectory:
         :return:
         """
         frame_dividers = [-1] + \
-                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 == f2-1] + \
+                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 == f2 - 1] + \
                          [len(self.frames)]
 
-        if len(frame_dividers)-1 != len(self.VideoChain):
+        if len(frame_dividers) - 1 != len(self.VideoChain):
             raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
 
-        parts = [Trajectory_part(self, [chain_element], [fr1+1, fr2+1])
+        parts = [Trajectory_part(self, [chain_element], [fr1 + 1, fr2 + 1])
                  for chain_element, fr1, fr2 in zip(self.VideoChain, frame_dividers, frame_dividers[1:])]
         return parts
 
@@ -172,7 +215,7 @@ class Trajectory:
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 
-        if hasattr(x, 'participants') and x.participants is not None:   # TODO: this is a bit ugly, why does Amirs
+        if hasattr(x, 'participants') and x.participants is not None:  # TODO: this is a bit ugly, why does Amirs
             # have participants?
             x.participants.positions = x.participants.positions[f1:f2:step, :]
             x.participants.angles = x.participants.angles[f1:f2:step]
@@ -212,11 +255,12 @@ class Trajectory:
         from Load_tracked_data.Load_Experiment import connector
         new = copy(self)
         for frames in frames_list:
-            con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1]-frames[0],
+            con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1] - frames[0],
                             filename=self.filename + '_interpolation_' + str(frames[0]) + '_' + str(frames[1]))
-            if frames[1]-frames[0] != con.position.shape[0]:
-                extra_position = np.vstack([con.position[-1] for _ in range(frames[1]-frames[0] - con.position.shape[0])])
-                extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1]-frames[0] - con.angle.shape[0])])
+            if frames[1] - frames[0] != con.position.shape[0]:
+                extra_position = np.vstack(
+                    [con.position[-1] for _ in range(frames[1] - frames[0] - con.position.shape[0])])
+                extra_angle = np.hstack([con.angle[-1] for _ in range(frames[1] - frames[0] - con.angle.shape[0])])
                 new.position[frames[0]:frames[1]] = np.vstack([con.position, extra_position])
                 new.angle[frames[0]:frames[1]] = np.hstack([con.angle, extra_angle])
             else:
@@ -232,8 +276,9 @@ class Trajectory:
         """
         new = copy(self)
         for frames in frames_list:
-            new.position[frames[0]:frames[1]] = np.vstack([new.position[frames[0]] for _ in range(frames[1]-frames[0])])
-            new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1]-frames[0])])
+            new.position[frames[0]:frames[1]] = np.vstack(
+                [new.position[frames[0]] for _ in range(frames[1] - frames[0])])
+            new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1] - frames[0])])
         return new
 
     def geometry(self):
@@ -273,7 +318,7 @@ class Trajectory:
         """
         discont = np.pi / periodicity[self.shape]
         self.angle = np.unwrap(self.angle, discont=discont)
-        stretch_factor = int(np.floor(frame_number/len(self.frames)))
+        stretch_factor = int(np.floor(frame_number / len(self.frames)))
 
         stretched_position = []
         stretched_angle = []
@@ -282,8 +327,9 @@ class Trajectory:
             stretched_angle = np.vstack([self.angle for _ in range(frame_number)]).squeeze()
 
         for i, frame in enumerate(range(len(self.frames) - 1)):
-            stretched_position += np.linspace(self.position[i], self.position[i+1], stretch_factor, endpoint=False).tolist()
-            stretched_angle += np.linspace(self.angle[i], self.angle[i+1], stretch_factor, endpoint=False).tolist()
+            stretched_position += np.linspace(self.position[i], self.position[i + 1], stretch_factor,
+                                              endpoint=False).tolist()
+            stretched_angle += np.linspace(self.angle[i], self.angle[i + 1], stretch_factor, endpoint=False).tolist()
 
         self.position, self.angle = np.array(stretched_position), np.array(stretched_angle).squeeze()
         self.frames = np.array([i for i in range(self.angle.shape[0])])
