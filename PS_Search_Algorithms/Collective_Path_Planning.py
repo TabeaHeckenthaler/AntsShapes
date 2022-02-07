@@ -1,6 +1,6 @@
 from copy import copy
 import numpy as np
-from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node_ind
+from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_Maze, Node3D
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 
 
@@ -10,7 +10,7 @@ class Solver:
         self.distances = np.array([])
 
 
-class Collective_Path_Planning(Path_planning_in_CS):
+class Collective_Path_Planning(Path_planning_in_Maze):
     """
     Differences from D_star_lite
     Collective =
@@ -53,7 +53,7 @@ class Collective_Path_Planning(Path_planning_in_CS):
     def choose_solver(self) -> Solver:
         return np.random.choice(self.solvers)
 
-    def add_knowledge(self, central_node: Node_ind):
+    def add_knowledge(self, central_node: Node3D):
         """
         Update the low resolution node that was falsely connected (in all solvers)
         :param central_node:
@@ -62,7 +62,7 @@ class Collective_Path_Planning(Path_planning_in_CS):
         self.choose_solver()
         pass
 
-    def initialize_known_conf_space(self) -> np.array:
+    def warp_known_conf_space(self) -> np.array:
         """
         Depending on the resolution of the solvers, a known_conf_space for every solver is initialized.
         :return:

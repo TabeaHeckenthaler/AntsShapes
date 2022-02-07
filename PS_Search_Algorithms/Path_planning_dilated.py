@@ -1,14 +1,14 @@
 from copy import copy
 import numpy as np
-from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node_ind, structure
+from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_Maze, Node3D, structure
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 from scipy.ndimage.measurements import label
 from Directories import SaverDirectories
 import os
 
 
-class Path_planning_dilated(Path_planning_in_CS):
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple,
+class Path_planning_dilated(Path_planning_in_Maze):
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: Node3D, ending_point: Node3D,
                  sensing_radius: int, dilation_radius: int, initial_cond: str, max_iter: int = 100000):
         super().__init__(x, starting_point, ending_point, initial_cond, max_iter)
         self.dilation_radius = dilation_radius
@@ -22,13 +22,13 @@ class Path_planning_dilated(Path_planning_in_CS):
             raise Exception('You are calculating a trajectory, which you already have saved')
         return filename
 
-    def initialize_known_conf_space(self) -> np.array:
+    def warp_known_conf_space(self) -> np.array:
         known_conf_space = copy(self.conf_space)
         if self.dilation_radius > 0:
             known_conf_space = known_conf_space.dilate(space=self.conf_space.space, radius=self.dilation_radius)
         return known_conf_space
 
-    def add_knowledge(self, central_node: Node_ind) -> None:
+    def add_knowledge(self, central_node: Node3D) -> None:
         """
         Adds knowledge to the known configuration space of the solver with a certain sensing_radius around
         the central node, which is the point of interception
@@ -55,7 +55,7 @@ class Path_planning_dilated(Path_planning_in_CS):
 
 
 def run_dilated(shape: str, size: str, solver: str, filename: str = None, show_animation: bool = False,
-                starting_point: tuple = None, ending_point: tuple = None, geometry: tuple = None,
+                starting_point: Node3D = None, ending_point: Node3D = None, geometry: tuple = None,
                 dilation_radius: int = 0, sensing_radius: int = 100) \
         -> Trajectory_ps_simulation:
     """
@@ -74,8 +74,8 @@ def run_dilated(shape: str, size: str, solver: str, filename: str = None, show_a
     """
     x = Trajectory_ps_simulation(size=size, shape=shape, solver=solver, filename=filename, geometry=geometry)
     d_star_lite = Path_planning_dilated(x, starting_point=starting_point, ending_point=ending_point,
-                                        sensing_radius=sensing_radius, dilation_radius=dilation_radius, init_cond='back'
-                                        )
+                                        sensing_radius=sensing_radius, dilation_radius=dilation_radius,
+                                        initial_cond='back')
     d_star_lite.path_planning()
     if show_animation:
         d_star_lite.show_animation()

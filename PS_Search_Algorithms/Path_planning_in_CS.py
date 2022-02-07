@@ -1,93 +1,34 @@
-from PhaseSpaces import PhaseSpace
+from ConfigSpace import ConfigSpace_Maze
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 from Setup.Maze import start, end, Maze
-from PS_Search_Algorithms.classes.Node_ind import Node_ind
+from PS_Search_Algorithms.classes.Node import Node3D, Node2D
 from copy import copy
 from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
 from PS_Search_Algorithms.Dstar_functions import voxel
-from skfmm import travel_time, distance  # use this! https://pythonhosted.org/scikit-fmm/
+from skfmm import distance  # use this! https://pythonhosted.org/scikit-fmm/
+from typing import Union
 
 try:
     import cc3d
 except:
     print('cc3d not installed')
 
-structure = np.ones((3, 3, 3), dtype=int)
-
 
 class Path_planning_in_CS:
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,
-                 max_iter: int = 100000) \
-            -> None:
-        """
-        Initialize the D_star_lite solver.
-        :param x: Trajectory_ps_simulation object, that stores information on the maze dimensions.
-        :param starting_point: coordinates of starting point (in cm or m)
-        :param ending_point: coordinates of ending point (in cm or m)
-        :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
-        """
-
-        self.conf_space = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, x.geometry())
-        self.conf_space.load_space()
-        # self.conf_space.visualize_space()
-
-        self.known_conf_space = self.initialize_known_conf_space()
-        # self.known_conf_space.initialize_maze_edges()
-
+    def __init__(self, start: Union[Node3D, Node2D], end: Union[Node3D, Node2D], max_iter: int = 100000,
+                 conf_space=None, dim=3) -> None:
+        self.start = start
+        self.end = end
         self.max_iter = max_iter
-        self.average_radius = Maze(x).average_radius()
+        self.conf_space = conf_space
+        self.current = self.start
+        self.structure = np.ones(tuple((3 for _ in range(dim))), dtype=int)
+        self.known_conf_space = conf_space  # the space according to which the distances will be calculated
         self.distance = None
         self.winner = False
-        self.start, self.end = self.define_starting_and_ending(x, starting_point, ending_point,
-                                                               initial_cond=initial_cond)
-        self.current = self.start
-
-        # self.draw_conf_space_and_path()
-        # self.speed = np.ones_like(self.conf_space.space) # just an example of a speed
-        # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
-        # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
-
-    def initialize_known_conf_space(self) -> np.array:
-        pass
-
-    def define_starting_and_ending(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple,
-                                   initial_cond: str) \
-            -> tuple:
-        """
-        Define the starting and ending point of the solver.
-        :param initial_cond:
-        :param x: trajectory that carries information on the maze
-        :param starting_point: coordinates of starting point (in cm or m)
-        :param ending_point: coordinates of ending point (in cm or m)
-        """
-        if starting_point is None:
-            starting_point = start(x, initial_cond)
-        if ending_point is None:
-            ending_point = end(x)
-        start_ = Node_ind(*self.conf_space.coords_to_indices(*starting_point), self.conf_space, self.average_radius)
-        end_ = Node_ind(*self.conf_space.coords_to_indices(*ending_point), self.conf_space, self.average_radius)
-
-        if self.collision(start_):
-            print('Your start is not in configuration space')
-            # start_.draw_maze()
-            # if bool(input('Move back? ')):
-            if False:
-                start_ = start_.find_closest_possible_conf(note='backward')
-            else:
-                start_ = start_.find_closest_possible_conf()
-
-        if self.collision(end_):
-            print('Your end is not in configuration space')
-            # end_.draw_maze()
-            # if bool(input('Move back? ')):
-            if False:
-                end_ = end_.find_closest_possible_conf(note='backward')
-            else:
-                end_ = end_.find_closest_possible_conf()
-        return start_, end_
 
     def path_planning(self, display_cs=True) -> None:
         """
@@ -114,7 +55,7 @@ class Path_planning_in_CS:
                 return
 
             greedy_node = self.find_greedy_node()
-            if not self.possible_step(greedy_node):
+            if self.possible_step(greedy_node):
                 self.step_to(greedy_node)
             else:
                 self.add_knowledge(greedy_node)
@@ -123,33 +64,62 @@ class Path_planning_in_CS:
         if self.current.ind() == self.end.ind():
             self.winner = True
 
+    def add_knowledge(self, *args):
+        pass
+
+    def collision(self, node, space: np.array = None) -> bool:
+        """
+        :param space: space, which
+        :param node: Node, which should be checked, whether in space.
+        """
+        if space is None:
+            space = self.conf_space.space
+        return not space[node.ind()]
+
+    def possible_step(self, greedy_node) -> bool:
+        return not self.collision(greedy_node)
+
+    def find_greedy_node(self):
+        """
+        Find the node with the smallest distance from self.end, that is bordering the self.current.
+        """
+        connected = self.current.connected()
+
+        while True:
+            list_distances = [self.distance[node_indices] for node_indices in connected]
+
+            if len(list_distances) == 0:
+                raise Exception('Not able to find a path')
+
+            minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
+            greedy_one = np.random.choice(minimal_nodes)
+            greedy_node_ind = connected[greedy_one]
+            # loop: (115, 130, 383), (116, 130, 382), (117, 129, 381), (116, 131, 381)
+            # return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+
+            # I think I added this, because they were sometimes stuck in positions impossible to exit.
+            if np.sum(np.logical_and(self.current.surrounding(greedy_node_ind), voxel)) > 0:
+                node = self.define_node(greedy_node_ind)
+                return node
+            else:
+                connected.remove(greedy_node_ind)
+
+    def define_node(self, ind, *args):
+        return Node3D(*ind, self.conf_space, *args)
+
     def step_to(self, greedy_node) -> None:
         greedy_node.parent = copy(self.current)
         self.current = greedy_node
-
-    def add_knowledge(self, central_node: Node_ind) -> None:
-        pass
-
-    def possible_step(self, greedy_node: Node_ind) -> bool:
-        return self.collision(greedy_node)
-
-    def unnecessary_space(self, buffer: int = 5):
-        unnecessary = np.ones_like(self.conf_space.space, dtype=bool)
-        unnecessary[np.min([self.start.ind()[0] - buffer, self.end.ind()[0] - buffer]):
-                    np.max([self.start.ind()[0] + buffer, self.end.ind()[0] + buffer]),
-        np.min([self.start.ind()[1] - buffer, self.end.ind()[1] - buffer]):
-        np.max([self.start.ind()[1] + buffer, self.end.ind()[1] + buffer])] = False
-        return unnecessary
 
     def compute_distances(self) -> None:
         """
         Computes distance of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
-        phi = np.ones_like(self.known_conf_space.space, dtype=int)
+        phi = np.ones_like(self.known_conf_space, dtype=int)
 
         # mask
-        mask = ~self.known_conf_space.space
+        mask = ~self.known_conf_space
 
         # this is to reduce computing power: we don't have to calculate distance in all space, just in small space
         # TODO: increase in a while loop
@@ -185,40 +155,6 @@ class Path_planning_in_CS:
         # self.conf_space.visualize_space(space=self.distance, colormap='Oranges')
         # plot_distances(self, index=self.current.xi, plane='x')
 
-    def find_greedy_node(self) -> Node_ind:
-        """
-        Find the node with the smallest distance from self.end, that is bordering the self.current.
-        """
-        connected = self.current.connected()
-
-        while True:
-            list_distances = [self.distance[node_indices] for node_indices in connected]
-
-            if len(list_distances) == 0:
-                raise Exception('Not able to find a path')
-
-            minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
-            greedy_one = np.random.choice(minimal_nodes)
-            greedy_node_ind = connected[greedy_one]
-            # loop: (115, 130, 383), (116, 130, 382), (117, 129, 381), (116, 131, 381)
-            # return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
-
-            # I think I added this, because they were sometimes stuck in positions impossible to exit.
-            if np.sum(np.logical_and(self.current.surrounding(greedy_node_ind), voxel)) > 0:
-                node = Node_ind(*greedy_node_ind, self.conf_space, self.average_radius)
-                return node
-            else:
-                connected.remove(greedy_node_ind)
-
-    def collision(self, node: Node_ind, space: np.array = None) -> bool:
-        """
-        :param space: space, which
-        :param node: Node, which should be checked, whether in space.
-        """
-        if space is None:
-            space = self.conf_space.space
-        return not space[node.xi, node.yi, node.thetai]
-
     def generate_path(self, length=np.infty, ind=False) -> np.array:
         """
         Generates path from current node, its parent node, and parents parents node etc.
@@ -239,6 +175,79 @@ class Path_planning_in_CS:
             node = node.parent
             i += 1
         return np.array(path)
+
+
+class Path_planning_in_Maze(Path_planning_in_CS):
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: Node3D, ending_point: Node3D, initial_cond: str,
+                 max_iter: int = 100000) \
+            -> None:
+        """
+        Initialize the D_star_lite solver.
+        :param x: Trajectory_ps_simulation object, that stores information on the maze dimensions.
+        :param starting_point: coordinates of starting point (in cm or m)
+        :param ending_point: coordinates of ending point (in cm or m)
+        :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
+        """
+        super().__init__(starting_point, ending_point, max_iter)
+        self.conf_space = ConfigSpace_Maze.ConfigSpace_Maze(x.solver, x.size, x.shape, x.geometry())
+        self.conf_space.load_space()
+        # self.conf_space.visualize_space()
+
+        self.known_conf_space = self.warp_known_conf_space()
+        # self.known_conf_space.initialize_maze_edges()
+
+        self.average_radius = Maze(x).average_radius()
+        self.start, self.end = self.check_starting_and_ending(x, initial_cond=initial_cond)
+
+        # self.draw_conf_space_and_path()
+        # self.speed = np.ones_like(self.conf_space.space) # just an example of a speed
+        # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
+        # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
+
+    def warp_known_conf_space(self) -> np.array:
+        pass
+
+    def define_node(self, ind, *args):
+        return Node3D(*ind, self.conf_space, self.average_radius)
+
+    def check_starting_and_ending(self, x: Trajectory_ps_simulation, initial_cond: str) \
+            -> tuple:
+        """
+        Define the starting and ending point of the solver.
+        :param initial_cond: front or back of the maze
+        :param x: trajectory that carries information on the maze
+        """
+        if self.start is None:
+            self.start = start(x, initial_cond)
+        if self.end is None:
+            self.end = end(x)
+
+        if self.collision(self.start):
+            print('Your start is not in configuration space')
+            # start_.draw_maze()
+            # if bool(input('Move back? ')):
+            if False:
+                self.start = self.start.find_closest_possible_conf(note='backward')
+            else:
+                self.start = self.start.find_closest_possible_conf()
+
+        if self.collision(end_):
+            print('Your end is not in configuration space')
+            # end_.draw_maze()
+            # if bool(input('Move back? ')):
+            if False:
+                self.end = self.end.find_closest_possible_conf(note='backward')
+            else:
+                self.end = self.end.find_closest_possible_conf()
+        return self.start, self.end
+
+    def unnecessary_space(self, buffer: int = 5):
+        unnecessary = np.ones_like(self.conf_space.space, dtype=bool)
+        unnecessary[np.min([self.start.ind()[0] - buffer, self.end.ind()[0] - buffer]):
+                    np.max([self.start.ind()[0] + buffer, self.end.ind()[0] + buffer]),
+        np.min([self.start.ind()[1] - buffer, self.end.ind()[1] - buffer]):
+        np.max([self.start.ind()[1] + buffer, self.end.ind()[1] + buffer])] = False
+        return unnecessary
 
     def into_trajectory(self, x: Trajectory_ps_simulation) -> Trajectory_ps_simulation:
         """
@@ -281,4 +290,3 @@ class Path_planning_in_CS:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             # mlab.close()
-

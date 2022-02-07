@@ -1,6 +1,6 @@
 import os
 from Directories import PhaseSpaceDirectory
-from PhaseSpaces.PhaseSpace import PhaseSpace
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from trajectory_inheritance.trajectory import get
 
 # x = get('XL_H_4100020_1_ants')
@@ -28,7 +28,7 @@ point_particle = False
 if point_particle:
     name = name + '_pp'
 
-ps = PhaseSpace('ant', 'XL', shape, name=name)
+ps = ConfigSpace_Maze('ant', 'XL', shape, name=name)
 ps.load_space()
 ps.visualize_space()
 k = 1

@@ -1,14 +1,14 @@
 from copy import copy
 import numpy as np
-from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node_ind
+from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_Maze, Node3D
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 from Directories import SaverDirectories
 import os
 
 
-class Path_planning_full_knowledge(Path_planning_in_CS):
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str = '',
-                 max_iter: int = 100000):
+class Path_planning_full_knowledge(Path_planning_in_Maze):
+    def __init__(self, x: Trajectory_ps_simulation, starting_point: Node3D, ending_point: Node3D,
+                 initial_cond: str = '', max_iter: int = 100000):
         super().__init__(x, starting_point, ending_point, initial_cond, max_iter)
         x.filename = self.choose_filename(x, initial_cond)
 
@@ -22,15 +22,15 @@ class Path_planning_full_knowledge(Path_planning_in_CS):
             print('You are calculating a trajectory, which you already have saved')
         return filename
 
-    def initialize_known_conf_space(self) -> np.array:
+    def warp_known_conf_space(self) -> np.array:
         return copy(self.conf_space)
 
-    def add_knowledge(self, central_node: Node_ind) -> None:
+    def add_knowledge(self, central_node: Node3D) -> None:
         raise Exception('You should not have to add any information. Something went wrong.')
 
 
-def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, starting_point: tuple = None,
-                       ending_point: tuple = None, initial_cond: str = '', show_animation: bool = False) \
+def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, starting_point: Node3D = None,
+                       ending_point: Node3D = None, initial_cond: str = '', show_animation: bool = False) \
         -> Trajectory_ps_simulation:
     """
     Initialize a trajectory, initialize a solver, run the path planning, pack it into a trajectory.

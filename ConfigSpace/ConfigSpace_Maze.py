@@ -32,8 +32,41 @@ scale = 5
 # TODO: fix the x.winner attribute
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
+class ConfigSpace(object):
+    def __init__(self, space):
+        self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
 
-class PhaseSpace(object):
+    @staticmethod
+    def reduced_resolution(space: np.array, reduction: int) -> np.array:
+        """
+        Reduce the resolution of the PS.
+        :param space: space that you want to reshape
+        :param reduction: By what factor the PS will be reduced.
+        :return: np.array representing the CS with reduced resolution.
+        """
+        for axis in range(int(space.ndim)):
+            space = space.take(indices=range(0, int(space.shape[axis] / reduction) * reduction), axis=axis)
+
+        def reshape(array) -> np.array:
+            """
+            Shrink an array
+            :return:
+            """
+            reshaper = [item for t in [(int(axis_len / reduction), reduction)
+                                       for axis_len in array.shape] for item in t]
+
+            return array.reshape(*reshaper)
+
+        def summer(array) -> np.array:
+            for i in range(int(array.ndim / 2)):
+                array = array.sum(axis=i + 1)
+            return array
+
+        # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
+        return summer(reshape(space)) / (reduction ** space.ndim)
+
+
+class ConfigSpace_Maze(ConfigSpace):
     def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name="", space=None):
         """
 
@@ -43,6 +76,7 @@ class PhaseSpace(object):
         :param geometry: tuple with names of the .xlsx files that contain the relevant dimensions
         :param name: name of the PhaseSpace.
         """
+        super().__init__(space)
         maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
 
         if len(name) == 0:
@@ -65,7 +99,6 @@ class PhaseSpace(object):
         self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
         self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
 
-        self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
         self.space_boundary = None
         self.fig = None
 
@@ -168,35 +201,6 @@ class PhaseSpace(object):
         """
         fig = mlab.figure(figure=self.name, bgcolor=(1, 1, 1,), fgcolor=(0, 0, 0,), size=(800, 800))
         return fig
-
-    @staticmethod
-    def reduced_resolution(space: np.array, reduction: int) -> np.array:
-        """
-        Reduce the resolution of the PS.
-        :param space: space that you want to reshape
-        :param reduction: By what factor the PS will be reduced.
-        :return: np.array representing the CS with reduced resolution.
-        """
-        for axis in range(int(space.ndim)):
-            space = space.take(indices=range(0, int(space.shape[axis] / reduction) * reduction), axis=axis)
-
-        def reshape(array) -> np.array:
-            """
-            Shrink an array
-            :return:
-            """
-            reshaper = [item for t in [(int(axis_len / reduction), reduction)
-                                       for axis_len in array.shape] for item in t]
-
-            return array.reshape(*reshaper)
-
-        def summer(array) -> np.array:
-            for i in range(int(array.ndim / 2)):
-                array = array.sum(axis=i + 1)
-            return array
-
-        # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
-        return summer(reshape(space)) / (reduction ** space.ndim)
 
     def visualize_space(self, reduction: int = 1, fig=None, colormap: str = 'Greys', space: np.ndarray = None) -> None:
         """
@@ -549,8 +553,8 @@ class PhaseSpace(object):
         return np.any(self.space[ps_area.space])
 
 
-class PS_Area(PhaseSpace):
-    def __init__(self, ps: PhaseSpace, space: np.array, name: str):
+class PS_Area(ConfigSpace_Maze):
+    def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=ps.geometry)
         self.space: np.array = space
         self.fig = ps.fig
@@ -668,7 +672,7 @@ class Node:
         return state_order
 
 
-class PhaseSpace_Labeled(PhaseSpace):
+class PhaseSpace_Labeled(ConfigSpace_Maze):
     """
     This class stores configuration space for a piano_movers problem in a 3 dim array.
     Axis 0 = x direction
@@ -682,9 +686,9 @@ class PhaseSpace_Labeled(PhaseSpace):
         n_2 describes the state you are
     """
 
-    def __init__(self, solver, size, shape, geometry, ps: PhaseSpace = None):
+    def __init__(self, solver, size, shape, geometry, ps: ConfigSpace_Maze = None):
         if ps is None:
-            ps = PhaseSpace(solver, size, shape, geometry, name='')
+            ps = ConfigSpace_Maze(solver, size, shape, geometry, name='')
             ps.load_space()
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=geometry)
         self.space = ps.space  # True, if there is collision. False, if it is an allowed configuration

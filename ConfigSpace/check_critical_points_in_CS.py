@@ -1,4 +1,4 @@
-from PhaseSpaces import PhaseSpace
+from ConfigSpace import ConfigSpace_Maze
 from copy import copy
 
 
@@ -17,7 +17,7 @@ def disconnect_center(size: str):
         return 147, 63, 150
 
 
-def mask_around_center(conf_space: PhaseSpace, center_function=tunnel_center):
+def mask_around_center(conf_space: ConfigSpace_Maze, center_function=tunnel_center):
     radiusx, radiusy, radiusz = 10, 13, 13
     mask = conf_space.empty_space()
     center = center_function(conf_space.size)
@@ -30,7 +30,7 @@ def mask_around_center(conf_space: PhaseSpace, center_function=tunnel_center):
 if __name__ == '__main__':
     solver, shape = 'ant', 'SPT'
     for size in ['L', 'S']:
-        conf_space = PhaseSpace.PhaseSpace(solver, size, shape, name='')
+        conf_space = ConfigSpace_Maze.ConfigSpace_Maze(solver, size, shape, name='')
 
         conf_space.load_space()
         conf_space.visualize_space()

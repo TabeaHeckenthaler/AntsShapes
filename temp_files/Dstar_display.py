@@ -1,4 +1,4 @@
-from PhaseSpaces import PhaseSpace, check_critical_points_in_CS
+from ConfigSpace import ConfigSpace_Maze, check_critical_points_in_CS
 from trajectory_inheritance.trajectory import get
 from copy import copy
 
@@ -11,7 +11,7 @@ x = get('XL_SPT_dil0_sensing1')
 # fig = ps_pp.new_fig()
 # ps_pp.visualize_space(fig=fig, colormap='Blues')
 
-ps = PhaseSpace.PhaseSpace(x.solver, x.size, x.shape, name=x.size + '_' + x.shape)
+ps = ConfigSpace_Maze.ConfigSpace_Maze(x.solver, x.size, x.shape, name=x.size + '_' + x.shape)
 ps.load_space(point_particle=False)
 fig = ps.new_fig()
 ps.visualize_space(fig, colormap='Greys')

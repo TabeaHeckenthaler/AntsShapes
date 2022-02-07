@@ -1,4 +1,4 @@
-from PhaseSpaces import PhaseSpace
+from ConfigSpace import ConfigSpace_Maze
 from Analysis.PathPy.network_functions import *
 from Analysis.States import States
 from trajectory_inheritance.exp_types import exp_types
@@ -8,7 +8,7 @@ if __name__ == '__main__':
     solver, shape = 'human', 'SPT'
     geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
     for size in exp_types[shape][solver][-1:]:
-        conf_space_labeled = PhaseSpace.PhaseSpace_Labeled(solver, size, shape, geometry)
+        conf_space_labeled = ConfigSpace_Maze.PhaseSpace_Labeled(solver, size, shape, geometry)
         conf_space_labeled.load_labeled_space()
 
         # conf_space_labeled.visualize_states()

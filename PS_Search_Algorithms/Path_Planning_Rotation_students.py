@@ -1,15 +1,17 @@
-from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node_ind
-from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
-import numpy as np
-from skfmm import travel_time
-from PhaseSpaces.PhaseSpace import PhaseSpace
 from copy import copy
 
+import numpy as np
+from skfmm import travel_time
+from typing import Union
 
-class Binned_PhaseSpace(PhaseSpace):
-    def __init__(self, phase_space: PhaseSpace, resolution: int):
-        super().__init__(solver=phase_space.solver, size=phase_space.size, shape=phase_space.shape,
-                         geometry=phase_space.geometry, space=phase_space.space)
+from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node3D, Node2D
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace
+from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
+
+
+class Binned_ConfigSpace(ConfigSpace):
+    def __init__(self, config_space: ConfigSpace, resolution: int):
+        super().__init__(space=config_space.space)
         self.resolution = resolution
         self.binned_space = self.calculate_binned_space()
 
@@ -17,10 +19,28 @@ class Binned_PhaseSpace(PhaseSpace):
         """
         :return: Space that has
         """
-        return self.space
+        return np.array([])
 
     def bins_connected(self, ind1, ind2) -> bool:
+        """
+
+        :param ind1: indices in self.space
+        :param ind2: indices in self.space
+        :return: Whether there is a path from ind1 to ind2 without leaving the bins.
+        """
         return self.find_path(ind1, ind2)[0]
+
+    def bin_ind(self, ind: tuple) -> tuple:
+        # TODO
+        return ind
+
+    def bin_cut_out(self, indices: list) -> np.array:
+        """
+        Return only the cut out part where all the indices lie in. The indices have to be in adjacent bins.
+        :param indices:
+        :return:
+        """
+        return np.array([])
 
     def find_path(self, ind1, ind2) -> tuple:
         """
@@ -30,21 +50,21 @@ class Binned_PhaseSpace(PhaseSpace):
         :return: (boolean (whether a path was found), list (node indices that connect the two indices))
         """
         # TODO: check whether centers of voxels are connected.
-        path_exists = False
-        if not path_exists:
-            return False, None
-        else:
-            return True, [ind1, ind2]
+        bins = self.bin_cut_out([ind1, ind2])
+        # path only within the adjacent bins
+        Planner = Path_planning_in_CS(Node2D(*ind1, self.space), Node2D(*ind2, self.space), conf_space=bins, )
+        Planner.path_planning()
 
-    def coverage(self) -> np.array:
-        # TODO: calculate coverage for binned space
-        return np.array([])
+        if Planner.winner:
+            return Planner.winner, Planner.generate_path()
+        else:
+            return False, None
 
 
 class Path_Planning_Rotation_students(Path_planning_in_CS):
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,
-                 resolution: int, max_iter: int = 100000, dil_radius: int = 0):
-        super().__init__(x, starting_point, ending_point, initial_cond, max_iter)
+    def __init__(self, conf_space, start: Union[Node2D, Node3D], end: Union[Node2D, Node3D], resolution: int,
+                 max_iter: int = 100000, dil_radius: int = 0):
+        super().__init__(start, end, max_iter, conf_space=conf_space)
         self.dil_radius = dil_radius
         self.speed = self.initialize_speed()
         self.resolution = resolution
@@ -54,7 +74,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         greedy_node.parent = copy([self.known_conf_space.find_path(self.current.ind(), greedy_node.ind())[1]])
         self.current = greedy_node
 
-    def initialize_known_conf_space(self) -> np.array:
+    def warp_known_conf_space(self) -> np.array:
         """
         Known configuration space is a low resolution representation of the real maze.
         :return:
@@ -62,12 +82,12 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.known_conf_space.space = copy(self.conf_space.space)
         if self.dil_radius > 0:
             self.known_conf_space.space = self.conf_space.dilate(self.known_conf_space.space, radius=self.dil_radius)
-        self.known_conf_space.space = Binned_PhaseSpace(self.known_conf_space.space, self.resolution)
+        self.known_conf_space.space = Binned_ConfigSpace(self.known_conf_space.space, self.resolution)
 
     def initialize_speed(self) -> np.array:
-        return 1/Binned_PhaseSpace(self.conf_space, self.resolution).coverage()
+        return 1/Binned_ConfigSpace(self.conf_space, self.resolution).binned_space
 
-    def possible_step(self, greedy_node: Node_ind) -> bool:
+    def possible_step(self, greedy_node: Node3D) -> bool:
         if self.known_conf_space.bins_connected(self.current.ind(), greedy_node.ind()):
             manage_to_pass = np.random.uniform() > self.known_conf_space.coverage()[greedy_node.ind()]
             if manage_to_pass:
@@ -77,7 +97,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         else:
             return False
 
-    def add_knowledge(self, central_node: Node_ind) -> None:
+    def add_knowledge(self, central_node: Node3D) -> None:
         """
         No path was found in greedy node, so we need to update our self.speed.
         Some kind of Bayesian estimation.

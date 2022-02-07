@@ -25,7 +25,7 @@ Rojas (rafaelrojasmiliani@gmail.com)
 from progressbar import progressbar
 import math
 import random
-from PhaseSpaces import PhaseSpace
+from ConfigSpace import ConfigSpace_Maze
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node_rrt import Node
 
@@ -224,8 +224,8 @@ def main(size='XL', shape='SPT', solver='ant'):
     print("start " + __file__)
 
     # ====Search Path with RRT====
-    conf_space = PhaseSpace.PhaseSpace(solver, size, shape,
-                                       name=size + '_' + shape)
+    conf_space = ConfigSpace_Maze.ConfigSpace_Maze(solver, size, shape,
+                                                   name=size + '_' + shape)
     conf_space.load_space()
 
     sampling_area = [[start[solver][shape][0] - 10, conf_space.extent['x'][-1] - 0.1],

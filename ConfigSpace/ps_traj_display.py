@@ -1,12 +1,12 @@
 from trajectory_inheritance.trajectory import get
-from PhaseSpaces.PhaseSpace import PhaseSpace
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from DataFrame.dataFrame import myDataFrame
 import seaborn as sns
 import numpy as np
 
 size, shape, solver = 'M', 'H', 'ant'
 
-ps = PhaseSpace(solver=solver, size=size, shape=shape, name=size + '_' + shape)
+ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape, name=size + '_' + shape)
 ps.load_space()
 ps.visualize_space()
 
