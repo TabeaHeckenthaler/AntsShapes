@@ -2,14 +2,27 @@ import math
 from mayavi import mlab
 import numpy as np
 from copy import copy
-from ConfigSpace.ConfigSpace_Maze import PS_Mask
+from ConfigSpace.ConfigSpace_Maze import PS_Mask, ConfigSpace
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from matplotlib import pyplot as plt
 
+voxel = {3: np.array([[[False, False, False],
+                       [False, True, False],
+                       [False, False, False]],
+                      [[False, True, False],
+                       [True, False, True],
+                       [False, True, False]],
+                      [[False, False, False],
+                       [False, True, False],
+                       [False, False, False]]]),
+         2: np.array([[False, True, False],
+                      [True, False, True],
+                      [False, True, False]])}
+
 
 class Node:
-    def __init__(self, conf_space):
+    def __init__(self, conf_space: ConfigSpace):
         self.parent = None
         self.conf_space = conf_space
 
@@ -22,10 +35,16 @@ class Node:
     def iterate_surroundings(self) -> iter:
         pass
 
+    def surrounding(self, ind, radius=1) -> np.array:
+        pass
+
 
 class Node2D(Node):
-    def __init__(self, xi, yi, conf_space):
+    def __init__(self, xi: int, yi: int, conf_space: ConfigSpace):
         super().__init__(conf_space)
+        if xi > conf_space.space.shape[0] - 1 or yi > conf_space.space.shape[1]:
+            raise ValueError('Your node is outside of ConfigSpace')
+
         self.xi = xi
         self.yi = yi
 
@@ -36,14 +55,16 @@ class Node2D(Node):
         fig = plt.imshow(self.conf_space.space)
         return fig
 
-    def connected(self) -> list:
+    def connected(self, space=None)  -> list:
         """
         Return all the options of next nodes, that are in possible conf_space.space
         :return:
         """
+        if space is None:
+            space = self.conf_space.space
         nn = []
         for xi, yi in self.iterate_surroundings():
-            if self.conf_space.space[xi, yi]:
+            if space[xi, yi]:
                 nn.append((xi, yi))
 
         if self.ind() not in nn:
@@ -56,13 +77,14 @@ class Node2D(Node):
         xi = [max(0, self.xi - 1), self.xi, min(self.conf_space.space.shape[0] - 1, self.xi + 1)]
         yi = [max(0, self.yi - 1), self.yi, min(self.conf_space.space.shape[1] - 1, self.yi + 1)]
 
-        yield xi[0], yi[0]
+        # yield xi[0], yi[0]
+        yield xi[1], yi[1]
         yield xi[0], yi[1]
-        yield xi[0], yi[2]
+        # yield xi[0], yi[2]
         yield xi[1], yi[2]
-        yield xi[2], yi[2]
+        # yield xi[2], yi[2]
         yield xi[2], yi[1]
-        yield xi[2], yi[0]
+        # yield xi[2], yi[0]
         yield xi[1], yi[0]
 
     def find_closest_possible_conf(self, note: str = None):
@@ -88,18 +110,18 @@ class Node2D(Node):
                     display.end_screen()
                     return options[0]
 
-    def surrounding(self, ind, radius=1):
+    def surrounding(self, ind: tuple, radius: int = 1) -> np.array:
         """
 
         :param ind:
         :param radius:
         :return:
         """
-        return np.array(self.conf_space.space[ind[0] - radius:ind[0] + radius + 1,
-                        ind[1] - radius:ind[1] + radius + 1], dtype=bool)
+        # TODO: this is not clean
+        return np.ones((3, 3))
 
     def coord(self):
-        return self.conf_space.indices_to_coords(*self.ind())
+        return self.ind()
 
     def distance(self, node) -> float:
         """
@@ -112,15 +134,15 @@ class Node2D(Node):
         return np.sqrt((coo_node[0] - coo_self[0]) ** 2 +
                        (coo_node[1] - coo_self[1]) ** 2)
 
-    def get_nearest_node(self, node_list):
+    def get_nearest_node(self, node_list: list):
         dlist = [self.distance(node) for node in node_list]
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
+    def draw_node(self, fig=None, scale_factor: float = 0.2, color: tuple = (0, 0, 0)):
         pass
 
-    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
+    def draw_line(self, node, fig=None, line_width: float = 0.2, color: tuple = (0, 0, 0)):
         pass
 
 
@@ -129,7 +151,7 @@ class Node3D(Node):
     DeLiteNode Node
     """
 
-    def __init__(self, xi, yi, thetai, conf_space, average_radius):
+    def __init__(self, xi, yi, thetai, conf_space: ConfigSpace, average_radius):
         super().__init__(conf_space)
         self.xi = xi
         self.yi = yi
@@ -346,3 +368,6 @@ class Node3D(Node):
                         line_width=line_width,
                         color=color,
                         )
+
+
+Node_constructors = {3: Node3D, 2: Node2D}

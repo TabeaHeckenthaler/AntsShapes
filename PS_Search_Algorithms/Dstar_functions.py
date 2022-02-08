@@ -38,13 +38,3 @@ def plot_distances(self, index=0, plane='theta'):
     # plt.imshow(self.distance[:, index, :]) (if you have the mask in self.distance it looks even better)
     return
 
-
-voxel = np.array([[[False, False, False],
-                   [False, True, False],
-                   [False, False, False]],
-                  [[False, True, False],
-                   [True, False, True],
-                   [False, True, False]],
-                  [[False, False, False],
-                   [False, True, False],
-                   [False, False, False]]])

@@ -6,9 +6,13 @@ from ConfigSpace.ConfigSpace_Maze import ConfigSpace
 
 
 # Zeile, Spalte
-binned_space = pd.read_excel(io=dir, sheet_name='binned_space').to_numpy()
+directory = os.path.join(home, 'PS_Search_Algorithms', 'path_planning_test.xlsx')
+conf_space = pd.read_excel(io=directory, sheet_name='space').to_numpy()
+binned_space = pd.read_excel(io=directory, sheet_name='binned_space').to_numpy()
+
 cs = ConfigSpace(conf_space)
-binned_cs = Binned_ConfigSpace(config_space=cs, resolution=resolution)
+resolution = 2
+binned_cs = Binned_ConfigSpace(space=conf_space, resolution=resolution)
 Planner = Path_Planning_Rotation_students(conf_space=ConfigSpace(space=conf_space),
                                           start=Node2D(0, 0, conf_space),
                                           end=Node2D(8, 8, conf_space),
@@ -16,13 +20,13 @@ Planner = Path_Planning_Rotation_students(conf_space=ConfigSpace(space=conf_spac
 
 
 class BinningTest(unittest.TestCase):
-    def test_calculate_binned_space(self):
-        self.assertEqual(binned_cs.binned_space,
-                         binned_space)
-
     def test_space_ind_to_bin_ind(self):
         self.assertEqual(binned_cs.space_ind_to_bin_ind((4, 2)),
                          (2, 1))
+
+    def test_calculate_binned_space(self):
+        self.assertEqual(binned_cs.binned_space,
+                         binned_space)
 
     def test_bin_cut_out(self):
         self.assertEqual(binned_cs.bin_cut_out([(0, 0), (2, 1)]),
@@ -44,4 +48,5 @@ class Path_PlanningTest(unittest.TestCase):
         Planner.add_knowledge(Node2D(*start, cs))
         final_speed = Planner.speed[binned_cs.space_ind_to_bin_ind(start)]
         self.assertLess(initial_speed, final_speed)
+
 

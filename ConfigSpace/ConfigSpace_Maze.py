@@ -33,7 +33,7 @@ scale = 5
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
 class ConfigSpace(object):
-    def __init__(self, space):
+    def __init__(self, space: np.array):
         self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
 
     @staticmethod
