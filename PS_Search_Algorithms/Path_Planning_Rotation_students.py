@@ -18,20 +18,31 @@ class Binned_ConfigSpace(ConfigSpace):
 
     def calculate_binned_space(self) -> np.array:
         """
-        :return: np.array that has dimensions self.space.shape/self.resolution, which says, how much percent coverage the
-        binned space has.
+        :return: np.array that has dimensions self.space.shape/self.resolution, which says, how much percent coverage
+        the binned space has.
         """
         # TODO
-        return np.array([])
+        binned_space = ...
+        return binned_space
 
-    def bin_cut_out(self, indices: list) -> np.array:
+    def space_ind_to_bin_ind(self, space_ind: tuple) -> tuple:
+        # TODO
+        bin_ind = ...
+        return bin_ind
+
+    def bin_ind_to_space_ind(self, bin_ind: tuple) -> tuple:
+        # TODO
+        space_ind = ...
+        return space_ind
+
+    def bin_cut_out(self, indices: list) -> tuple:
         """
         Return only the cut out part where all the indices lie in. The indices have to be in adjacent bins.
         :param indices: indices in self.space
-        :return:
+        :return: tuple of position of top, left index of cut_out in original cs, and actual cut_out
         """
         # TODO
-        return np.array([])
+        return tuple, np.array([])
 
     def find_path(self, ind1: tuple, ind2: tuple) -> tuple:
         """
@@ -40,12 +51,13 @@ class Binned_ConfigSpace(ConfigSpace):
         :param ind2: indices of second node (in high_resolution_space)
         :return: (boolean (whether a path was found), list (node indices that connect the two indices))
         """
-        bins = self.bin_cut_out([ind1, ind2])
-        # path only within the adjacent bins
-        # TODO Tabea: I think, we have to change the indices to new cut out.
-        Planner = Path_planning_in_CS(Node2D(*ind1, bins), Node2D(*ind2, bins), conf_space=bins)
+        top_left_ind, bins = self.bin_cut_out([ind1, ind2])
+        ind1_in_bin = [sum(x) for x in zip(ind1, top_left_ind)]
+        ind2_in_bin = [sum(x) for x in zip(ind2, top_left_ind)]
+        Planner = Path_planning_in_CS(Node2D(*ind1_in_bin, bins),
+                                      Node2D(*ind2_in_bin, bins),
+                                      conf_space=bins)
         Planner.path_planning()
-
         if Planner.winner:
             return Planner.winner, Planner.generate_path()
         else:
@@ -59,10 +71,11 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.dil_radius = dil_radius
         self.resolution = resolution
         self.speed = self.initialize_speed()
-        DEBUG = 1
+        self.found_path = None  # saves paths, so no need to recalculate
 
     def step_to(self, greedy_node) -> None:
-        greedy_node.parent = copy([self.known_conf_space.find_path(self.current.ind(), greedy_node.ind())[1]])
+        greedy_node.parent = copy([self.found_path])
+        self.found_path = None
         self.current = greedy_node
 
     def warp_known_conf_space(self) -> np.array:
@@ -78,13 +91,12 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
     def initialize_speed(self) -> np.array:
         return Binned_ConfigSpace(self.conf_space, self.resolution).binned_space
 
-    def possible_step(self, greedy_node: Union[Node2D, Node3D]) -> Union[bool, list]:
-        path_exists, path = self.known_conf_space.bins_connected(self.current.ind(), greedy_node.ind())
+    def possible_step(self, greedy_node: Union[Node2D, Node3D]) -> Union[bool]:
+        path_exists, self.found_path = self.known_conf_space.find_path(self.current.ind(), greedy_node.ind())
         if path_exists:
-            manage_to_pass = np.random.uniform() > self.known_conf_space.coverage()[greedy_node.ind()]
+            bin_index = self.known_conf_space.space_ind_to_bin_ind(self, greedy_node.ind())
+            manage_to_pass = np.random.uniform() > self.known_conf_space.coverage()[bin_index]
             if manage_to_pass:
-                return path
-            else:
                 return True
         else:
             return False
@@ -94,8 +106,9 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         No path was found in greedy node, so we need to update our self.speed.
         Some kind of Bayesian estimation.
         :param central_node: node in high resolution config_space
-        :return:
         """
+        # TODO
+        self.speed = ...
 
     def compute_distances(self) -> None:
         """
@@ -103,18 +116,10 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         """
         # phi should contain -1s and 1s and 0s. From the 0 line the distance metric will be calculated.
         phi = np.ones_like(self.known_conf_space.space, dtype=int)
-
-        mask = ~self.known_conf_space.space
-        phi = np.ma.MaskedArray(phi, mask)
-        phi.data[self.end.ind()] = 0
+        phi.data[self.known_conf_space.space_ind_to_bin_ind(self.end.ind())] = 0
 
         print('Recompute travel time')
         self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
-        # in order to mask the 'unreachable' nodes (diagonal or outside of conf_space), set distance there to inf.
-        # dist = travel_time(phi, self.speed, periodic=(0, 0, 1))
-        # dist_data = dist.data
-        # dist_data[dist.mask] = np.inf
-        # self.distance = dist_data
 
         # TO CHECK: how to plot your results in 2D in a certain plane
         # plot_distances(self, index=self.current.xi, plane='x')
