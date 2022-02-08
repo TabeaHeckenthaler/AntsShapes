@@ -93,10 +93,9 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         """
         No path was found in greedy node, so we need to update our self.speed.
         Some kind of Bayesian estimation.
-        :param central_node:
+        :param central_node: node in high resolution config_space
         :return:
         """
-        # TODO: Some Bayesian estimation update, on the... speed? or Coverage? (Tabea)
 
     def compute_distances(self) -> None:
         """
@@ -127,6 +126,8 @@ if __name__ == '__main__':
     resolution = 2
 
     Planner = Path_Planning_Rotation_students(conf_space=ConfigSpace(space=conf_space),
-                                              start=Node2D(0, 0, conf_space),
+                                              start=Node2D(1, 1, conf_space),
                                               end=Node2D(8, 8, conf_space),
                                               resolution=resolution)
+
+    Planner.path_planning()
