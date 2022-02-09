@@ -87,7 +87,7 @@ class PathLength:
     def average_radius(self):
         return Maze(self.x).average_radius()
 
-    def calculate_path_length(self, rot=True, frames=None):
+    def calculate_path_length(self, rot: bool = True, frames: list = None):
         """
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
