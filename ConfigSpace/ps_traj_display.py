@@ -13,7 +13,7 @@ ps.visualize_space()
 exps = myDataFrame[(myDataFrame['size'] == size) & (myDataFrame['shape'] == shape) & (myDataFrame['solver'] == solver)]
 filenames = exps['filename'][:10]
 trajs = [get(filename) for filename in filenames]
-trajs[1].play(ps=ps, step=20, videowriter=True)
+trajs[1].play(cs=ps, step=20, videowriter=True)
 cmap = sns.color_palette("rocket_r", as_cmap=True)
 colors = cmap(np.linspace(0.2, 1, len(trajs)))[:, :3]
 

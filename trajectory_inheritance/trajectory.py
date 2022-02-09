@@ -190,14 +190,14 @@ class Trajectory:
     def velocity(self, second_smooth, *args):
         return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
 
-    def play(self, wait=0, ps=None, step=1, videowriter=False, frames=None):
+    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None):
         """
         Displays a given trajectory_inheritance (self)
         :param videowriter:
         :param frames:
         :param indices: which slice of frames would you like to display
         :param wait: how many milliseconds should we wait between displaying steps
-        :param ps: Configuration space
+        :param cs: Configuration space
         :param step: display only the ith frame
         :Keyword Arguments:
             * *indices_to_coords* (``[int, int]``) --
@@ -224,7 +224,7 @@ class Trajectory:
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=cs, videowriter=videowriter))
 
     def check(self) -> None:
         """

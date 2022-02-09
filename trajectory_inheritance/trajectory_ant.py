@@ -237,7 +237,7 @@ class Trajectory_ant(Trajectory):
         self.load_participants()
         return self.participants.averageCarrierNumber()
 
-    def play(self, wait=0, ps=None, step=1, videowriter=False, frames=None):
+    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -258,4 +258,4 @@ class Trajectory_ant(Trajectory):
         x.frames = x.frames[f1:f2:step]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=ps, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=cs, videowriter=videowriter))
