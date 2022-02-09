@@ -1,4 +1,4 @@
-from ConfigSpace import ConfigSpace_Maze
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node import Node3D, Node2D, Node_constructors
@@ -100,7 +100,7 @@ class Path_planning_in_CS:
     def add_knowledge(self, *args):
         pass
 
-    def collision(self, node, space: np.array = None) -> bool:
+    def collision(self, node: Union[Node2D, Node3D], space: np.array = None) -> bool:
         """
         :param space: space, which
         :param node: Node, which should be checked, whether in space.
@@ -149,7 +149,7 @@ class Path_planning_in_CS:
         phi = np.ma.MaskedArray(phi, mask)
         phi.data[self.end.ind()] = 0
 
-        # TODO: increase in a while loop
+        # idea: increase in a while loop
         # this is to reduce computing power: we don't have to calculate distance in all space, just in small space
         # space = np.logical_and(~self.unnecessary_space(buffer=5), self.planning_space.space)
         # labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
@@ -201,9 +201,8 @@ class Path_planning_in_CS:
 
 
 class Path_planning_in_Maze(Path_planning_in_CS):
-    def __init__(self, x: Trajectory_ps_simulation, starting_point: Node3D, ending_point: Node3D, initial_cond: str,
-                 max_iter: int = 100000) \
-            -> None:
+    def __init__(self, x: Trajectory_ps_simulation, starting_node: Node3D, ending_node: Node3D, initial_cond: str,
+                 max_iter: int = 100000) -> None:
         """
         Initialize the D_star_lite solver.
         :param x: Trajectory_ps_simulation object, that stores information on the maze dimensions.
@@ -211,23 +210,24 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         :param ending_point: coordinates of ending point (in cm or m)
         :param max_iter: maximal number of steps before the solver gives up and returns a trajectory with x.winner=False
         """
-        super().__init__(starting_point, ending_point, max_iter)
-        self.conf_space = ConfigSpace_Maze.ConfigSpace_Maze(x.solver, x.size, x.shape, x.geometry())
-        self.conf_space.load_space()
-        # self.conf_space.visualize_space()
-
-        self.planning_space = self.warp_planning_space()
-        # self.planning_space.initialize_maze_edges()
+        conf_space = ConfigSpace_Maze(x.solver, x.size, x.shape, x.geometry())
+        conf_space.load_space()
 
         self.average_radius = Maze(x).average_radius()
+        super().__init__(starting_node, ending_node, max_iter, conf_space=conf_space)
         self.start, self.end = self.check_starting_and_ending(x, initial_cond=initial_cond)
+        self._current = self.start
+        # self.conf_space.visualize_space()
+
+        self.planning_space = self.warp_conf_space()
+        # self.planning_space.initialize_maze_edges()
 
         # self.draw_conf_space_and_path()
         # self.speed = np.ones_like(self.conf_space.space) # just an example of a speed
         # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
         # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
-    def warp_planning_space(self) -> np.array:
+    def warp_conf_space(self) -> np.array:
         pass
 
     def check_starting_and_ending(self, x: Trajectory_ps_simulation, initial_cond: str) \
@@ -238,27 +238,29 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         :param x: trajectory that carries information on the maze
         """
         if self.start is None:
-            self.start = start(x, initial_cond)
+            starting_indices = self.conf_space.coords_to_indices(*start(x, initial_cond))
+            self.start = Node3D(*starting_indices, self.conf_space)
         if self.end is None:
-            self.end = end(x)
+            ending_indices = self.conf_space.coords_to_indices(*end(x))
+            self.end = Node3D(*ending_indices, self.conf_space)
 
         if self.collision(self.start):
             print('Your start is not in configuration space')
             # start_.draw_maze()
             # if bool(input('Move back? ')):
             if False:
-                self.start = self.start.find_closest_possible_conf(note='backward')
+                self.start = Node3D(*self.start.find_closest_possible_conf(note='backward'), self.conf_space)
             else:
-                self.start = self.start.find_closest_possible_conf()
+                self.start = Node3D(*self.start.find_closest_possible_conf(), self.conf_space)
 
-        if self.collision(end_):
+        if self.collision(self.end):
             print('Your end is not in configuration space')
             # end_.draw_maze()
             # if bool(input('Move back? ')):
             if False:
-                self.end = self.end.find_closest_possible_conf(note='backward')
+                self.end = Node3D(*self.end.find_closest_possible_conf(note='backward'), self.conf_space)
             else:
-                self.end = self.end.find_closest_possible_conf()
+                self.end = Node3D(*self.end.find_closest_possible_conf(), self.conf_space)
         return self.start, self.end
 
     def unnecessary_space(self, buffer: int = 5):

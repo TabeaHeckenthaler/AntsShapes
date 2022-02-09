@@ -22,7 +22,7 @@ class Path_planning_dilated(Path_planning_in_Maze):
             raise Exception('You are calculating a trajectory, which you already have saved')
         return filename
 
-    def warp_planning_space(self) -> np.array:
+    def warp_conf_space(self) -> np.array:
         planning_space = copy(self.conf_space)
         if self.dilation_radius > 0:
             planning_space = planning_space.dilate(space=self.conf_space.space, radius=self.dilation_radius)

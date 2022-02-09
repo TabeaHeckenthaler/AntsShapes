@@ -152,12 +152,12 @@ class Node3D(Node):
     DeLiteNode Node
     """
 
-    def __init__(self, xi, yi, thetai, conf_space: ConfigSpace, average_radius):
+    def __init__(self, xi, yi, thetai, conf_space: ConfigSpace):
         super().__init__(conf_space)
         self.xi = xi
         self.yi = yi
         self.thetai = thetai  # this takes values between 0 and 2*np.pi
-        self.average_radius = average_radius
+        self.average_radius: float = conf_space.average_radius
         self.path_xi = []
         self.path_yi = []
         self.path_thetai = []  # this takes values between 0 and 2*np.pi
@@ -262,7 +262,7 @@ class Node3D(Node):
 
             if self.conf_space.overlapping(ps_mask):
                 indice_list = np.array(np.where(np.logical_and(self.conf_space.space, ps_mask.space))).transpose()
-                options = [Node3D(*indices, self.conf_space, self.average_radius) for indices in indice_list]
+                options = [Node3D(*indices, self.conf_space) for indices in indice_list]
                 if note == 'backward':
                     options = [new for new in options if new.ind()[0] < self.ind()[0]]
                     # self.conf_space.visualize_space()

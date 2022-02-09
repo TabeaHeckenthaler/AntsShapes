@@ -62,7 +62,7 @@ class Collective_Path_Planning(Path_planning_in_Maze):
         self.choose_solver()
         pass
 
-    def warp_planning_space(self) -> np.array:
+    def warp_conf_space(self) -> np.array:
         """
         Depending on the resolution of the solvers, a planning_space for every solver is initialized.
         :return:

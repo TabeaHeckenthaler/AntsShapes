@@ -9,6 +9,7 @@ from copy import copy
 from os import path
 from trajectory_inheritance.exp_types import is_exp_valid
 
+
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
 # TODO: x = get(myDataFrame.loc[429].filename).play() displays a maze, that does not make any sense!
