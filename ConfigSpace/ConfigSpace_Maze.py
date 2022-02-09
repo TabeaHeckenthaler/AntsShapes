@@ -5,7 +5,7 @@ import os
 import itertools
 from Setup.Maze import Maze
 from Directories import PhaseSpaceDirectory
-from Analysis.PathLength import resolution
+from Analysis.resolution import resolution
 from scipy import ndimage
 from datetime import datetime
 import string

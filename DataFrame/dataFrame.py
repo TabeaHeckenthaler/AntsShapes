@@ -127,7 +127,9 @@ class DataFrame(pd.DataFrame):
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
 
-        self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
+        self['minimal path length [length unit]'] = self['filename'].\
+            progress_apply(lambda x: PathLength(get(x)).minimal())
+        # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
     def fill_column(self):
         for i, row in tqdm(self.iterrows()):
@@ -150,6 +152,9 @@ tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
+    # myDataFrame.drop(columns='minimal path length [length unit]')
+    myDataFrame.add_column()
+
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
     # how_many_experiments(myDataFrame)

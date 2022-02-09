@@ -7,6 +7,7 @@ from copy import copy
 from trajectory_inheritance.trajectory import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
+from PS_Search_Algorithms.Path_planning_full_knowledge import minimal_filename
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
@@ -132,10 +133,8 @@ class PathLength:
         plt.show()
 
     def minimal(self):
-        if self.x.shape not in ['RASH', 'LASH']:
-            raise ValueError('You still have to minimal function')
-            # TODO: get the right filename
-            ideal_filename = 'XL_' + self.x.shape + '_dil0_sensing1'
+        if self.x.shape in ['SPT']:
+            ideal_filename = minimal_filename(self.x.size, self.x.shape, self.x.geometry(), self.x.initial_cond())
             ideal = get(ideal_filename)
             return PathLength(ideal).per_experiment() * \
                    Maze(self.x).exit_size/Maze(ideal, geometry=self.x.geometry).exit_size

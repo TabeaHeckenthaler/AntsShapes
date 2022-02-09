@@ -6,6 +6,15 @@ from Directories import SaverDirectories
 import os
 
 
+def minimal_filename(size: str, shape: str, geometry: tuple, initial_cond) -> str:
+    if initial_cond is None:
+        initial_cond = ''
+    if len(initial_cond) > 0:
+        initial_cond = '_' + initial_cond
+    geometry_string = "_".join([string[:-5] for string in geometry])
+    return 'minimal_' + size + '_' + shape + initial_cond + '_' + geometry_string
+
+
 class Path_planning_full_knowledge(Path_planning_in_Maze):
     def __init__(self, x: Trajectory_ps_simulation, starting_node: Node3D, ending_node: Node3D,
                  initial_cond: str = '', max_iter: int = 100000):
@@ -14,10 +23,7 @@ class Path_planning_full_knowledge(Path_planning_in_Maze):
 
     @staticmethod
     def choose_filename(x: Trajectory_ps_simulation, initial_cond: str = '') -> str:
-        geometry_string = "_".join([string[:-5] for string in x.geometry()])
-        if len(initial_cond) > 0:
-            initial_cond = '_' + initial_cond
-        filename = 'minimal_' + x.size + '_' + x.shape + initial_cond + '_' + geometry_string
+        filename = minimal_filename(x.size, x.shape, x.geometry(), initial_cond)
         if filename in os.listdir(SaverDirectories['ps_simulation']):
             print('You are calculating a trajectory, which you already have saved')
         return filename
@@ -56,25 +62,25 @@ def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, star
 if __name__ == '__main__':
     for size in ['XL', 'L', 'M', 'S']:
         x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-                               initial_cond='front')
-        x.save()
-
-    for size in ['XL', 'L', 'M', 'S']:
-        x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                               geometry=('MazeDimensions_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                                initial_cond='back')
         x.save()
 
-    for size in ['Small Far', 'Medium', 'Large']:
-        x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
-                               initial_cond='front')
-        x.save()
-
-    for size in ['Small Far', 'Medium', 'Large']:
-        x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
-                               initial_cond='back')
-        x.save()
+    # for size in ['XL', 'L', 'M', 'S']:
+    #     x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
+    #                            geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+    #                            initial_cond='front')
+    #     x.save()
+    #
+    # for size in ['Small Far', 'Medium', 'Large']:
+    #     x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
+    #                            geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+    #                            initial_cond='front')
+    #     x.save()
+    #
+    # for size in ['Small Far', 'Medium', 'Large']:
+    #     x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
+    #                            geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+    #                            initial_cond='back')
+    #     x.save()
 
