@@ -21,20 +21,48 @@ class Path_planning_in_CS:
     """
     No diagonal paths allowed
     """
+    def _get_distance(self):
+        return self._distance
+
+    def _set_distance(self, distance):
+        if distance is not None and distance.shape != self.planning_space.space.shape:
+            raise ValueError('Your distance does not have the right shape')
+        self._distance = distance
+
+    distance = property(_get_distance, _set_distance)
+
+    def _get_current(self):
+        return self._current
+
+    def _set_current(self, next_current: Union[Node2D, Node3D]):
+        if next_current not in list(self._current.iterate_surroundings()):
+            raise ValueError('You are trying to set your current node to a far away node.')
+        self._current = next_current
+
+    current = property(_get_current, _set_current)
+
     def __init__(self, start: Union[Node3D, Node2D], end: Union[Node3D, Node2D], max_iter: int = 100000,
                  conf_space=None) -> None:
         self.start = start
         self.end = end
         self.max_iter = max_iter
         self.conf_space = conf_space
-        self.current = self.start
+        self._current = self.start
         self.structure = np.ones(tuple((3 for _ in range(self.conf_space.space.ndim))), dtype=int)
-        self.known_conf_space = conf_space  # the space according to which the distances will be calculated
-        self.distance = None
+        self.planning_space = conf_space
+        # self.planning_space.space is the space according to which distances are calculated and nodes to walk to are
+        # chosen, which are closest to the end (not necessarily in self.conf_space.space, if planning_space is warped.)
+        self._distance = None
         self.winner = False
         self.voxel = voxel[self.conf_space.space.ndim]
         self.periodic = (0, 0, 1)[: self.conf_space.space.ndim]
-        self.node_constructor = Node_constructors[self.conf_space.space.ndim]
+        self.node_constructor = Node_constructors[self.conf_space.space.ndim]  # class of node (Node2D or Node3D)
+
+    def is_winner(self):
+        if self._current.ind() == self.end.ind():
+            self.winner = True
+            return self.winner
+        return self.winner
 
     def path_planning(self, display_cs=False) -> None:
         """
@@ -50,14 +78,16 @@ class Path_planning_in_CS:
         # print('Planning the path')
         self.compute_distances()
         # self.draw_conf_space_and_path(self.conf_space, 'conf_space_fig')
-        # self.draw_conf_space_and_path(self.known_conf_space, 'known_conf_space_fig')
+        # self.draw_conf_space_and_path(self.planning_space, 'planning_space_fig')
 
         ii = 0
-        while self.current.ind() != self.end.ind() and ii < self.max_iter:
+        while ii < self.max_iter:
             ii += 1
+            if self.is_winner():
+                return
             if display_cs:
-                self.current.draw_node(fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
-            # if self.current.distance == np.inf:
+                self._current.draw_node(fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
+            # if self._current.distance == np.inf:
             #     return
 
             greedy_node = self.find_greedy_node()
@@ -66,9 +96,6 @@ class Path_planning_in_CS:
             else:
                 self.add_knowledge(greedy_node)
                 self.compute_distances()
-
-        if self.current.ind() == self.end.ind():
-            self.winner = True
 
     def add_knowledge(self, *args):
         pass
@@ -85,18 +112,14 @@ class Path_planning_in_CS:
     def possible_step(self, greedy_node) -> bool:
         return not self.collision(greedy_node)
 
-    def list_distances(self, connected):
-        return [self.distance[node_indices] for node_indices in connected]
-
-    def current_known(self):
-        return self.current
-
     def find_greedy_node(self):
         """
-        Find the node with the smallest distance from self.end, that is bordering the self.current.
+        Find the node with the smallest distance from self.end, that is bordering the self._current in
+        self.planning_space.space
+        :return: greedy node with indices from self.conf_space.space
         """
-        connected_distance = {c: self.distance[c]
-                              for c in self.current_known().connected(space=self.known_conf_space.binned_space)}
+        connected_nodes = self._current.connected(space=self.planning_space.space)
+        connected_distance = {node: self.distance[node] for node in connected_nodes}
 
         while True:
             if len(connected_distance) == 0:
@@ -104,44 +127,37 @@ class Path_planning_in_CS:
 
             minimal_nodes = list(filter(lambda x: connected_distance[x] == min(connected_distance.values()),
                                         connected_distance))
-            # minimal_nodes = np.where(list_distances == np.array(list_distances).min())[0]
-            greedy_one = minimal_nodes[np.random.choice(len(minimal_nodes))]
-            # loop: (115, 130, 383), (116, 130, 382), (117, 129, 381), (116, 131, 381)
-            # return Node_ind(*greedy_node_ind, self.conf_space.space.shape, self.average_radius)
+            random_minimal_node = minimal_nodes[np.random.choice(len(minimal_nodes))]
 
             # I think I added this, because they were sometimes stuck in positions impossible to exit.
-            if np.sum(np.logical_and(self.current.surrounding(greedy_one), self.voxel)) > 0:
-                node = self.define_node_to_walk_to(greedy_one)
-                return node
+            if np.sum(np.logical_and(self._current.surrounding(random_minimal_node), self.voxel)) > 0:
+                return self.node_constructor(*random_minimal_node, self.conf_space)
             else:
-                connected_distance.pop(greedy_one)
-
-    def define_node_to_walk_to(self, ind, *args):
-        return self.node_constructor(*ind, self.conf_space, *args)
+                connected_distance.pop(random_minimal_node)
 
     def step_to(self, greedy_node) -> None:
-        greedy_node.parent = copy(self.current)
-        self.current = greedy_node
+        greedy_node.parent = copy(self._current)
+        self._current = greedy_node
 
     def compute_distances(self) -> None:
         """
-        Computes distance of the current position of the solver to the finish line in conf_space
+        Computes distance of the current position of the solver to the finish line according to self.planning_space.space
         """
         # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
-        phi = np.ones_like(self.known_conf_space.space, dtype=int)
-        mask = ~np.array(self.known_conf_space.space, dtype=bool)
+        phi = np.ones_like(self.planning_space.space, dtype=int)
+        mask = ~np.array(self.planning_space.space, dtype=bool)
         phi = np.ma.MaskedArray(phi, mask)
         phi.data[self.end.ind()] = 0
 
         # TODO: increase in a while loop
         # this is to reduce computing power: we don't have to calculate distance in all space, just in small space
-        # space = np.logical_and(~self.unnecessary_space(buffer=5), self.known_conf_space.space)
+        # space = np.logical_and(~self.unnecessary_space(buffer=5), self.planning_space.space)
         # labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         # if labels[self.end.ind()] == labels[self.start.ind()]:
         #     mask = mask or self.unnecessary_space()
         #
         # else:
-        #     space = np.logical_and(~self.unnecessary_space(buffer=50), self.known_conf_space.space)
+        #     space = np.logical_and(~self.unnecessary_space(buffer=50), self.planning_space.space)
         #     labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         #     if labels[self.end.ind()] == labels[self.start.ind()]:
         #         mask = np.logical_or(mask, self.unnecessary_space())
@@ -171,8 +187,8 @@ class Path_planning_in_CS:
         :param ind:
         :return: np.array with [[x1, y1, angle1], [x2, y2, angle2], ... ] of the path
         """
-        path = [self.current.coord()]
-        node = self.current
+        path = [self._current.coord()]
+        node = self._current
         i = 0
         while node.parent is not None and i < length:
             if not ind:
@@ -200,8 +216,8 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         self.conf_space.load_space()
         # self.conf_space.visualize_space()
 
-        self.known_conf_space = self.warp_known_conf_space()
-        # self.known_conf_space.initialize_maze_edges()
+        self.planning_space = self.warp_planning_space()
+        # self.planning_space.initialize_maze_edges()
 
         self.average_radius = Maze(x).average_radius()
         self.start, self.end = self.check_starting_and_ending(x, initial_cond=initial_cond)
@@ -211,11 +227,8 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         # self.speed[:, int(self.speed.shape[1] / 2):-1, :] =
         # copy(self.speed[:, int(self.speed.shape[1] / 2):-1, :] / 2)
 
-    def warp_known_conf_space(self) -> np.array:
+    def warp_planning_space(self) -> np.array:
         pass
-
-    def define_node_to_walk_to(self, ind, *args):
-        return self.node_constructor(*ind, self.conf_space, self.average_radius)
 
     def check_starting_and_ending(self, x: Trajectory_ps_simulation, initial_cond: str) \
             -> tuple:
@@ -292,7 +305,7 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         :param save: Whether to save the image
         """
         self.draw_conf_space_and_path()
-        self.draw_conf_space_and_path(space=self.known_conf_space)
+        self.draw_conf_space_and_path(space=self.planning_space)
         if save:
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)

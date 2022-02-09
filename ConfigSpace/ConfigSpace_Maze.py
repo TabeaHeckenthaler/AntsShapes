@@ -33,8 +33,9 @@ scale = 5
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
 class ConfigSpace(object):
-    def __init__(self, space: np.array):
+    def __init__(self, space: np.array, name=''):
         self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
+        self.name = name
 
     @staticmethod
     def reduced_resolution(space: np.array, reduction: int) -> np.array:
@@ -64,6 +65,9 @@ class ConfigSpace(object):
 
         # return np.array(summer(reshape(space))/(reduction**space.ndim)>0.5, dtype=bool)
         return summer(reshape(space)) / (reduction ** space.ndim)
+
+    def overlapping(self, ps_area):
+        return np.any(self.space[ps_area.space])
 
 
 class ConfigSpace_Maze(ConfigSpace):
@@ -549,9 +553,6 @@ class ConfigSpace_Maze(ConfigSpace):
                     centroids = np.vstack([centroids, centroid])
         return ps_states, centroids
 
-    def overlapping(self, ps_area):
-        return np.any(self.space[ps_area.space])
-
 
 class PS_Area(ConfigSpace_Maze):
     def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str):
@@ -583,10 +584,10 @@ class PS_Area(ConfigSpace_Maze):
         # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
 
 
-class PS_Mask(PS_Area):
-    def __init__(self, ps):
-        space = np.zeros_like(ps.space, dtype=bool)
-        super().__init__(ps, space, 'mask')
+class PS_Mask(ConfigSpace):
+    def __init__(self, space):
+        space = np.zeros_like(space, dtype=bool)
+        super().__init__(space, name='mask')
 
     @staticmethod
     def paste(wall: np.array, block: np.array, loc: tuple) -> np.array:
@@ -800,7 +801,6 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         """
 
         :param fig: mylab figure reference
-        :param colormap: What color do you want the available states to appear in?
         :param reduction: What amount of reduction?
         :return:
         """
@@ -839,7 +839,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string)
 
         print('Saving ' + self.name + ' in path: ' + directory)
-        pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(path, 'wb'))
+        pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(directory, 'wb'))
 
         # Actually, I dont really need all this information.  self.space_labeled should be enough
         directory = self.directory(point_particle=False,

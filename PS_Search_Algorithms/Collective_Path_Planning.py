@@ -62,9 +62,9 @@ class Collective_Path_Planning(Path_planning_in_Maze):
         self.choose_solver()
         pass
 
-    def warp_known_conf_space(self) -> np.array:
+    def warp_planning_space(self) -> np.array:
         """
-        Depending on the resolution of the solvers, a known_conf_space for every solver is initialized.
+        Depending on the resolution of the solvers, a planning_space for every solver is initialized.
         :return:
         """
         pass
@@ -80,9 +80,9 @@ def run_collective(shape: str, size: str, solver: str, dilation_radius: int = 8,
     :param shape: shape of the load, that moves through the maze
     :param size: size of the load
     :param solver: type of solver
-    :param sensing_radius: radius around the point of impact, where the known_conf_space is updated by the real
+    :param sensing_radius: radius around the point of impact, where the planning_space is updated by the real
     conf_space
-    :param dilation_radius: radius by which the conf_space is dilated by to calculate known_conf_space.
+    :param dilation_radius: radius by which the conf_space is dilated by to calculate planning_space.
     :param filename: Name of the trajectory
     :param show_animation: show animation
     :param starting_point: point (in real world coordinates) that the solver starts at

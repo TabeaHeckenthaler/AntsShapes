@@ -22,7 +22,7 @@ class Path_planning_full_knowledge(Path_planning_in_Maze):
             print('You are calculating a trajectory, which you already have saved')
         return filename
 
-    def warp_known_conf_space(self) -> np.array:
+    def warp_planning_space(self) -> np.array:
         return copy(self.conf_space)
 
     def add_knowledge(self, central_node: Node3D) -> None:

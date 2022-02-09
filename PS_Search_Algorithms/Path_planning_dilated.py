@@ -22,11 +22,11 @@ class Path_planning_dilated(Path_planning_in_Maze):
             raise Exception('You are calculating a trajectory, which you already have saved')
         return filename
 
-    def warp_known_conf_space(self) -> np.array:
-        known_conf_space = copy(self.conf_space)
+    def warp_planning_space(self) -> np.array:
+        planning_space = copy(self.conf_space)
         if self.dilation_radius > 0:
-            known_conf_space = known_conf_space.dilate(space=self.conf_space.space, radius=self.dilation_radius)
-        return known_conf_space
+            planning_space = planning_space.dilate(space=self.conf_space.space, radius=self.dilation_radius)
+        return planning_space
 
     def add_knowledge(self, central_node: Node3D) -> None:
         """
@@ -40,18 +40,18 @@ class Path_planning_dilated(Path_planning_in_Maze):
                            - (central_node.thetai - self.sensing_radius)]
 
         conf_space_rolled = np.roll(self.conf_space.space, rolling_indices, axis=(0, 1, 2))
-        known_conf_space_rolled = np.roll(self.known_conf_space.space, rolling_indices, axis=(0, 1, 2))
+        planning_space_rolled = np.roll(self.planning_space.space, rolling_indices, axis=(0, 1, 2))
 
         # only the connected component which we sense
         sr = self.sensing_radius
         labeled, _ = label(conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], structure)
-        known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr] = \
+        planning_space_rolled[:2 * sr, :2 * sr, :2 * sr] = \
             np.logical_or(
-                np.array(known_conf_space_rolled[:2 * sr, :2 * sr, :2 * sr], dtype=bool),
+                np.array(planning_space_rolled[:2 * sr, :2 * sr, :2 * sr], dtype=bool),
                 np.array(labeled == labeled[sr, sr, sr])).astype(int)
 
-        # update_screen known_conf_space by using known_conf_space_rolled and rolling back
-        self.known_conf_space.space = np.roll(known_conf_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
+        # update_screen planning_space by using planning_space_rolled and rolling back
+        self.planning_space.space = np.roll(planning_space_rolled, [-r for r in rolling_indices], axis=(0, 1, 2))
 
 
 def run_dilated(shape: str, size: str, solver: str, filename: str = None, show_animation: bool = False,

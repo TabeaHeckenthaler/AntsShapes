@@ -55,7 +55,7 @@ class Node2D(Node):
         fig = plt.imshow(self.conf_space.space)
         return fig
 
-    def connected(self, space=None)  -> list:
+    def connected(self, space=None) -> list:
         """
         Return all the options of next nodes, that are in possible conf_space.space
         :return:
@@ -140,6 +140,7 @@ class Node2D(Node):
         return node_list[minind]
 
     def draw_node(self, fig=None, scale_factor: float = 0.2, color: tuple = (0, 0, 0)):
+        # TODO: Rotation students
         pass
 
     def draw_line(self, node, fig=None, line_width: float = 0.2, color: tuple = (0, 0, 0)):
@@ -177,7 +178,7 @@ class Node3D(Node):
         display.display()
         return display
 
-    def connected(self) -> list:
+    def connected(self, space=None) -> list:
         """
         Return all the options of next nodes, that are in possible conf_space.space
         :param conf_space: PhaseSpace
