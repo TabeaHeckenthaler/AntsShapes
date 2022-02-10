@@ -6,8 +6,9 @@ Created on Wed May  6 11:24:09 2020
 """
 import numpy as np
 from os import path
+import os
 import pickle
-from Directories import SaverDirectories, work_dir, mini_SaverDirectories
+from Directories import SaverDirectories, work_dir, mini_SaverDirectories, home
 from copy import deepcopy
 from Setup.Maze import Maze
 from Setup.Load import periodicity
@@ -401,11 +402,19 @@ def get(filename) -> Trajectory:
     :param filename: Name of the trajectory that is supposed to be unpickled
     :return: trajectory object
     """
-    import os
+    # this is local on your computer
+    local_address = path.join(home, 'trajectory_inheritance', 'trajectories_local')
+    if filename in os.listdir(local_address):
+        with open(path.join(local_address, filename), 'rb') as f:
+            print('You are loading ' + filename + 'from local copy.')
+            x = pickle.load(f)
+        return x
+
+    # this is on labs network
     for root, dirs, files in os.walk(work_dir):
         for dir in dirs:
-            if filename in os.listdir(os.path.join(work_dir, dir)):
-                address = os.path.join(work_dir, dir, filename)
+            if filename in os.listdir(path.join(work_dir, dir)):
+                address = path.join(work_dir, dir, filename)
                 with open(address, 'rb') as f:
                     x = pickle.load(f)
                 return x
