@@ -8,6 +8,7 @@ from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node3D
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace
 import pandas as pd
 from Directories import home
+from matplotlib import pyplot as plt
 
 
 class Binned_ConfigSpace(ConfigSpace):
@@ -28,7 +29,6 @@ class Binned_ConfigSpace(ConfigSpace):
         # self.resolution
         # binned_space = ...
         # return binned_space
-        binned_space = 'yoh'
         return binned_space  # This is saved in the excel file
 
     def bin_cut_out(self, indices: list) -> tuple:
@@ -196,6 +196,13 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         return self.node_constructor(*self.planning_space.space_ind_to_bin_ind(self._current.ind()),
                                      ConfigSpace(self.planning_space.space))
 
+    def draw_maze(self):
+        # TODO Rotation students: It might be nice to draw black lines that seperate the bins, so that we can easily
+        #   see where the bins are. (Check the documentation of matplotlib.pyplot for this)
+
+        self.conf_space.fig = plt.imshow(self.conf_space.space)
+        plt.show(block=False)
+
 
 # this is only for testing
 directory = os.path.join(home, 'PS_Search_Algorithms', 'path_planning_test.xlsx')
@@ -210,4 +217,5 @@ if __name__ == '__main__':
                                               resolution=resolution)
 
     # TODO Rotation students: Draw node for Node2D and make a visualisation, so that display_cs = True can be passed
-    Planner.path_planning()
+    Planner.draw_maze()
+    Planner.path_planning(display_cs=True)

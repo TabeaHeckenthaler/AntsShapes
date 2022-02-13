@@ -51,13 +51,6 @@ class Node2D(Node):
     def ind(self):
         return self.xi, self.yi
 
-    def draw_maze(self):
-        fig = plt.imshow(self.conf_space.space)
-        return fig
-
-    def draw_node(self):
-        # TODO Rotation student: define function
-        return
 
     def connected(self, space=None) -> list:
         """
@@ -143,8 +136,9 @@ class Node2D(Node):
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, fig=None, scale_factor: float = 0.2, color: tuple = (0, 0, 0)):
-        # TODO: Rotation students
+    def draw_node(self, fig=None):
+        # TODO: Rotation students: Change the color of the box of this node.
+        # self.ind() gives you current node indices
         pass
 
     def draw_line(self, node, fig=None, line_width: float = 0.2, color: tuple = (0, 0, 0)):

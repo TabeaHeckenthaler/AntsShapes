@@ -10,7 +10,7 @@ from Analysis.GeneralFunctions import graph_dir
 from PS_Search_Algorithms.classes.Node import voxel
 from skfmm import distance  # use this! https://pythonhosted.org/scikit-fmm/
 from typing import Union
-
+from matplotlib import pyplot as plt
 try:
     import cc3d
 except:
