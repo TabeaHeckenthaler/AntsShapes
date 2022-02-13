@@ -135,6 +135,9 @@ class Path_planning_in_CS:
             else:
                 connected_distance.pop(random_minimal_node)
 
+                # TODO: Tabea, choosing node, and then you already pop here?
+                #  Then you have to update already here, right?
+
     def step_to(self, greedy_node) -> None:
         greedy_node.parent = copy(self._current)
         self._current = greedy_node

@@ -136,10 +136,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         :return: greedy node with indices from self.conf_space.space
         """
         connected_distance = self.distances_in_surrounding_nodes()
-        while True:
-            if len(connected_distance) == 0:
-                raise Exception('Not able to find a path')
-
+        while len(connected_distance) > 0:
             minimal_nodes = list(filter(lambda x: connected_distance[x] == min(connected_distance.values()),
                                         connected_distance))
             random_node_in_greedy_bin = minimal_nodes[np.random.choice(len(minimal_nodes))]
@@ -149,6 +146,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
                 return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
             else:
                 connected_distance.pop(random_node_in_greedy_bin)
+        raise Exception('Not able to find a path')
 
     def possible_step(self, greedy_node: Union[Node2D, Node3D]) -> Union[bool]:
         """
@@ -162,6 +160,8 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
             manage_to_pass = np.random.uniform(0, 1) < self.planning_space.space[bin_index]
             if manage_to_pass:
                 return True
+            else:
+                return False
         else:
             return False
 
@@ -178,7 +178,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         """
         Computes travel time ( = self.distance) of the current position of the solver to the finish line in conf_space
         """
-        # phi should contain -1s and 1s and 0s. From the 0 line the distance metric will be calculated.
+        # phi should contain -1s and 1s and 0s. From the 0 line the distance metric will e calculated.
         phi = np.ones_like(self.planning_space.space, dtype=int)
         phi[self.planning_space.space_ind_to_bin_ind(self.end.ind())] = 0
         self.distance = travel_time(phi, self.speed, periodic=self.periodic)

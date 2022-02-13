@@ -9,4 +9,3 @@ n.add_edge('c', 'e')
 print(n)
 
 export_html(n, r'C:\Users\tabea\PycharmProjects\AntsShapes\a.html', )
-n

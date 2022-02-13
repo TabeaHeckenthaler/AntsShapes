@@ -17,10 +17,20 @@ def resolution(size: str, shape: str, solver: str, geometry: tuple, path_length:
     return int(conf_space.coords_to_index(0, path_length))
 
 
+def typical_v_max() -> float:
+    # TODO Rotation students: Find typical top speed
+    return float()
 # how long does it take for the shape to reach from 0 to v_max or from v_max to 0? Better: How much path is traversed.
+
+
 def find_acceleration_frames(x: Trajectory) -> list:
     # TODO Rotation student: Find for a given trajectory, example frames, where the load is accelerated from 0 to v_max,
     #   or where the shape is decelerated (far away from the wall)
+
+    # Find frames, where v is about v_max
+
+    # Find frames beforehand, where the speed is 0.
+
     pass
 
 

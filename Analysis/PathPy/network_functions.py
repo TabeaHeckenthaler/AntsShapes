@@ -25,9 +25,12 @@ def create_higher_order_network(paths, k=2) -> pp.Network:
     return hon
 
 
-def get_trajectories(solver='human', size='Large', shape='SPT', number: int = None) -> list:
+def get_trajectories(solver='human', size='Large', shape='SPT',
+                     geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'), number: int = None) \
+        -> list:
     """
     Get trajectories based on the trajectories saved in myDataFrame.
+    :param geometry: geometry of the maze, given by the names of the excel files with the dimensions
     :param number: How many trajectories do you want to have in your list?
     :param solver: str
     :param size: str
@@ -37,7 +40,9 @@ def get_trajectories(solver='human', size='Large', shape='SPT', number: int = No
     df = myDataFrame[
         (myDataFrame['size'] == size) &
         (myDataFrame['shape'] == shape) &
-        (myDataFrame['solver'] == solver)]
+        (myDataFrame['solver'] == solver) &
+        (myDataFrame['maze dimensions'] == geometry[0]) &
+        (myDataFrame['load dimensions'] == geometry[1])]
 
     filenames = df['filename'][:number]
     # filenames = ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]
@@ -52,7 +57,9 @@ def plot_transition_matrix(T: np.array, state_order: list, name: str = 'transiti
     ax.set_yticks(range(len(state_order)))
     ax.set_xticklabels(state_order)
     ax.set_yticklabels(state_order)
-    plt.gcf().savefig(graph_dir() + os.path.sep + name + '.pdf')
+    directory = graph_dir() + os.path.sep + name + '.pdf'
+    print('Saving transition matrix in ', directory)
+    plt.gcf().savefig(directory)
 
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
@@ -93,7 +100,9 @@ def plot_network(n: pp.Network, name: str = 'network') -> None:
                     "node_size": {name: sizes[len(name)] for name in g1.vs["name"]},
                     "node_color": {name: colors[len(name)] for name in g1.vs["name"]},
                     }
-    export_html(n, path.join(network_dir, name + '.html'), **visual_style)
+    directory = path.join(network_dir, name + '.html')
+    print('Saving network image in ', directory)
+    export_html(n, directory, **visual_style)
 
 
 def pathpy_network(state_series) -> (pp.Paths, pp.Network):

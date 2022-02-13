@@ -527,6 +527,10 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
+        cc_to_keep = min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
+        if cc_to_keep != 10:
+            print('You seem to have to little cc...')
+
         min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1)
 
         for label in range(1, number_cc):
@@ -724,8 +728,8 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         """
         directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius, small=True)
 
-        print('Loading labeled from ', directory, '...')
         if os.path.exists(directory):
+            print('Loading labeled from ', directory, '.')
             # self.space_labeled = pickle.load(open(path, 'rb'))
             self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
@@ -841,7 +845,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         print('Saving ' + self.name + ' in path: ' + directory)
         pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(directory, 'wb'))
 
-        # Actually, I dont really need all this information.  self.space_labeled should be enough
+        # Actually, I don't really need all this information.  self.space_labeled should be enough
         directory = self.directory(point_particle=False,
                                    erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
@@ -862,7 +866,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         """
         :return: maximum distance so that it is noted as transition area
         """
-        maze = Maze(solver=self.solver, size=self.size, shape=self.shape)
+        maze = Maze(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
         if self.shape == 'SPT':
             distance_cm = (maze.slits[1] - maze.slits[0]) / 3
         else:
@@ -874,8 +878,8 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         Calculate the labeled space.
         :return:
         """
-        print('Calculating distances for the different states in', self.name)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
+        print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
         [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
         distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
 
