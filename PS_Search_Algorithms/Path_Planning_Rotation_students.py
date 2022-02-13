@@ -23,13 +23,18 @@ class Binned_ConfigSpace(ConfigSpace):
         the binned space has.
         """
         # TODO Rotation students: Fill in the function
+        # Excel file array found in here:
+        # self.high_resolution_space.space
+        # self.resolution
         # binned_space = ...
         # return binned_space
+        binned_space = 'yoh'
         return binned_space  # This is saved in the excel file
 
     def bin_cut_out(self, indices: list) -> tuple:
         """
-        Return only the cut out part where all the indices lie in. The indices have to be in adjacent bins.
+        Return only the cut out part where all the indices (in high resolution space) lie in.
+        The indices have to be in adjacent bins. If indices are not in adjacent bins, raise an Error.
         :param indices: indices in self.space
         :return: tuple of position of top, left index of cut_out in original cs, and actual cut_out
         """
@@ -41,8 +46,9 @@ class Binned_ConfigSpace(ConfigSpace):
 
     def ind_in_bin(self, bin_index: tuple) -> list:
         """
+
         :param bin_index:
-        :return: list with all indices (in self.high_resolutions) in a bin
+        :return: list with all indices (in self.high_resolutions) as tuples in a bin
         """
         # TODO Rotation students: For resolution larger than 2
         # TODO Rotation students: For 3D as well

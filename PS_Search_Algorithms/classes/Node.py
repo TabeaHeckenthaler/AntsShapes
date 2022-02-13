@@ -55,6 +55,10 @@ class Node2D(Node):
         fig = plt.imshow(self.conf_space.space)
         return fig
 
+    def draw_node(self):
+        # TODO Rotation student: define function
+        return
+
     def connected(self, space=None) -> list:
         """
         Return all the options of next nodes, that are in possible conf_space.space

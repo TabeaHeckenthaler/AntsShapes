@@ -215,6 +215,7 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         """
         conf_space = ConfigSpace_Maze(x.solver, x.size, x.shape, x.geometry())
         conf_space.load_space()
+        conf_space.visualize_space()
 
         self.average_radius = Maze(x).average_radius()
         super().__init__(starting_node, ending_node, max_iter, conf_space=conf_space)

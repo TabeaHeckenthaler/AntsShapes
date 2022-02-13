@@ -15,3 +15,5 @@ for size in ['XL', 'L', 'M', 'S']:
                            geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                            initial_cond='front')
     x.play(wait=10, cs=conf_space)
+
+
