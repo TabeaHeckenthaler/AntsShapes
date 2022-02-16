@@ -20,7 +20,7 @@ mini_SaverDirectories = {'ant': path.join(mini_work_dir, 'Ant_Trajectories'),
                          'gillespie': path.join(mini_work_dir, 'Gillespie_Trajectories'),
                          'ps_simulation': path.join(mini_work_dir, 'PS_simulation_Trajectories')}
 
-PhaseSpaceDirectory = path.join(data_home, 'PhaseSpaces')
+PhaseSpaceDirectory = path.join(data_home, 'Configuration_Spaces')
 
 excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
 contacts_dir = path.join(data_home, 'Contacts', 'ant')

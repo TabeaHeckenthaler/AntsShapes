@@ -527,7 +527,7 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
+        cc_to_keep = np.min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
         if cc_to_keep != 10:
             print('You seem to have to little cc...')
 
@@ -714,6 +714,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             print('Loading labeled from ', directory, '...')
             self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
+            # TODO: I have to tweek this, because its not good yet. (for ants)
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
             self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
             # self.visualize_states(reduction=5)
@@ -794,6 +795,9 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
 
         else:
             self.fig = fig
+
+        if self.centroids is None:
+            self.load_eroded_labeled_space()
 
         print('Draw states')
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
