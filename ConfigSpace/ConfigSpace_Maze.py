@@ -527,7 +527,7 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = np.min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
+        cc_to_keep = np.min([len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep])
         if cc_to_keep != 10:
             print('You seem to have to little cc...')
 

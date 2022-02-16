@@ -53,7 +53,7 @@ class Path_PlanningTest(unittest.TestCase):
         final_speed = Planner.speed[binned_cs.space_ind_to_bin_ind(start)]
         self.assertLess(initial_speed, final_speed)
 
-    def test_display(self):
-        Planner.path_planning(display_cs=True)
+    # def test_display(self):
+    #     Planner.path_planning(display_cs=True)
 
 
