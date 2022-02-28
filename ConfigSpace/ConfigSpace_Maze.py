@@ -1,11 +1,11 @@
 import numpy as np
 import pickle
-# from PhysicsEngine.Contact import possible_configuration
+from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
-# from Setup.Maze import Maze
+from Setup.Maze import Maze
 from Directories import PhaseSpaceDirectory
-# from Analysis.resolution import resolution
+from Analysis.resolution import resolution
 from scipy import ndimage
 from datetime import datetime
 import string

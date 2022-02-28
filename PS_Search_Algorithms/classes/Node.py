@@ -1,9 +1,9 @@
 import math
-# from mayavi import mlab
+from mayavi import mlab
 import numpy as np
 from copy import copy
 from ConfigSpace.ConfigSpace_Maze import PS_Mask, ConfigSpace
-# from Setup.Maze import Maze
+from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from matplotlib import pyplot as plt
 

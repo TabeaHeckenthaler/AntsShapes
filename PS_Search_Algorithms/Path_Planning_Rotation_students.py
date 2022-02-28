@@ -18,7 +18,7 @@ class Binned_ConfigSpace(ConfigSpace):
         self.resolution = resolution
         super().__init__(space=self.decimate_space())
         self.dual_space = self.calc_dual_space()
-        self.draw_dual_space()
+        # self.draw_dual_space()
         self.node_constructor = Node_constructors[config_space.space.ndim]
 
     def decimate_space(self):
@@ -26,7 +26,7 @@ class Binned_ConfigSpace(ConfigSpace):
         bin_size = self.resolution
         space = self.high_resolution_space.space
 
-        decimated_shape = [ int(space.shape[0] / bin_size) , int(space.shape[1] / bin_size) ]
+        decimated_shape = [int(space.shape[0] / bin_size) , int(space.shape[1] / bin_size) ]
 
         decimated_space = np.empty(decimated_shape)
 
@@ -232,7 +232,6 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
             print('choose node: ', random_node_in_greedy_bin)
             return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
 
-
         # # I think I added this, because they were sometimes stuck in positions impossible to exit.
         # if np.sum(np.logical_and(self._current.surrounding(random_node_in_greedy_bin), self.voxel)) > 0:
         #     return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
@@ -298,7 +297,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         weight = self.planning_space.dual_space.edges[edge]["weight"]
         nx.set_edge_attributes(self.planning_space.dual_space, {edge: {"weight": 2 * weight }})
 
-        self.planning_space.draw_dual_space(); plt.show()
+        # self.planning_space.draw_dual_space(); plt.show()
 
     def compute_distances(self) -> None:
         """
@@ -319,11 +318,29 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
                                      ConfigSpace(self.planning_space.space))
 
     def draw_maze(self):
-        # TODO Rotation students: It might be nice to draw black lines that seperate the bins, so that we can easily
-        #   see where the bins are. (Check the documentation of matplotlib.pyplot for this)
-
         self.conf_space.fig = plt.imshow(self.conf_space.space)
         plt.show(block=False)
+
+    def generate_path(self, length=np.infty, ind=False) -> np.array:
+        """
+        Generates path from current node, its parent node, and parents parents node etc.
+        Returns an numpy array with the x, y, and theta coordinates of the path,
+        starting with the initial node and ending with the current node.
+        :param length: maximum length of generated path
+        :param ind:
+        :return: np.array with [[x1, y1, angle1], [x2, y2, angle2], ... ] of the path
+        """
+        path = [self._current.coord()]
+        node = self._current
+        i = 0
+        while node.parent is not None and i < length:
+            if not ind:
+                path.insert(0, node.parent.ind())
+            else:
+                path.append(node.parent.ind())
+            node = node.parent
+            i += 1
+        return np.array(path)
 
 
 # this is only for testing
@@ -338,7 +355,6 @@ if __name__ == '__main__':
                                               end=Node2D(7, 5, config_space),
                                               resolution=resolution)
 
-    # TODO Rotation students: Draw node for Node2D and make a visualisation, so that display_cs = True can be passed
     # Planner.draw_maze()
     Planner.path_planning(display_cs=False)
     DEBUG = 1
