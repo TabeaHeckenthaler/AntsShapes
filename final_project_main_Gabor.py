@@ -28,6 +28,9 @@ def imitation_of_human_solver_test():
 
 
 if __name__ == '__main__':
-    # network_visualisation('human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    # 1. Walk in network of states
+    network_visualisation('human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+
+    # 2. Simulation of trajectories within a piano-movers type maze
     imitation_of_human_solver_test()
     # My experimental students are currently working on these functions, that are to be tested

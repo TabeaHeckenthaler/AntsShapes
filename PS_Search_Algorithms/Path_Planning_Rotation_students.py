@@ -103,7 +103,8 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.resolution = resolution
         self.planning_space.space = copy(self.conf_space.space)
         self.warp_planning_space()
-        self.speed = self.initialize_speed()
+        # self.speed = self.initialize_speed()
+        self.dual_space = None
         self.found_path = None  # saves paths, so no need to recalculate
 
     def step_to(self, greedy_node) -> None:

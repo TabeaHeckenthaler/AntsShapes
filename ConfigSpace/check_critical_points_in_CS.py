@@ -28,20 +28,21 @@ def mask_around_center(conf_space: ConfigSpace_Maze, center_function=tunnel_cent
 
 
 if __name__ == '__main__':
-    solver, shape = 'ant', 'SPT'
-    for size in ['L', 'S']:
-        conf_space = ConfigSpace_Maze.ConfigSpace_Maze(solver, size, shape, name='')
+    solver, shape = 'human', 'SPT'
+    geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+    for size in ['Small Far']:
+        conf_space = ConfigSpace_Maze.ConfigSpace_Maze(solver, size, shape, geometry, name='')
 
         conf_space.load_space()
         conf_space.visualize_space()
-        #
+
         # for center in [tunnel_center, disconnect_center]:
         #     mask = mask_around_center(conf_space, center)
         #     conf_space.calculate_space(mask=mask)
         #     new_space = copy(conf_space.space)
         #     conf_space.visualize_space(space=new_space)
         #     conf_space.visualize_space(space=mask, colormap='Oranges')
-        #
+
         DEBUG = 1
 
         # conf_space.calculate_space()
