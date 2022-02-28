@@ -303,6 +303,15 @@ class Node3D(Node):
                        (coo_node[1] - coo_self[1]) ** 2 +
                        (((coo_node[2] - coo_self[2] + np.pi) % (2 * np.pi) - np.pi) * self.average_radius) ** 2)
 
+    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
+        # plot the random point
+        # if point is not None:
+        mlab.points3d(self.xi, self.yi, self.thetai * self.average_radius,
+                      figure=fig,
+                      scale_factor=scale_factor,
+                      color=color,
+                      )
+
     def calc_distance_and_angles(self, to_node):
         coo_self = self.coord()
         coo_to_node = to_node.coord()

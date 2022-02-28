@@ -86,9 +86,10 @@ class Path_planning_in_CS:
             if self.is_winner():
                 return
             if display_cs:
-                self._current.draw_node(fig=self.conf_space.fig,
-                                        # scale_factor=0.2, color=(1, 0, 0)
-                                        )
+                self.conf_space.draw_ind(self._current.ind())
+                # self._current.draw_node(fig=self.conf_space.fig,
+                #                         # scale_factor=0.2, color=(1, 0, 0)
+                #                         )
             # if self._current.distance == np.inf:
             #     return
 

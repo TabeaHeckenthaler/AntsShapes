@@ -89,8 +89,8 @@ class ConfigSpace(object):
                                      edge_labels=edge_labs)
         plt.show()
 
-    def calc_dual_space(self) -> nx.grid_graph:
-        dual_space = nx.grid_graph(dim=self.space.shape[::-1])
+    def calc_dual_space(self, periodic=False) -> nx.grid_graph:
+        dual_space = nx.grid_graph(dim=self.space.shape[::-1], periodic=periodic)
         for edge in list(dual_space.edges):
             m = self.space[edge[0]] * self.space[edge[1]]
             if m == 0:
