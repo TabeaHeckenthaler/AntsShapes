@@ -86,21 +86,17 @@ class ConfigSpace(object):
 
         nx.draw_networkx_edge_labels(lattice,
                                      pos,
-                                     edge_labels = edge_labs)
+                                     edge_labels=edge_labs)
         plt.show()
 
     def calc_dual_space(self) -> nx.grid_graph:
-        dual_space = nx.grid_graph( dim = self.space.shape[::-1] )
+        dual_space = nx.grid_graph(dim=self.space.shape[::-1])
         for edge in list(dual_space.edges):
-
             m = self.space[edge[0]] * self.space[edge[1]]
-            if m > 2:
-                print('Hey')
             if m == 0:
-                dual_space.remove_edge( edge[0], edge[1] )
+                dual_space.remove_edge(edge[0], edge[1])
             else:
-                nx.set_edge_attributes(dual_space, {edge: {"weight": 1-m }})
-
+                nx.set_edge_attributes(dual_space, {edge: {"weight": 1 - m}})
         return dual_space
 
 
@@ -145,7 +141,8 @@ class ConfigSpace_Maze(ConfigSpace):
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
 
-    def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '', small: bool =False) \
+    def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '',
+                  small: bool = False) \
             -> str:
         """
         Where a PhaseSpace should be saved, or where it can be found.
@@ -454,8 +451,9 @@ class ConfigSpace_Maze(ConfigSpace):
 
     def empty_space(self) -> np.array:
         return np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
-             int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
-             int(np.ceil((self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
+                         int(np.ceil((self.extent['y'][1] - self.extent['y'][0]) / float(self.pos_resolution))),
+                         int(np.ceil(
+                             (self.extent['theta'][1] - self.extent['theta'][0]) / float(self.theta_resolution)))),
                         dtype=bool)
 
     def calculate_boundary(self, point_particle=False, mask=None) -> None:
@@ -565,7 +563,7 @@ class ConfigSpace_Maze(ConfigSpace):
         if cc_to_keep != 10:
             print('You seem to have to little cc...')
 
-        min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep]-1)
+        min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep] - 1)
 
         for label in range(1, number_cc):
             if stats['voxel_counts'][label] > min:
@@ -861,7 +859,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
                 space = np.array(self.space_labeled == label, dtype=bool)
                 centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
                 self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
-                mlab.text3d(*(a*b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
+                mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
                 idx += 1
 
     def save_labeled(self, directory=None, date_string='') -> None:
@@ -946,7 +944,8 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
                                                if distance_stack[ind].data[ii] < np.inf])
             if len(self.space_labeled[ind]) == 0:
-                self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
+                self.space_labeled[ind] = ''.join(
+                    [ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')

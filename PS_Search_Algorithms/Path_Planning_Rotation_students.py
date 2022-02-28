@@ -1,87 +1,78 @@
 from copy import copy
 import os
 import numpy as np
-from skfmm import travel_time
 from typing import Union
 import networkx as nx
-
+from trajectory_inheritance.trajectory_human import Trajectory_human
+from Setup.Maze import start, end
 from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node3D, Node2D, Node_constructors
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace
 import pandas as pd
 from Directories import home
 from matplotlib import pyplot as plt
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
+from itertools import product
+import pickle
+from Directories import PhaseSpaceDirectory
 
 
 class Binned_ConfigSpace(ConfigSpace):
     def __init__(self, high_resolution_space: ConfigSpace, resolution: int):
         self.high_resolution_space = high_resolution_space
+        self.dim = high_resolution_space.space.ndim
         self.resolution = resolution
         super().__init__(space=self.decimate_space())
         self.dual_space = self.calc_dual_space()
         # self.draw_dual_space()
-        self.node_constructor = Node_constructors[config_space.space.ndim]
+        self.node_constructor = Node_constructors[self.dim]
+
+    def directory(self):
+        return os.path.join(PhaseSpaceDirectory, 'SPT_decimated' + '_' + str(self.resolution))
 
     def decimate_space(self):
+        # if os.path.exists(self.directory()):
+        #     decimated_space = pickle.load(open(self.directory(), 'rb'))
+        #     return decimated_space
 
         bin_size = self.resolution
         space = self.high_resolution_space.space
 
-        decimated_shape = [int(space.shape[0] / bin_size) , int(space.shape[1] / bin_size) ]
-
+        decimated_shape = [int(s / bin_size) for s in space.shape]
         decimated_space = np.empty(decimated_shape)
 
-        for i in range(decimated_shape[0]):
-            for j in range(decimated_shape[1]):
-
-                bin_sum = 0
-
-                for m in range(i * bin_size, (i + 1) * bin_size):
-                    for n in range(j * bin_size, (j + 1) * bin_size):
-                        bin_sum += space[m, n]
-
-                decimated_space[i, j] = bin_sum / bin_size ** 2
-
+        for i, j, k in product(*[range(s) for s in decimated_shape]):
+            bin_sum = np.sum(self.bin([(i, j, k), (i, j, k)]))
+            decimated_space[i, j, k] = bin_sum / bin_size ** self.dim
+        # self.save(decimated_space)
         return decimated_space
 
-    # def decimate_space(self) -> np.array:
-    #     """
-    #     :return: np.array that has dimensions self.space.shape/self.resolution, which says, how much percent coverage
-    #     the binned space has.
-    #     """
-    #     # TODO Rotation students: Fill in the function
-    #     # Excel file array found in here:
-    #     # self.high_resolution_space.space
-    #     # self.resolution
-    #     # binned_space = ...
-    #     return binned_space  # This is saved in the excel file
+    def save(self, decimated_space):
+        pickle.dump(decimated_space, open(self.directory(), 'wb'))
+
+    def bin(self, bin_indices: list) -> np.array:
+        bin_size = self.resolution
+        dsi = bin_indices  # decimated space indices
+        return self.high_resolution_space.space[int(dsi[0][0] * bin_size):int((dsi[1][0] + 1) * bin_size),
+               int(dsi[0][1] * bin_size):int((dsi[1][1] + 1) * bin_size),
+               int(dsi[0][2] * bin_size):int((dsi[1][2] + 1) * bin_size)]
 
     def bin_cut_out(self, indices: list) -> tuple:
         """
         Return only the cut out part where all the indices (in high resolution space) lie in.
         The indices have to be in adjacent bins. If indices are not in adjacent bins, raise an Error.
-        :param indices: indices in self.space
+        :param indices: indices in self.high_resolution_space
         :return: tuple of position of top, left index of cut_out in original cs, and actual cut_out
         """
-        # TODO Rotation students: Generalize this function for all indices
-        # return tuple, np.array([])
-        #if indices[0] == (1, 1):
-         #   return (0, 0), self.high_resolution_space.space[0:2, 0:4]
-        #raise ValueError('Binned_Space.bin_cut_out() still has to be generalized.')
-
         bin_size = self.resolution
-        array = self.high_resolution_space.space
+        dsi = list(list(np.floor(indices[i][j] / bin_size) for j in range(self.dim)) for i in range(len(indices)))
 
-        dsi = [[np.floor(indices[0][0] / bin_size), np.floor(indices[0][1] / bin_size)],
-               [np.floor(indices[1][0] / bin_size), np.floor(indices[1][1] / bin_size)]]  # decimated space indices
+        bins = self.high_resolution_space.space[int(dsi[0][0] * bin_size):int((dsi[1][0] + 1) * bin_size),
+               int(dsi[0][1] * bin_size):int((dsi[1][1] + 1) * bin_size),
+               int(dsi[0][2] * bin_size):int((dsi[1][2] + 1) * bin_size)]
 
-        bins = array[int(dsi[0][0] * bin_size):int((dsi[1][0] + 1) * bin_size),
-                     int(dsi[0][1] * bin_size):int((dsi[1][1] + 1) * bin_size)]
-
-        cutout_tuple = ( (int(dsi[0][0] * bin_size), int(dsi[0][1] * bin_size)) , bins )
+        cutout_tuple = (tuple(int(dsi[0][i] * bin_size) for i in range(self.dim)), bins)
 
         return cutout_tuple
-
-
 
     def ind_in_bin(self, bin_index: tuple) -> list:
 
@@ -90,11 +81,6 @@ class Binned_ConfigSpace(ConfigSpace):
         :param bin_index:
         :return: list with all indices (in self.high_resolutions) as tuples in a bin
         """
-        # TODO Rotation students: For resolution larger than 2
-        # TODO Rotation students: For 3D as well
-        # grid = list(map(tuple, np.stack(np.meshgrid(np.arange(0, self.resolution), np.arange(0, self.resolution)),
-        # axis=2)))
-
         """
         grid = [(0, 0), (1, 0), (0, 1), (1, 1)]
         top_left = [self.corner_of_bin_in_space(bin_index) for _ in range(len(grid))]
@@ -102,20 +88,20 @@ class Binned_ConfigSpace(ConfigSpace):
         space_indices = [tuple(sum(x) for x in zip(tuple1, tuple2)) for tuple1, tuple2 in zip(top_left, grid)]
         """
 
-        dim = len( bin_index )
+        dim = len(bin_index)
 
         bin_size = self.resolution
 
         bin_shape = tuple(bin_size for _ in range(dim))
 
-        #bin_ind = self.corner_of_bin_in_space(bin_index)
+        # bin_ind = self.corner_of_bin_in_space(bin_index)
 
         space_indices = []
 
         for i in np.ndindex(bin_shape):
             index = np.array(i) + np.array(bin_index) * bin_size
 
-            space_indices.append( tuple(index) )
+            space_indices.append(tuple(index))
 
         return space_indices
 
@@ -144,7 +130,7 @@ class Binned_ConfigSpace(ConfigSpace):
         """
         top_left, bins = self.bin_cut_out([start, end])
         cs = ConfigSpace(space=bins)
-        if  cs.dual_space is None:
+        if cs.dual_space is None:
             cs.dual_space = cs.calc_dual_space()
         try:
             shortest_path = nx.shortest_path(cs.dual_space,
@@ -168,11 +154,11 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
     def __init__(self, conf_space, start: Union[Node2D, Node3D], end: Union[Node2D, Node3D], resolution: int,
                  max_iter: int = 100000, dil_radius: int = 0):
         super().__init__(start, end, max_iter, conf_space=conf_space)
-        self.dil_radius = dil_radius
+        # self.dil_radius = dil_radius
         self.resolution = resolution
         self.planning_space.space = copy(self.conf_space.space)
         self.warp_planning_space()
-        self.speed = self.initialize_speed()
+        # self.speed = self.initialize_speed()
         self.found_path = None  # saves paths, so no need to recalculate
 
     def step_to(self, greedy_node) -> None:
@@ -189,12 +175,12 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         """
         Planning_space is a low resolution representation of the real maze.
         """
-        if self.dil_radius > 0:
-            self.planning_space.space = self.conf_space.dilate(self.planning_space.space, radius=self.dil_radius)
+        # if self.dil_radius > 0:
+        #     self.planning_space.space = self.conf_space.dilate(self.planning_space.space, radius=self.dil_radius)
         self.planning_space = Binned_ConfigSpace(self.planning_space, self.resolution)
 
-    def initialize_speed(self) -> np.array:
-        return Binned_ConfigSpace(self.conf_space, self.resolution).space
+    # def initialize_speed(self) -> np.array:
+    #     return Binned_ConfigSpace(self.conf_space, self.resolution).space
 
     def distances_in_surrounding_nodes(self) -> dict:
         connected_bins = {bin_ind: self.planning_space.ind_in_bin(bin_ind)
@@ -218,7 +204,6 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
                                 weight="weight")
 
         if len(path) < 2:
-            greedy_bin = path[0]
             return self.node_constructor(*self.end.ind(), self.conf_space)
 
         else:
@@ -227,7 +212,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
             # connected_distance = self.distances_in_surrounding_nodes()
 
             # while len(connected_distance) > 0:
-            minimal_nodes = self.planning_space.ind_in_bin( greedy_bin )
+            minimal_nodes = self.planning_space.ind_in_bin(greedy_bin)
             random_node_in_greedy_bin = minimal_nodes[np.random.choice(len(minimal_nodes))]
             print('choose node: ', random_node_in_greedy_bin)
             return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
@@ -288,14 +273,14 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         :param central_node: node in high resolution config_space
         """
 
-        #self.draw_dual_lattice(); plt.show()
+        # self.draw_dual_lattice(); plt.show()
 
         start_bin_ind = self.planning_space.space_ind_to_bin_ind(self._current.ind())
         end_bin_ind = self.planning_space.space_ind_to_bin_ind(greedy_bin.ind())
 
         edge = (start_bin_ind, end_bin_ind)
         weight = self.planning_space.dual_space.edges[edge]["weight"]
-        nx.set_edge_attributes(self.planning_space.dual_space, {edge: {"weight": 2 * weight }})
+        nx.set_edge_attributes(self.planning_space.dual_space, {edge: {"weight": 2 * weight}})
 
         # self.planning_space.draw_dual_space(); plt.show()
 
@@ -346,14 +331,36 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
 # this is only for testing
 directory = os.path.join(home, 'PS_Search_Algorithms', 'path_planning_test.xlsx')
 resolution = 2
-binned_space = pd.read_excel(io=directory, sheet_name='binned_space').to_numpy()
-config_space = ConfigSpace(space=pd.read_excel(io=directory, sheet_name='space').to_numpy())
+# binned_space = pd.read_excel(io=directory, sheet_name='binned_space').to_numpy()
 
 if __name__ == '__main__':
-    Planner = Path_Planning_Rotation_students(conf_space=config_space,
-                                              start=Node2D(1, 1, config_space),
-                                              end=Node2D(7, 5, config_space),
-                                              resolution=resolution)
+    # 2D
+    # directory = os.path.join(home, 'PS_Search_Algorithms', 'path_planning_test.xlsx')
+    # resolution = 2
+    # binned_space = pd.read_excel(io=directory, sheet_name='binned_space').to_numpy()
+    # config_space = ConfigSpace(space=pd.read_excel(io=directory, sheet_name='space').to_numpy())
+    # Planner = Path_Planning_Rotation_students(conf_space=config_space,
+    #                                           start=Node2D(1, 1, config_space),
+    #                                           end=Node2D(7, 5, config_space),
+    #                                           resolution=resolution)
+    #
+    # # Planner.draw_maze()
+    # Planner.path_planning(display_cs=False)
+    # DEBUG = 1
+
+    conf_space = ConfigSpace_Maze('human', 'Large', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    conf_space.load_space()
+    # conf_space.visualize_space(reduction=10)
+
+    # start = conf_space.indices_to_coords(80, 80, 80)
+    # end = conf_space.indices_to_coords(100, 80, 200)
+    # conf_space.draw(start[:2], start[-1])
+    # conf_space.draw(end[:2], end[-1])
+
+    Planner = Path_Planning_Rotation_students(conf_space=conf_space,
+                                              start=Node3D(80, 80, 80, conf_space),
+                                              end=Node3D(100, 80, 200, conf_space),
+                                              resolution=20)
 
     # Planner.draw_maze()
     Planner.path_planning(display_cs=False)
