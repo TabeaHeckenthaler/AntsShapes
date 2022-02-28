@@ -3,6 +3,7 @@ import os
 import numpy as np
 from skfmm import travel_time
 from typing import Union
+import networkx as nx
 
 from PS_Search_Algorithms.Path_planning_in_CS import Path_planning_in_CS, Node3D, Node2D, Node_constructors
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace
@@ -15,21 +16,44 @@ class Binned_ConfigSpace(ConfigSpace):
     def __init__(self, high_resolution_space: ConfigSpace, resolution: int):
         self.high_resolution_space = high_resolution_space
         self.resolution = resolution
-        super().__init__(space=self.calculate_binned_space())
+        super().__init__(space=self.decimate_space())
+        self.dual_space = self.calc_dual_space()
+        self.draw_dual_space()
         self.node_constructor = Node_constructors[config_space.space.ndim]
 
-    def calculate_binned_space(self) -> np.array:
-        """
-        :return: np.array that has dimensions self.space.shape/self.resolution, which says, how much percent coverage
-        the binned space has.
-        """
-        # TODO Rotation students: Fill in the function
-        # Excel file array found in here:
-        # self.high_resolution_space.space
-        # self.resolution
-        # binned_space = ...
-        # return binned_space
-        return binned_space  # This is saved in the excel file
+    def decimate_space(self):
+
+        bin_size = self.resolution
+        space = self.high_resolution_space.space
+
+        decimated_shape = [ int(space.shape[0] / bin_size) , int(space.shape[1] / bin_size) ]
+
+        decimated_space = np.empty(decimated_shape)
+
+        for i in range(decimated_shape[0]):
+            for j in range(decimated_shape[1]):
+
+                bin_sum = 0
+
+                for m in range(i * bin_size, (i + 1) * bin_size):
+                    for n in range(j * bin_size, (j + 1) * bin_size):
+                        bin_sum += space[m, n]
+
+                decimated_space[i, j] = bin_sum / bin_size ** 2
+
+        return decimated_space
+
+    # def decimate_space(self) -> np.array:
+    #     """
+    #     :return: np.array that has dimensions self.space.shape/self.resolution, which says, how much percent coverage
+    #     the binned space has.
+    #     """
+    #     # TODO Rotation students: Fill in the function
+    #     # Excel file array found in here:
+    #     # self.high_resolution_space.space
+    #     # self.resolution
+    #     # binned_space = ...
+    #     return binned_space  # This is saved in the excel file
 
     def bin_cut_out(self, indices: list) -> tuple:
         """
@@ -40,11 +64,27 @@ class Binned_ConfigSpace(ConfigSpace):
         """
         # TODO Rotation students: Generalize this function for all indices
         # return tuple, np.array([])
-        if indices[0] == (1, 1):
-            return (0, 0), self.high_resolution_space.space[0:2, 0:4]
-        raise ValueError('Binned_Space.bin_cut_out() still has to be generalized.')
+        #if indices[0] == (1, 1):
+         #   return (0, 0), self.high_resolution_space.space[0:2, 0:4]
+        #raise ValueError('Binned_Space.bin_cut_out() still has to be generalized.')
+
+        bin_size = self.resolution
+        array = self.high_resolution_space.space
+
+        dsi = [[np.floor(indices[0][0] / bin_size), np.floor(indices[0][1] / bin_size)],
+               [np.floor(indices[1][0] / bin_size), np.floor(indices[1][1] / bin_size)]]  # decimated space indices
+
+        bins = array[int(dsi[0][0] * bin_size):int((dsi[1][0] + 1) * bin_size),
+                     int(dsi[0][1] * bin_size):int((dsi[1][1] + 1) * bin_size)]
+
+        cutout_tuple = ( (int(dsi[0][0] * bin_size), int(dsi[0][1] * bin_size)) , bins )
+
+        return cutout_tuple
+
+
 
     def ind_in_bin(self, bin_index: tuple) -> list:
+
         """
 
         :param bin_index:
@@ -55,10 +95,28 @@ class Binned_ConfigSpace(ConfigSpace):
         # grid = list(map(tuple, np.stack(np.meshgrid(np.arange(0, self.resolution), np.arange(0, self.resolution)),
         # axis=2)))
 
+        """
         grid = [(0, 0), (1, 0), (0, 1), (1, 1)]
         top_left = [self.corner_of_bin_in_space(bin_index) for _ in range(len(grid))]
 
         space_indices = [tuple(sum(x) for x in zip(tuple1, tuple2)) for tuple1, tuple2 in zip(top_left, grid)]
+        """
+
+        dim = len( bin_index )
+
+        bin_size = self.resolution
+
+        bin_shape = tuple(bin_size for _ in range(dim))
+
+        #bin_ind = self.corner_of_bin_in_space(bin_index)
+
+        space_indices = []
+
+        for i in np.ndindex(bin_shape):
+            index = np.array(i) + np.array(bin_index) * bin_size
+
+            space_indices.append( tuple(index) )
+
         return space_indices
 
     def space_ind_to_bin_ind(self, space_ind: tuple) -> tuple:
@@ -85,14 +143,25 @@ class Binned_ConfigSpace(ConfigSpace):
         :return: (boolean (whether a path was found), list (node indices that connect the two indices))
         """
         top_left, bins = self.bin_cut_out([start, end])
-        Planner = Path_planning_in_CS(self.node_constructor(*start, ConfigSpace(bins)),
-                                      self.node_constructor(*end, ConfigSpace(bins)),
-                                      conf_space=ConfigSpace(bins))
-        Planner.path_planning()
-        if Planner.winner:
-            return Planner.winner, Planner.generate_path()
-        else:
+        cs = ConfigSpace(space=bins)
+        if  cs.dual_space is None:
+            cs.dual_space = cs.calc_dual_space()
+        try:
+            shortest_path = nx.shortest_path(cs.dual_space,
+                                             tuple(np.array(start) - np.array(top_left)),
+                                             tuple(np.array(end) - np.array(top_left)))
+        except nx.NetworkXNoPath:
             return False, None
+        return True, shortest_path
+
+        # Planner = Path_planning_in_CS(self.node_constructor(*start, ConfigSpace(bins)),
+        #                               self.node_constructor(*end, ConfigSpace(bins)),
+        #                               conf_space=ConfigSpace(bins))
+        # Planner.path_planning()
+        # if Planner.winner:
+        #     return Planner.winner, Planner.generate_path()
+        # else:
+        #     return False, None
 
 
 class Path_Planning_Rotation_students(Path_planning_in_CS):
@@ -103,8 +172,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.resolution = resolution
         self.planning_space.space = copy(self.conf_space.space)
         self.warp_planning_space()
-        # self.speed = self.initialize_speed()
-        self.dual_space = None
+        self.speed = self.initialize_speed()
         self.found_path = None  # saves paths, so no need to recalculate
 
     def step_to(self, greedy_node) -> None:
@@ -112,6 +180,7 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         Walk to the greedy node.
         :param greedy_node: greedy node with indices from high_resolution space.
         """
+        print('I am stepping to: ', greedy_node.ind())
         greedy_node.parent = copy([self.found_path])
         self.found_path = None
         self._current = greedy_node
@@ -142,18 +211,40 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         self.planning_space.space
         :return: greedy node with indices from self.conf_space.space
         """
-        connected_distance = self.distances_in_surrounding_nodes()
-        while len(connected_distance) > 0:
-            minimal_nodes = list(filter(lambda x: connected_distance[x] == min(connected_distance.values()),
-                                        connected_distance))
-            random_node_in_greedy_bin = minimal_nodes[np.random.choice(len(minimal_nodes))]
 
-            # I think I added this, because they were sometimes stuck in positions impossible to exit.
-            if np.sum(np.logical_and(self._current.surrounding(random_node_in_greedy_bin), self.voxel)) > 0:
-                return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
-            else:
-                connected_distance.pop(random_node_in_greedy_bin)
-        raise Exception('Not able to find a path')
+        path = nx.dijkstra_path(self.planning_space.dual_space,
+                                self.planning_space.space_ind_to_bin_ind(self._current.ind()),
+                                self.planning_space.space_ind_to_bin_ind(self.end.ind()),
+                                weight="weight")
+
+        if len(path) < 2:
+            greedy_bin = path[0]
+            return self.node_constructor(*self.end.ind(), self.conf_space)
+
+        else:
+            greedy_bin = path[1]
+            print('choose bin: ', greedy_bin)
+            # connected_distance = self.distances_in_surrounding_nodes()
+
+            # while len(connected_distance) > 0:
+            minimal_nodes = self.planning_space.ind_in_bin( greedy_bin )
+            random_node_in_greedy_bin = minimal_nodes[np.random.choice(len(minimal_nodes))]
+            print('choose node: ', random_node_in_greedy_bin)
+            return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
+
+
+        # # I think I added this, because they were sometimes stuck in positions impossible to exit.
+        # if np.sum(np.logical_and(self._current.surrounding(random_node_in_greedy_bin), self.voxel)) > 0:
+        #     return self.node_constructor(*random_node_in_greedy_bin, self.conf_space)
+        # else:
+        #     connected_distance.pop(random_node_in_greedy_bin)
+        # raise Exception('Not able to find a path')
+
+    def is_winner(self):
+        if self._current.ind() == self.end.ind():
+            self.winner = True
+            return self.winner
+        return self.winner
 
     def possible_step(self, greedy_node: Union[Node2D, Node3D]) -> Union[bool]:
         """
@@ -162,33 +253,63 @@ class Path_Planning_Rotation_students(Path_planning_in_CS):
         :return:
         """
         path_exists, self.found_path = self.planning_space.find_path(self._current.ind(), greedy_node.ind())
+
         if path_exists:
-            bin_index = self.planning_space.space_ind_to_bin_ind(greedy_node.ind())
-            manage_to_pass = np.random.uniform(0, 1) < self.planning_space.space[bin_index]
-            if manage_to_pass:
-                return True
-            else:
-                return False
+            # bin_index = self.planning_space.space_ind_to_bin_ind(greedy_node.ind())
+            return True
+            # manage_to_pass = np.random.uniform(0, 1) < self.planning_space.space[bin_index]
+            # if manage_to_pass:
+            #     return True
+            # else:
+            #     return False
         else:
             return False
 
-    def add_knowledge(self, central_node: Union[Node2D, Node3D]) -> None:
+    # def draw_dual_lattice(self):  # the function which draws a lattice defined as networkx grid
+    #
+    #     lattice = self.planning_space.dual_space
+    #
+    #     plt.figure(figsize=(6, 6))
+    #     pos = {(x, y): (y, -x) for x, y in lattice.nodes()}
+    #     nx.draw(lattice, pos=pos,
+    #             node_color='yellow',
+    #             with_labels=True,
+    #             node_size=600)
+    #
+    #     edge_labs = dict([((u, v), d["weight"]) for u, v, d in lattice.edges(data=True)])
+    #
+    #     nx.draw_networkx_edge_labels(lattice,
+    #                                  pos,
+    #                                  edge_labels = edge_labs)
+
+    def add_knowledge(self, greedy_bin: Union[Node2D, Node3D]) -> None:
         """
         No path was found in greedy node, so we need to update our self.speed.
-        Some kind of Bayesian estimation.
+        Some kind of Bayesian estimation... not
         :param central_node: node in high resolution config_space
         """
-        # TODO Rotation students: Bayesian update on self.speed. Decrease the speeds after a wall was encountered.
-        self.speed = self.speed
+
+        #self.draw_dual_lattice(); plt.show()
+
+        start_bin_ind = self.planning_space.space_ind_to_bin_ind(self._current.ind())
+        end_bin_ind = self.planning_space.space_ind_to_bin_ind(greedy_bin.ind())
+
+        edge = (start_bin_ind, end_bin_ind)
+        weight = self.planning_space.dual_space.edges[edge]["weight"]
+        nx.set_edge_attributes(self.planning_space.dual_space, {edge: {"weight": 2 * weight }})
+
+        self.planning_space.draw_dual_space(); plt.show()
 
     def compute_distances(self) -> None:
         """
         Computes travel time ( = self.distance) of the current position of the solver to the finish line in conf_space
         """
         # phi should contain -1s and 1s and 0s. From the 0 line the distance metric will e calculated.
-        phi = np.ones_like(self.planning_space.space, dtype=int)
-        phi[self.planning_space.space_ind_to_bin_ind(self.end.ind())] = 0
-        self.distance = travel_time(phi, self.speed, periodic=self.periodic)
+        pass
+
+        # phi = np.ones_like(self.planning_space.space, dtype=int)
+        # phi[self.planning_space.space_ind_to_bin_ind(self.end.ind())] = 0
+        # self.distance = travel_time(phi, self.speed, periodic=self.periodic)
 
     def current_known(self) -> Union[Node2D, Node3D]:
         """
@@ -218,5 +339,6 @@ if __name__ == '__main__':
                                               resolution=resolution)
 
     # TODO Rotation students: Draw node for Node2D and make a visualisation, so that display_cs = True can be passed
-    Planner.draw_maze()
-    Planner.path_planning(display_cs=True)
+    # Planner.draw_maze()
+    Planner.path_planning(display_cs=False)
+    DEBUG = 1

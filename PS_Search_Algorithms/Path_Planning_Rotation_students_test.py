@@ -20,12 +20,15 @@ Planner = Path_Planning_Rotation_students(conf_space=cs,
 
 
 class BinningTest(unittest.TestCase):
-    def test_calculate_binned_space(self):
-        self.assertListEqual(binned_cs.space.tolist(), binned_space.tolist())
+    def test_decimate_space(self):
+        self.assertListEqual(binned_cs.space.tolist(),
+                             binned_space.tolist())
 
     def test_bin_cut_out(self):
         self.assertListEqual(binned_cs.bin_cut_out([(0, 0), (2, 1)])[1].tolist(),
-                             ((0, 0), binned_space[0:4, 1:3])[1].tolist())
+                                                   conf_space[0:4, 0:2].tolist())
+        self.assertTupleEqual(binned_cs.bin_cut_out([(0, 0), (2, 1)])[0],
+                             (0, 0))
 
     def test_ind_in_bin(self):
         x = [(0, 0), (1, 0), (0, 1), (1, 1)]
@@ -42,7 +45,7 @@ class BinningTest(unittest.TestCase):
 
 class Path_PlanningTest(unittest.TestCase):
     def test_initialize_speed(self):
-        self.assertListEqual(Planner.speed.tolist(), binned_cs.space.tolist())
+        self.assertEqual(Planner.speed, binned_cs.space)
 
     def test_add_knowledge(self):
         start = (4, 2)
@@ -53,7 +56,7 @@ class Path_PlanningTest(unittest.TestCase):
         final_speed = Planner.speed[binned_cs.space_ind_to_bin_ind(start)]
         self.assertLess(initial_speed, final_speed)
 
-    # def test_display(self):
-    #     Planner.path_planning(display_cs=True)
+    def test_display(self):
+        Planner.path_planning(display_cs=True)
 
 

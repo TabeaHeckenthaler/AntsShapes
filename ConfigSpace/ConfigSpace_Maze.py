@@ -1,18 +1,19 @@
 import numpy as np
 import pickle
-from PhysicsEngine.Contact import possible_configuration
+# from PhysicsEngine.Contact import possible_configuration
 import os
 import itertools
-from Setup.Maze import Maze
+# from Setup.Maze import Maze
 from Directories import PhaseSpaceDirectory
-from Analysis.resolution import resolution
+# from Analysis.resolution import resolution
 from scipy import ndimage
 from datetime import datetime
 import string
 from skfmm import distance
 from tqdm import tqdm
 from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
-
+import networkx as nx
+from matplotlib import pyplot as plt
 
 try:
     from mayavi import mlab
@@ -36,6 +37,7 @@ class ConfigSpace(object):
     def __init__(self, space: np.array, name=''):
         self.space = space  # True, if configuration is possible; False, if there is a collision with the wall
         self.name = name
+        self.dual_space = None
 
     @staticmethod
     def reduced_resolution(space: np.array, reduction: int) -> np.array:
@@ -68,6 +70,38 @@ class ConfigSpace(object):
 
     def overlapping(self, ps_area):
         return np.any(self.space[ps_area.space])
+
+    def draw_dual_space(self):  # the function which draws a lattice defined as networkx grid
+
+        lattice = self.dual_space
+
+        plt.figure(figsize=(6, 6))
+        pos = {(x, y): (y, -x) for x, y in lattice.nodes()}
+        nx.draw(lattice, pos=pos,
+                node_color='yellow',
+                with_labels=True,
+                node_size=600)
+
+        edge_labs = dict([((u, v), d["weight"]) for u, v, d in lattice.edges(data=True)])
+
+        nx.draw_networkx_edge_labels(lattice,
+                                     pos,
+                                     edge_labels = edge_labs)
+        plt.show()
+
+    def calc_dual_space(self) -> nx.grid_graph:
+        dual_space = nx.grid_graph( dim = self.space.shape[::-1] )
+        for edge in list(dual_space.edges):
+
+            m = self.space[edge[0]] * self.space[edge[1]]
+            if m > 2:
+                print('Hey')
+            if m == 0:
+                dual_space.remove_edge( edge[0], edge[1] )
+            else:
+                nx.set_edge_attributes(dual_space, {edge: {"weight": 1-m }})
+
+        return dual_space
 
 
 class ConfigSpace_Maze(ConfigSpace):
@@ -527,7 +561,7 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = np.min([len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep])
+        cc_to_keep = min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
         if cc_to_keep != 10:
             print('You seem to have to little cc...')
 
@@ -714,7 +748,6 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             print('Loading labeled from ', directory, '...')
             self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
-            # TODO: I have to tweek this, because its not good yet. (for ants)
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
             self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
             # self.visualize_states(reduction=5)
@@ -795,9 +828,6 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
 
         else:
             self.fig = fig
-
-        if self.centroids is None:
-            self.load_eroded_labeled_space()
 
         print('Draw states')
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):

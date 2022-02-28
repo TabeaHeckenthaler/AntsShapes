@@ -1,9 +1,9 @@
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
-from Setup.Maze import start, end, Maze
+# from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node import Node3D, Node2D, Node_constructors
 from copy import copy
-from mayavi import mlab
+# from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
@@ -86,7 +86,9 @@ class Path_planning_in_CS:
             if self.is_winner():
                 return
             if display_cs:
-                self._current.draw_node(fig=self.conf_space.fig, scale_factor=0.2, color=(1, 0, 0))
+                self._current.draw_node(fig=self.conf_space.fig,
+                                        # scale_factor=0.2, color=(1, 0, 0)
+                                        )
             # if self._current.distance == np.inf:
             #     return
 
@@ -118,6 +120,8 @@ class Path_planning_in_CS:
         self.planning_space.space
         :return: greedy node with indices from self.conf_space.space
         """
+
+
         connected_nodes = self._current.connected(space=self.planning_space.space)
         connected_distance = {node: self.distance[node] for node in connected_nodes}
 
@@ -241,6 +245,8 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         :param initial_cond: front or back of the maze
         :param x: trajectory that carries information on the maze
         """
+        start = None
+        end = None
         if self.start is None:
             starting_indices = self.conf_space.coords_to_indices(*start(x, initial_cond))
             self.start = Node3D(*starting_indices, self.conf_space)
@@ -312,7 +318,7 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         """
         self.draw_conf_space_and_path()
         self.draw_conf_space_and_path(space=self.planning_space)
-        if save:
-            mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
-            mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
+        # if save:
+        #     mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
+        #     mlab.savefig(graph_dir() + os.path.sep + self.conf_space.name + '.jpg', magnification=4)
             # mlab.close()

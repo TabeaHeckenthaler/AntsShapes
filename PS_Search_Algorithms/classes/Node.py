@@ -1,9 +1,9 @@
 import math
-from mayavi import mlab
+# from mayavi import mlab
 import numpy as np
 from copy import copy
 from ConfigSpace.ConfigSpace_Maze import PS_Mask, ConfigSpace
-from Setup.Maze import Maze
+# from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from matplotlib import pyplot as plt
 
@@ -166,15 +166,15 @@ class Node3D(Node):
         else:
             return self.xi, self.yi, self.thetai % self.conf_space.space.shape[2]
 
-    def draw_maze(self):
-        maze = Maze(size=self.conf_space.size, shape=self.conf_space.shape, solver=self.conf_space.solver,
-                    geometry=self.conf_space.geometry)
-        x, y, theta = self.conf_space.indices_to_coords(*self.ind())
-        maze.set_configuration([x, y], float(theta))
-        display = Display('', maze)
-        maze.draw(display)
-        display.display()
-        return display
+    # def draw_maze(self):
+    #     maze = Maze(size=self.conf_space.size, shape=self.conf_space.shape, solver=self.conf_space.solver,
+    #                 geometry=self.conf_space.geometry)
+    #     x, y, theta = self.conf_space.indices_to_coords(*self.ind())
+    #     maze.set_configuration([x, y], float(theta))
+    #     display = Display('', maze)
+    #     maze.draw(display)
+    #     display.display()
+    #     return display
 
     def connected(self, space=None) -> list:
         """
@@ -322,51 +322,51 @@ class Node3D(Node):
         minind = dlist.index(min(dlist))
         return node_list[minind]
 
-    def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
-        coo = self.coord()
-        mlab.points3d(coo[0], coo[1], coo[2] * self.average_radius,
-                      figure=fig,
-                      scale_factor=scale_factor,
-                      color=color,
-                      )
-
-    def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
-        coo_self = self.coord()
-        coo_node = node.coord()
-
-        if abs(coo_node[2] - coo_self[2]) > np.pi:
-            if coo_node[2] > coo_self[2]:
-                upper_node, lower_node = copy(coo_node), copy(coo_self)
-            else:
-                upper_node, lower_node = copy(coo_self), copy(coo_node)
-
-            d = lower_node[2] % (2 * np.pi) - upper_node[2]
-            A = lower_node[2] % (2 * np.pi) - np.pi
-            half_way_x = (coo_node[0] - coo_self[0]) * A / d + coo_self[0]
-            half_way_y = (coo_node[1] - coo_self[1]) * A / d + coo_self[1]
-
-            mlab.plot3d([upper_node[0], half_way_x],
-                        [upper_node[1], half_way_y],
-                        [upper_node[2] * self.average_radius, 2 * np.pi * self.average_radius],
-                        figure=fig,
-                        line_width=line_width,
-                        color=color,
-                        )
-            mlab.plot3d([half_way_x, lower_node[0]],
-                        [half_way_y, lower_node[1]],
-                        [0, lower_node[2] * self.average_radius],
-                        figure=fig,
-                        line_width=line_width,
-                        color=color,
-                        )
-
-        else:
-            mlab.plot3d([coo_self[0], coo_node[0]], [coo_self[1], coo_node[1]],
-                        [coo_self[2] * self.average_radius, coo_node[2] * self.average_radius],
-                        figure=fig,
-                        line_width=line_width,
-                        color=color,
-                        )
+    # def draw_node(self, fig=None, scale_factor=0.2, color=(0, 0, 0)):
+    #     coo = self.coord()
+    #     mlab.points3d(coo[0], coo[1], coo[2] * self.average_radius,
+    #                   figure=fig,
+    #                   scale_factor=scale_factor,
+    #                   color=color,
+    #                   )
+    #
+    # def draw_line(self, node, fig=None, line_width=0.2, color=(0, 0, 0)):
+    #     coo_self = self.coord()
+    #     coo_node = node.coord()
+    #
+    #     if abs(coo_node[2] - coo_self[2]) > np.pi:
+    #         if coo_node[2] > coo_self[2]:
+    #             upper_node, lower_node = copy(coo_node), copy(coo_self)
+    #         else:
+    #             upper_node, lower_node = copy(coo_self), copy(coo_node)
+    #
+    #         d = lower_node[2] % (2 * np.pi) - upper_node[2]
+    #         A = lower_node[2] % (2 * np.pi) - np.pi
+    #         half_way_x = (coo_node[0] - coo_self[0]) * A / d + coo_self[0]
+    #         half_way_y = (coo_node[1] - coo_self[1]) * A / d + coo_self[1]
+    #
+    #         mlab.plot3d([upper_node[0], half_way_x],
+    #                     [upper_node[1], half_way_y],
+    #                     [upper_node[2] * self.average_radius, 2 * np.pi * self.average_radius],
+    #                     figure=fig,
+    #                     line_width=line_width,
+    #                     color=color,
+    #                     )
+    #         mlab.plot3d([half_way_x, lower_node[0]],
+    #                     [half_way_y, lower_node[1]],
+    #                     [0, lower_node[2] * self.average_radius],
+    #                     figure=fig,
+    #                     line_width=line_width,
+    #                     color=color,
+    #                     )
+    #
+    #     else:
+    #         mlab.plot3d([coo_self[0], coo_node[0]], [coo_self[1], coo_node[1]],
+    #                     [coo_self[2] * self.average_radius, coo_node[2] * self.average_radius],
+    #                     figure=fig,
+    #                     line_width=line_width,
+    #                     color=color,
+    #                     )
 
 
 Node_constructors = {3: Node3D, 2: Node2D}
