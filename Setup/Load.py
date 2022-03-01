@@ -1,6 +1,6 @@
 import numpy as np
 from Box2D import b2CircleShape, b2FixtureDef
-from Setup.Maze import ResizeFactors
+from Setup.Maze import ResizeFactors, centerOfMass_shift
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
@@ -83,7 +83,7 @@ def corners_phis(my_maze):
         phis = np.array([np.pi, -np.pi / 2, np.pi, np.pi / 2, 0, -np.pi / 2, 0, -np.pi / 2])
 
     if my_maze.shape == 'SPT':  # This is the Special T
-        [shape_height, shape_width, shape_thickness] = my_maze.getLoadDim()
+        [shape_height, shape_width, shape_thickness, short_edge] = my_maze.getLoadDim()
         h = centerOfMass_shift * shape_width  # distance of the centroid away from the center of the long middle
         corners = np.array([[-shape_width / 2 + shape_thickness - h, -shape_thickness / 2],  # left
                             [-shape_width / 2 + shape_thickness - h, -shape_height / 2],

@@ -699,6 +699,9 @@ class Maze(b2World):
             shape_height, shape_width, shape_thickness = self.getLoadDim()
             shape_height_short_edge = np.NaN
 
+        if self.shape in ['RASH', 'LASH']:
+            shift = ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][self.size]
+
         if self.shape.endswith('ASH'):
             print('I dont know circumference of ASH!!!')
             breakpoint()
@@ -709,11 +712,7 @@ class Maze(b2World):
                       2 * shape_height -
                       2 * shape_thickness +
                       2 * shape_width,
-               'RASH': 2 * shape_width + 4 * shape_height - 4 * ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][
-                   self.size]
-                       - 2 * shape_thickness,
-               'LASH': 2 * shape_width + 4 * shape_height - 4 * ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][
-                   self.size]
-                       - 2 * shape_thickness
+               'RASH': 2 * shape_width + 4 * shape_height - 4 * shift - 2 * shape_thickness,
+               'LASH': 2 * shape_width + 4 * shape_height - 4 * shift - 2 * shape_thickness
                }
         return cir[self.shape]
