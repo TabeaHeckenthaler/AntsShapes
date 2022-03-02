@@ -86,7 +86,7 @@ class Path_planning_in_CS:
             if self.is_winner():
                 return
             if display_cs:
-                self.conf_space.draw_ind(self._current.ind())
+                self.conf_space.draw_ind(self._current.ind(), color=(1, 0, 0))
                 # self._current.draw_node(fig=self.conf_space.fig,
                 #                         # scale_factor=0.2, color=(1, 0, 0)
                 #                         )
@@ -97,6 +97,7 @@ class Path_planning_in_CS:
             if self.possible_step(greedy_node):
                 self.step_to(greedy_node)
             else:
+                self.conf_space.draw_ind(greedy_node.ind(), color=(0.3, 0.3, 0.3), scale_factor=0.8)
                 self.add_knowledge(greedy_node)
                 self.compute_distances()
 
@@ -121,7 +122,6 @@ class Path_planning_in_CS:
         self.planning_space.space
         :return: greedy node with indices from self.conf_space.space
         """
-
 
         connected_nodes = self._current.connected(space=self.planning_space.space)
         connected_distance = {node: self.distance[node] for node in connected_nodes}

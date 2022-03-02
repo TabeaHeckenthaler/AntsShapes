@@ -118,13 +118,13 @@ class Binned_ConfigSpace(ConfigSpace):
         """
         return tuple(int(ind / self.resolution) for ind in space_ind)
 
-    def corner_of_bin_in_space(self, bin_ind: tuple) -> tuple:
-        """
-        Find space index of the top left node inside the bin.
-        :param bin_ind: index of bin in self.space
-        :return: space indices
-        """
-        return tuple(int(ind * self.resolution) for ind in bin_ind)
+    # def corner_of_bin_in_space(self, bin_ind: tuple) -> tuple:
+    #     """
+    #     Find space index of the top left node inside the bin.
+    #     :param bin_ind: index of bin in self.space
+    #     :return: space indices
+    #     """
+    #     return tuple(int(ind * self.resolution) for ind in bin_ind)
 
     def find_path(self, start: tuple, end: tuple) -> tuple:
         """
@@ -358,15 +358,19 @@ if __name__ == '__main__':
     # starting_indices = conf_space.coords_to_indices(*start(x, 'back'))
     # ending_indices = conf_space.coords_to_indices(*end(x))
 
-    starting_indices = (91, 126, 0)
-    ending_indices = (336, 126, 0)
+    starting_indices = (91, 126, 313)  # used to be (91, 126, 0)
+    ending_indices = (336, 126, 313)
+    stuck_indices = (215, 139, 352)
     # (123, 135, 301)
 
     Planner = Path_Planning_Rotation_students(conf_space=conf_space,
-                                              start=Node3D(*starting_indices, conf_space),
+                                              start=Node3D(*stuck_indices, conf_space),
                                               end=Node3D(*ending_indices, conf_space),
-                                              resolution=20)
+                                              resolution=40)
 
     # Planner.draw_maze()
     Planner.path_planning(display_cs=True)
     DEBUG = 1
+
+# cannot decimate high-resolution space exactly
+# motivate your choice of initializing and updating weights

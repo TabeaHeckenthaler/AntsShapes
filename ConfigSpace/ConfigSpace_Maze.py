@@ -14,6 +14,7 @@ from tqdm import tqdm
 from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
 import networkx as nx
 from matplotlib import pyplot as plt
+from copy import copy
 
 try:
     from mayavi import mlab
@@ -89,8 +90,28 @@ class ConfigSpace(object):
                                      edge_labels=edge_labs)
         plt.show()
 
+    def neighbors(self, node) -> list:
+        cube = list(np.ndindex((3, 3, 3)))
+        cube.remove((1, 1, 1))
+        neighbour_coords = np.array(cube) - 1
+        a = neighbour_coords + np.array(node)
+        a[:, 2] = a[:, 2] % self.space.shape[2]
+        out_of_boundary = np.where(np.logical_or(np.logical_or(a[:, 0] >= np.array(self.space.shape)[0],
+                                                               a[:, 1] >= np.array(self.space.shape)[1]),
+                                                 np.logical_or(a[:, 0] < 0, a[:, 1] < 0)))[0]
+        a1 = list(map(tuple, a.reshape((26, 3))))
+        b = [tu for i, tu in enumerate(a1) if i not in out_of_boundary]
+        return b
+
     def calc_dual_space(self, periodic=False) -> nx.grid_graph:
         dual_space = nx.grid_graph(dim=self.space.shape[::-1], periodic=periodic)
+
+        nodes = list(copy(dual_space.nodes))
+
+        for node in nodes:
+            for neighbor in self.neighbors(node):
+                dual_space.add_edge(node, neighbor)
+
         for edge in list(dual_space.edges):
             m = self.space[edge[0]] * self.space[edge[1]]
             if m == 0:
@@ -487,14 +508,14 @@ class ConfigSpace_Maze(ConfigSpace):
                       color=color
                       )
 
-    def draw_ind(self, indices: tuple, scale_factor: float = 0.2) -> None:
+    def draw_ind(self, indices: tuple, scale_factor: float = 0.2, color=None) -> None:
         """
         Draw single indices in a PS
         :param indices: indices of node to draw
         :param scale_factor: how much the PhaseSpace has been scaled
         """
         coords = self.indices_to_coords(*indices)
-        self.draw(coords[:2], coords[2], scale_factor=scale_factor)
+        self.draw(coords[:2], coords[2], scale_factor=scale_factor, color=color)
 
     def trim(self, borders: list) -> None:
         """
