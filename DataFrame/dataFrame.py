@@ -20,8 +20,8 @@ def get_filenames(solver, size='', shape='', free=False):
         return [filename for filename in listdir(SaverDirectories[solver])
                 if ('_' in filename and shape_folder_naming[size] in filename)]
     else:
-        return [filename for filename in listdir(SaverDirectories[solver])
-                if size in filename and shape in filename and 'free' not in filename]
+        return [filename for filename in listdir(SaverDirectories[solver][free])
+                if size in filename and shape in filename]
 
 
 columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',

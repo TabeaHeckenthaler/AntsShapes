@@ -1,0 +1,27 @@
+from DataFrame.dataFrame import get_filenames
+from os import listdir
+from Directories import MatlabFolder, SaverDirectories
+from os import path
+from Directories import NewFileName
+from tqdm import tqdm
+from copy import copy
+import numpy as np
+import json
+from trajectory_inheritance.exp_types import exp_types
+from trajectory_inheritance.trajectory_ant import Trajectory_ant
+from PS_Search_Algorithms.Path_planning_full_knowledge import run_full_knowledge
+from datetime import datetime
+from trajectory_inheritance.trajectory import get
+from Load_tracked_data.Load_Experiment import find_unpickled, load
+
+if __name__ == '__main__':
+
+    solver, shape = 'ant', 'SPT'
+    size = 'XL'
+    free = True
+    fps = 50
+
+    for mat_filename in tqdm(find_unpickled(solver, size, shape, free=True)):
+        print(mat_filename)
+        x = load(mat_filename, solver, size, shape, fps, free=free)
+        x.save(address=path.join(SaverDirectories[solver][free], x.filename))

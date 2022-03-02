@@ -28,18 +28,22 @@ def is_extension(name) -> bool:
         return True
 
 
-def find_unpickled(solver, size, shape):
+def get_mat_files(solver, size, shape, free=False):
+    return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if size + shape in mat_file]
+
+
+def find_unpickled(solver, size, shape, free=False):
     """
     find the .mat files, which are not pickled yet.
     :return: list of un-pickled .mat file names (without .mat extension)
     """
-    pickled = get_filenames(solver, size=size)
+    pickled = get_filenames(solver, size=size, free=free)
     if solver in ['ant', 'human']:
         expORsim = 'exp'
     else:
         expORsim = 'sim'
 
-    mat_files = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape))]
+    mat_files = get_mat_files(solver, size, shape, free=free)
     new_names = [NewFileName(mat_file[:-4], solver, size, shape, expORsim) for mat_file in mat_files]
 
     unpickled = [mat_file
@@ -65,8 +69,8 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
         x = Trajectory_ant(size=size, shape=shape, old_filename=filename, free=free, winner=winner,
                            fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
                            falseTracking=[falseTracking])
-        if x.free:
-            x.RunNum = int(input('What is the RunNumber?'))
+        # if x.free:
+        #     x.RunNum = int(input('What is the RunNumber?'))
 
     elif solver == 'human':
         shape = 'SPT'
@@ -177,20 +181,21 @@ def parts(filename, solver, size, shape):
     return VideoChain
 
 
-def load(filename, solver, size, shape, winner=None):
-    if solver == 'human':
-        fps = 30
-    elif solver == 'ant':
-        fps = 50
-    else:
-        fps = np.NaN
+def load(filename, solver, size, shape, fps, winner=None, free=False):
+    if not free:
+        if solver == 'human':
+            fps = 30
+        elif solver == 'ant':
+            fps = 50
+        else:
+            fps = np.NaN
 
-    if winner is None:
-        if filename not in winner_dict.keys():
-            continue_winner_dict(solver, shape)
-        winner = winner_dict[filename]
+        if winner is None:
+            if filename not in winner_dict.keys():
+                continue_winner_dict(solver, shape)
+            winner = winner_dict[filename]
     print('\n' + filename)
-    return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape)
+    return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape, free=free)
 
 
 def connector(part1, part2, frames_missing, filename=None):
@@ -223,8 +228,8 @@ if __name__ == '__main__':
     for size in exp_types[shape][solver]:
         for mat_filename in tqdm(find_unpickled(solver, size, shape)):
             print(mat_filename)
-            x = load(mat_filename, solver, size, shape)
-            chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
+            x = load(mat_filename, solver, size, shape, fps)
+            chain = [x] + [load(filename, solver, size, shape, fps, winner=x.winner)
                            for filename in parts(mat_filename, solver, size, shape)[1:]]
             total_time_seconds = np.sum([traj.timer() for traj in chain])
 

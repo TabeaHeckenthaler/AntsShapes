@@ -28,8 +28,8 @@ def faulty_connection():
     conn_dict = []
 
     for mat_filename, size in zip(conn_dict, ['S' for _ in range(3)]):
-        x = load(mat_filename, solver, size, shape)
-        chain = [x] + [load(filename, solver, size, shape, winner=x.winner)
+        x = load(mat_filename, solver, size, shape, fps)
+        chain = [x] + [load(filename, solver, size, shape, fps, winner=x.winner)
                        for filename in parts(mat_filename, solver, size, shape)[1:]]
         total_time_seconds = np.sum([traj.timer() for traj in chain])
 

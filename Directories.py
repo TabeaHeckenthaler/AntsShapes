@@ -7,7 +7,8 @@ home = path.join(path.abspath(__file__).split('\\')[0]+path.sep, *path.abspath(_
 data_home = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'PyCharm_Data', 'AntsShapes')
 
 work_dir = path.join(data_home, 'Pickled_Trajectories')
-SaverDirectories = {'ant': path.join(work_dir, 'Ant_Trajectories'),
+SaverDirectories = {'ant': {True: path.join(work_dir, 'Ant_Trajectories', 'Free'),
+                            False: path.join(work_dir, 'Ant_Trajectories', 'Slitted')},
                     'human': path.join(work_dir, 'Human_Trajectories'),
                     'humanhand': path.join(work_dir, 'HumanHand_Trajectories'),
                     'gillespie': path.join(work_dir, 'Gillespie_Trajectories'),
@@ -30,8 +31,8 @@ maze_dimension_directory = path.join(home, 'Setup')
 
 
 def SetupDirectories():
-    if not (path.isdir(SaverDirectories['ant'])):
-        if not path.isdir('\\\\' + SaverDirectories['ant'].split('\\')[2]):
+    if not (path.isdir(SaverDirectories['ant'][False])):
+        if not path.isdir('\\\\' + SaverDirectories['ant'][False].split('\\')[2]):
             return
         mkdir(SaverDirectories['ant'])
     if not (path.isdir(SaverDirectories['human'])):
@@ -63,12 +64,15 @@ trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
 
 
-def MatlabFolder(solver, size, shape):
+def MatlabFolder(solver, size, shape, free=False):
     if solver == 'ant':
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
                                'SPT': 'Special T', 'T': 'T'}
-        return path.join(trackedAntMovieDirectory, 'Slitted', shape_folder_naming[shape], size, 'Output Data')
+        if not free:
+            return path.join(trackedAntMovieDirectory, 'Slitted', shape_folder_naming[shape], size, 'Output Data')
+        else:
+            return path.join(trackedAntMovieDirectory, 'Free', 'Output Data', shape_folder_naming[shape])
 
     if solver == 'human':
         return path.join(trackedHumanMovieDirectory, size, 'Data')
