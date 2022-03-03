@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # free trajectories
     home = os.path.join(os.path.abspath(__file__).split('\\')[0] + os.path.sep,
-                        *os.path.abspath(__file__).split(os.path.sep)[1:-1])
+                        *os.path.abspath(__file__).split(os.path.sep)[1:-3])
 
     # I suggest, that you put the trajectory pickles into the following directory
     folder = os.path.join('trajectory_inheritance', 'trajectories_local')
