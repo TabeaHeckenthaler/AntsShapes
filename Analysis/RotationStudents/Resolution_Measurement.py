@@ -1,67 +1,88 @@
-from trajectory_inheritance.trajectory import get, Trajectory
-import numpy as np
+from trajectory_inheritance.trajectory import get
 from Analysis.PathLength import PathLength
-from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from matplotlib import pyplot as plt
+import numpy as np
+from scipy.signal import medfilt
+import json
+from DataFrame.dataFrame import get_filenames
+from tqdm import tqdm
 
 
-def resolution(size: str, shape: str, solver: str, geometry: tuple, path_length: float) -> int:
+def velocity(position: np.array, fps: int) -> np.array:
+    v = np.array([])
+    n = len(position) - 1
+    for y in range(n):
+        r = position[y + 1] - position[y]
+        g = np.sqrt(r[0] ** 2 + r[1] ** 2) * fps
+        v = np.append(v, g)
+    return v
+
+
+def smooth_v(v) -> np.array:
     """
-    The goal is to find the proper bin size.
-    :param size:
-    :param shape:
-    :param solver:
-    :return:
+    Smooth the v using np.medfilt (smoothing window ~30)
+    :param v: velocity
+    :return: smoothed velocity
     """
-    conf_space = ConfigSpace_Maze(solver, size, shape, geometry)
-    conf_space.load_space()
-    return int(conf_space.coords_to_index(0, path_length))
+    return medfilt(v, 31)
 
 
-def typical_v_max() -> float:
-    # TODO Rotation students: Find typical top speed
-    return float()
-# how long does it take for the shape to reach from 0 to v_max or from v_max to 0? Better: How much path is traversed.
+def calculate_v_max(v) -> float:
+    """
+    :param v: velocity
+    :return: maximal velocity
+    """
+    return np.max(v)
 
 
-def find_acceleration_frames(x: Trajectory) -> list:
-    # TODO Rotation student: Find for a given trajectory, example frames, where the load is accelerated from 0 to v_max,
-    #   or where the shape is decelerated (far away from the wall)
+def acceleration_frames(v, limiter, cutoff) -> list:
+    """
 
-    # Find frames, where v is about v_max
+    """
+    v_max = calculate_v_max(smoothed_v)
 
-    # Find frames beforehand, where the speed is 0.
+    for f2 in np.where(v >= limiter * v_max)[0]:
+        f1s = [frame for frame, v in enumerate(v) if v <= cutoff * v_max and frame < f2]
+        if len(f1s) > 0:
+            f1 = np.max(f1s)
+            return [f1, f2]
+    return []
 
-    pass
+
+def plot_acceleration_frames(frames, marker='s'):
+    plt.plot(x_axis[frames[0]], smoothed_v[frames[0]], "r" + marker)
+    plt.plot(x_axis[frames[1]], smoothed_v[frames[1]], "g" + marker)
 
 
-# saved in trajectory_inheritance/trajectories_local
-exp = {'Large': ['large_20211006174255_20211006174947'],  # 26 people
-       'Medium': ['medium_20211125132354_20211125133125_20211125133125_20211125133138_20211125133138_20211125134057'],  #  9 people
-       'Small Far': ['small_20210413102456_20210413102801']  # 1 person
-       }
+get_filenames('human', size='', shape='', free=False)
 
 
 if __name__ == '__main__':
-    path_list = list()  # list
-    shape, solver = 'SPT', 'human'
-    geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')  # tuple
+    shape, solver, geometry = 'SPT', 'human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')  # tuple
     resolution_dict = dict()
-    for size in exp.keys():
-        for name in exp[size]:
+
+    for size in ['Large', 'Medium', 'Small Far']:
+        path_list = []
+        for name in tqdm(get_filenames('human', size=size, shape='SPT', free=False)):
             trajectory = get(name)
 
-            # trajectory.position
-            # trajectory.angle
-            # trajectory.angle.__class__ gives you the class of your object
+            smoothed_v = smooth_v(velocity(trajectory.position, trajectory.fps))
+            frames = acceleration_frames(smoothed_v, 0.25, 0.05)
+            if len(frames) > 1:
+                path_list.append(PathLength(trajectory).calculate_path_length(frames=frames, rot=False))
 
-            # TODO Itay: Plot position (x, t), plot (speed, t) (-> matplotlib.pyplot)
-            plt.figure()
+                if path_list[-1] > 5:
+                    x_axis = np.array(range(len(trajectory.position) - 1)) / trajectory.fps
+                    plt.plot(x_axis, smoothed_v, color='blue')
+                    plot_acceleration_frames(frames, marker='s')
+                    plt.show()
 
-            # frames = find_acceleration_frames(traj)
-            frames = [1, 100]
-            path_list.append(PathLength(trajectory).calculate_path_length(frames=frames))
-
-        resolution_dict[size] = resolution(size, shape, solver, geometry, np.mean(path_list))
+        resolution_dict[size] = (np.mean(path_list), np.std(path_list), np.std(path_list) / np.sqrt(np.size(path_list)))
     print(resolution_dict)
 
+    plt.figure()
+    plt.errorbar([mean[0] for mean in resolution_dict.values()], [sem[2] for sem in resolution_dict.values()])
+    plt.show()
+
+    with open('bin_size.json', 'w') as fp:
+        json.dump(resolution_dict, fp)

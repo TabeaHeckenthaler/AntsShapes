@@ -9,7 +9,6 @@ from copy import copy
 from os import path
 from trajectory_inheritance.exp_types import is_exp_valid
 
-
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 
 # TODO: x = get(myDataFrame.loc[429].filename).play() displays a maze, that does not make any sense!
@@ -40,6 +39,7 @@ ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, '
                  'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
                  'humanhand': {'': 1}}
 ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'])
+
 
 # for solver in ant_dimensions:
 #     ResizeFactors[solver] = ResizeFactors['ant']
@@ -87,6 +87,11 @@ class Maze(b2World):
                 position = x.position[i]
             if angle is None:
                 angle = x.angle[i]
+
+            # if x.free:
+            #     self.free = x.free
+            #     self.arena_height = np.max(x.position[:, 0])  # TODO
+            #     self.arena_length = np.max(x.position[:, 1])
             if geometry is not None:
                 self.excel_file_maze, self.excel_file_load = geometry
             else:
@@ -100,8 +105,9 @@ class Maze(b2World):
             if geometry is None:
                 raise ValueError('You have to pass a geometry')
             self.excel_file_maze, self.excel_file_load = geometry
+            self.free = free
 
-        self.free = free
+        # if not self.free:
         self.arena_length = float()
         self.arena_height = float()
         self.exit_size = float()
@@ -109,18 +115,21 @@ class Maze(b2World):
         self.slits = list()
         self.slitpoints = np.array([])
         self.slitTree = list()
+
         self.body = self.create_Maze()
-        self.get_zone()
+
+        # if not self.free:
+        #     self.get_zone()
 
         self.create_Load(position=position, angle=angle, point_particle=point_particle, bb=bb)
 
     def getMazeDim(self):
-        if self.free:
-            self.arena_height = 10
-            self.arena_length = 10
-            return
+        # if self.free: # TODO
+            # self.arena_height = 10
+            # self.arena_length = 10
+            # return
 
-        else:
+        if True:
             df = read_excel(path.join(maze_dimension_directory, self.excel_file_maze), engine='openpyxl')
 
             if self.excel_file_maze in ['MazeDimensions_ant.xlsx', 'MazeDimensions_ant_L_I_425.xlsx',
@@ -167,11 +176,12 @@ class Maze(b2World):
         self.getMazeDim()
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
 
-        if self.free:
-            my_maze.CreateLoopFixture(
-                vertices=[(0, 0), (0, self.arena_height * 3), (self.arena_length * 3, self.arena_height * 3),
-                          (self.arena_length * 3, 0)])
-        else:
+        # if self.free:
+        #     my_maze.CreateLoopFixture(
+        #         vertices=[(0, 0), (0, self.arena_height * 3), (self.arena_length * 3, self.arena_height * 3),
+        #                   (self.arena_length * 3, 0)])
+
+        if True:
             my_maze.CreateLoopFixture(
                 vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
                           (self.arena_length, 0)])
@@ -341,7 +351,8 @@ class Maze(b2World):
     def minimal_path_length(self):
         from DataFrame.dataFrame import myDataFrame
         from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-        p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
+        p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][
+            ['path length [length unit]']]
         return p.values[0][0]
 
     def create_Load(self, position=None, angle=0, point_particle=False, bb: bool = False):

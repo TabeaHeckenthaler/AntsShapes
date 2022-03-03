@@ -100,7 +100,7 @@ class PathLength:
 
         # the connector parts have to short of a path length.
         if isinstance(self.x, Trajectory_part) and self.x.is_connector():
-            return np.NaN
+            raise ValueError('Check here')
 
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
         aver_radius = self.average_radius()
@@ -110,10 +110,11 @@ class PathLength:
             return 0
         pos, ang = position[0], unwrapped_angle[0]
         path_length = 0
+        cs_resolution = resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape)
 
-        for i in range(len(unwrapped_angle)):
+        for i in range(1, len(unwrapped_angle)):
             d = self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
-            if d > resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape):
+            if d > cs_resolution:
                 path_length += self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
                 pos, ang = position[i], unwrapped_angle[i]
         return path_length

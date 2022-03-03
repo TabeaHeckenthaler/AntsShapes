@@ -6,9 +6,25 @@ from Analysis.GeneralFunctions import ranges, gauss
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 import pandas as pd
+from scipy.signal import medfilt
+
 
 max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
                                {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
+
+
+class Velocity:
+    def __init__(self, trajectory):
+        self.trajectory = trajectory
+        self.v_x = medfilt(np.gradient(self.trajectory.position[:, 0]), trajectory.fps + 1)
+        self.v_y = medfilt(np.gradient(self.trajectory.position[:, 1]), trajectory.fps + 1)
+        self.omega = medfilt(np.gradient(self.trajectory.angle), trajectory.fps + 1)
+
+    def draw_histogram(self):
+        fig, ax = plt.subplots(2)
+        ax[0].hist(np.linalg.norm(np.vstack([self.v_x, self.v_y]), axis=0), density=True)
+        ax[1].hist(self.omega, density=True)
+        plt.show()
 
 
 # StartedScripts: Are all the trajectories in the right direction??
@@ -159,35 +175,61 @@ def velocity_distribution_fitting(x):
 
 
 if __name__ == '__main__':
-    from trajectory_inheritance.trajectory import get
-    from tqdm import tqdm
-    # I want to calculate the average speed during an experiment (scaled by maze size?)
-    df_dir = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.json'
-    df = pd.DataFrame(pd.read_json(df_dir))
-
-    shape = 'SPT'
-    solver = 'ant'
-
-    df = df[df['shape'] == shape]
-    df = df.groupby('solver').get_group(solver)[
-        ['filename', 'maze size', 'path length [length unit]', 'minimal path length [length unit]',
-         'average Carrier Number', 'winner']]
-    df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
+    # from trajectory_inheritance.trajectory import get
+    # from tqdm import tqdm
+    # # I want to calculate the average speed during an experiment (scaled by maze size?)
+    # df_dir = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.json'
+    # df = pd.DataFrame(pd.read_json(df_dir))
     #
-    # mean_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
-    #     ['average Carrier Number']].mean().unstack().reindex(sizes['ant'])
-    # sem_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
-    #     ['average Carrier Number']].sem().unstack().reindex(sizes['ant'])
+    # shape = 'SPT'
+    # solver = 'ant'
+    #
+    # df = df[df['shape'] == shape]
+    # df = df.groupby('solver').get_group(solver)[
+    #     ['filename', 'maze size', 'path length [length unit]', 'minimal path length [length unit]',
+    #      'average Carrier Number', 'winner']]
+    # df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
+    # #
+    # # mean_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
+    # #     ['average Carrier Number']].mean().unstack().reindex(sizes['ant'])
+    # # sem_CarrierNumbers = df_ant_HIT.groupby(['maze size', 'shape'])[
+    # #     ['average Carrier Number']].sem().unstack().reindex(sizes['ant'])
+    #
+    # vel = []
+    # scaled_vel = []
+    # for filename, min_path in tqdm(zip(df['filename'], df['minimal path length [length unit]'])):
+    #     x = get(filename)
+    #     mean_vel = np.mean(np.linalg.norm(x.velocity(1), axis=0))
+    #     vel.append(mean_vel)
+    #     scaled_vel.append(mean_vel/min_path)
+    # df['velocity'] = vel
+    # df['scaled_velocity'] = scaled_vel
+    # df = df.dropna()
+    # df.to_json('C:\\Users\\tabea\\PycharmProjects\\Python_Adv_Course_2021' +
+    #            '\\MachineLearning\\data_frame_machineLearning.json')
 
-    vel = []
-    scaled_vel = []
-    for filename, min_path in tqdm(zip(df['filename'], df['minimal path length [length unit]'])):
-        x = get(filename)
-        mean_vel = np.mean(np.linalg.norm(x.velocity(1), axis=0))
-        vel.append(mean_vel)
-        scaled_vel.append(mean_vel/min_path)
-    df['velocity'] = vel
-    df['scaled_velocity'] = scaled_vel
-    df = df.dropna()
-    df.to_json('C:\\Users\\tabea\\PycharmProjects\\Python_Adv_Course_2021' +
-               '\\MachineLearning\\data_frame_machineLearning.json')
+    from trajectory_inheritance.trajectory import get
+    from DataFrame.dataFrame import get_filenames
+    import json
+    size = 'XL'
+
+    # pickled = get_filenames('ant', size=size, free=True)
+    # velocities = [Velocity(get(name)) for name in pickled]
+    # velocity_dict = {}
+    # velocity_dict['v_x'] = np.hstack([vel.v_x for vel in velocities]).tolist()
+    # velocity_dict['v_y'] = np.hstack([vel.v_y for vel in velocities]).tolist()
+    # velocity_dict['omega'] = np.hstack([vel.omega for vel in velocities]).tolist()
+
+    # jsonString = json.dumps(velocity_dict)
+    # jsonFile = open(size + "_velocity_dict.json", "w")
+    # jsonFile.write(jsonString)
+    # jsonFile.close()
+
+    with open(size + "_velocity_dict.json", 'r') as f:
+        velocity_dict = json.load(f)
+    fig, ax = plt.subplots(2)
+    ax[0].hist(np.linalg.norm(np.vstack([velocity_dict['v_x'], velocity_dict['v_y']]), axis=0), density=True, bins=100)
+    ax[1].hist(velocity_dict['omega'], density=True, bins=100)
+    plt.show()
+
+    DEBUG = 1

@@ -413,8 +413,8 @@ def get(filename) -> Trajectory:
     # this is on labs network
     for root, dirs, files in os.walk(work_dir):
         for dir in dirs:
-            if filename in os.listdir(path.join(work_dir, dir)):
-                address = path.join(work_dir, dir, filename)
+            if filename in os.listdir(path.join(root, dir)):
+                address = path.join(root, dir, filename)
                 with open(address, 'rb') as f:
                     x = pickle.load(f)
                 return x
