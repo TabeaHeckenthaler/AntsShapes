@@ -39,7 +39,13 @@ if __name__ == '__main__':
     # free trajectories
     home = os.path.join(os.path.abspath(__file__).split('\\')[0] + os.path.sep,
                         *os.path.abspath(__file__).split(os.path.sep)[1:-1])
+
+    # I suggest, that you put the trajectory pickles into the following directory
     folder = os.path.join('trajectory_inheritance', 'trajectories_local')
-    x = get('XL_SPT_4280003_freeXLSpecialT_1', os.path.join(home, folder))
+
+    name_of_exp = 'XL_SPT_4280003_freeXLSpecialT_1'
+    x = get(name_of_exp, os.path.join(home, folder))
     x.play()
+
+    # plot velocity from the histograms I sent
     plot_velocity()

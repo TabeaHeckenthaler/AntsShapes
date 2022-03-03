@@ -5,7 +5,7 @@ import numpy as np
 import scipy.io as sio
 from os import path
 from Setup.Load import periodicity
-from Setup.Maze import Maze
+from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
 
 length_unit = 'cm'
@@ -257,5 +257,8 @@ class Trajectory_ant(Trajectory):
         x.position, x.angle = x.position[f1:f2:step, :], x.angle[f1:f2:step]
         x.frames = x.frames[f1:f2:step]
 
-        my_maze = Maze(x)
+        if not x.free:
+            my_maze = Maze(x)
+        else:
+            my_maze = Maze_free_space(x)
         return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=cs, videowriter=videowriter))
