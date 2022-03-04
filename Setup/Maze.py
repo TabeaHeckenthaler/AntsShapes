@@ -94,11 +94,7 @@ class Maze_parent(b2World):
         # self.get_zone()
 
     def create_Maze(self):
-        my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
-        my_maze.CreateLoopFixture(
-            vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
-                      (self.arena_length, 0)])
-        return my_maze
+        pass
 
     def corners(self):
         corners = [[0, 0],
@@ -495,6 +491,10 @@ class Maze(Maze_parent):
         self.slits = list()
         self.slitpoints = np.array([])
         self.slitTree = list()
+        self.excel_file_maze, self.excel_file_load = x.geometry()
+        self.shape = x.shape
+        self.size = x.size
+        self.solver = x.solver
         self.getMazeDim()
         super().__init__(x)
         self.CreateSlitObject()
@@ -654,6 +654,13 @@ class Maze(Maze_parent):
         # from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
         p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
         return p.values[0][0]
+
+    def create_Maze(self):
+        my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
+        my_maze.CreateLoopFixture(
+            vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
+                      (self.arena_length, 0)])
+        return my_maze
 
 
 class Maze_free_space(Maze_parent):

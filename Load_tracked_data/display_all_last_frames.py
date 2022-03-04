@@ -3,9 +3,6 @@ from trajectory_inheritance.trajectory import get
 from Directories import df_dir
 import json
 
-x = get('S_SPT_4720014_SSpecialT_1_ants')
-x.play()
-
 
 def correct_a_false_winner(filename, winner=False, comment=''):
     x = get(filename)
@@ -49,6 +46,9 @@ def choose_relevant_experiments(df, shape, solver, winner=None, init_cond='back'
 
 
 if __name__ == '__main__':
+
+    # x = get('S_SPT_4720014_SSpecialT_1_ants')
+    # x.play()
 
     # filename = 'M_SPT_4700022_MSpecialT_1_ants'
     # correct_a_false_winner(filename, winner=True, comment='Extend this trajectory to the end!')
