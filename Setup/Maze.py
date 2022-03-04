@@ -65,44 +65,27 @@ def end(x):
 
 
 class Maze_parent(b2World):
-    def __init__(self, *args, size='XL', shape='SPT', solver='ant', position=None, angle=0,
-                 point_particle=False, geometry: tuple = None, i=0, bb: bool = False):
+    def __init__(self, position=None, angle=0, point_particle=False, bb: bool = False):
         super().__init__(gravity=(0, 0), doSleep=True)
 
-        if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
-                                                        'Trajectory_part']:
-            x = args[0]
-            self.shape = x.shape
-            self.size = x.size
-            self.solver = x.solver
-            position = x.position[i] if position is None else position
-            angle = x.angle[i] if angle is None else angle
-            self.excel_file_maze, self.excel_file_load = geometry if geometry is not None else x.geometry()
-
-        else:
-            is_exp_valid(shape, solver, size)
-            self.shape = shape  # load shape (maybe this will become name of the maze...)
-            self.solver = solver  # load shape (maybe this will become name of the maze...)
-            self.size = size
-            if geometry is None:
-                raise ValueError('You have to pass a geometry')
-            self.excel_file_maze, self.excel_file_load = geometry
+        if not hasattr(self, 'size'):
+            self.size = 'XL'
+        if not hasattr(self, 'shape'):
+            self.shape = 'SPT'
+        if not hasattr(self, 'solver'):
+            self.solver = 'ant'
+        if not hasattr(self, 'arena_height'):
+            self.arena_height = 10
+        if not hasattr(self, 'arena_length'):
+            self.arena_length = 'XL'
+        if not hasattr(self, 'excel_file_load'):
+            self.excel_file_load = 'LoadDimensions_new2021_SPT_ant.xlsx'
 
         self.maze = self.create_Maze()
         self.create_Load(position=position, angle=angle, point_particle=point_particle, bb=bb)
-        # self.get_zone()
 
     def create_Maze(self):
         pass
-
-    def corners(self):
-        corners = [[0, 0],
-                   [0, self.arena_height],
-                   [self.slits[-1] + 20, self.arena_height],
-                   [self.slits[-1] + 20, 0],
-                   ]
-        return np.array(corners + list(np.resize(self.slitpoints, (16, 2))))
 
     def set_configuration(self, position, angle):
         self.bodies[-1].position.x, self.bodies[-1].position.y, self.bodies[-1].angle = position[0], position[1], angle
@@ -463,27 +446,25 @@ class Maze_parent(b2World):
             shape_height, shape_width, shape_thickness = self.getLoadDim()
             shape_height_short_edge = np.NaN
 
-        if self.shape in ['RASH', 'LASH']:
-            shift = ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][self.size]
+        shift = ASSYMETRIC_H_SHIFT * ResizeFactors[self.solver][self.size]
 
-        if self.shape.endswith('ASH'):
-            print('I dont know circumference of ASH!!!')
-            breakpoint()
         cir = {'H': 4 * shape_height - 2 * shape_thickness + 2 * shape_width,
                'I': 2 * shape_height + 2 * shape_width,
                'T': 2 * shape_height + 2 * shape_width,
-               'SPT': 2 * shape_height_short_edge +
-                      2 * shape_height -
-                      2 * shape_thickness +
-                      2 * shape_width,
+               'SPT': 2 * shape_height_short_edge + 2 * shape_height - 2 * shape_thickness + 2 * shape_width,
                'RASH': 2 * shape_width + 4 * shape_height - 4 * shift - 2 * shape_thickness,
                'LASH': 2 * shape_width + 4 * shape_height - 4 * shift - 2 * shape_thickness
                }
+
+        if self.shape.endswith('ASH'):
+            raise ValueError('I do not know circumference of ASH!!!')
+
         return cir[self.shape]
 
 
 class Maze(Maze_parent):
-    def __init__(self, x):
+    def __init__(self, *args, size='XL', shape='SPT', solver='ant', position=None, angle=0, point_particle=False,
+                 geometry: tuple = None, i=0, bb: bool = False):
         self.arena_length = float()
         self.arena_height = float()
         self.exit_size = float()
@@ -491,13 +472,35 @@ class Maze(Maze_parent):
         self.slits = list()
         self.slitpoints = np.array([])
         self.slitTree = list()
-        self.excel_file_maze, self.excel_file_load = x.geometry()
-        self.shape = x.shape
-        self.size = x.size
-        self.solver = x.solver
+
+        if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
+                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
+                                                        'Trajectory_part']:
+            x = args[0]
+            self.excel_file_maze, self.excel_file_load = x.geometry()
+            self.shape = x.shape
+            self.size = x.size
+            self.solver = x.solver
+            position = x.position[i] if position is None else position
+            angle = x.angle[i] if angle is None else angle
+        else:
+            self.excel_file_maze, self.excel_file_load = geometry
+            self.shape = shape
+            self.size = size
+            self.solver = solver
+
+        is_exp_valid(shape, solver, size)
         self.getMazeDim()
-        super().__init__(x)
+        super().__init__(position=position, angle=angle, point_particle=point_particle, bb=bb)
         self.CreateSlitObject()
+
+    def corners(self):
+        corners = [[0, 0],
+                   [0, self.arena_height],
+                   [self.slits[-1] + 20, self.arena_height],
+                   [self.slits[-1] + 20, 0],
+                   ]
+        return np.array(corners + list(np.resize(self.slitpoints, (16, 2))))
 
     def getMazeDim(self):
         df = read_excel(path.join(maze_dimension_directory, self.excel_file_maze), engine='openpyxl')
@@ -652,7 +655,8 @@ class Maze(Maze_parent):
     def minimal_path_length(self):
         from DataFrame.dataFrame import myDataFrame
         # from trajectory_inheritance.trajectory_ps_simulation import filename_dstar
-        p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][['path length [length unit]']]
+        p = myDataFrame.loc[myDataFrame['filename'] == filename_dstar(self.size, self.shape, 0, 0)][
+            ['path length [length unit]']]
         return p.values[0][0]
 
     def create_Maze(self):
@@ -664,10 +668,29 @@ class Maze(Maze_parent):
 
 
 class Maze_free_space(Maze_parent):
-    def __init__(self, x):
-        self.arena_height = np.max(x.position[:, 1])
-        self.arena_length = np.max(x.position[:, 0])
-        super().__init__(x)
+    def __init__(self, *args, size='XL', shape='SPT', solver='ant', position=None, angle=0, point_particle=False,
+                 geometry: tuple = None, i=0, bb: bool = False):
+        if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
+                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
+                                                        'Trajectory_part']:
+            x = args[0]
+            self.arena_height = np.max(x.position[:, 1])
+            self.arena_length = np.max(x.position[:, 0])
+            self.excel_file_maze, self.excel_file_load = x.geometry()
+            self.shape = x.shape
+            self.size = x.size
+            self.solver = x.solver
+            position = x.position[i] if position is None else position
+            angle = x.angle[i] if angle is None else angle
+        else:
+            self.arena_height = 10
+            self.arena_length = 10
+            self.excel_file_maze, self.excel_file_load = geometry
+            self.shape = shape
+            self.size = size
+            self.solver = solver
+
+        super().__init__(position=position, angle=angle, point_particle=point_particle, bb=bb)
 
     def create_Maze(self):
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
