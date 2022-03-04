@@ -6,7 +6,8 @@ import numpy as np
 
 size, shape, solver = 'M', 'H', 'ant'
 
-ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape, name=size + '_' + shape)
+ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape, name=size + '_' + shape,
+                      geometry=('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx'))
 ps.load_space()
 ps.visualize_space()
 
