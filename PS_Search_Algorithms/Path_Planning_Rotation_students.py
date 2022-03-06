@@ -14,6 +14,7 @@ from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from itertools import product
 import pickle
 from Directories import PhaseSpaceDirectory
+import time
 
 
 class Binned_ConfigSpace(ConfigSpace):
@@ -134,25 +135,28 @@ class Binned_ConfigSpace(ConfigSpace):
         :return: (boolean (whether a path was found), list (node indices that connect the two indices))
         """
         top_left, bins = self.bin_cut_out([start, end])
-        cs = ConfigSpace(space=bins)
-        if cs.dual_space is None:
-            cs.dual_space = cs.calc_dual_space()
-        try:
-            shortest_path = nx.shortest_path(cs.dual_space,
-                                             tuple(np.array(start) - np.array(top_left)),
-                                             tuple(np.array(end) - np.array(top_left)))
-        except nx.NetworkXNoPath:
-            return False, None
-        return True, shortest_path
+        start_indices_in_bin = tuple(np.array(start) - np.array(top_left))
+        end_indices_in_bin = tuple(np.array(end) - np.array(top_left))
 
-        # Planner = Path_planning_in_CS(self.node_constructor(*start, ConfigSpace(bins)),
-        #                               self.node_constructor(*end, ConfigSpace(bins)),
-        #                               conf_space=ConfigSpace(bins))
-        # Planner.path_planning()
-        # if Planner.winner:
-        #     return Planner.winner, Planner.generate_path()
-        # else:
+        # cs = ConfigSpace(space=bins)
+        # if cs.dual_space is None:
+        #     cs.dual_space = cs.calc_dual_space()
+        # try:
+        #     shortest_path = nx.shortest_path(cs.dual_space,
+        #                                      tuple(np.array(start) - np.array(top_left)),
+        #                                      tuple(np.array(end) - np.array(top_left)))
+        # except nx.NetworkXNoPath:
         #     return False, None
+        # return True, shortest_path
+
+        Planner = Path_planning_in_CS(self.node_constructor(*start_indices_in_bin, ConfigSpace(bins)),
+                                      self.node_constructor(*end_indices_in_bin, ConfigSpace(bins)),
+                                      conf_space=ConfigSpace(bins), periodic=(0, 0, 0))
+        Planner.path_planning()
+        if Planner.winner:
+            return Planner.winner, Planner.generate_path()
+        else:
+            return False, None
 
 
 class Path_Planning_Rotation_students(Path_planning_in_CS):
@@ -353,7 +357,7 @@ if __name__ == '__main__':
                                  geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     conf_space = ConfigSpace_Maze('human', 'Large', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     conf_space.load_space()
-    conf_space.visualize_space()
+    conf_space.visualize_space(reduction=4)
 
     # starting_indices = conf_space.coords_to_indices(*start(x, 'back'))
     # ending_indices = conf_space.coords_to_indices(*end(x))

@@ -150,12 +150,12 @@ class Node3D(Node):
     DeLiteNode Node
     """
 
-    def __init__(self, xi, yi, thetai, conf_space: ConfigSpace):
+    def __init__(self, xi, yi, thetai, conf_space: ConfigSpace, average_radius: float = None):
         super().__init__(conf_space)
         self.xi = xi
         self.yi = yi
         self.thetai = thetai  # this takes values between 0 and 2*np.pi
-        self.average_radius: float = conf_space.average_radius
+        self.average_radius: float = average_radius
         self.path_xi = []
         self.path_yi = []
         self.path_thetai = []  # this takes values between 0 and 2*np.pi

@@ -42,7 +42,7 @@ class Path_planning_in_CS:
     current = property(_get_current, _set_current)
 
     def __init__(self, start: Union[Node3D, Node2D], end: Union[Node3D, Node2D], max_iter: int = 100000,
-                 conf_space=None) -> None:
+                 conf_space=None, periodic=(0, 0, 1)) -> None:
         self.start = start
         self.end = end
         self.max_iter = max_iter
@@ -55,7 +55,7 @@ class Path_planning_in_CS:
         self._distance = None
         self.winner = False
         self.voxel = voxel[self.conf_space.space.ndim]
-        self.periodic = (0, 0, 1)[: self.conf_space.space.ndim]
+        self.periodic = periodic[: self.conf_space.space.ndim]
         self.node_constructor = Node_constructors[self.conf_space.space.ndim]  # class of node (Node2D or Node3D)
 
     def is_winner(self):
@@ -90,8 +90,9 @@ class Path_planning_in_CS:
                 # self._current.draw_node(fig=self.conf_space.fig,
                 #                         # scale_factor=0.2, color=(1, 0, 0)
                 #                         )
-            # if self._current.distance == np.inf:
-            #     return
+
+            if self.distance is not None and self.distance[self.current.ind()] == np.inf:
+                return
 
             greedy_node = self.find_greedy_node()
             if self.possible_step(greedy_node):
@@ -151,11 +152,10 @@ class Path_planning_in_CS:
         """
         Computes distance of the current position of the solver to the finish line according to self.planning_space.space
         """
-        # phi should contain -1s and 1s, later from the 0 line the distance metric will be calculated.
-        phi = np.ones_like(self.planning_space.space, dtype=int)
+        zero_contour_space = np.ones_like(self.planning_space.space, dtype=int)
         mask = ~np.array(self.planning_space.space, dtype=bool)
-        phi = np.ma.MaskedArray(phi, mask)
-        phi.data[self.end.ind()] = 0
+        zero_contour_space = np.ma.MaskedArray(zero_contour_space, mask)
+        zero_contour_space[self.end.ind()] = 0
 
         # idea: increase in a while loop
         # this is to reduce computing power: we don't have to calculate distance in all space, just in small space
@@ -172,11 +172,11 @@ class Path_planning_in_CS:
 
         # calculate the distances from the goal position, this is the easiest, if the speed is uniform
         # self.distance = distance(phi, periodic=(0, 0, 1)).data
+
+        dist = distance(zero_contour_space, periodic=self.periodic)
         # in order to mask the 'unreachable' nodes (diagonal or outside of conf_space), set distance there to inf.
-        dist = distance(phi, periodic=self.periodic)
-        dist_data = dist.data
-        dist_data[dist.mask] = np.inf
-        self.distance = dist_data
+        dist.data[dist.mask] = np.inf
+        self.distance = dist.data
 
         # if the speed is not uniform:
         # self.distance = travel_time(phi, self.speed, periodic=(0, 0, 1)).data
