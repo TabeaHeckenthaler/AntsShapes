@@ -225,7 +225,7 @@ class Trajectory:
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
         my_maze = Maze(x)
-        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, ps=cs, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, cs=cs, videowriter=videowriter))
 
     def check(self) -> None:
         """

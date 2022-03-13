@@ -25,7 +25,7 @@ class States:
     States is a class which represents the transitions of states of a trajectory. States are defined by eroding the CS,
     and then finding connected components.
     """
-    def __init__(self, conf_space_labeled, x, step: int = 1):
+    def __init__(self, conf_space_labeled, x, step: int = 0.5):
         """
         :param step: after how many frames I add a label to my label list
         :param x: trajectory
@@ -43,15 +43,49 @@ class States:
             # print('You might want to decrease your step size, because you might be skipping state transitions.')
 
     @staticmethod
-    def combine_transitions(state_series) -> list:
+    def combine_transitions(labels) -> list:
         """
         I want to combine states, that are [.... 'gb' 'bg'...] to [... 'gb'...]
-        :param state_series: series to be mashed
-        :return: state_series with combined transitions
         """
-        state_series = [''.join(sorted(state)) for state in state_series]
-        mask = [True] + [sorted(state1) != sorted(state2) for state1, state2 in zip(state_series, state_series[1:])]
-        return np.array(state_series)[mask].tolist()
+        labels = [''.join(sorted(state)) for state in labels]
+        mask = [True] + [sorted(state1) != sorted(state2) for state1, state2 in zip(labels, labels[1:])]
+        return np.array(labels)[mask].tolist()
+
+    @staticmethod
+    def add_missing_transitions(labels) -> list:
+        """
+        I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
+        """
+        labels_copy = labels.copy()
+        i = 1
+        for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
+            if state1 in state2 or state2 in state1 or len(set(state1) & set(state2)) > 0:
+                pass
+            elif len(state1) == len(state2) == 1:
+                transition = ''.join(sorted(state1 + state2))
+                if transition in allowed_transition_attempts:
+                    labels_copy.insert(ii+i, transition)
+                    i += 1
+                else:
+                    raise ValueError('What happened0?')
+            elif len(state1) == len(state2) == 2:
+                raise ValueError('What happened1?')
+
+            elif ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
+                t1 = state1[1]
+                t2 = ''.join(sorted(state1[1] + state2))
+                labels_copy.insert(ii + i, t1)
+                labels_copy.insert(ii + i + 1, t2)
+                i += 2
+            elif ''.join(sorted(state1[0] + state2)) in allowed_transition_attempts:
+                t1 = state1[0]
+                t2 = ''.join(sorted(state1[0] + state2))
+                labels_copy.insert(ii + i, t1)
+                labels_copy.insert(ii + i + 1, t2)
+                i += 2
+            else:
+                raise ValueError('What happened2?')
+        return labels_copy
 
     @staticmethod
     def cut_at_end(time_series) -> list:
@@ -95,4 +129,6 @@ class States:
         :return:
         """
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
+        labels = self.combine_transitions(labels)
+        labels = self.add_missing_transitions(labels)
         return labels

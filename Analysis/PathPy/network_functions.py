@@ -29,6 +29,7 @@ def get_trajectories(solver='human', size='Large', shape='SPT',
         (myDataFrame['size'] == size) &
         (myDataFrame['shape'] == shape) &
         (myDataFrame['solver'] == solver) &
+        (myDataFrame['initial condition'] == 'back') &
         (myDataFrame['maze dimensions'] == geometry[0]) &
         (myDataFrame['load dimensions'] == geometry[1])]
 
@@ -105,18 +106,20 @@ class Network(pp.Network):
             g.add_edge(e[0], e[1], weight=self.edges[e]['weight'])
         return g
 
-    def plot_transition_matrix(self, T: np.array = None):
+    def plot_transition_matrix(self, T: np.array = None, title: str = '', axis=None):
         if T is None:
             T = self.transition_matrix().toarray()
-        fig, ax = plt.subplots(1, 1)
-        _ = ax.imshow(T)
-        ax.set_xticks(range(len(self.possible_transitions)))
-        ax.set_yticks(range(len(self.possible_transitions)))
-        ax.set_xticklabels(self.possible_transitions)
-        ax.set_yticklabels(self.possible_transitions)
+        if axis is None:
+            fig, axis = plt.subplots(1, 1)
+        _ = axis.imshow(T)
+        axis.set_xticks(range(len(self.possible_transitions)))
+        axis.set_yticks(range(len(self.possible_transitions)))
+        axis.set_xticklabels(self.possible_transitions)
+        axis.set_yticklabels(self.possible_transitions)
         directory = graph_dir() + os.path.sep + 'T_' + self.name + '.pdf'
         print('Saving transition matrix in ', directory)
         plt.gcf().savefig(directory)
+        plt.title(title)
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)

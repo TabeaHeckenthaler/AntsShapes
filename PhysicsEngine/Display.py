@@ -16,7 +16,7 @@ except:
 
 
 class Display:
-    def __init__(self, name: str, my_maze, wait=0, ps=None, i=0, videowriter=False, config=None):
+    def __init__(self, name: str, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None):
         self.my_maze = my_maze
         self.filename = name
         self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter
@@ -41,11 +41,11 @@ class Display:
             my_maze.set_configuration(config[0], config[1])
 
         self.renew_screen()
-        self.ps = ps
+        self.cs = cs
         if videowriter:
-            if self.ps is not None:
-                self.VideoShape = (max(self.height, mlab.screenshot(self.ps.fig, mode='rgb').shape[0]),
-                                   self.width + mlab.screenshot(self.ps.fig, mode='rgb').shape[1])
+            if self.cs is not None:
+                self.VideoShape = (max(self.height, mlab.screenshot(self.cs.fig, mode='rgb').shape[0]),
+                                   self.width + mlab.screenshot(self.cs.fig, mode='rgb').shape[1])
 
             else:
                 self.VideoShape = (self.monitor['height'], self.monitor['width'])
@@ -115,12 +115,14 @@ class Display:
 
     def draw(self, x):
         self.my_maze.draw(self)
-        if self.ps is not None:
+        scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
+                        'Small Near': 0.2, 'Small': 0.2}[self.my_maze.size]
+        if self.cs is not None:
             if self.i <= 1 or self.i >= len(x.angle)-1:
-                kwargs = {'color': (0, 0, 0), 'scale_factor': 1.}
+                kwargs = {'color': (0, 0, 0), 'scale_factor': scale_factor}
             else:
                 kwargs = {}
-            self.ps.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
+            self.cs.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)
@@ -138,7 +140,7 @@ class Display:
             pass
             img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
             if hasattr(self, 'ps'):
-                img = merge_frames([img, mlab.screenshot(self.ps.fig, mode='rgb')],
+                img = merge_frames([img, mlab.screenshot(self.cs.fig, mode='rgb')],
                                    (self.VideoShape[0], self.VideoShape[1], 3),
                                    [[0, 0], [0, self.width]])
 

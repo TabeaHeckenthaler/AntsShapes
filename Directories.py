@@ -21,6 +21,7 @@ mini_SaverDirectories = {'ant': path.join(mini_work_dir, 'Ant_Trajectories'),
                          'gillespie': path.join(mini_work_dir, 'Gillespie_Trajectories'),
                          'ps_simulation': path.join(mini_work_dir, 'PS_simulation_Trajectories')}
 
+# TODO: Rotation student: Change data_home to fit where you saved your space
 PhaseSpaceDirectory = path.join(data_home, 'Configuration_Spaces')
 
 excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
@@ -28,6 +29,15 @@ contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
 network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
 maze_dimension_directory = path.join(home, 'Setup')
+
+video_directory = path.join(home, 'Videos')
+if not path.exists(video_directory):
+    mkdir(video_directory)
+
+trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
+                                                                                        path.sep, path.sep)
+trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
+trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
 
 
 def SetupDirectories():
@@ -54,14 +64,6 @@ def SetupDirectories():
         mkdir(mini_SaverDirectories['ps_simulation'])
     return
 
-video_directory = path.join(home, 'Videos')
-if not path.exists(video_directory):
-    mkdir(video_directory)
-
-trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
-                                                                                        path.sep, path.sep)
-trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
-trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
 
 
 def MatlabFolder(solver, size, shape, free=False):

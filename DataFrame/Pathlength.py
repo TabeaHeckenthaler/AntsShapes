@@ -6,6 +6,7 @@ from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers, get
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from DataFrame.dataFrame import myDataFrame as df
+from DataFrame.dataFrame import choose_relevant_experiments
 import json
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
@@ -153,26 +154,12 @@ def ant_HIT_figure_path_length(df_gr_solver):
         save_fig(fig, 'ants_' + y)
 
 
-def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back', size=None):
-    """
-    Reduce df to relevant experiments
-    :param df: dataFrame
-    :param shape: shape of the load ('H', 'I', 'SPT'...)
-    :param solver: ('human', 'ant', ...)
-    :param winner: Do you want to include only successful trajectories?
-    :param init_cond: Do you want to restrict the included experiments only to a specific initial condition?
-    (front, back or None)
-    :return: DataFrame with relevant experiments
-    """
-    df = df[df['shape'] == shape]
-    df = df[df['solver'] == solver]
-    if size is not None:
-        df = df[df['size'] == size]
-    if winner is not None:
-        df = df[df['winner'] == winner]
-    if init_cond == 'back':
-        df = df[df['initial condition'] == init_cond]
-    return df
+def adjust_figure():
+    ax.set_ylim(0, 50)
+    ax.set_xscale('log')
+    # ax.set_yscale('log')
+    # ax.set_ylim(0, 25)
+    plt.show()
 
 
 def relevant_columns(df):
@@ -181,14 +168,6 @@ def relevant_columns(df):
     df = df[columns]
     df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
     return df
-
-
-def adjust_figure():
-    ax.set_ylim(0, 50)
-    ax.set_xscale('log')
-    # ax.set_yscale('log')
-    # ax.set_ylim(0, 25)
-    plt.show()
 
 
 if __name__ == '__main__':

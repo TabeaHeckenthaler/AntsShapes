@@ -127,8 +127,7 @@ class DataFrame(pd.DataFrame):
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
 
-        self['minimal path length [length unit]'] = self['filename'].\
-            progress_apply(lambda x: PathLength(get(x)).minimal())
+        self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
     def fill_column(self):
@@ -148,18 +147,41 @@ class DataFrame(pd.DataFrame):
         return new_data_frame
 
 
+def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back', size=None):
+    """
+    Reduce df to relevant experiments
+    :param df: dataFrame
+    :param shape: shape of the load ('H', 'I', 'SPT'...)
+    :param solver: ('human', 'ant', ...)
+    :param winner: Do you want to include only successful trajectories?
+    :param init_cond: Do you want to restrict the included experiments only to a specific initial condition?
+    (front, back or None)
+    :return: DataFrame with relevant experiments
+    """
+    df = df[df['shape'] == shape]
+    df = df[df['solver'] == solver]
+    if size is not None:
+        df = df[df['size'] == size]
+    if winner is not None:
+        df = df[df['winner'] == winner]
+    if init_cond == 'back':
+        df = df[df['initial condition'] == init_cond]
+    return df
+
+
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
     # myDataFrame.drop(columns='minimal path length [length unit]')
     myDataFrame.add_column()
+    DEBUG = 1
 
     # TODO: add new contacts to contacts json file
     # from DataFrame.plot_dataframe import how_many_experiments
     # how_many_experiments(myDataFrame)
 
-    for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
-        print(new_experiment['filename'])
-        myDataFrame = myDataFrame + new_experiment
-        myDataFrame.save()
+    # for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
+    #     print(new_experiment['filename'])
+    #     myDataFrame = myDataFrame + new_experiment
+    #     myDataFrame.save()

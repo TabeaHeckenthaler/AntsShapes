@@ -357,12 +357,12 @@ if __name__ == '__main__':
                                  geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     conf_space = ConfigSpace_Maze('human', 'Large', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     conf_space.load_space()
-    conf_space.visualize_space(reduction=4)
+    conf_space.visualize_space()
 
     # starting_indices = conf_space.coords_to_indices(*start(x, 'back'))
     # ending_indices = conf_space.coords_to_indices(*end(x))
 
-    starting_indices = (91, 126, 313)  # used to be (91, 126, 0)
+    # starting_indices = (91, 126, 313)  # used to be (91, 126, 0)
     ending_indices = (336, 126, 313)
     stuck_indices = (215, 139, 352)
     # (123, 135, 301)

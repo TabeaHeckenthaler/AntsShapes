@@ -580,14 +580,14 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
 
-        cc_to_keep = min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
+        cc_to_keep = np.min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
         if cc_to_keep != 10:
             print('You seem to have to little cc...')
 
-        min = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep] - 1)
+        minimum = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep] - 1)
 
         for label in range(1, number_cc):
-            if stats['voxel_counts'][label] > min:
+            if stats['voxel_counts'][label] > minimum:
                 ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
 
                 # if this is part of a another ps that is split by 0 or 2pi
@@ -842,6 +842,8 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         :param reduction: What amount of reduction?
         :return:
         """
+        if self.ps_states is None:
+            self.load_eroded_labeled_space()
         if self.fig is None or not self.fig.running:
             self.visualize_space(reduction=reduction)
 
@@ -849,10 +851,12 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw states')
+        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/resolution
+
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
-            # ps_state.extent = self.extent # This was only becaus I had made a mistake
+            # ps_state.extent = self.extent # This was only because I had made a mistake
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
-            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=2)
+            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=scale)
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -868,20 +872,14 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw transitions')
-        idx = 0
-        for label in tqdm(np.unique(self.space_labeled)):
-            if len(label) > 1:
-                if idx % 3 == 0:
-                    colormap = 'Reds'
-                elif idx % 3 == 1:
-                    colormap = 'Purples'
-                else:
-                    colormap = 'Greens'
-                space = np.array(self.space_labeled == label, dtype=bool)
-                centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
-                self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
-                mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=1)
-                idx += 1
+        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/reduction
+        transitions = [trans for trans in np.unique(self.space_labeled) if len(trans) > 1]
+        for label, colormap in tqdm(zip(transitions, itertools.cycle(['Reds', 'Purples', 'Greens']))):
+            space = np.array(self.space_labeled == label, dtype=bool)
+            centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
+            self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
+            mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=scale)
+        DEBUG = 1
 
     def save_labeled(self, directory=None, date_string='') -> None:
         """
@@ -931,6 +929,9 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         Calculate the labeled space.
         :return:
         """
+        if self.ps_states is None:
+            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
+            self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
         [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
@@ -974,15 +975,16 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
 
 
 if __name__ == '__main__':
-    # shape = 'SPT'
-    # size = 'M'
-    # solver = 'ant'
+    shape = 'SPT'
+    size = 'Large'
+    solver = 'human'
 
-    # ps = PhaseSpace(solver, size, shape)
+    ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape,
+                          geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     # ps.calculate_space()
     # ps.calculate_boundary()
     #
     # ps.save_space()
-    # ps.visualize_space()
+    ps.visualize_space()
 
     DEBUG = 1
