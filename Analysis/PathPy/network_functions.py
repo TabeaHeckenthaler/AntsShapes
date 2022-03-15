@@ -44,35 +44,50 @@ colors = {0: 'black', 1: 'red', 2: 'blue'}
 
 
 class Network(pp.Network):
-    def __init__(self, possible_transitions: list, name='network'):
+    def __init__(self, solver, size, shape, possible_transitions: list = None):
         super().__init__(directed=True)
         self.possible_transitions = possible_transitions
-        self.name = name
+        self.name = '_'.join(['network', solver, size, shape])
         self.paths = pp.Paths()
-        for state1, state2 in itertools.product(possible_transitions, possible_transitions):
-            self.add_edge(state1, state2, weight=0)
         self.N = None
         self.Q = None
         self.t = None
         self.R = None
         self.P = None
         self.B = None
+        if possible_transitions is not None:
+            for state1, state2 in itertools.product(possible_transitions, possible_transitions):
+                self.add_edge(state1, state2, weight=0)
+
+    def to_dict(self):
+        if self.N is None:
+            self.calc_fundamental_matrix()
+        if self.t is None:
+            self.calc_expected_absorption_time()
+        if self.B is None:
+            self.calc_absorption_probabilities()
+
+        return {'N': self.N.tolist(), 'Q': self.Q.tolist(), 't': self.t.tolist(), 'R': self.R.tolist(),
+                'P': self.P.tolist(), 'B': self.B.tolist()}
 
     def save_dir(self):
         return self.name + '_N.txt'
 
-    def save_fundamental_matrix(self):
-        if self.N is None:
-            self.calc_fundamental_matrix()
-
+    def save(self):
         with open(self.save_dir(), 'w') as json_file:
-            json.dump(self.N.tolist(), json_file)
+            json.dump(self.to_dict, json_file)
 
-    def get_fundamental_matrix(self):
+    def get(self):
         if not os.path.exists(self.save_dir()):
             raise ValueError('You havent saved the fundamental_matrix!')
         with open(self.save_dir(), 'r') as json_file:
-            self.N = json.load(json_file)
+            attribute_dict = json.load(json_file)
+        self.N = attribute_dict['N']
+        self.Q = attribute_dict['Q']
+        self.t = attribute_dict['t']
+        self.R = attribute_dict['R']
+        self.P = attribute_dict['P']
+        self.B = attribute_dict['B']
 
     def add_paths(self, transitions: list) -> None:
         [self.paths.add_path(transition) for transition in transitions]
@@ -166,10 +181,6 @@ class Network(pp.Network):
     def calc_absorption_probabilities(self):
         if self.N is None:
             self.calc_fundamental_matrix()
-
-    def absorbing_state_analysis(self):
-        if self.N is None:
-            self.calc_expected_absorption_time()
         self.B = np.matmul(self.N, self.R)  # absorption probabilities
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:

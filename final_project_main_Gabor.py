@@ -15,9 +15,9 @@ def network_visualisation(solver, shape, geometry):
 
         trajectories = get_trajectories(solver=solver, size=size, shape=shape, geometry=geometry)
         list_of_states = [States(conf_space_labeled, x, step=int(x.fps)) for x in trajectories]
-        paths = [states.combine_transitions(states.state_series) for states in list_of_states]
+        paths = [s.combine_transitions(s.state_series) for s in list_of_states]
 
-        my_network = Network(state_order, name='_'.join(['network', solver, size, shape]))
+        my_network = Network(solver, size, shape, possible_transitions=state_order)
         my_network.add_paths(paths)
         my_network.plot_network()
         my_network.plot_transition_matrix()

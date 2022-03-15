@@ -1,5 +1,5 @@
 import numpy as np
-from Analysis.States import States
+from Analysis.PathPy.network_functions import Network
 
 
 class FailedAttempt:
@@ -14,12 +14,12 @@ class FailedAttempt:
 
 
 class FailedAttemptPathLengthExtender:
-    def __init__(self, failedAttempt, fundamental_matrix):
+    def __init__(self, failedAttempt: FailedAttempt, fundamental_matrix: np.array):
         """
         fundamental matrix must contain self_loops, or I have to define mean time spent in a certain state.
         """
         self.failedAttempt = failedAttempt
-        self.fundamental_matrix = fundamental_matrix  # TODO
+        self.fundamental_matrix = fundamental_matrix
 
     def expected_solving_time(self) -> float:
         t = np.matmul(self.fundamental_matrix, np.ones([1, self.fundamental_matrix.shape[0]]))
