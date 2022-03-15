@@ -27,7 +27,7 @@ PhaseSpaceDirectory = path.join(data_home, 'Configuration_Spaces')
 excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
 contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
-network_dir = path.join(home, 'Analysis', 'PathPy', 'Network_Images')
+network_dir = path.join(home, 'Analysis', 'PathPy')
 maze_dimension_directory = path.join(home, 'Setup')
 
 video_directory = path.join(home, 'Videos')

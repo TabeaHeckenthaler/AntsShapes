@@ -12,6 +12,7 @@ import os
 from copy import copy
 import itertools
 import json
+from Analysis.States import states, forbidden_transition_attempts, allowed_transition_attempts
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
@@ -59,7 +60,7 @@ class Network(pp.Network):
             for state1, state2 in itertools.product(possible_transitions, possible_transitions):
                 self.add_edge(state1, state2, weight=0)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         if self.N is None:
             self.calc_fundamental_matrix()
         if self.t is None:
@@ -70,24 +71,53 @@ class Network(pp.Network):
         return {'N': self.N.tolist(), 'Q': self.Q.tolist(), 't': self.t.tolist(), 'R': self.R.tolist(),
                 'P': self.P.tolist(), 'B': self.B.tolist()}
 
-    def save_dir(self):
-        return self.name + '_N.txt'
+    def create_paths(self):
+        raise ValueError('You still have to program this!')
+        # conf_space_labeled = ConfigSpace_Maze.PhaseSpace_Labeled(solver, size, shape, geometry)
+        # conf_space_labeled.load_labeled_space()
+        # conf_space_labeled.visualize_states()
+        # trajectories = get_trajectories(solver=solver, size=size, shape=shape, geometry=geometry)
+        # list_of_states = [States(conf_space_labeled, x, step=int(x.fps)) for x in trajectories]
+        # transitions = [s.combine_transitions(s.state_series) for s in list_of_states]
+        # self.add_paths(transitions)
 
-    def save(self):
-        with open(self.save_dir(), 'w') as json_file:
-            json.dump(self.to_dict, json_file)
+    def save_dir_paths(self):
+        return os.path.join(network_dir, 'ExperimentalPaths', self.name + '_transitions.txt')
 
-    def get(self):
-        if not os.path.exists(self.save_dir()):
-            raise ValueError('You havent saved the fundamental_matrix!')
-        with open(self.save_dir(), 'r') as json_file:
-            attribute_dict = json.load(json_file)
-        self.N = attribute_dict['N']
-        self.Q = attribute_dict['Q']
-        self.t = attribute_dict['t']
-        self.R = attribute_dict['R']
-        self.P = attribute_dict['P']
-        self.B = attribute_dict['B']
+    def save_paths(self):
+        with open(self.save_dir_paths(), 'w') as json_file:
+            json.dump(self.to_dict(), json_file)
+
+    def get_paths(self):
+        if os.path.exists(self.save_dir_paths()):
+            with open(self.save_dir_paths(), 'r') as json_file:
+                transitions = json.load(json_file)
+            self.add_paths(transitions)
+        else:
+            self.create_paths()
+            self.save_paths()
+
+    def save_dir_results(self):
+        return os.path.join(network_dir, 'MarkovianNetworks', self.name + '.txt')
+
+    def save_results(self):
+        dictionary = self.to_dict()
+        with open(self.save_dir_results(), 'w') as json_file:
+            json.dump(dictionary, json_file)
+
+    def get_results(self):
+        if os.path.exists(self.save_dir_results()):
+            with open(self.save_dir_results(), 'r') as json_file:
+                attribute_dict = json.load(json_file)
+            self.N = attribute_dict['N']
+            self.Q = attribute_dict['Q']
+            self.t = attribute_dict['t']
+            self.R = attribute_dict['R']
+            self.P = attribute_dict['P']
+            self.B = attribute_dict['B']
+        else:
+            self.get_paths()
+            self.save_results()
 
     def add_paths(self, transitions: list) -> None:
         [self.paths.add_path(transition) for transition in transitions]
@@ -110,7 +140,7 @@ class Network(pp.Network):
                         "node_size": {name: sizes[len(name)] for name in g1.vs["name"]},
                         "node_color": {name: colors[len(name)] for name in g1.vs["name"]},
                         }
-        directory = path.join(network_dir, self.name + '.html')
+        directory = path.join(network_dir, 'Network_Images', self.name + '.html')
         print('Saving network image in ', directory)
         export_html(n_to_plot, directory, **visual_style)
 
@@ -162,12 +192,12 @@ class Network(pp.Network):
     def calc_fundamental_matrix(self):
         T = self.transition_matrix().toarray()
         m = transposeMatrix(T)
-        m = sort(m)
+        # m = sort(m)
         # norm = normalize(m)
         trans = num_of_transients(m)
         self.Q, self.R = decompose(m)
-        self.P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]),
-                            np.hstack([self.R, self.Q])])  # canonical form of transition matrix
+        self.P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]), np.hstack([self.R, self.Q])])
+        # canonical form of transition matrix
         P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
         print(P_inf)
         self.N = np.linalg.inv(identity(len(self.Q[-1])) - self.Q)  # fundamental matrix
@@ -215,3 +245,17 @@ class Network(pp.Network):
     #     # estimate the order of the sequence (something like memory)
     #     ms = pp.MarkovSequence(self.paths.sequence())
     #     order = ms.estimate_order(4)
+
+
+if __name__ == '__main__':
+    solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+
+    sizes = ['Large', 'Medium']
+    for size in sizes:
+        state_order = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
+        my_network = Network(solver, size, shape, possible_transitions=state_order)
+        my_network.get_results()
+        DEBUG = 1
+
+        # my_network.plot_network()
+        # my_network.plot_transition_matrix()
