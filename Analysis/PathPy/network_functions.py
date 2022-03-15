@@ -58,6 +58,22 @@ class Network(pp.Network):
         self.P = None
         self.B = None
 
+    def save_dir(self):
+        return self.name + '_N.txt'
+
+    def save_fundamental_matrix(self):
+        if self.N is None:
+            self.calc_fundamental_matrix()
+
+        with open(self.save_dir(), 'w') as json_file:
+            json.dump(self.N.tolist(), json_file)
+
+    def get_fundamental_matrix(self):
+        if not os.path.exists(self.save_dir()):
+            raise ValueError('You havent saved the fundamental_matrix!')
+        with open(self.save_dir(), 'r') as json_file:
+            self.N = json.load(json_file)
+
     def add_paths(self, transitions: list) -> None:
         [self.paths.add_path(transition) for transition in transitions]
 
@@ -155,10 +171,6 @@ class Network(pp.Network):
         if self.N is None:
             self.calc_expected_absorption_time()
         self.B = np.matmul(self.N, self.R)  # absorption probabilities
-
-    def save_fundamental_matrix(self):
-        with open(self.name + '_fundamental_matrix.txt', 'w') as json_file:
-            json.dump(self.N, json_file)
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)

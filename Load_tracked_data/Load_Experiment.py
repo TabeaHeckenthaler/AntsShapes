@@ -110,8 +110,8 @@ def continue_winner_dict(solver, shape):
 
         if len(new) > 0:
             winner_dict.update(new)
-`            with open('winner_dictionary.txt', 'w') as json_file:
-                json.dump(winner_dict, json_file)`
+            with open('winner_dictionary.txt', 'w') as json_file:
+                json.dump(winner_dict, json_file)
     return
 
 
