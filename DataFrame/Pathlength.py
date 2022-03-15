@@ -177,9 +177,9 @@ if __name__ == '__main__':
     solvers = ['ant', 'human']
 
     for solver in solvers:
-        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver,
-                                                      winner=True, init_cond='back')
-        plot_path_length(relevant_columns(df_relevant_exp), solver, ax, marker='*')
+        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, winner=True, init_cond='back')
+        relevant_df = relevant_columns(df_relevant_exp)
+        plot_path_length(relevant_df, solver, ax, marker='x')
 
     adjust_figure()
     save_fig(fig, 'back_path_length_humans')

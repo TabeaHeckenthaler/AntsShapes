@@ -127,20 +127,21 @@ class Network(pp.Network):
     #     #     print(e, hon.edges[e])
     #     return hon
     #
-    # def absorbing_state_analysis(self) -> np.array:
-    #     T = self.transition_matrix().toarray()
-    #     m = transposeMatrix(T)
-    #     m = sort(m)
-    #     # norm = normalize(m)
-    #     trans = num_of_transients(m)
-    #     Q, R = decompose(m)
-    #     P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]),
-    #                    np.hstack([R, Q])])  # canonical form of transition matrix
-    #     N = np.linalg.inv(identity(len(Q[-1])) - Q)  # fundamental matrix
-    #     t = np.matmul(N, np.ones(N.shape[0]))  # expected number of steps before absorption from each steps
-    #     B = np.matmul(N, R)  # absorption probabilities
-    #     P_inf = np.linalg.matrix_power(P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
-    #     return t
+
+    def absorbing_state_analysis(self) -> np.array:
+        T = self.transition_matrix().toarray()
+        m = transposeMatrix(T)
+        m = sort(m)
+        # norm = normalize(m)
+        trans = num_of_transients(m)
+        Q, R = decompose(m)
+        P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]),
+                       np.hstack([R, Q])])  # canonical form of transition matrix
+        N = np.linalg.inv(identity(len(Q[-1])) - Q)  # fundamental matrix
+        t = np.matmul(N, np.ones(N.shape[0]))  # expected number of steps before absorption from each steps
+        B = np.matmul(N, R)  # absorption probabilities
+        P_inf = np.linalg.matrix_power(P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
+        return t
     #
     # def Markovian_analysis(self) -> np.array:
     #     # adjacency_matrix, degrees, laplacian, transition matrix and eigenvector
