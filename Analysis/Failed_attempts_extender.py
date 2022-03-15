@@ -1,5 +1,4 @@
 import numpy as np
-from Analysis.PathPy.network_functions import Network
 
 
 class FailedAttempt:
@@ -14,16 +13,18 @@ class FailedAttempt:
 
 
 class FailedAttemptPathLengthExtender:
-    def __init__(self, failedAttempt: FailedAttempt, fundamental_matrix: np.array):
+    """
+    Markovian assumption: Extend the trajectory path length
+    """
+    def __init__(self, failedAttempt: FailedAttempt, expected_solving_times: np.array):
         """
         fundamental matrix must contain self_loops, or I have to define mean time spent in a certain state.
         """
         self.failedAttempt = failedAttempt
-        self.fundamental_matrix = fundamental_matrix
+        self.expected_solving_times = expected_solving_times
 
     def expected_solving_time(self) -> float:
-        t = np.matmul(self.fundamental_matrix, np.ones([1, self.fundamental_matrix.shape[0]]))
-        return float()
+        return self.expected_solving_times[self.failedAttempt.final_state] * self.failedAttempt.mean_speed()
 
     def expected_additional_path_length(self) -> float:
         return self.failedAttempt.mean_speed() * self.expected_solving_time()
