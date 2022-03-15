@@ -1,6 +1,7 @@
 from itertools import groupby
 import numpy as np
 
+
 states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
 
 forbidden_transition_attempts = ['be', 'bf', 'bg',
@@ -36,7 +37,6 @@ class States:
         self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
         self.interpolate_zeros()
         self.state_series = self.calculate_state_series()
-
         if len(self.forbidden_attempts()) > 0:
             print('forbidden_attempts:', self.forbidden_attempts(), 'in', x.filename)
 

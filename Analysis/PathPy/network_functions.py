@@ -11,6 +11,7 @@ from Analysis.GeneralFunctions import graph_dir
 import os
 from copy import copy
 import itertools
+import json
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
@@ -50,6 +51,12 @@ class Network(pp.Network):
         self.paths = pp.Paths()
         for state1, state2 in itertools.product(possible_transitions, possible_transitions):
             self.add_edge(state1, state2, weight=0)
+        self.N = None
+        self.Q = None
+        self.t = None
+        self.R = None
+        self.P = None
+        self.B = None
 
     def add_paths(self, transitions: list) -> None:
         [self.paths.add_path(transition) for transition in transitions]
@@ -121,6 +128,38 @@ class Network(pp.Network):
         plt.gcf().savefig(directory)
         plt.title(title)
 
+    def calc_fundamental_matrix(self):
+        T = self.transition_matrix().toarray()
+        m = transposeMatrix(T)
+        m = sort(m)
+        # norm = normalize(m)
+        trans = num_of_transients(m)
+        self.Q, self.R = decompose(m)
+        self.P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]),
+                            np.hstack([self.R, self.Q])])  # canonical form of transition matrix
+        P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
+        print(P_inf)
+        self.N = np.linalg.inv(identity(len(self.Q[-1])) - self.Q)  # fundamental matrix
+
+    def calc_expected_absorption_time(self):
+        if self.N is None:
+            self.calc_fundamental_matrix()
+        self.t = np.matmul(self.N,
+                           np.ones(self.N.shape[0]))  # expected number of steps before absorption from each steps
+
+    def calc_absorption_probabilities(self):
+        if self.N is None:
+            self.calc_fundamental_matrix()
+
+    def absorbing_state_analysis(self):
+        if self.N is None:
+            self.calc_expected_absorption_time()
+        self.B = np.matmul(self.N, self.R)  # absorption probabilities
+
+    def save_fundamental_matrix(self):
+        with open(self.name + '_fundamental_matrix.txt', 'w') as json_file:
+            json.dump(self.N, json_file)
+
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)
     #     # for e in hon.edges:
@@ -128,21 +167,6 @@ class Network(pp.Network):
     #     return hon
     #
 
-    def absorbing_state_analysis(self) -> np.array:
-        T = self.transition_matrix().toarray()
-        m = transposeMatrix(T)
-        m = sort(m)
-        # norm = normalize(m)
-        trans = num_of_transients(m)
-        Q, R = decompose(m)
-        P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]),
-                       np.hstack([R, Q])])  # canonical form of transition matrix
-        N = np.linalg.inv(identity(len(Q[-1])) - Q)  # fundamental matrix
-        t = np.matmul(N, np.ones(N.shape[0]))  # expected number of steps before absorption from each steps
-        B = np.matmul(N, R)  # absorption probabilities
-        P_inf = np.linalg.matrix_power(P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
-        return t
-    #
     # def Markovian_analysis(self) -> np.array:
     #     # adjacency_matrix, degrees, laplacian, transition matrix and eigenvector
     #     A = self.adjacency_matrix().toarray()

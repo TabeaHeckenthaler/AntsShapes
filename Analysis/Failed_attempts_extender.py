@@ -1,3 +1,6 @@
+import numpy as np
+from Analysis.States import States
+
 
 class FailedAttempt:
     def __init__(self, name, path_length, time, final_state):
@@ -19,7 +22,7 @@ class FailedAttemptPathLengthExtender:
         self.fundamental_matrix = fundamental_matrix  # TODO
 
     def expected_solving_time(self) -> float:
-        self.fundamental_matrix
+        t = np.matmul(self.fundamental_matrix, np.ones([1, self.fundamental_matrix.shape[0]]))
         return float()
 
     def expected_additional_path_length(self) -> float:
