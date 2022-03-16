@@ -47,7 +47,7 @@ colors = {0: 'black', 1: 'red', 2: 'blue'}
 class Network(pp.Network):
     def __init__(self, solver, size, shape, possible_transitions: list = None):
         super().__init__(directed=True)
-        self.possible_transitions = possible_transitions
+        self.state_order = possible_transitions
         self.name = '_'.join(['network', solver, size, shape])
         self.paths = pp.Paths()
         self.N = None
@@ -69,7 +69,7 @@ class Network(pp.Network):
             self.calc_absorption_probabilities()
 
         return {'N': self.N.tolist(), 'Q': self.Q.tolist(), 't': self.t.tolist(), 'R': self.R.tolist(),
-                'P': self.P.tolist(), 'B': self.B.tolist()}
+                'P': self.P.tolist(), 'B': self.B.tolist(), 'state_order': self.state_order}
 
     def create_paths(self):
         raise ValueError('You still have to program this!')
@@ -85,8 +85,9 @@ class Network(pp.Network):
         return os.path.join(network_dir, 'ExperimentalPaths', self.name + '_transitions.txt')
 
     def save_paths(self):
+        raise ValueError('Check save_paths')
         with open(self.save_dir_paths(), 'w') as json_file:
-            json.dump(self.to_dict(), json_file)
+            json.dump(self.paths, json_file)
 
     def get_paths(self):
         if os.path.exists(self.save_dir_paths()):
@@ -104,17 +105,19 @@ class Network(pp.Network):
         dictionary = self.to_dict()
         with open(self.save_dir_results(), 'w') as json_file:
             json.dump(dictionary, json_file)
+            print('Saved Markovian results in ', self.save_dir_results())
 
     def get_results(self):
         if os.path.exists(self.save_dir_results()):
             with open(self.save_dir_results(), 'r') as json_file:
                 attribute_dict = json.load(json_file)
-            self.N = attribute_dict['N']
-            self.Q = attribute_dict['Q']
-            self.t = attribute_dict['t']
-            self.R = attribute_dict['R']
-            self.P = attribute_dict['P']
-            self.B = attribute_dict['B']
+            self.N = np.array(attribute_dict['N'])
+            self.Q = np.array(attribute_dict['Q'])
+            self.t = np.array(attribute_dict['t'])
+            self.R = np.array(attribute_dict['R'])
+            self.P = np.array(attribute_dict['P'])
+            self.B = np.array(attribute_dict['B'])
+            self.state_order = attribute_dict['state_order']
         else:
             self.get_paths()
             self.save_results()
@@ -180,26 +183,60 @@ class Network(pp.Network):
         if axis is None:
             fig, axis = plt.subplots(1, 1)
         _ = axis.imshow(T)
-        axis.set_xticks(range(len(self.possible_transitions)))
-        axis.set_yticks(range(len(self.possible_transitions)))
-        axis.set_xticklabels(self.possible_transitions)
-        axis.set_yticklabels(self.possible_transitions)
+        axis.set_xticks(range(len(self.state_order)))
+        axis.set_yticks(range(len(self.state_order)))
+        axis.set_xticklabels(self.state_order)
+        axis.set_yticklabels(self.state_order)
         directory = graph_dir() + os.path.sep + 'T_' + self.name + '.pdf'
         print('Saving transition matrix in ', directory)
         plt.gcf().savefig(directory)
         plt.title(title)
 
+    def remove_unvisited_states(self, T):
+        full = np.logical_or(~np.all(T == 0, axis=1), ~np.all(T == 0, axis=0))
+        self.state_order = np.array(self.state_order)[full].tolist()
+        T_reduced = T[full][:, full]
+        return T_reduced
+
+    def sort(self, m):
+        """
+        reorganize matrix so zero-rows go last (preserving zero rows order)
+        """
+        size = len(m)
+
+        zero_row = -1
+        for r in range(size):
+            sum = 0
+            for c in range(size):
+                sum += m[r][c]
+            if sum == 0:
+                # we have found all-zero row, remember it
+                zero_row = r
+            if sum != 0 and zero_row > -1:
+                # we have found non-zero row after all-zero row - swap these rows
+                raise ValueError('sort state_order')
+                self.state_order = self.state_order
+                n = swap(m, r, zero_row)
+                # and repeat from the beginning
+                return sort(n)
+        # nothing to sort, return
+        return m
+
     def calc_fundamental_matrix(self):
         T = self.transition_matrix().toarray()
-        m = transposeMatrix(T)
-        # m = sort(m)
-        # norm = normalize(m)
-        trans = num_of_transients(m)
+        T = self.remove_unvisited_states(T)
+        m = self.sort(transposeMatrix(T))
+        norm = normalize(m)
+        number_of_transient_states = num_of_transients(m)
         self.Q, self.R = decompose(m)
-        self.P = np.vstack([np.hstack([identity(1), np.zeros([1, trans])]), np.hstack([self.R, self.Q])])
+        absorbing_states = 1
+        self.P = np.vstack([np.hstack([identity(absorbing_states),
+                                       np.zeros([absorbing_states, number_of_transient_states])]),
+                            np.hstack([self.R,
+                                       self.Q])])
         # canonical form of transition matrix
-        P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
-        print(P_inf)
+        # P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
+        # print(P_inf)
         self.N = np.linalg.inv(identity(len(self.Q[-1])) - self.Q)  # fundamental matrix
 
     def calc_expected_absorption_time(self):

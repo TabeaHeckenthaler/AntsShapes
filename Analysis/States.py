@@ -8,7 +8,7 @@ forbidden_transition_attempts = ['be', 'bf', 'bg',
                                  'di',
                                  'eb', 'ei',
                                  'fb', 'fi',
-                                 'gf', 'ge', 'gj', 'gb',
+                                 'gb',
                                  'id', 'ie', 'if']
 
 allowed_transition_attempts = ['ab', 'ad',

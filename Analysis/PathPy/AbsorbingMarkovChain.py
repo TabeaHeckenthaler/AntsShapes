@@ -1,7 +1,7 @@
 # Given Absorbing Markov Chain find Absorbing Probabilities
 # From Wikipedia: https://en.wikipedia.org/wiki/Absorbing_Markov_chain
 # Taken from  https://github.com/mkutny/absorbing-markov-chains/blob/master/amc.py
-# AMC is represented in a form:
+# fundamental matrix is represented in a form:
 # [Q R]
 # [O I]
 # where Q - t-by-t matrix of probabilities of transition between transient states,
@@ -20,6 +20,9 @@ import numpy as np
 
 
 def num_of_transients(m):
+    """
+    Number of states, that are not absorbing
+    """
     if len(m) == 0:
         raise Exception("Can't get transient states of empty matrix")
 
@@ -32,7 +35,7 @@ def num_of_transients(m):
             # has just finished looping over an empty row (i.e. w/o `break`)
             return r
     # reached end of table and didn't encounter all-zero row - no absorbing states
-    raise Exception("Not a valid AMC matrix: no absorbing (terminal) states")
+    raise Exception("Not a valid fundamental matrix: no absorbing (terminal) states")
 
 
 # decompose input matrix `m` on Q (t-by-t) and R (t-by-r) components
@@ -112,8 +115,10 @@ def swap(m, i, j):
     return n
 
 
-# reorganize matrix so zero-rows go last (preserving zero rows order)
 def sort(m):
+    """
+    reorganize matrix so zero-rows go last (preserving zero rows order)
+    """
     size = len(m)
 
     zero_row = -1
