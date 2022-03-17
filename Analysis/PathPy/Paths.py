@@ -6,10 +6,14 @@ from Directories import network_dir
 import json
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.exp_types import exp_types
+import numpy as np
+
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
-                     geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'), number: int = None) \
+                     geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                     number: int = None) \
         -> list:
     """
     Get trajectories based on the trajectories saved in myDataFrame.
@@ -36,6 +40,8 @@ def get_trajectories(solver='human', size='Large', shape='SPT',
 class Paths(pp.Paths):
     def __init__(self, solver, size, shape, geometry):
         super().__init__()
+        if 'Small' in size:
+            size = 'Small'
         self.solver = solver
         self.shape = shape
         self.size = size
@@ -52,6 +58,9 @@ class Paths(pp.Paths):
         if os.path.exists(self.save_dir()):
             with open(self.save_dir(), 'r') as json_file:
                 saved_paths = json.load(json_file)
+            for p in saved_paths:
+                if np.sum(np.array(p) == final_state) > 1:
+                    DEBUG = 1
             [self.add_path(p) for p in saved_paths]
         else:
             calculated_paths = self.calculate_paths()
@@ -60,10 +69,10 @@ class Paths(pp.Paths):
             self.save_paths()
 
     def calculate_paths(self):
-        conf_space_labeled = ConfigSpace_Labeled(self.solver, self.size, shape, self.geometry)
+        conf_space_labeled = ConfigSpace_Labeled(self.solver, self.size, self.shape, self.geometry)
         conf_space_labeled.load_labeled_space()
-        trajectories = get_trajectories(solver=solver, size=size, shape=shape, geometry=geometry)
-        list_of_states = [States(conf_space_labeled, x, step=int(x.fps)) for x in trajectories]
+        trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
+        list_of_states = [States(conf_space_labeled, x, step=int(x.fps * 0.3)) for x in trajectories]
         return [s.combine_transitions(s.state_series) for s in list_of_states]
 
     def to_list(self):
@@ -81,4 +90,12 @@ class Paths(pp.Paths):
         json_string = self.to_list()
         with open(self.save_dir(), 'w') as json_file:
             json.dump(json_string, json_file)
-        print('Saved paths in ', )
+        print('Saved paths in ', self.save_dir())
+
+
+if __name__ == '__main__':
+    solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+
+    for size in exp_types[shape][solver]:
+        paths = Paths(solver, size, shape, geometry)
+        paths.load_paths()

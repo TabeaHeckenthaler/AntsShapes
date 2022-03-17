@@ -18,6 +18,7 @@ allowed_transition_attempts = ['ab', 'ad',
                                'gf', 'ge', 'gj',
                                'ij',
                                'jg', 'ji']
+final_state = 'j'
 
 
 class States:
@@ -36,10 +37,6 @@ class States:
         self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
         self.interpolate_zeros()
         self.state_series = self.calculate_state_series()
-        if len(self.forbidden_attempts()) > 0:
-            print('forbidden_attempts:', self.forbidden_attempts(), 'in', x.filename)
-
-            # print('You might want to decrease your step size, because you might be skipping state transitions.')
 
     @staticmethod
     def combine_transitions(labels) -> list:
@@ -116,18 +113,6 @@ class States:
             if l == '0':
                 self.time_series[i] = self.time_series[i - 1]
 
-    def forbidden_attempts(self) -> list:
-        """
-        Check whether the permitted transitions are all allowed
-        :return: boolean, whether all transitions are allowed
-        """
-        allowed = {el[0]: [] for el in allowed_transition_attempts}
-        [allowed[origin].append(goal) for [origin, goal] in allowed_transition_attempts]
-        # TODO
-        # return [str(l0) + ' to ' + str(l1) for l0, l1 in zip(self.time_series, self.time_series[1:])
-        #         if l1 not in allowed[l0]]
-        return []
-
     def calculate_state_series(self):
         """
         Reduces time series to series of states. No self loops anymore.
@@ -136,5 +121,10 @@ class States:
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
         labels = self.combine_transitions(labels)
         labels = self.add_missing_transitions(labels)
+        labels = self.cut_of_after_final_state(labels)
         return labels
 
+    @staticmethod
+    def cut_of_after_final_state(labels):
+        first_time_in_final_state = np.where(np.array(labels) == final_state)[0][-1]
+        return labels[:first_time_in_final_state+1]
