@@ -990,5 +990,6 @@ if __name__ == '__main__':
     # ps.save_space()
     reduction = 2
     ps.visualize_states(reduction=reduction)
+    ps.visualize_transitions(reduction=reduction)
 
     DEBUG = 1
