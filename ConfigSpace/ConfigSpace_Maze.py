@@ -239,8 +239,7 @@ class ConfigSpace_Maze(ConfigSpace):
             # first check the bounding box
             maze_bb.set_configuration([x, y], float(theta))
             if possible_configuration(load_bb, maze_corners, former_found)[0]:
-                self.space[indices], former_found = possible_configuration(load_bb, maze_corners, former_found)
-
+                self.space[indices], former_found = True, (0, 0)
             else:
                 maze.set_configuration([x, y], float(theta))
                 self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
@@ -557,7 +556,6 @@ class ConfigSpace_Maze(ConfigSpace):
             # return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=bool)
 
         struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
-
         space1 = erode_space(space, struct)
 
         slice = int(space.shape[-1] / 2)
@@ -566,7 +564,7 @@ class ConfigSpace_Maze(ConfigSpace):
 
         return np.logical_or(space1, space2)  # have to check, if its really a logical or...
 
-    def split_connected_components(self, space: np.array, cc_to_keep=10) -> (list, list):
+    def split_connected_components(self, space: np.array) -> (list, list):
         """
         from self find connected components
         Take into account periodicity
@@ -579,35 +577,35 @@ class ConfigSpace_Maze(ConfigSpace):
         centroids = np.empty((0, 3))
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
+        voxel_counts = [stats['voxel_counts'][label] for label in range(stats['voxel_counts'].shape[0])]
+        cc_to_keep = 10
 
-        cc_to_keep = np.min(len(np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])), cc_to_keep)
-        if cc_to_keep != 10:
-            print('You seem to have to little cc...')
+        max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
+        min_cc_size = np.sort(voxel_counts)[-cc_to_keep] - 1
+        chosen_cc = np.where((max_cc_size > stats['voxel_counts']) & (stats['voxel_counts'] > min_cc_size))[0]
+        assert chosen_cc.shape[0] == 10, 'something is off'
 
-        minimum = max(2000, np.sort([stats['voxel_counts'][label] for label in range(1, number_cc)])[-cc_to_keep] - 1)
+        for label in chosen_cc:
+            ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
 
-        for label in range(1, number_cc):
-            if stats['voxel_counts'][label] > minimum:
-                ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
+            # if this is part of a another ps that is split by 0 or 2pi
+            centroid = np.array(self.indices_to_coords(*np.floor(stats['centroids'][label])))
 
-                # if this is part of a another ps that is split by 0 or 2pi
-                centroid = np.array(self.indices_to_coords(*np.floor(stats['centroids'][label])))
+            border_bottom = np.any(ps.space[:, :, 0])
+            border_top = np.any(ps.space[:, :, -1])
 
-                border_bottom = np.any(ps.space[:, :, 0])
-                border_top = np.any(ps.space[:, :, -1])
+            if (border_bottom and not border_top) or (border_top and not border_bottom):
+                index = np.where(np.abs(centroid[0] - centroids[:, 0]) < 0.1)[0]
+                if len(index) > 0:
+                    ps_states[index[0]].space = np.logical_or(ps_states[index[0]].space, ps.space)
+                    centroids[index[0]][-1] = 0
 
-                if (border_bottom and not border_top) or (border_top and not border_bottom):
-                    index = np.where(np.abs(centroid[0] - centroids[:, 0]) < 0.1)[0]
-                    if len(index) > 0:
-                        ps_states[index[0]].space = np.logical_or(ps_states[index[0]].space, ps.space)
-                        centroids[index[0]][-1] = 0
-
-                    else:
-                        ps_states.append(ps)
-                        centroids = np.vstack([centroids, centroid])
                 else:
                     ps_states.append(ps)
                     centroids = np.vstack([centroids, centroid])
+            else:
+                ps_states.append(ps)
+                centroids = np.vstack([centroids, centroid])
         return ps_states, centroids
 
 
@@ -730,7 +728,7 @@ class Node:
         return state_order
 
 
-class PhaseSpace_Labeled(ConfigSpace_Maze):
+class ConfigSpace_Labeled(ConfigSpace_Maze):
     """
     This class stores configuration space for a piano_movers problem in a 3 dim array.
     Axis 0 = x direction
@@ -851,7 +849,7 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw states')
-        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/resolution
+        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/reduction
 
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
             # ps_state.extent = self.extent # This was only because I had made a mistake
@@ -871,6 +869,9 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         else:
             self.fig = fig
 
+        if self.space_labeled is None:
+            self.load_labeled_space()
+
         print('Draw transitions')
         scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/reduction
         transitions = [trans for trans in np.unique(self.space_labeled) if len(trans) > 1]
@@ -879,7 +880,6 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
             centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
             self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
             mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=scale)
-        DEBUG = 1
 
     def save_labeled(self, directory=None, date_string='') -> None:
         """
@@ -910,7 +910,10 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
         we use this function.
         :return:
         """
-        return self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
+        default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
+        if self.size == 'Small Far' and self.solver == 'human':
+            return default + 4
+        return default
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
     def max_distance_for_transition(self):
@@ -976,15 +979,16 @@ class PhaseSpace_Labeled(ConfigSpace_Maze):
 
 if __name__ == '__main__':
     shape = 'SPT'
-    size = 'Large'
+    size = 'Small Far'
     solver = 'human'
 
-    ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape,
-                          geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape,
+                             geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
     # ps.calculate_space()
     # ps.calculate_boundary()
     #
     # ps.save_space()
-    ps.visualize_space()
+    reduction = 2
+    ps.visualize_states(reduction=reduction)
 
     DEBUG = 1

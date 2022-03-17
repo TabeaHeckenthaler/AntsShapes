@@ -10,9 +10,9 @@ from Analysis.PathPy.AbsorbingMarkovChain import *
 from Analysis.GeneralFunctions import graph_dir
 import os
 from copy import copy
-import itertools
 import json
 from Analysis.States import states, forbidden_transition_attempts, allowed_transition_attempts
+import pandas as pd
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
@@ -47,18 +47,18 @@ colors = {0: 'black', 1: 'red', 2: 'blue'}
 class Network(pp.Network):
     def __init__(self, solver, size, shape, possible_transitions: list = None):
         super().__init__(directed=True)
-        self.state_order = possible_transitions
         self.name = '_'.join(['network', solver, size, shape])
         self.paths = pp.Paths()
+        self.T = None
         self.N = None
         self.Q = None
         self.t = None
         self.R = None
         self.P = None
         self.B = None
-        if possible_transitions is not None:
-            for state1, state2 in itertools.product(possible_transitions, possible_transitions):
-                self.add_edge(state1, state2, weight=0)
+        # if possible_transitions is not None:
+        #     for state1, state2 in itertools.product(possible_transitions, possible_transitions):
+        #         self.add_edge(state1, state2, weight=0)
 
     def to_dict(self) -> dict:
         if self.N is None:
@@ -68,8 +68,8 @@ class Network(pp.Network):
         if self.B is None:
             self.calc_absorption_probabilities()
 
-        return {'N': self.N.tolist(), 'Q': self.Q.tolist(), 't': self.t.tolist(), 'R': self.R.tolist(),
-                'P': self.P.tolist(), 'B': self.B.tolist(), 'state_order': self.state_order}
+        return {'T': self.T.tolist(), 'N': self.N.tolist(), 'Q': self.Q.tolist(), 't': self.t.tolist(),
+                'R': self.R.tolist(), 'P': self.P.tolist(), 'B': self.B.tolist(), 'state_order': list(self.nodes.keys())}
 
     def create_paths(self):
         raise ValueError('You still have to program this!')
@@ -101,26 +101,25 @@ class Network(pp.Network):
     def save_dir_results(self):
         return os.path.join(network_dir, 'MarkovianNetworks', self.name + '.txt')
 
-    def save_results(self):
-        dictionary = self.to_dict()
+    def save_results(self, results):
         with open(self.save_dir_results(), 'w') as json_file:
-            json.dump(dictionary, json_file)
+            json.dump(results, json_file)
             print('Saved Markovian results in ', self.save_dir_results())
 
     def get_results(self):
         if os.path.exists(self.save_dir_results()):
             with open(self.save_dir_results(), 'r') as json_file:
                 attribute_dict = json.load(json_file)
-            self.N = np.array(attribute_dict['N'])
-            self.Q = np.array(attribute_dict['Q'])
-            self.t = np.array(attribute_dict['t'])
-            self.R = np.array(attribute_dict['R'])
-            self.P = np.array(attribute_dict['P'])
-            self.B = np.array(attribute_dict['B'])
-            self.state_order = attribute_dict['state_order']
+            self.N = pd.DataFrame(attribute_dict['N'])
+            self.Q = pd.DataFrame(attribute_dict['Q'])
+            self.t = pd.DataFrame(attribute_dict['t'])
+            self.R = pd.DataFrame(attribute_dict['R'])
+            self.P = pd.DataFrame(attribute_dict['P'])
+            self.B = pd.DataFrame(attribute_dict['B'])
         else:
             self.get_paths()
-            self.save_results()
+            results = self.to_dict()
+            self.save_results(results)
 
     def add_paths(self, transitions: list) -> None:
         [self.paths.add_path(transition) for transition in transitions]
@@ -177,26 +176,27 @@ class Network(pp.Network):
             g.add_edge(e[0], e[1], weight=self.edges[e]['weight'])
         return g
 
-    def plot_transition_matrix(self, T: np.array = None, title: str = '', axis=None):
-        if T is None:
-            T = self.transition_matrix().toarray()
+    def plot_transition_matrix(self, title: str = '', axis=None):
+        if self.T is None:
+            self.T = self.transition_matrix().toarray()
         if axis is None:
             fig, axis = plt.subplots(1, 1)
-        _ = axis.imshow(T)
-        axis.set_xticks(range(len(self.state_order)))
-        axis.set_yticks(range(len(self.state_order)))
-        axis.set_xticklabels(self.state_order)
-        axis.set_yticklabels(self.state_order)
+        _ = axis.imshow(self.T)
+        axis.set_xticks(range(len(self.nodes.keys())))
+        axis.set_yticks(range(len(self.nodes.keys())))
+        axis.set_xticklabels(self.nodes.keys())
+        axis.set_yticklabels(self.nodes.keys())
         directory = graph_dir() + os.path.sep + 'T_' + self.name + '.pdf'
         print('Saving transition matrix in ', directory)
         plt.gcf().savefig(directory)
         plt.title(title)
 
-    def remove_unvisited_states(self, T):
-        full = np.logical_or(~np.all(T == 0, axis=1), ~np.all(T == 0, axis=0))
-        self.state_order = np.array(self.state_order)[full].tolist()
-        T_reduced = T[full][:, full]
-        return T_reduced
+    @staticmethod
+    def swap(m, r, zero_row):
+        columns = list(m.columns.copy())
+        columns[zero_row], columns[r] = columns[r], columns[zero_row]
+
+        return m.reindex(index=columns, columns=columns)
 
     def sort(self, m):
         """
@@ -208,32 +208,32 @@ class Network(pp.Network):
         for r in range(size):
             sum = 0
             for c in range(size):
-                sum += m[r][c]
+                sum += m.iloc[r, c]
             if sum == 0:
                 # we have found all-zero row, remember it
                 zero_row = r
             if sum != 0 and zero_row > -1:
                 # we have found non-zero row after all-zero row - swap these rows
-                raise ValueError('sort state_order')
-                self.state_order = self.state_order
-                n = swap(m, r, zero_row)
+                n = self.swap(m, r, zero_row)
                 # and repeat from the beginning
-                return sort(n)
+                return self.sort(n)
         # nothing to sort, return
         return m
 
     def calc_fundamental_matrix(self):
-        T = self.transition_matrix().toarray()
-        T = self.remove_unvisited_states(T)
-        m = self.sort(transposeMatrix(T))
-        norm = normalize(m)
-        number_of_transient_states = num_of_transients(m)
-        self.Q, self.R = decompose(m)
+        self.T = pd.DataFrame(self.transition_matrix().toarray(),
+                              columns=list(self.node_to_name_map()),
+                              index=list(self.node_to_name_map()))
+        sorted = self.sort(self.T.transpose())
+        self.T = pd.DataFrame(normalize(sorted.to_numpy()),
+                              columns=sorted.columns, index=sorted.columns)
+        number_of_transient_states = num_of_transients(self.T)
+
+        self.Q, self.R = decompose(self.T)
         absorbing_states = 1
         self.P = np.vstack([np.hstack([identity(absorbing_states),
                                        np.zeros([absorbing_states, number_of_transient_states])]),
-                            np.hstack([self.R,
-                                       self.Q])])
+                            np.hstack([self.R, self.Q])])
         # canonical form of transition matrix
         # P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
         # print(P_inf)
@@ -292,7 +292,7 @@ if __name__ == '__main__':
         state_order = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
         my_network = Network(solver, size, shape, possible_transitions=state_order)
         my_network.get_results()
+        my_network.plot_transition_matrix()
         DEBUG = 1
 
         # my_network.plot_network()
-        # my_network.plot_transition_matrix()

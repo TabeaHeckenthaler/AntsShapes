@@ -18,7 +18,7 @@ if __name__ == '__main__':
                 states_series = json.load(f)
                 DEBUG = 1
         else:
-            conf_space_labeled = ConfigSpace_Maze.PhaseSpace_Labeled(solver, size, shape, geometry)
+            conf_space_labeled = ConfigSpace_Maze.ConfigSpace_Labeled(solver, size, shape, geometry)
             conf_space_labeled.load_eroded_labeled_space()
             # conf_space_labeled.visualize_states(reduction=5)
             conf_space_labeled.visualize_transitions(reduction=2)

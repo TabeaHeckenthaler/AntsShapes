@@ -17,6 +17,7 @@
 # assume absorbing states follow transient states w/o interlieveing
 from fractions import Fraction
 import numpy as np
+import pandas as pd
 
 
 def num_of_transients(m):
@@ -27,8 +28,8 @@ def num_of_transients(m):
         raise Exception("Can't get transient states of empty matrix")
 
     for r in range(len(m)):
-        for c in range(len(m[r])):
-            if m[r][c] != 0:
+        for c in range(len(m.iloc[r])):
+            if m.iloc[r, c] != 0:
                 # this is not an all-zero row, try next one
                 break
         else:
@@ -49,7 +50,7 @@ def decompose(m):
     for r in range(t):
         qRow = []
         for c in range(t):
-            qRow.append(m[r][c])
+            qRow.append(m.iloc[r, c])
         Q.append(qRow)
     if Q == []:
         raise Exception("Not a valid AMC matrix: no transient states")
@@ -57,12 +58,12 @@ def decompose(m):
     R = []
     for r in range(t):
         rRow = []
-        for c in range(t, len(m[r])):
-            rRow.append(m[r][c])
+        for c in range(t, len(m.iloc[r])):
+            rRow.append(m.iloc[r, c])
         R.append(rRow)
     if R == []:
         raise Exception("Not a valid AMC matrix: missing absorbing states")
-    return np.array(Q), np.array(R)
+    return pd.DataFrame(Q, columns=None, index=None), pd.DataFrame(R, columns=None, index=None)
 
 
 # return Identity matrix of size `t`
@@ -160,7 +161,7 @@ def normalize(m, use_fractions=False):
                 else:
                     nRow.append(float(m[r][c]) / sum)
         n.append(nRow)
-    return n
+    return np.array(n)
 
 
 # subtract two matrices
