@@ -1,7 +1,6 @@
 from itertools import groupby
 import numpy as np
 
-
 states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
 
 forbidden_transition_attempts = ['be', 'bf', 'bg',
@@ -132,3 +131,4 @@ class States:
         labels = self.combine_transitions(labels)
         labels = self.add_missing_transitions(labels)
         return labels
+
