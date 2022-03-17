@@ -168,11 +168,16 @@ class Network(pp.Network):
         self.T = pd.DataFrame(normalize(sorted_transition_matrix.to_numpy()),
                               columns=sorted_transition_matrix.columns,
                               index=sorted_transition_matrix.columns)
+
         number_of_transient_states = num_of_transients(self.T)
         number_of_absorbing_states = self.T.shape[0] - number_of_transient_states
         transient_state_order = sorted_transition_matrix.columns[:number_of_transient_states]
 
         self.Q, self.R = decompose(self.T)
+        self.R.set_index(transient_state_order, inplace=True)
+        self.Q.set_index(transient_state_order, inplace=True)
+        self.Q.set_axis(transient_state_order, inplace=True, axis=1)
+
         self.P = pd.DataFrame(np.vstack([np.hstack([identity(number_of_absorbing_states),
                                          np.zeros([number_of_absorbing_states, number_of_transient_states])]),
                               np.hstack([self.R, self.Q])]),
@@ -181,7 +186,9 @@ class Network(pp.Network):
         self.N = pd.DataFrame(np.linalg.inv(identity(self.Q.shape[-1]) - self.Q),
                               columns=transient_state_order,
                               index=transient_state_order)  # fundamental matrix
-        self.B = pd.DataFrame(np.matmul(self.N, self.R))  # absorption probabilities
+        self.B = pd.DataFrame(np.matmul(self.N.to_numpy(), self.R.to_numpy()),
+                              index=transient_state_order,
+                              columns=self.T.index[-number_of_absorbing_states:])  # absorption probabilities
         self.t = pd.DataFrame(np.matmul(self.N, np.ones(self.N.shape[0])), index=transient_state_order)
 
     def check_P(self):

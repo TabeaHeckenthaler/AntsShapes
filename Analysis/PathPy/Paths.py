@@ -10,7 +10,6 @@ from trajectory_inheritance.exp_types import exp_types
 import numpy as np
 
 
-
 def get_trajectories(solver='human', size='Large', shape='SPT',
                      geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
                      number: int = None) \
@@ -24,8 +23,12 @@ def get_trajectories(solver='human', size='Large', shape='SPT',
     :param shape: str
     :return: list of objects, that are of the class or subclass Trajectory
     """
+    if size == 'Small':
+        sizes = ['Small Far', 'Small Near']
+    else:
+        sizes = [size]
     df = myDataFrame[
-        (myDataFrame['size'] == size) &
+        (myDataFrame['size'].isin(sizes)) &
         (myDataFrame['shape'] == shape) &
         (myDataFrame['solver'] == solver) &
         (myDataFrame['initial condition'] == 'back') &
@@ -58,9 +61,6 @@ class Paths(pp.Paths):
         if os.path.exists(self.save_dir()):
             with open(self.save_dir(), 'r') as json_file:
                 saved_paths = json.load(json_file)
-            for p in saved_paths:
-                if np.sum(np.array(p) == final_state) > 1:
-                    DEBUG = 1
             [self.add_path(p) for p in saved_paths]
         else:
             calculated_paths = self.calculate_paths()
@@ -69,7 +69,11 @@ class Paths(pp.Paths):
             self.save_paths()
 
     def calculate_paths(self):
-        conf_space_labeled = ConfigSpace_Labeled(self.solver, self.size, self.shape, self.geometry)
+        if self.size == 'Small':
+            size = 'Small Far'
+        else:
+            size = 'Small'
+        conf_space_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
         conf_space_labeled.load_labeled_space()
         trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
         list_of_states = [States(conf_space_labeled, x, step=int(x.fps * 0.3)) for x in trajectories]

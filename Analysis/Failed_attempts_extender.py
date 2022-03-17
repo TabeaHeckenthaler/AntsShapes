@@ -1,5 +1,5 @@
 import numpy as np
-from Analysis.PathPy.network_functions import Network
+from Analysis.PathPy.Network import Network
 from DataFrame.dataFrame import myDataFrame
 
 

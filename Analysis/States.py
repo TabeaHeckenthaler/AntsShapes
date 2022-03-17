@@ -126,5 +126,8 @@ class States:
 
     @staticmethod
     def cut_of_after_final_state(labels):
-        first_time_in_final_state = np.where(np.array(labels) == final_state)[0][-1]
-        return labels[:first_time_in_final_state+1]
+        first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
+        if len(first_time_in_final_state) > 1:
+            return labels[:first_time_in_final_state[0]+1]
+        else:
+            return labels
