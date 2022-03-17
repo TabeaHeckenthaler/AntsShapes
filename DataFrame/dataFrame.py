@@ -24,7 +24,7 @@ def get_filenames(solver, size='', shape='', free=False):
                 if size in filename and shape in filename]
 
 
-columns = pd.Index(['filename', 'solver', 'size', 'maze size', 'shape', 'winner',
+columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
                     'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
@@ -173,8 +173,9 @@ tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
-    # myDataFrame.drop(columns='minimal path length [length unit]')
-    myDataFrame.add_column()
+    # myDataFrame.drop(columns='maze size', inplace=True)
+    # myDataFrame.save()
+    # myDataFrame.add_column()
     DEBUG = 1
 
     # TODO: add new contacts to contacts json file
