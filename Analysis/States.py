@@ -70,15 +70,21 @@ class States:
             elif len(state1) == len(state2) == 2:
                 raise ValueError('What happened1?')
 
-            elif ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
-                t1 = state1[1]
-                t2 = ''.join(sorted(state1[1] + state2))
+            elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
+                t2 = ''.join(sorted(state1 + state2[0]))
+                t1 = state2[0]
                 labels_copy.insert(ii + i, t1)
                 labels_copy.insert(ii + i + 1, t2)
                 i += 2
             elif ''.join(sorted(state1[0] + state2)) in allowed_transition_attempts:
                 t1 = state1[0]
                 t2 = ''.join(sorted(state1[0] + state2))
+                labels_copy.insert(ii + i, t1)
+                labels_copy.insert(ii + i + 1, t2)
+                i += 2
+            elif ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
+                t1 = state1[1]
+                t2 = ''.join(sorted(state1[1] + state2))
                 labels_copy.insert(ii + i, t1)
                 labels_copy.insert(ii + i + 1, t2)
                 i += 2

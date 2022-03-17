@@ -911,7 +911,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         :return:
         """
         default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
-        if self.size == 'Small Far' and self.solver == 'human':
+        if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
             return default + 4
         return default
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
