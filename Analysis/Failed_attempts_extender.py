@@ -37,7 +37,7 @@ if __name__ == '__main__':
     exp = myDataFrame.loc[myDataFrame.filename == filename].squeeze()
 
     my_failed_attempt = FailedAttempt(exp.filename, exp.path_length, exp.time, exp.final_state)
-    my_network = Network(exp.solver, exp.size, exp.shape)
+    my_network = Network(exp.solver, exp.size, exp.shape, None)
     my_network.get_results()
 
     extender = FailedAttemptPathLengthExtender(my_failed_attempt, my_network.t)

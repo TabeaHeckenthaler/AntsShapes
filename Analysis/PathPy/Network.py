@@ -11,13 +11,14 @@ from Analysis.GeneralFunctions import graph_dir
 from Analysis.States import states, forbidden_transition_attempts, allowed_transition_attempts
 from Analysis.PathPy.AbsorbingMarkovChain import *
 from Analysis.PathPy.Paths import Paths
+from typing import Union
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
 colors = {0: 'black', 1: 'red', 2: 'blue'}
 
 
 class Network(pp.Network):
-    def __init__(self, solver: str, size: str, shape: str, paths: Paths):
+    def __init__(self, solver: str, size: str, shape: str, paths: Union[Paths, None]):
         super().__init__(directed=True)
         if 'Small' in size:
             size = 'Small'
@@ -31,6 +32,7 @@ class Network(pp.Network):
         self.R = None
         self.P = None  # canonical form of transition matrix
         self.B = None
+
         # if possible_transitions is not None:
         #     for state1, state2 in itertools.product(possible_transitions, possible_transitions):
         #         self.add_edge(state1, state2, weight=0)
@@ -190,11 +192,6 @@ class Network(pp.Network):
                               index=transient_state_order,
                               columns=self.T.index[-number_of_absorbing_states:])  # absorption probabilities
         self.t = pd.DataFrame(np.matmul(self.N, np.ones(self.N.shape[0])), index=transient_state_order)
-
-    def check_P(self):
-        # P_inf = np.linalg.matrix_power(self.P, 100)  # check whether P_inf is indeed np.array([[I, 0], [B, 0]])
-        # print(P_inf)
-        pass
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)

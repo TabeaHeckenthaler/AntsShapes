@@ -32,7 +32,7 @@ class States:
         :param x: trajectory
         :return: list of strings with labels
         """
-        self.time_step = step/x.fps
+        self.time_step = step/x.fps  # in seconds
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=step)]
         self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
         self.interpolate_zeros()
@@ -46,6 +46,7 @@ class States:
         labels = [''.join(sorted(state)) for state in labels]
         mask = [True] + [sorted(state1) != sorted(state2) for state1, state2 in zip(labels, labels[1:])]
         return np.array(labels)[mask].tolist()
+
 
     @staticmethod
     def add_missing_transitions(labels) -> list:
@@ -131,3 +132,7 @@ class States:
             return labels[:first_time_in_final_state[0]+1]
         else:
             return labels
+
+    def time_stamped_series(self) -> list:
+        groups = groupby(self.time_series)
+        return [(label, sum(1 for _ in group) * self.time_step) for label, group in groups]

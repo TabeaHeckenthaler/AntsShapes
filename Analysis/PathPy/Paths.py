@@ -8,6 +8,7 @@ from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
 from trajectory_inheritance.exp_types import exp_types
 import numpy as np
+from itertools import groupby
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
@@ -72,7 +73,7 @@ class Paths(pp.Paths):
         if self.size == 'Small':
             size = 'Small Far'
         else:
-            size = 'Small'
+            size = self.size
         conf_space_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
         conf_space_labeled.load_labeled_space()
         trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
@@ -97,9 +98,42 @@ class Paths(pp.Paths):
         print('Saved paths in ', self.save_dir())
 
 
+class PathsTimeStamped(Paths):
+    def __init__(self, solver, size, shape, geometry):
+        super().__init__(solver, size, shape, geometry)
+        self.time_stamped_series = None
+
+    def calculate_timestamped(self):
+        if self.size == 'Small':
+            size = 'Small Far'
+        else:
+            size = self.size
+        delta_t = 0.25  # in seconds
+        conf_space_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
+        conf_space_labeled.load_labeled_space()
+        trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
+        list_of_states = [States(conf_space_labeled, x, step=int(x.fps * delta_t)) for x in trajectories]
+        self.time_stamped_series = [s.time_stamped_series() for s in list_of_states]
+
+    def save_dir(self):
+        name = '_'.join(['network', self.solver, self.size, self.shape])
+        return os.path.join(network_dir, 'ExperimentalPaths', name + '_states_timestamped.txt')
+
+    def to_list(self):
+        return self.time_stamped_series
+
+    def load_paths(self):
+        if os.path.exists(self.save_dir()):
+            with open(self.save_dir(), 'r') as json_file:
+                self.time_stamped_series = json.load(json_file)
+        else:
+            self.calculate_timestamped()
+            self.save_paths()
+
+
 if __name__ == '__main__':
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
 
     for size in exp_types[shape][solver]:
-        paths = Paths(solver, size, shape, geometry)
+        paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
