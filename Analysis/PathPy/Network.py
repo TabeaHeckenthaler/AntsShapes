@@ -10,7 +10,7 @@ import json
 from Analysis.GeneralFunctions import graph_dir
 from Analysis.PathPy.Path import states, forbidden_transition_attempts, allowed_transition_attempts
 from Analysis.PathPy.AbsorbingMarkovChain import *
-from Analysis.PathPy.Paths import Paths
+from Analysis.PathPy.Paths import Paths, PathsTimeStamped
 from typing import Union
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
@@ -216,6 +216,12 @@ class Network(pp.Network):
     #     # estimate the order of the sequence (something like memory)
     #     ms = pp.MarkovSequence(self.paths.sequence())
     #     order = ms.estimate_order(4)
+
+#
+# class SelfLoopingNetwork(Network):
+#     def __init__(self, solver: str, size: str, shape: str, paths: Union[Paths, None]):
+#         super().__init__(solver, size, shape, paths)
+#
 
 
 if __name__ == '__main__':

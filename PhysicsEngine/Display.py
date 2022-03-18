@@ -37,6 +37,7 @@ class Display:
         self.wait = wait
         self.i = i
         self.path = path
+        path.frame_step = int(self.fps * path.time_step)
 
         if config is not None:
             my_maze.set_configuration(config[0], config[1])

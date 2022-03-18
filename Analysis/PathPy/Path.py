@@ -26,18 +26,27 @@ class Path:
     States is a class which represents the transitions of states of a trajectory. States are defined by eroding the CS,
     and then finding connected components.
     """
-    def __init__(self, conf_space_labeled, x, step: int = 0.5):
+    def __init__(self, time_step: float, time_series=None, x=None, conf_space_labeled=None):
         """
         :param step: after how many frames I add a label to my label list
         :param x: trajectory
         :return: list of strings with labels
         """
-        self.time_step = step/x.fps  # in seconds
-        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=step)]
-        self.time_series = self.get_time_series(conf_space_labeled, indices)
+        self.time_step = time_step
+
+        if x is not None:
+            self.frame_step = int(self.time_step * x.fps)  # in seconds
+        else:
+            self.frame_step = None
+
+        self.time_series = time_series
+        if self.frame_step is not None and self.time_series is None and x is not None:
+            self.time_series = self.get_time_series(conf_space_labeled, x)
+
         self.state_series = self.calculate_state_series()
 
-    def get_time_series(self, conf_space_labeled, indices):
+    def get_time_series(self, conf_space_labeled, x):
+        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [conf_space_labeled.space_labeled[index] for index in indices]
         labels = self.interpolate_zeros(labels)
         labels = self.add_missing_transitions(labels)

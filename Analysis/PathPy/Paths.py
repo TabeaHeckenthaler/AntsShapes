@@ -50,25 +50,22 @@ class Paths(pp.Paths):
         self.geometry = geometry
         self.time_step = time_step
         self.time_series = None
+        self.single_paths = None
 
     def save_dir(self):
-        name = '_'.join(['network', self.solver, self.size, self.shape])
+        name = '_'.join(['paths', self.solver, self.size, self.shape])
         return os.path.join(network_dir, 'ExperimentalPaths', name + '_transitions.txt')
-
-    def add_paths(self, transitions: list) -> None:
-        [self.add_path(transition) for transition in transitions]
 
     def load_paths(self):
         if os.path.exists(self.save_dir()):
             with open(self.save_dir(), 'r') as json_file:
-                saved_paths = json.load(json_file)
-            [self.add_path(p) for p in saved_paths]
-        else:
-            if self.time_series is None:
-                self.calculate_time_series()
-            for p in self.time_series:
-                self.add_path(p)
+                self.time_series = json.load(json_file)
+                self.single_paths = {name: Path(self.time_step, time_s) for name, time_s in self.time_series.items()}
+
+        elif self.time_series is None:
+            self.calculate_time_series()
             self.save_paths()
+        [self.add_path(p, expand_subpaths=False) for p in self.time_series.values()]
 
     def calculate_time_series(self):
         if self.size == 'Small':
@@ -78,22 +75,12 @@ class Paths(pp.Paths):
         cs_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
         cs_labeled.load_labeled_space()
         trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
-        self.paths = {x.filename: Path(cs_labeled, x, step=int(x.fps * self.time_step)) for x in trajectories}
-        self.time_series = {name: path.time_series for name, path in self.paths.items()}
-
-    def to_list(self):
-        lister = []
-        for p_length in self.paths:
-            for p in self.paths[p_length]:
-                segment = []
-                for s in p:
-                    segment.append(s)
-                for _ in range(int(self.paths[p_length][p][1])):
-                    lister += [list(segment)]
-        return lister
+        self.single_paths = {x.filename: Path(self.time_step, conf_space_labeled=cs_labeled, x=x)
+                             for x in trajectories}
+        self.time_series = {name: path.time_series for name, path in self.single_paths.items()}
 
     def save_paths(self):
-        json_string = self.to_list()
+        json_string = self.time_series
         with open(self.save_dir(), 'w') as json_file:
             json.dump(json_string, json_file)
         print('Saved paths in ', self.save_dir())
@@ -108,34 +95,37 @@ class PathsTimeStamped(Paths):
 
     def calculate_timestamped(self):
         if self.time_series is None:
-            self.calculate_time_series()
-        self.time_stamped_series = {name: path.time_stamped_series() for name, path in self.paths.items()}
+            self.load_paths()
+        self.time_stamped_series = {name: path.time_stamped_series() for name, path in self.single_paths.items()}
 
-    def save_dir(self):
-        name = '_'.join(['network', self.solver, self.size, self.shape])
+    def save_dir_timestamped(self):
+        name = '_'.join([self.solver, self.size, self.shape])
         return os.path.join(network_dir, 'ExperimentalPaths', name + '_states_timestamped.txt')
 
-    def to_list(self):
-        return self.time_stamped_series
+    def save_timestamped_paths(self):
+        json_string = self.time_stamped_series
+        with open(self.save_dir_timestamped(), 'w') as json_file:
+            json.dump(json_string, json_file)
+        print('Saved timestamped paths in ', self.save_dir_timestamped())
 
-    def load_paths(self):
-        if os.path.exists(self.save_dir()):
-            with open(self.save_dir(), 'r') as json_file:
+    def load_time_stamped_paths(self):
+        if os.path.exists(self.save_dir_timestamped()):
+            with open(self.save_dir_timestamped(), 'r') as json_file:
                 self.time_stamped_series = json.load(json_file)
         else:
             print('Calculating paths')
             self.calculate_timestamped()
+            self.save_timestamped_paths()
 
 
 if __name__ == '__main__':
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
 
-    for size in exp_types[shape][solver][-1:]:
+    for size in exp_types[shape][solver]:
         paths = PathsTimeStamped(solver, size, shape, geometry)
+        paths.load_time_stamped_paths()
         paths.load_paths()
 
-        filename = list(paths.paths.keys())[0]
+        filename = list(paths.time_series.keys())[0]
         x = get(filename)
-        x.play(path=paths.paths[filename], videowriter=True)
-        paths.save_paths()
-        # TODO
+        x.play(path=paths.single_paths[filename], videowriter=False)
