@@ -21,7 +21,7 @@ allowed_transition_attempts = ['ab', 'ad',
 final_state = 'j'
 
 
-class States:
+class Path:
     """
     States is a class which represents the transitions of states of a trajectory. States are defined by eroding the CS,
     and then finding connected components.
@@ -34,9 +34,22 @@ class States:
         """
         self.time_step = step/x.fps  # in seconds
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=step)]
-        self.time_series = [conf_space_labeled.space_labeled[index] for index in indices]
-        self.interpolate_zeros()
+        self.time_series = self.get_time_series(conf_space_labeled, indices)
         self.state_series = self.calculate_state_series()
+
+    def get_time_series(self, conf_space_labeled, indices):
+        labels = [conf_space_labeled.space_labeled[index] for index in indices]
+        labels = self.interpolate_zeros(labels)
+        labels = self.add_missing_transitions(labels)
+        return labels
+
+    @staticmethod
+    def cut_of_after_final_state(labels):
+        first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
+        if len(first_time_in_final_state) > 1:
+            return labels[:first_time_in_final_state[0]+1]
+        else:
+            return labels
 
     @staticmethod
     def combine_transitions(labels) -> list:
@@ -47,16 +60,19 @@ class States:
         mask = [True] + [sorted(state1) != sorted(state2) for state1, state2 in zip(labels, labels[1:])]
         return np.array(labels)[mask].tolist()
 
-
     @staticmethod
-    def add_missing_transitions(labels) -> list:
+    def valid_transition(state1, state2):
+        # state1 in state2 or state2 in state1 or
+        return len(set(state1) & set(state2)) > 0 or state1 == state2
+
+    def add_missing_transitions(self, labels) -> list:
         """
         I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
         """
         labels_copy = labels.copy()
         i = 1
         for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
-            if state1 in state2 or state2 in state1 or len(set(state1) & set(state2)) > 0:
+            if self.valid_transition(state1, state2):
                 pass
             elif len(state1) == len(state2) == 1:
                 transition = ''.join(sorted(state1 + state2))
@@ -90,6 +106,9 @@ class States:
                 raise ValueError('What happened2?')
         return labels_copy
 
+    def state_at_time(self, time: float) -> str:
+        return self.time_series[int(time/self.time_step)]
+
     @staticmethod
     def cut_at_end(time_series) -> list:
         """
@@ -102,17 +121,19 @@ class States:
         first_appearance = np.where(np.array(time_series) == 'j')[0][0]
         return time_series[:first_appearance+1]
 
-    def interpolate_zeros(self) -> None:
+    @staticmethod
+    def interpolate_zeros(labels: list) -> list:
         """
         Interpolate over all the states, that are not inside Configuration space (due to the computer representation of
         the maze not being exactly the same as the real maze)
         :return:
         """
-        if self.time_series[0] == '0':
-            self.time_series[0] = [l for l in self.time_series if l != '0'][:1000][0]
-        for i, l in enumerate(self.time_series):
+        if labels[0] == '0':
+            labels[0] = [l for l in labels if l != '0'][:1000][0]
+        for i, l in enumerate(labels):
             if l == '0':
-                self.time_series[i] = self.time_series[i - 1]
+                labels[i] = labels[i - 1]
+        return labels
 
     def calculate_state_series(self):
         """
@@ -121,17 +142,8 @@ class States:
         """
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
         labels = self.combine_transitions(labels)
-        labels = self.add_missing_transitions(labels)
         labels = self.cut_of_after_final_state(labels)
         return labels
-
-    @staticmethod
-    def cut_of_after_final_state(labels):
-        first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
-        if len(first_time_in_final_state) > 1:
-            return labels[:first_time_in_final_state[0]+1]
-        else:
-            return labels
 
     def time_stamped_series(self) -> list:
         groups = groupby(self.time_series)

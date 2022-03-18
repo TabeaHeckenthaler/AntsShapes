@@ -60,14 +60,14 @@ class Trajectory_gillespie(Trajectory):
 #            else:
 #                Point(start, end).draw(display)
 
-    def run_simulation(self, frameNumber, free=False, display=True):
-        maze = Maze(size=self.size, shape=self.shape, solver='sim', free=free)
+    def run_simulation(self, frameNumber, display=True):
+        maze = Maze(size=self.size, shape=self.shape, solver='sim')
         self.frames = np.linspace(1, frameNumber, frameNumber)
         self.position = np.array([[maze.arena_length / 4, maze.arena_height / 2]])
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         if display:
             from PhysicsEngine.Display import Display
-            self.run_trj(maze, display=Display(self.filename, maze))
+            self.run_trj(maze, display=Display(self.filename, self.fps, maze))
         else:
             self.run_trj(maze)
 

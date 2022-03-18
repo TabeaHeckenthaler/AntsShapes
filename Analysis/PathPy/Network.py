@@ -8,7 +8,7 @@ import os
 from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.States import states, forbidden_transition_attempts, allowed_transition_attempts
+from Analysis.PathPy.Path import states, forbidden_transition_attempts, allowed_transition_attempts
 from Analysis.PathPy.AbsorbingMarkovChain import *
 from Analysis.PathPy.Paths import Paths
 from typing import Union

@@ -263,4 +263,4 @@ class Trajectory_ant(Trajectory):
             my_maze = Maze(x)
         else:
             my_maze = Maze_free_space(x)
-        return x.run_trj(my_maze, display=Display(x.filename, my_maze, wait=wait, cs=cs, videowriter=videowriter))
+        return x.run_trj(my_maze, display=Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter))

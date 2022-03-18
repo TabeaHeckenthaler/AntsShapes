@@ -16,8 +16,9 @@ except:
 
 
 class Display:
-    def __init__(self, name: str, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None):
+    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None, path=None):
         self.my_maze = my_maze
+        self.fps = fps
         self.filename = name
         self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
@@ -27,8 +28,7 @@ class Display:
         self.font = pygame.font.Font('freesansbold.ttf', 25)
         # self.monitor = {'left': 0, 'top': 0,
         #                 'width': int(Tk().winfo_screenwidth() * 0.9), 'height': int(Tk().winfo_screenheight() * 0.8)}
-        self.monitor = {'left': 0, 'top': 0,
-                        'width': self.width, 'height': self.height}
+        self.monitor = {'left': 0, 'top': 0, 'width': self.width, 'height': self.height}
         self.screen = self.create_screen()
         self.arrows = []
         self.circles = []
@@ -36,12 +36,14 @@ class Display:
         self.points = []
         self.wait = wait
         self.i = i
+        self.path = path
 
         if config is not None:
             my_maze.set_configuration(config[0], config[1])
 
         self.renew_screen()
         self.cs = cs
+
         if videowriter:
             if self.cs is not None:
                 self.VideoShape = (max(self.height, mlab.screenshot(self.cs.fig, mode='rgb').shape[0]),
@@ -49,9 +51,12 @@ class Display:
 
             else:
                 self.VideoShape = (self.monitor['height'], self.monitor['width'])
-            self.VideoWriter = cv2.VideoWriter(path.join(video_directory, sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v'),
-                                               cv2.VideoWriter_fourcc(*'DIVX'), 20,
+            self.VideoWriter = cv2.VideoWriter(self.video_directory(), cv2.VideoWriter_fourcc(*'DIVX'), 20,
                                                (self.VideoShape[1], self.VideoShape[0]))
+
+    @staticmethod
+    def video_directory():
+        return os.path.join(video_directory, sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v')
 
     def create_screen(self, caption=str(), free=False) -> pygame.surface:
         pygame.font.init()  # display and fonts
@@ -93,6 +98,14 @@ class Display:
             self.screen.blit(text2, [0, 25])
             self.screen.blit(text, text_rect)
 
+        if self.path is not None:
+            state = self.path.state_at_time(self.time())
+            text_state = self.font.render('state: ' + state, True, colors['text'])
+            self.screen.blit(text_state, [0, 50])
+
+    def time(self) -> float:
+        return self.i/self.fps
+
     def end_screen(self):
         if hasattr(self, 'VideoWriter'):
             self.VideoWriter.release()
@@ -123,12 +136,16 @@ class Display:
             else:
                 kwargs = {}
             self.cs.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
+
         if hasattr(x, 'participants'):
             if hasattr(x.participants, 'forces'):
                 x.participants.forces.draw(self, x)
             if hasattr(x.participants, 'positions'):
                 x.participants.draw(self)
         self.display()
+
+        if hasattr(self, 'VideoWriter'):
+            self.write_to_Video()
         # self.write_to_Video()
         return
 
@@ -136,15 +153,13 @@ class Display:
         pygame.display.flip()
 
     def write_to_Video(self):
-        if hasattr(self, 'VideoWriter'):
-            pass
-            img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
-            if hasattr(self, 'ps'):
-                img = merge_frames([img, mlab.screenshot(self.cs.fig, mode='rgb')],
-                                   (self.VideoShape[0], self.VideoShape[1], 3),
-                                   [[0, 0], [0, self.width]])
+        img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+        if hasattr(self, 'ps'):
+            img = merge_frames([img, mlab.screenshot(self.cs.fig, mode='rgb')],
+                               (self.VideoShape[0], self.VideoShape[1], 3),
+                               [[0, 0], [0, self.width]])
 
-            self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
+        self.VideoWriter.write(cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB))
 
         # if self.ps is not None:
         #     self.ps.write_to_Video()

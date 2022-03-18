@@ -411,7 +411,7 @@ class Maze_parent(b2World):
     def draw(self, display=None):
         if display is None:
             from PhysicsEngine.Display import Display
-            d = Display('', self)
+            d = Display('', 1, self)
         else:
             d = display
         for body in self.bodies:

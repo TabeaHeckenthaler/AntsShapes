@@ -11,7 +11,7 @@ from datetime import datetime
 import string
 from skfmm import distance
 from tqdm import tqdm
-from Analysis.States import forbidden_transition_attempts, allowed_transition_attempts, states
+from Analysis.PathPy.Path import forbidden_transition_attempts, allowed_transition_attempts, states
 import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy

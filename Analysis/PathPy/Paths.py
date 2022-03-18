@@ -1,4 +1,4 @@
-from Analysis.States import States
+from Analysis.PathPy.Path import Path
 import os
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 import pathpy as pp
@@ -7,8 +7,6 @@ import json
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.trajectory import get
 from trajectory_inheritance.exp_types import exp_types
-import numpy as np
-from itertools import groupby
 
 
 def get_trajectories(solver='human', size='Large', shape='SPT',
@@ -42,7 +40,7 @@ def get_trajectories(solver='human', size='Large', shape='SPT',
 
 
 class Paths(pp.Paths):
-    def __init__(self, solver, size, shape, geometry):
+    def __init__(self, solver, size, shape, geometry, time_step=0.25):
         super().__init__()
         if 'Small' in size:
             size = 'Small'
@@ -50,6 +48,8 @@ class Paths(pp.Paths):
         self.shape = shape
         self.size = size
         self.geometry = geometry
+        self.time_step = time_step
+        self.time_series = None
 
     def save_dir(self):
         name = '_'.join(['network', self.solver, self.size, self.shape])
@@ -64,21 +64,22 @@ class Paths(pp.Paths):
                 saved_paths = json.load(json_file)
             [self.add_path(p) for p in saved_paths]
         else:
-            calculated_paths = self.calculate_paths()
-            for p in calculated_paths:
+            if self.time_series is None:
+                self.calculate_time_series()
+            for p in self.time_series:
                 self.add_path(p)
             self.save_paths()
 
-    def calculate_paths(self):
+    def calculate_time_series(self):
         if self.size == 'Small':
             size = 'Small Far'
         else:
             size = self.size
-        conf_space_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
-        conf_space_labeled.load_labeled_space()
+        cs_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
+        cs_labeled.load_labeled_space()
         trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
-        list_of_states = [States(conf_space_labeled, x, step=int(x.fps * 0.3)) for x in trajectories]
-        return [s.combine_transitions(s.state_series) for s in list_of_states]
+        self.paths = {x.filename: Path(cs_labeled, x, step=int(x.fps * self.time_step)) for x in trajectories}
+        self.time_series = {name: path.time_series for name, path in self.paths.items()}
 
     def to_list(self):
         lister = []
@@ -99,21 +100,16 @@ class Paths(pp.Paths):
 
 
 class PathsTimeStamped(Paths):
-    def __init__(self, solver, size, shape, geometry):
+    def __init__(self, solver, size, shape, geometry, time_step=0.25):
         super().__init__(solver, size, shape, geometry)
+        self.time_series = None
         self.time_stamped_series = None
+        self.time_step = time_step
 
     def calculate_timestamped(self):
-        if self.size == 'Small':
-            size = 'Small Far'
-        else:
-            size = self.size
-        delta_t = 0.25  # in seconds
-        conf_space_labeled = ConfigSpace_Labeled(self.solver, size, self.shape, self.geometry)
-        conf_space_labeled.load_labeled_space()
-        trajectories = get_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
-        list_of_states = [States(conf_space_labeled, x, step=int(x.fps * delta_t)) for x in trajectories]
-        self.time_stamped_series = [s.time_stamped_series() for s in list_of_states]
+        if self.time_series is None:
+            self.calculate_time_series()
+        self.time_stamped_series = {name: path.time_stamped_series() for name, path in self.paths.items()}
 
     def save_dir(self):
         name = '_'.join(['network', self.solver, self.size, self.shape])
@@ -127,13 +123,19 @@ class PathsTimeStamped(Paths):
             with open(self.save_dir(), 'r') as json_file:
                 self.time_stamped_series = json.load(json_file)
         else:
+            print('Calculating paths')
             self.calculate_timestamped()
-            self.save_paths()
 
 
 if __name__ == '__main__':
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
 
-    for size in exp_types[shape][solver]:
+    for size in exp_types[shape][solver][-1:]:
         paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
+
+        filename = list(paths.paths.keys())[0]
+        x = get(filename)
+        x.play(path=paths.paths[filename], videowriter=True)
+        paths.save_paths()
+        # TODO
