@@ -48,9 +48,24 @@ class Path:
     def get_time_series(self, conf_space_labeled, x):
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [conf_space_labeled.space_labeled[index] for index in indices]
+        labels = self.cut_of_after_final_state(labels)
         labels = self.interpolate_zeros(labels)
+        labels = self.clean(labels)
         labels = self.add_missing_transitions(labels)
         return labels
+
+    @staticmethod
+    def clean(labels):
+        not_allowed = [('bg', 'gb')]
+        last_state = labels[0]
+        labels_copy = labels.copy()
+        for ii, next_state in enumerate(labels[1:], start=1):
+            if (last_state, next_state) == ('bg', 'gb'):
+                DEBUG = 1
+            if (last_state, next_state) in not_allowed:
+                labels_copy[ii] = last_state
+            last_state = labels_copy[ii]
+        return labels_copy
 
     @staticmethod
     def cut_of_after_final_state(labels):
@@ -71,7 +86,6 @@ class Path:
 
     @staticmethod
     def valid_transition(state1, state2):
-        # state1 in state2 or state2 in state1 or
         return len(set(state1) & set(state2)) > 0 or state1 == state2
 
     def add_missing_transitions(self, labels) -> list:
@@ -83,6 +97,7 @@ class Path:
         for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
             if self.valid_transition(state1, state2):
                 pass
+
             elif len(state1) == len(state2) == 1:
                 transition = ''.join(sorted(state1 + state2))
                 if transition in allowed_transition_attempts:

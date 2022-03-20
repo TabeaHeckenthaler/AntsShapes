@@ -1,4 +1,4 @@
-import pathpy as pp
+import pathpy
 from pathpy.visualisation import export_html
 from matplotlib import pyplot as plt
 import igraph
@@ -8,18 +8,36 @@ import os
 from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.PathPy.Path import states, forbidden_transition_attempts, allowed_transition_attempts
 from Analysis.PathPy.AbsorbingMarkovChain import *
-from Analysis.PathPy.Paths import Paths, PathsTimeStamped
-from typing import Union
+from Analysis.PathPy.Paths import Paths, PathsTimeStamped, PathWithoutSelfLoops
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
 colors = {0: 'black', 1: 'red', 2: 'blue'}
 
 
-class Network(pp.Network):
-    def __init__(self, solver: str, size: str, shape: str, paths: Union[Paths, None]):
-        super().__init__(directed=True)
+class Network(pathpy.Network):
+
+    # def __init__(self, solver, size, shape):
+    #     super().__init__()
+    #     if 'Small' in size:
+    #         size = 'Small'
+    #     self.name = '_'.join(['network', solver, size, shape])
+    #     self.paths = None
+    #     self.T = None  # transition matrix
+    #     self.N = None  # fundamental matrix
+    #     self.Q = None
+    #     self.t = None  # absorption time
+    #     self.R = None
+    #     self.P = None  # canonical form of transition matrix
+    #     self.B = None
+    #
+    #     # if possible_transitions is not None:
+    #     #     for state1, state2 in itertools.product(possible_transitions, possible_transitions):
+    #     #         self.add_edge(state1, state2, weight=0)
+
+    @classmethod
+    def init_from_paths(cls, paths, solver, size, shape):
+        self = super(Network, cls).from_paths(paths)
         if 'Small' in size:
             size = 'Small'
         self.name = '_'.join(['network', solver, size, shape])
@@ -32,10 +50,7 @@ class Network(pp.Network):
         self.R = None
         self.P = None  # canonical form of transition matrix
         self.B = None
-
-        # if possible_transitions is not None:
-        #     for state1, state2 in itertools.product(possible_transitions, possible_transitions):
-        #         self.add_edge(state1, state2, weight=0)
+        return self
 
     def to_dict(self) -> dict:
         if self.N is None:
@@ -65,7 +80,7 @@ class Network(pp.Network):
             self.B = pd.read_json(attribute_dict['B'])
         else:
             self.markovian_analysis()
-            self.save_results(self.to_dict())
+            # self.save_results(self.to_dict())
 
     def add_edges(self):
         for states, weight in self.paths.paths[1].items():
@@ -225,13 +240,32 @@ class Network(pp.Network):
 
 
 if __name__ == '__main__':
-    solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    nodes = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
+    # solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+    solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+    # nodes = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
+    fig, ax = plt.subplots()
+    index = None
 
-    for size in exp_types[shape][solver]:
-        paths = Paths(solver, size, shape, geometry)
+    for i, size in enumerate(exp_types[shape][solver][:-1]):
+        paths = PathWithoutSelfLoops(solver, size, shape, geometry)
         paths.load_paths()
-        my_network = Network(solver, size, shape, paths)
+        my_network = Network.init_from_paths(paths, solver, size, shape)
         my_network.get_results()
         my_network.plot_transition_matrix()
-        DEBUG = 1
+
+        if i == 0:
+            t = my_network.t.sort_values(0, ascending=False)
+            index = t.index
+            ax.set_xticks(ticks=range(len(index)))
+            ax.set_xticklabels(index)
+        else:
+            t = my_network.t.loc[index]
+
+        t.plot(ax=ax, label=size)
+
+    plt.show(block=False)
+    ax.set_ylabel('humans: number of states to pass before solving')
+    ax.legend(exp_types[shape][solver])
+    fig.savefig(os.path.join(graph_dir(), 'human_expected_solving_time_no_self' + '.png'),
+                format='png', pad_inches=0.5, bbox_inches='tight')
+    DEBUG = 1
