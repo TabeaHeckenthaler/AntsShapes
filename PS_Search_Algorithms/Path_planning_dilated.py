@@ -19,7 +19,7 @@ class Path_planning_dilated(Path_planning_in_Maze):
         filename = x.size + '_' + x.shape + '_' + 'dil' + str(self.dilation_radius) + '_sensing' + \
                    str(self.sensing_radius)
         if filename in os.listdir(SaverDirectories['ps_simulation']):
-            raise Exception('You are calculating a trajectory, which you already have saved')
+            raise Exception('You are calculating a trajectory, which you already have saved:' + filename)
         return filename
 
     def warp_conf_space(self) -> np.array:

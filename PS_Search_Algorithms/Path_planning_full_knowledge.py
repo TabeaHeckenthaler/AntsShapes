@@ -25,7 +25,7 @@ class Path_planning_full_knowledge(Path_planning_in_Maze):
     def choose_filename(x: Trajectory_ps_simulation, initial_cond: str = '') -> str:
         filename = minimal_filename(x.size, x.shape, x.geometry(), initial_cond)
         if filename in os.listdir(SaverDirectories['ps_simulation']):
-            print('You are calculating a trajectory, which you already have saved')
+            print('You are calculating a trajectory, which you already have saved:' + filename)
         return filename
 
     def warp_conf_space(self) -> np.array:
@@ -60,9 +60,9 @@ def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, star
 
 
 if __name__ == '__main__':
-    for size in ['XL', 'L', 'M', 'S']:
+    for size in ['S']:
         x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                               geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                                initial_cond='back')
         x.save()
 
