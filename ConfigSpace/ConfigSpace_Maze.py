@@ -978,12 +978,9 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 
 if __name__ == '__main__':
-    shape = 'SPT'
-    size = 'Small Far'
-    solver = 'human'
+    solver, shape, size, geometry = 'ant', 'SPT', 'L', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape,
-                             geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
     # ps.calculate_space()
     # ps.calculate_boundary()
     #

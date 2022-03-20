@@ -12,7 +12,7 @@ def choose_experiments(solver, shape, size, geometry, communication=None):
     :param shape: str
     :return: list of objects, that are of the class or subclass Trajectory
     """
-    if size == 'Small':
+    if 'Small' in size:
         sizes = ['Small Far', 'Small Near']
     else:
         sizes = [size]
@@ -26,7 +26,7 @@ def choose_experiments(solver, shape, size, geometry, communication=None):
         (myDataFrame['load dimensions'] == geometry[1])]
 
     if communication is not None:
-        df = myDataFrame[(myDataFrame['communication'] == communication)]
+        df = df[(df['communication'] == communication)]
     return df
 
 

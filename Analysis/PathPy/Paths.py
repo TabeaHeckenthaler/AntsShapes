@@ -28,9 +28,7 @@ class Paths(pp.Paths):
         return os.path.join(network_dir, 'ExperimentalPaths', name + '_transitions')
 
     def load_paths(self, filenames=None):
-
         dictfilt = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
-
         if os.path.exists(self.save_dir() + '.txt'):
             with open(self.save_dir() + '.txt', 'r') as json_file:
                 self.time_series = json.load(json_file)
@@ -43,6 +41,9 @@ class Paths(pp.Paths):
             self.save_paths()
             if filenames is not None:
                 self.time_series = dictfilt(self.time_series, filenames)
+        self.add_paths()
+
+    def add_paths(self):
         [self.add_path(p) for p in self.time_series.values()]
 
     def calculate_time_series(self):
@@ -112,15 +113,7 @@ class PathsTimeStamped(Paths):
 
 
 class PathWithoutSelfLoops(Paths):
-    def load_paths(self):
-        if os.path.exists(self.save_dir() + '.txt'):
-            with open(self.save_dir() + '.txt', 'r') as json_file:
-                self.time_series = json.load(json_file)
-                self.single_paths = {name: Path(self.time_step, time_s) for name, time_s in self.time_series.items()}
-
-        elif self.time_series is None:
-            self.calculate_time_series()
-            self.save_paths()
+    def add_paths(self):
         [self.add_path(p.state_series) for p in self.single_paths.values()]
 
 
