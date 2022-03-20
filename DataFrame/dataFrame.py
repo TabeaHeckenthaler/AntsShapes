@@ -147,7 +147,7 @@ class DataFrame(pd.DataFrame):
         return new_data_frame
 
 
-def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_cond='back', size=None):
+def choose_relevant_experiments(df, shape, solver, geometry, winner: bool = None, init_cond='back', size=None):
     """
     Reduce df to relevant experiments
     :param df: dataFrame
@@ -160,6 +160,8 @@ def choose_relevant_experiments(df, shape, solver, winner: bool = None, init_con
     """
     df = df[df['shape'] == shape]
     df = df[df['solver'] == solver]
+    df = df[df['maze dimensions'] == geometry[0]]
+    df = df[df['load dimensions'] == geometry[1]]
     if size is not None:
         df = df[df['size'] == size]
     if winner is not None:
