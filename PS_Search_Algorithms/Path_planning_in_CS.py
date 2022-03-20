@@ -220,7 +220,7 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         """
         conf_space = ConfigSpace_Maze(x.solver, x.size, x.shape, x.geometry())
         conf_space.load_space()
-        conf_space.visualize_space()
+        # conf_space.visualize_space()
 
         self.average_radius = Maze(x).average_radius()
         super().__init__(starting_node, ending_node, max_iter, conf_space=conf_space)
@@ -246,8 +246,8 @@ class Path_planning_in_Maze(Path_planning_in_CS):
         :param initial_cond: front or back of the maze
         :param x: trajectory that carries information on the maze
         """
-        start = None
-        end = None
+        # start = None
+        # end = None
         if self.start is None:
             starting_indices = self.conf_space.coords_to_indices(*start(x, initial_cond))
             self.start = Node3D(*starting_indices, self.conf_space)

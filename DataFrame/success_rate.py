@@ -14,7 +14,7 @@ def relevant_columns(df):
 
 
 for solver in solvers:
-    df_relevant_exp = choose_relevant_experiments(myDataFrame.clone(), shape, solver, init_cond='back')
+    df_relevant_exp = choose_relevant_experiments(myDataFrame.clone(), shape, solver, geometry, init_cond='back')
     df = relevant_columns(df_relevant_exp)
 
     df.to_json('success_rate.txt', orient='split')
