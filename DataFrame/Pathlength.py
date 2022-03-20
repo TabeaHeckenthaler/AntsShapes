@@ -8,9 +8,46 @@ from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from DataFrame.dataFrame import myDataFrame as df
 from DataFrame.dataFrame import choose_relevant_experiments
 import json
+from Analysis.PathLength import PathLength
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
 plot_group_size_seperately = {'ant': [1], 'human': [2]}
+
+
+def plot_path_length_cutoff(df, solver, ax, marker='.'):
+    df['pathlength cut off'] = df['filename'].progress_apply(lambda x: PathLength(get(x)).comparable())
+
+    for communication in [0, 1]:
+        df_solver_comm = df[df['communication'] == communication]
+
+        seperate_group_df = \
+            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
+        not_seperate_group_df = \
+            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
+
+        for part in [seperate_group_df, not_seperate_group_df]:
+            groups = part.groupby(by=['size'])
+            means = groups.mean()
+            sem = groups.sem()
+            # std = groups.std()
+
+            means.plot.scatter(x='average Carrier Number',
+                               y='path length/minimal path length[]',
+                               label='comm: ' + str(communication),
+                               xerr=sem['average Carrier Number'],
+                               yerr=sem['path length/minimal path length[]'],
+                               c=color[solver][communication],
+                               ax=ax,
+                               marker=marker,
+                               s=150)
+
+            if len(means) > 0:
+                xs = list(means['average Carrier Number'] + 0.5)
+                ys = list(means['path length/minimal path length[]'] + 0.5)
+                for txt, x, y in zip(list(means.index), xs, ys):
+                    ax.annotate(txt, (x, y), fontsize=13)
+
+    reduce_legend()
 
 
 def plot_path_length(df, solver, ax, marker='.'):
@@ -174,12 +211,13 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1, 1)
     shape = 'SPT'
-    solvers = ['ant', 'human']
+    solvers = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+               'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
 
-    for solver in solvers:
-        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, winner=True, init_cond='back')
+    for solver, geometry in solvers.items():
+        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, geometry, init_cond='back')
         relevant_df = relevant_columns(df_relevant_exp)
-        plot_path_length(relevant_df, solver, ax, marker='x')
+        plot_path_length_cutoff(relevant_df, solver, ax, marker='x')
 
     adjust_figure()
     save_fig(fig, 'back_path_length_humans')

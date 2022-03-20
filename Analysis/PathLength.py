@@ -88,7 +88,7 @@ class PathLength:
     def average_radius(self):
         return Maze(self.x).average_radius()
 
-    def calculate_path_length(self, rot: bool = True, frames: list = None):
+    def calculate_path_length(self, rot: bool = True, frames: list = None, max_path_length=np.inf):
         """
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
@@ -116,6 +116,8 @@ class PathLength:
             d = self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
             if d > cs_resolution:
                 path_length += self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
+                if path_length > max_path_length:
+                    return path_length
                 pos, ang = position[i], unwrapped_angle[i]
         return path_length
 
@@ -133,7 +135,7 @@ class PathLength:
         plt.plot(np.array(pos_list)[:, 0], np.array(pos_list)[:, 1], color='k')
         plt.show()
 
-    def minimal(self):
+    def minimal(self) -> float:
         if self.x.shape in ['SPT']:
             ideal_filename = minimal_filename(self.x.size, self.x.shape, self.x.geometry(), self.x.initial_cond())
             ideal = get(ideal_filename)
@@ -142,8 +144,20 @@ class PathLength:
         else:
             return np.nan
 
+    def comparable(self, maximal=25) -> tuple:
+        """
+        Cut experiment after certain path length distance which scales with group size.
+        (10 times the minimal path length)
+        Adjust winner boolean.
+        """
+        max_path_length = self.minimal() * maximal
+        path_length = self.calculate_path_length(max_path_length=max_path_length)
+        winner = path_length < max_path_length
+        return path_length, winner
+
 
 if __name__ == '__main__':
-    x = get('XL_SPT_4630002_XLSpecialT_1_ants (part 1)')
-    print(PathLength(x).per_experiment())
+    x = get('minimal_S_SPT_back_MazeDimensions_new2021_SPT_ant_LoadDimensions_new2021_SPT_ant')
+    print(PathLength(x).comparable())
+    DEBUG = 1
     # p = [resolution(size, 'ant') for size in sizes['ant']]
