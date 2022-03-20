@@ -29,10 +29,11 @@ except:
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
-
+cc_to_keep = 10
 
 # TODO: fix the x.winner attribute
 # I want the resolution (in cm) for x and y and archlength to be all the same.
+
 
 class ConfigSpace(object):
     def __init__(self, space: np.array, name=''):
@@ -214,7 +215,7 @@ class ConfigSpace_Maze(ConfigSpace):
         self.space[:, 0, :] = False
         self.space[:, -1, :] = False
 
-    def calculate_space(self, point_particle=False, mask=None) -> None:
+    def calculate_space(self, mask=None) -> None:
         """
         This module calculated a space.
         :param point_particle:
@@ -568,7 +569,6 @@ class ConfigSpace_Maze(ConfigSpace):
         """
         from self find connected components
         Take into account periodicity
-        :param cc_to_keep: how many connected components to keep (10 for SPT)
         :param space: which space should be split
         :return: list of ps spaces, that have only single connected components
         """
@@ -578,7 +578,6 @@ class ConfigSpace_Maze(ConfigSpace):
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
         voxel_counts = [stats['voxel_counts'][label] for label in range(stats['voxel_counts'].shape[0])]
-        cc_to_keep = 10
 
         max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
         min_cc_size = np.sort(voxel_counts)[-cc_to_keep] - 1
@@ -764,6 +763,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if os.path.exists(directory):
             print('Loading labeled from ', directory, '...')
             self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(directory, 'rb'))
+            if len(self.centroids) != cc_to_keep - 2:
+                print('Wrong number of cc')
         else:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
             self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
@@ -849,12 +850,18 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw states')
-        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/reduction
+        if len(self.centroids) != cc_to_keep - 2:
+            print('Wrong number of cc')
 
         for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
             # ps_state.extent = self.extent # This was only because I had made a mistake
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
-            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name, scale=scale)
+            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name,
+                        scale=self.scale_of_letters(reduction))
+
+    def scale_of_letters(self, reduction):
+        return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
+                 'L': 0.5, 'XL': 1, 'M': 0.25, 'S': 0.125}[self.size]/reduction
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -873,13 +880,13 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.load_labeled_space()
 
         print('Draw transitions')
-        scale = {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2}[self.size]/reduction
         transitions = [trans for trans in np.unique(self.space_labeled) if len(trans) > 1]
         for label, colormap in tqdm(zip(transitions, itertools.cycle(['Reds', 'Purples', 'Greens']))):
             space = np.array(self.space_labeled == label, dtype=bool)
             centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
             self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
-            mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label, scale=scale)
+            mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label,
+                        scale=self.scale_of_letters(reduction))
 
     def save_labeled(self, directory=None, date_string='') -> None:
         """
@@ -913,6 +920,10 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
         if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
             return default + 4
+        if self.solver == 'ant':
+            if self.size == 'S':
+                return default + 4
+            return default + 3
         return default
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
@@ -978,15 +989,17 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 
 if __name__ == '__main__':
-    solver, shape, size, geometry = 'ant', 'SPT', 'L', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+    sizes_to_reerode = ['M', 'S']
+    solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-    # ps.calculate_space()
-    # ps.calculate_boundary()
-    #
-    # ps.save_space()
-    reduction = 2
-    ps.visualize_states(reduction=reduction)
-    ps.visualize_transitions(reduction=reduction)
+    for size in sizes_to_reerode:
+        ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
+        ps.load_eroded_labeled_space()
+        # ps.calculate_boundary()
+        # ps.save_space()
 
-    DEBUG = 1
+        reduction = 2
+        ps.visualize_states(reduction=reduction)
+        ps.visualize_transitions(reduction=reduction)
+
+        DEBUG = 1

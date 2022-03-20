@@ -391,6 +391,8 @@ class Trajectory_part(Trajectory):
         self.angle = parent_traj.angle[frames[0]:frames[-1]]
 
     def is_connector(self):
+        if self.VideoChain[-1] is None:
+            return False
         return 'CONNECTOR' in self.VideoChain[-1]
 
     def geometry(self):
