@@ -228,7 +228,7 @@ class Network(pathpy.Network):
     #     pp.algorithms.path_measures.entropy_growth_rate_ratio(self.paths, method='Miller')
     #
     #     # Is the process Markovian?
-    #     # estimate the order of the sequence (something like memory)
+    #     # estimate the order of the sequence (calculate_diffusion_time like memory)
     #     ms = pp.MarkovSequence(self.paths.sequence())
     #     order = ms.estimate_order(4)
 

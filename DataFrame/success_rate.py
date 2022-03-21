@@ -1,6 +1,4 @@
 from DataFrame.dataFrame import choose_relevant_experiments, myDataFrame
-import os
-import json
 import pandas as pd
 
 shape = 'SPT'

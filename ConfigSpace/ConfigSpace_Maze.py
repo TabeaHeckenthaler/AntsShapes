@@ -11,7 +11,7 @@ from datetime import datetime
 import string
 from skfmm import distance
 from tqdm import tqdm
-from Analysis.PathPy.Path import forbidden_transition_attempts, allowed_transition_attempts, states
+from Analysis.PathPy.SPT_states import forbidden_transition_attempts, allowed_transition_attempts, states
 import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy
@@ -582,7 +582,7 @@ class ConfigSpace_Maze(ConfigSpace):
         max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
         min_cc_size = np.sort(voxel_counts)[-cc_to_keep] - 1
         chosen_cc = np.where((max_cc_size > stats['voxel_counts']) & (stats['voxel_counts'] > min_cc_size))[0]
-        assert chosen_cc.shape[0] == 10, 'something is off'
+        assert chosen_cc.shape[0] == 10, 'calculate_diffusion_time is off'
 
         for label in chosen_cc:
             ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
@@ -861,7 +861,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
-                 'L': 0.5, 'XL': 1, 'M': 0.25, 'S': 0.125}[self.size]/reduction
+                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size]/reduction
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -989,16 +989,13 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 
 if __name__ == '__main__':
-    sizes_to_reerode = ['M', 'S']
+    sizes_to_reerode = ['S']
     solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
     for size in sizes_to_reerode:
         ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
         ps.load_eroded_labeled_space()
-        # ps.calculate_boundary()
-        # ps.save_space()
-
-        reduction = 2
+        reduction = 4
         ps.visualize_states(reduction=reduction)
         ps.visualize_transitions(reduction=reduction)
 

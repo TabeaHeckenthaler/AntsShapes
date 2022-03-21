@@ -1,24 +1,8 @@
 from itertools import groupby
 import numpy as np
-
-states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
-
-forbidden_transition_attempts = ['be', 'bf', 'bg',
-                                 'di',
-                                 'eb', 'ei',
-                                 'fb', 'fi',
-                                 'gb',
-                                 'id', 'ie', 'if']
-
-allowed_transition_attempts = ['ab', 'ad',
-                               'ba',
-                               'de', 'df', 'da',
-                               'ed', 'eg',
-                               'fd', 'fg',
-                               'gf', 'ge', 'gj',
-                               'ij',
-                               'jg', 'ji']
-final_state = 'j'
+from trajectory_inheritance.trajectory import get
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
+from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts
 
 
 class Path:
@@ -104,13 +88,20 @@ class Path:
                     labels_copy.insert(ii+i, transition)
                     i += 1
                 else:
-                    raise ValueError('What happened0?')
+                    if state1 == 'd' and state2 == 'g':
+                        labels_copy.insert(ii+i, 'df')
+                        labels_copy.insert(ii+i+1, 'f')
+                        labels_copy.insert(ii+i+2, 'fg')
+                        i += 3
+                    else:
+                        raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2)
+
             elif len(state1) == len(state2) == 2:
-                raise ValueError('What happened1?')
+                raise ValueError('Moved from transition to transition:' + state1 + '_' + state2)
 
             elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
-                t2 = ''.join(sorted(state1 + state2[0]))
-                t1 = state2[0]
+                t1 = ''.join(sorted(state1 + state2[0]))
+                t2 = state2[0]
                 labels_copy.insert(ii + i, t1)
                 labels_copy.insert(ii + i + 1, t2)
                 i += 2
@@ -120,7 +111,14 @@ class Path:
                 labels_copy.insert(ii + i, t1)
                 labels_copy.insert(ii + i + 1, t2)
                 i += 2
-            elif ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
+
+            elif len(state2) > 1 and ''.join(sorted(state1 + state2[1])) in allowed_transition_attempts:
+                t1 = ''.join(sorted(state1 + state2[1]))
+                t2 = state2[1]
+                labels_copy.insert(ii + i, t1)
+                labels_copy.insert(ii + i + 1, t2)
+                i += 2
+            elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
                 t1 = state1[1]
                 t2 = ''.join(sorted(state1[1] + state2))
                 labels_copy.insert(ii + i, t1)
@@ -172,3 +170,11 @@ class Path:
     def time_stamped_series(self) -> list:
         groups = groupby(self.time_series)
         return [(label, sum(1 for _ in group) * self.time_step) for label, group in groups]
+
+
+if __name__ == '__main__':
+    filename = 'M_SPT_4700005_MSpecialT_1_ants'
+    x = get(filename)
+    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    cs_labeled.load_labeled_space()
+    path = Path(0.25, x=x, conf_space_labeled=cs_labeled)

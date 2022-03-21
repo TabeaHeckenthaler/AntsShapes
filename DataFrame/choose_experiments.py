@@ -31,9 +31,10 @@ def choose_experiments(solver, shape, size, geometry, communication=None):
 
 
 def choose_trajectories(solver='human', size='Large', shape='SPT',
-                     geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'), number: int = None) \
+                        geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                        communication=None, number: int = None) \
         -> list:
-    df = choose_experiments(solver, shape, size, geometry)
+    df = choose_experiments(solver, shape, size, geometry, communication=communication)
     filenames = df['filename'][:number]
     # filenames = ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]
     return [get(filename) for filename in filenames]

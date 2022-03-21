@@ -40,7 +40,7 @@ class Collective_Path_Planning(Path_planning_in_Maze):
     If we only had two big pixels, the maze would be solved easily. Hence, this only works, if we have a resolution high
     enough to capture 'the intricacies' of the maze. Something like shortest distance between two states?
     I am actually not sure about this point.
-    Maybe its better to think about whether points are connected via a straight line? Or something like that?
+    Maybe its better to think about whether points are connected via a straight line? Or calculate_diffusion_time like that?
     """
 
     def __init__(self, x: Trajectory_ps_simulation, starting_point: tuple, ending_point: tuple, initial_cond: str,

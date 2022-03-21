@@ -37,13 +37,16 @@ class Display:
         self.wait = wait
         self.i = i
         self.path = path
-        path.frame_step = int(self.fps * path.time_step)
-
+        if path is not None:
+            path.frame_step = int(self.fps * path.time_step)
         if config is not None:
             my_maze.set_configuration(config[0], config[1])
 
         self.renew_screen()
         self.cs = cs
+        if self.cs is not None:
+            self.scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
+                                 'Small Near': 0.2, 'Small': 0.2}[self.my_maze.size]
 
         if videowriter:
             if self.cs is not None:
@@ -129,11 +132,9 @@ class Display:
 
     def draw(self, x):
         self.my_maze.draw(self)
-        scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
-                        'Small Near': 0.2, 'Small': 0.2}[self.my_maze.size]
         if self.cs is not None:
             if self.i <= 1 or self.i >= len(x.angle)-1:
-                kwargs = {'color': (0, 0, 0), 'scale_factor': scale_factor}
+                kwargs = {'color': (0, 0, 0), 'scale_factor': self.scale_factor}
             else:
                 kwargs = {}
             self.cs.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
