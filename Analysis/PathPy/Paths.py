@@ -7,6 +7,7 @@ import json
 from trajectory_inheritance.exp_types import exp_types
 import csv
 from DataFrame.choose_experiments import choose_trajectories
+import numpy as np
 
 
 class Paths(pp.Paths):
@@ -132,6 +133,7 @@ def humans():
             paths = PathsTimeStamped(solver, size, shape, geometry, communication=com)
             paths.load_paths()
             paths.load_time_stamped_paths()
+
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
     # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
@@ -145,6 +147,14 @@ def ants():
         paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
         paths.load_time_stamped_paths()
+
+        for p in paths.time_series:
+            if len(np.where(p == 'j')[0]) > 1:
+                DEBUG = 1
+
+
+        DEBUG = 1
+
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
     # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
@@ -152,4 +162,4 @@ def ants():
 
 
 if __name__ == '__main__':
-    ants()
+    humans()

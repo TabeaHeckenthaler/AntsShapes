@@ -32,7 +32,7 @@ class Path:
     def get_time_series(self, conf_space_labeled, x):
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [conf_space_labeled.space_labeled[index] for index in indices]
-        labels = self.cut_of_after_final_state(labels)
+        labels = self.cut_off_after_final_state(labels)
         labels = self.interpolate_zeros(labels)
         labels = self.clean(labels)
         labels = self.add_missing_transitions(labels)
@@ -52,9 +52,10 @@ class Path:
         return labels_copy
 
     @staticmethod
-    def cut_of_after_final_state(labels):
+    def cut_off_after_final_state(labels):
         first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
         if len(first_time_in_final_state) > 1:
+            print(labels[:first_time_in_final_state[0]+1][-10:])
             return labels[:first_time_in_final_state[0]+1]
         else:
             return labels
@@ -70,7 +71,44 @@ class Path:
 
     @staticmethod
     def valid_transition(state1, state2):
+        if set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
+            return False
         return len(set(state1) & set(state2)) > 0 or state1 == state2
+
+    @staticmethod
+    def neccessary_transitions(state1, state2) -> list:
+        if state1 == 'd' and state2 == 'gj':
+            return ['df', 'f', 'fg', 'g']
+        if state1 == 'd' and state2 == 'g':
+            return ['df', 'f', 'fg']
+        if state1 == 'ba' and state2 == 'di':
+            return ['a', 'ad', 'd']
+
+        # otherwise, our Markov chain is not absorbing for L ants
+        if set(state1) in [set('fg'), set('fd')] and set(state1) in [set('fg'), set('fd')]:
+            return ['f']
+
+        if len(state1) == len(state2) == 1:
+            transition = ''.join(sorted(state1 + state2))
+            if transition in allowed_transition_attempts:
+                return [transition]
+            else:
+                raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2)
+
+        elif len(state1) == len(state2) == 2:
+            raise ValueError('Moved from transition to transition:' + state1 + '_' + state2)
+
+        elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
+            return [''.join(sorted(state1 + state2[0])), state2[0]]
+        elif ''.join(sorted(state1[0] + state2)) in allowed_transition_attempts:
+            return [state1[0], ''.join(sorted(state1[0] + state2))]
+
+        elif len(state2) > 1 and ''.join(sorted(state1 + state2[1])) in allowed_transition_attempts:
+            return [''.join(sorted(state1 + state2[1])), state2[1]]
+        elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
+            return [state1[1], ''.join(sorted(state1[1] + state2))]
+        else:
+            raise ValueError('What happened: ' + state1 + ' -> ' + state2)
 
     def add_missing_transitions(self, labels) -> list:
         """
@@ -78,83 +116,58 @@ class Path:
         """
         labels_copy = labels.copy()
         i = 1
+
         for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
-            if self.valid_transition(state1, state2):
-                pass
-
-            elif len(state1) == len(state2) == 1:
-                transition = ''.join(sorted(state1 + state2))
-                if transition in allowed_transition_attempts:
-                    labels_copy.insert(ii+i, transition)
-                    i += 1
+            if not self.valid_transition(state1, state2):
+                if state1 in ['f', 'e'] and state2 == 'i':
+                    labels_copy[ii + i] = state1  # only for small SPT ants
                 else:
-                    if state1 == 'd' and state2 == 'g':
-                        labels_copy.insert(ii+i, 'df')
-                        labels_copy.insert(ii+i+1, 'f')
-                        labels_copy.insert(ii+i+2, 'fg')
-                        i += 3
-                    else:
-                        raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2)
+                    for t in self.neccessary_transitions(state1, state2):
+                        labels_copy.insert(ii + i, t)
+                        i += 1
 
-            elif len(state1) == len(state2) == 2:
-                raise ValueError('Moved from transition to transition:' + state1 + '_' + state2)
-
-            elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
-                t1 = ''.join(sorted(state1 + state2[0]))
-                t2 = state2[0]
-                labels_copy.insert(ii + i, t1)
-                labels_copy.insert(ii + i + 1, t2)
-                i += 2
-            elif ''.join(sorted(state1[0] + state2)) in allowed_transition_attempts:
-                t1 = state1[0]
-                t2 = ''.join(sorted(state1[0] + state2))
-                labels_copy.insert(ii + i, t1)
-                labels_copy.insert(ii + i + 1, t2)
-                i += 2
-
-            elif len(state2) > 1 and ''.join(sorted(state1 + state2[1])) in allowed_transition_attempts:
-                t1 = ''.join(sorted(state1 + state2[1]))
-                t2 = state2[1]
-                labels_copy.insert(ii + i, t1)
-                labels_copy.insert(ii + i + 1, t2)
-                i += 2
-            elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
-                t1 = state1[1]
-                t2 = ''.join(sorted(state1[1] + state2))
-                labels_copy.insert(ii + i, t1)
-                labels_copy.insert(ii + i + 1, t2)
-                i += 2
-            else:
-                raise ValueError('What happened2?')
         return labels_copy
 
     def state_at_time(self, time: float) -> str:
         return self.time_series[int(time/self.time_step)]
 
-    @staticmethod
-    def cut_at_end(time_series) -> list:
-        """
-        After state 'j' appears, cut off series
-        :param time_series: series to be mashed
-        :return: time_series with combined transitions
-        """
-        if 'j' not in time_series:
-            return time_series
-        first_appearance = np.where(np.array(time_series) == 'j')[0][0]
-        return time_series[:first_appearance+1]
-
-    @staticmethod
-    def interpolate_zeros(labels: list) -> list:
+    def interpolate_zeros(self, labels: list) -> list:
         """
         Interpolate over all the states, that are not inside Configuration space (due to the computer representation of
         the maze not being exactly the same as the real maze)
         :return:
         """
+
         if labels[0] == '0':
             labels[0] = [l for l in labels if l != '0'][:1000][0]
+
         for i, l in enumerate(labels):
             if l == '0':
-                labels[i] = labels[i - 1]
+                where = np.where(np.array(labels[i:]) != '0')[0]
+
+                if len(where) < 1:
+                    if labels[i-1] == 'jg':
+                        labels[i:] = ['j' for _ in range(len(labels[i:]))]
+                    else:
+                        labels[i:] = [labels[i-1] for _ in range(len(labels[i:]))]
+
+                else:
+                    index = where[0] + i
+                    if self.valid_transition(labels[i-1], labels[index]):
+                        transitions = [labels[i-1], labels[index]]
+                    else:
+                        if labels[i-1] == 'f' and labels[index] == 'i':
+                            transitions = ['f', 'f']  # this occurs only in small SPT ants
+                        else:
+                            transitions = [labels[i-1], *self.neccessary_transitions(labels[i-1], labels[index]), labels[index]]
+
+                    for array, state in zip(np.array_split(range(i, index), len(transitions)), transitions):
+                        if len(array > 0):
+                            labels[array[0]: array[-1] + 1] = [state for _ in range(len(array))]
+
+        if len([1 for state1, state2 in zip(labels[:-1], labels[1:]) if state1 == 'j' and state2 != 'j']):
+            print('something')
+
         return labels
 
     def calculate_state_series(self):
@@ -164,7 +177,7 @@ class Path:
         """
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
         labels = self.combine_transitions(labels)
-        labels = self.cut_of_after_final_state(labels)
+        labels = self.cut_off_after_final_state(labels)
         return labels
 
     def time_stamped_series(self) -> list:
@@ -177,4 +190,8 @@ if __name__ == '__main__':
     x = get(filename)
     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
     cs_labeled.load_labeled_space()
+    # cs_labeled.visualize_space()
+    # x.play(cs=cs_labeled, step=5)
+
     path = Path(0.25, x=x, conf_space_labeled=cs_labeled)
+    DEBUG = 1

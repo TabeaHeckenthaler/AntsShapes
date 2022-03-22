@@ -46,7 +46,7 @@ class Display:
         self.cs = cs
         if self.cs is not None:
             self.scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
-                                 'Small Near': 0.2, 'Small': 0.2}[self.my_maze.size]
+                                 'Small Near': 0.2, 'Small': 0.2, 'M': 0.25, 'L': 0.5, 'XL': 1, 'S': 0.25}[self.my_maze.size]
 
         if videowriter:
             if self.cs is not None:
@@ -136,7 +136,7 @@ class Display:
             if self.i <= 1 or self.i >= len(x.angle)-1:
                 kwargs = {'color': (0, 0, 0), 'scale_factor': self.scale_factor}
             else:
-                kwargs = {}
+                kwargs = {'scale_factor': self.scale_factor}
             self.cs.draw(x.position[self.i:self.i + 1], x.angle[self.i:self.i + 1], **kwargs)
 
         if hasattr(x, 'participants'):

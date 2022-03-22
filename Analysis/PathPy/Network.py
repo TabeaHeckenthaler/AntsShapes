@@ -62,7 +62,7 @@ class Network(pathpy.Network):
     def save_dir_results(self):
         return os.path.join(network_dir, 'MarkovianNetworks', self.name + '.txt')
 
-    def save_results(self, results):
+    def save(self, results):
         with open(self.save_dir_results(), 'w') as json_file:
             json.dump(results, json_file)
             print('Saved Markovian results in ', self.save_dir_results())
@@ -239,26 +239,15 @@ class Network(pathpy.Network):
 #
 
 
-if __name__ == '__main__':
-    # solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    # nodes = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
-    fig, ax = plt.subplots()
-    index = None
-
-    for i, size in enumerate(exp_types[shape][solver][:-1]):
-        paths = PathWithoutSelfLoops(solver, size, shape, geometry)
-        paths.load_paths()
-        my_network = Network.init_from_paths(paths, solver, size, shape)
-        my_network.get_results()
-        my_network.plot_transition_matrix()
-
+def plot_diffusion_time(networks):
+    for my_network in networks:
         if i == 0:
             t = my_network.t.sort_values(0, ascending=False)
             index = t.index
             ax.set_xticks(ticks=range(len(index)))
             ax.set_xticklabels(index)
         else:
+            # t = my_network.t.reindex(index)
             t = my_network.t.loc[index]
 
         t.plot(ax=ax, label=size)
@@ -268,4 +257,24 @@ if __name__ == '__main__':
     ax.legend(exp_types[shape][solver])
     fig.savefig(os.path.join(graph_dir(), 'human_expected_solving_time_no_self' + '.png'),
                 format='png', pad_inches=0.5, bbox_inches='tight')
+
+
+if __name__ == '__main__':
+    # solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+    solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx',
+                                             'LoadDimensions_new2021_SPT_ant.xlsx')
+    # nodes = sorted(states + forbidden_transition_attempts + allowed_transition_attempts)
+    fig, ax = plt.subplots()
+    index = None
+    networks = []
+    for i, size in enumerate(exp_types[shape][solver]):
+        paths = PathWithoutSelfLoops(solver, size, shape, geometry)
+        paths.load_paths()
+        my_network = Network.init_from_paths(paths, solver, size, shape)
+        my_network.get_results()
+        my_network.plot_transition_matrix()
+        networks.append(my_network)
+        my_network.save(my_network.to_dict())
+
+    plot_diffusion_time(networks)
     DEBUG = 1

@@ -16,6 +16,7 @@ def calculate_diffusion_time(i, index, filenames, paths, solver, size, shape, ax
     else:
         t = my_network.t.reindex(index)
         t = t.loc[index]
+
     return t, index
 
 
@@ -50,7 +51,8 @@ def ants():
     index = None
     legend = []
 
-    for i, size in enumerate(exp_types[shape][solver][:-1]):
+    for i, size in enumerate(exp_types[shape][solver]):
+        print(size)
         paths = Paths(solver, size, shape, geometry)
         filenames = choose_experiments(solver, shape, size, geometry).filename
         t, index = calculate_diffusion_time(i, index, filenames, paths, solver, size, shape, ax)
