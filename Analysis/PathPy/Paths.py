@@ -126,14 +126,14 @@ class PathWithoutSelfLoops(Paths):
 
 def humans():
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    communication = [True, False]
+    # communication = [True, False]
 
     for size in exp_types[shape][solver]:
-        for com in communication:
-            paths = PathsTimeStamped(solver, size, shape, geometry, communication=com)
+        # for com in communication:
+            paths = PathsTimeStamped(solver, size, shape, geometry, communication=None)
             paths.load_paths()
             paths.load_time_stamped_paths()
-
+            DEBUG = 1
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
     # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
@@ -162,4 +162,4 @@ def ants():
 
 
 if __name__ == '__main__':
-    humans()
+    ants()
