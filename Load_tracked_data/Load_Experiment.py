@@ -29,7 +29,15 @@ def is_extension(name) -> bool:
 
 
 def get_mat_files(solver, size, shape, free=False):
-    return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if size + shape in mat_file]
+    if solver == 'ant':
+        return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if
+                size + shape in mat_file]
+    elif solver == 'human':
+        human_size_dict = {'Large': 'large', 'Medium': 'medium', 'Small Near': 'small', 'Small Far': 'small2'}
+        return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if
+                human_size_dict[size] in mat_file]
+    else:
+        raise Exception('Where are you mat files for the solver ' + solver)
 
 
 def find_unpickled(solver, size, shape, free=False):
@@ -143,8 +151,7 @@ def continue_time_dict(solver, shape):
         time_dict = json.load(json_file)
 
     for size in exp_types[shape][solver]:
-        to_save = [unpickled for unpickled in find_unpickled(solver, size, shape)
-                   if unpickled not in time_dict.keys()]
+        to_save = [unpickled for unpickled in find_unpickled(solver, size, shape) if unpickled not in time_dict.keys()]
         while to_save:
             name = to_save[0]
             time_dict.update({name: delta_t(name)})
@@ -183,17 +190,12 @@ def parts(filename, solver, size, shape):
 
 def load(filename, solver, size, shape, fps, winner=None, free=False):
     if not free:
-        if solver == 'human':
-            fps = 30
-        elif solver == 'ant':
-            fps = 50
-        else:
-            fps = np.NaN
 
         if winner is None:
             if filename not in winner_dict.keys():
                 continue_winner_dict(solver, shape)
             winner = winner_dict[filename]
+    filename = filename[:-4]
     print('\n' + filename)
     return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape, free=free)
 
@@ -222,31 +224,34 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    solver, shape = 'ant', 'SPT'
+    solver, shape = 'human', 'SPT'
+    fps = {'human': 30, 'ant': 50}
     continue_time_dict(solver, shape)
 
     for size in exp_types[shape][solver]:
-        for mat_filename in tqdm(find_unpickled(solver, size, shape)):
-            print(mat_filename)
-            x = load(mat_filename, solver, size, shape, fps)
-            chain = [x] + [load(filename, solver, size, shape, fps, winner=x.winner)
-                           for filename in parts(mat_filename, solver, size, shape)[1:]]
-            total_time_seconds = np.sum([traj.timer() for traj in chain])
+        unpickled = find_unpickled(solver, size, shape)
+        if len(unpickled) > 0:
+            for mat_filename in tqdm(unpickled):
+                print(mat_filename)
+                x = load(mat_filename, solver, size, shape, fps[solver])
+                chain = [x] + [load(filename, solver, size, shape, fps[solver], winner=x.winner)
+                               for filename in parts(mat_filename, solver, size, shape)[1:]]
+                total_time_seconds = np.sum([traj.timer() for traj in chain])
 
-            frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
+                frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
 
-            for part in chain[1:]:
-                frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
-                if frames_missing_per_movie > 10 * x.fps:
-                    connection = connector(x, part, frames_missing_per_movie)
-                    x = x + connection
-                x = x + part
+                for part in chain[1:]:
+                    frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+                    if frames_missing_per_movie > 10 * x.fps:
+                        connection = connector(x, part, frames_missing_per_movie)
+                        x = x + connection
+                    x = x + part
 
-            x.save()
-            # file_object = open('check_trajectories.txt', 'a')
-            # file_object.write(x.filename + '\n')
-            # file_object.close()
+                x.save()
+                # file_object = open('check_trajectories.txt', 'a')
+                # file_object.write(x.filename + '\n')
+                # file_object.close()
 
-            # TODO: Check that the winner is correctly saved!!
-            # TODO: add new file to contacts json file
-            # TODO: add new file to pandas DataFrame
+                # TODO: Check that the winner is correctly saved!!
+                # TODO: add new file to contacts json file
+                # TODO: add new file to pandas DataFrame

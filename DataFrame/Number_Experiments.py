@@ -1,6 +1,7 @@
 from DataFrame.plot_dataframe import save_fig
 from matplotlib import pyplot as plt
 from trajectory_inheritance.trajectory import sizes
+from DataFrame.dataFrame import myDataFrame as df
 
 
 def how_many_experiments_SPT(df, initial_cond='back'):
@@ -79,3 +80,8 @@ def how_many_experiments(df, initial_cond='back', shapes=['I', 'T', 'H']):
 
     ax[0].set_ylabel('number of experiments')
     save_fig(fig, 'how_many_experiments_' + initial_cond + '_' + ''.join(shapes))
+
+
+if __name__ == '__main__':
+    # untracked = {'humans': {'S': 14, 'L': 1}}
+    how_many_experiments_SPT(df)

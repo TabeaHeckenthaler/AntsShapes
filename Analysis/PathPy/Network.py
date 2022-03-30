@@ -42,6 +42,8 @@ class Network(pathpy.Network):
             size = 'Small'
         self.name = '_'.join(['network', solver, size, shape])
         self.paths = paths
+        if type(self.paths) is PathWithoutSelfLoops:
+            self.name = self.name + '_state_transitions'
         self.add_edges()
         self.T = None  # transition matrix
         self.N = None  # fundamental matrix
@@ -149,44 +151,36 @@ class Network(pathpy.Network):
         plt.title(title)
 
     @staticmethod
-    def swap(m, r, zero_row):
-        columns = list(m.columns.copy())
-        columns[zero_row], columns[r] = columns[r], columns[zero_row]
+    def swap(m, row2, row1):
+        order = m.index.tolist()
+        order[row2], order[row1] = copy(order[row1]), copy(order[row2])
+        m = m.reindex(columns=order, index=order)
+        return m
 
-        return m.reindex(index=columns, columns=columns)
-
-    def sort(self, m):
+    def find_canonical_from(self, T):
         """
         reorganize matrix so zero-rows go last (preserving zero rows order)
         """
-        size = len(m)
-
-        zero_row = -1
-        for r in range(size):
-            sum = 0
-            for c in range(size):
-                sum += m.iloc[r, c]
-            if sum == 0:
-                # we have found all-zero row, remember it
-                zero_row = r
-            if sum != 0 and zero_row > -1:
-                # we have found non-zero row after all-zero row - swap these rows
-                n = self.swap(m, r, zero_row)
-                # and repeat from the beginning
-                return self.sort(n)
-        # nothing to sort, return
-        return m
+        absorbing = 1
+        for i, r in enumerate(T.index):
+            if 1.0 == T.loc[r][r]:
+                for ii in range(absorbing, i+1)[::-1]:
+                    T = self.swap(T, ii, ii-1)
+                absorbing += 1
+        return T
 
     def markovian_analysis(self):
         self.T = pd.DataFrame(self.transition_matrix().toarray(),
                               columns=list(self.node_to_name_map()),
                               index=list(self.node_to_name_map()))
-        sorted_transition_matrix = self.sort(self.T.transpose())
-        self.T = pd.DataFrame(normalize(sorted_transition_matrix.to_numpy()),
-                              columns=sorted_transition_matrix.columns,
-                              index=sorted_transition_matrix.columns)
+        self.T['j']['j'] = 1
+        sorted_transition_matrix = self.find_canonical_from(self.T.transpose())
+        # self.T = pd.DataFrame(normalize(sorted_transition_matrix.to_numpy()),
+        #                       columns=sorted_transition_matrix.columns,
+        #                       index=sorted_transition_matrix.columns)
 
         number_of_transient_states = num_of_transients(self.T)
+        number_of_transient_states = 3
         number_of_absorbing_states = self.T.shape[0] - number_of_transient_states
         transient_state_order = sorted_transition_matrix.columns[:number_of_transient_states]
 
@@ -195,18 +189,20 @@ class Network(pathpy.Network):
         self.Q.set_index(transient_state_order, inplace=True)
         self.Q.set_axis(transient_state_order, inplace=True, axis=1)
 
+        columns = sorted_transition_matrix.columns[number_of_transient_states:].tolist() + \
+                  sorted_transition_matrix.columns[:number_of_transient_states].tolist()
+
         self.P = pd.DataFrame(np.vstack([np.hstack([identity(number_of_absorbing_states),
                                          np.zeros([number_of_absorbing_states, number_of_transient_states])]),
                               np.hstack([self.R, self.Q])]),
-                              columns=sorted_transition_matrix.columns,
-                              index=sorted_transition_matrix.columns)
+                              columns=columns, index=columns)
         self.N = pd.DataFrame(np.linalg.inv(identity(self.Q.shape[-1]) - self.Q),
                               columns=transient_state_order,
                               index=transient_state_order)  # fundamental matrix
         self.B = pd.DataFrame(np.matmul(self.N.to_numpy(), self.R.to_numpy()),
                               index=transient_state_order,
                               columns=self.T.index[-number_of_absorbing_states:])  # absorption probabilities
-        self.t = pd.DataFrame(np.matmul(self.N, np.ones(self.N.shape[0])), index=transient_state_order)
+        self.t = np.matmul(self.N, np.ones(self.N.shape[0]))  # TODO: There is something really off here, with the ant state transitions.
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)

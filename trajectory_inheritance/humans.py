@@ -46,6 +46,8 @@ def get_excel_worksheet_index(filename) -> int:
     indices = []
 
     for i in range(2, number_exp + 1):
+        if i == 191:
+            DEBUG = 1
         in_filled_lines = (i <= number_exp and sheet.cell(row=i, column=1).value is not None)
         old_filename_times = sheet.cell(row=i, column=1).value.split(' ')[0].split('_')
         if len([ii for ii in range(len(times_list))

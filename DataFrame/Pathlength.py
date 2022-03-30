@@ -9,16 +9,58 @@ from DataFrame.dataFrame import myDataFrame as df
 from DataFrame.dataFrame import choose_relevant_experiments
 import json
 from Analysis.PathLength import PathLength
+import os
+import pandas as pd
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
 plot_group_size_seperately = {'ant': [1], 'human': [2]}
 
 
 def plot_path_length_cutoff(df, solver, ax, marker='.'):
-    df['pathlength cut off'] = df['filename'].progress_apply(lambda x: PathLength(get(x)).comparable())
+    if os.path.exists('cut_off.json'):
+        with open('cut_off.json', 'r') as json_file:
+            values = json.loads(json.load(json_file)).values()
+            df['pathlength cut off'] = np.array(list(values))[:, 0]
+            df['winner'] = np.array(list(values))[:, 1]
+            df['winner'] = df['winner'].astype(bool)
+
+    else:
+        results = df['filename'].progress_apply(lambda x: PathLength(get(x)).comparable())
+
+        with open('cut_off.json', 'w') as json_file:
+            json.dump(results.to_json(), json_file)
 
     for communication in [0, 1]:
         df_solver_comm = df[df['communication'] == communication]
+
+        seperate_group_df = \
+            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
+        not_seperate_group_df = \
+            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
+        for part in [seperate_group_df, not_seperate_group_df]:
+            groups = part.groupby(by=['size'])
+            means = groups.mean()
+            sem = groups.sem()
+            # std = groups.std()
+
+            means.plot.scatter(x='average Carrier Number',
+                               y='winner',
+                               label='comm: ' + str(communication),
+                               xerr=sem['average Carrier Number'],
+                               yerr=sem['winner'],
+                               c=color[solver][communication],
+                               ax=ax[1],
+                               marker=marker,
+                               s=150)
+
+            if len(means) > 0:
+                xs = list(means['average Carrier Number'] + 0.5)
+                ys = list(means['winner'] + 0.5)
+                for txt, x, y in zip(list(means.index), xs, ys):
+                    ax[1].annotate(txt, (x, y), fontsize=13)
+
+    for communication in [0, 1]:
+        df_solver_comm = df[df['communication'] == communication][df['winner']]
 
         seperate_group_df = \
             df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
@@ -32,22 +74,23 @@ def plot_path_length_cutoff(df, solver, ax, marker='.'):
             # std = groups.std()
 
             means.plot.scatter(x='average Carrier Number',
-                               y='path length/minimal path length[]',
+                               y='pathlength cut off',
                                label='comm: ' + str(communication),
                                xerr=sem['average Carrier Number'],
-                               yerr=sem['path length/minimal path length[]'],
+                               yerr=sem['pathlength cut off'],
                                c=color[solver][communication],
-                               ax=ax,
+                               ax=ax[0],
                                marker=marker,
                                s=150)
 
             if len(means) > 0:
                 xs = list(means['average Carrier Number'] + 0.5)
-                ys = list(means['path length/minimal path length[]'] + 0.5)
+                ys = list(means['pathlength cut off'] + 0.5)
                 for txt, x, y in zip(list(means.index), xs, ys):
-                    ax.annotate(txt, (x, y), fontsize=13)
+                    ax[0].annotate(txt, (x, y), fontsize=13)
 
     reduce_legend()
+    DEBUG = 1
 
 
 def plot_path_length(df, solver, ax, marker='.'):
@@ -209,7 +252,7 @@ def relevant_columns(df):
 
 if __name__ == '__main__':
 
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = plt.subplots(2, 1)
     shape = 'SPT'
     solvers = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}

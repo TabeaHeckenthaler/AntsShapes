@@ -152,12 +152,12 @@ class PathLength:
         """
         max_path_length = self.minimal() * maximal
         path_length = self.calculate_path_length(max_path_length=max_path_length)
-        winner = path_length < max_path_length
+        winner = (path_length < max_path_length) and self.x.winner
         return path_length, winner
 
 
 if __name__ == '__main__':
-    x = get('minimal_S_SPT_back_MazeDimensions_new2021_SPT_ant_LoadDimensions_new2021_SPT_ant')
+    x = get('S_SPT_4800006_SSpecialT_1_ants (part 1)')
     print(PathLength(x).comparable())
     DEBUG = 1
     # p = [resolution(size, 'ant') for size in sizes['ant']]

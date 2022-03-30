@@ -2,28 +2,23 @@ from Analysis.PathPy.Network import *
 from DataFrame.choose_experiments import choose_experiments
 
 
-def calculate_diffusion_time(filenames, paths, solver, size, shape) -> pd.Series:
-    paths.load_paths(filenames=filenames)
-
-    my_network = Network.init_from_paths(paths, solver, size, shape)
-    my_network.get_results()
-
-    t = my_network.t.sort_values(0, ascending=False) * paths.time_step  # TODO: this easily leads
-    # to mistakes
-    return t
-
-
-class DiffusionTime:
+class Diffusion:
     def __init__(self, solver, shape, geometry):
         self.solver, self.shape, self.geometry = solver, shape, geometry
 
-    def get_diffusion_times(self) -> dict:
+    def get_diffusion(self) -> dict:
+        pass
+
+    def y_label(self):
+        pass
+
+    def saving_name(self) -> str:
         pass
 
     def plot(self):
         fig, ax = plt.subplots()
         legend = []
-        diff_times = self.get_diffusion_times()
+        diff_times = self.get_diffusion()
 
         index = sorted(list({x for l in [list(t.index) for t in diff_times.values()] for x in l}))
         ax.set_xticks(ticks=range(len(index)))
@@ -36,14 +31,23 @@ class DiffusionTime:
         plt.show(block=False)
         ax.set_ylabel(self.y_label())
         ax.legend(legend)
+        print('Saving figure in ' + os.path.join(graph_dir(), self.saving_name() + '.png'))
         fig.savefig(os.path.join(graph_dir(), self.saving_name() + '.png'),
                     format='png', pad_inches=0.5, bbox_inches='tight')
 
-    def y_label(self):
-        pass
 
-    def saving_name(self) -> str:
-        pass
+class DiffusionTime(Diffusion):
+    def __init__(self, solver, shape, geometry):
+        super().__init__(solver, shape, geometry)
+
+    def calculate_diffusion_time(self, filenames, size) -> pd.Series:
+        paths = Paths(self.solver, size, self.shape, self.geometry)
+        paths.load_paths(filenames=filenames)
+
+        my_network = Network.init_from_paths(paths, self.solver, size, self.shape)
+        my_network.get_results()
+        t = my_network.t.sort_values(0, ascending=False) * paths.time_step  # TODO: this easily leads to mistakes
+        return t
 
 
 class DiffusionTimeHuman(DiffusionTime):
@@ -56,16 +60,15 @@ class DiffusionTimeHuman(DiffusionTime):
     def saving_name(self):
         return 'human_expected_solving_time'
 
-    def get_diffusion_times(self):
+    def get_diffusion(self):
         diff_times = {}
-        for i, self.size in enumerate(exp_types[self.shape][self.solver]):
+        for i, size in enumerate(exp_types[self.shape][self.solver]):
             for communication in [True, False]:
-                paths = Paths(self.solver, self.size, self.shape, self.geometry)
-                filenames = choose_experiments(self.solver, self.shape, self.size, self.geometry,
+                filenames = choose_experiments(self.solver, self.shape, size, self.geometry,
                                                communication=communication).filename
                 if len(filenames) > 0:
-                    t = calculate_diffusion_time(filenames, paths, self.solver, self.size, self.shape)
-                    diff_times[self.size + '_comm_' + str(communication)] = t
+                    diff_times[size + '_comm_' + str(communication)] = \
+                        self.calculate_diffusion_time(filenames, size)
         return diff_times
 
 
@@ -79,20 +82,79 @@ class DiffusionTimeAnt(DiffusionTime):
     def saving_name(self):
         return 'ants_expected_solving_time'
 
-    def get_diffusion_times(self):
+    def get_diffusion(self):
         diff_times = {}
         for i, size in enumerate(exp_types[self.shape][self.solver]):
-                paths = Paths(self.solver, size, self.shape, self.geometry)
-                filenames = choose_experiments(self.solver, self.shape, size, self.geometry).filename
+            filenames = choose_experiments(self.solver, self.shape, size, self.geometry).filename
+            if len(filenames) > 0:
+                diff_times[size] = self.calculate_diffusion_time(filenames, size)
+        return diff_times
+
+
+class DiffusionStates(Diffusion):
+    def __init__(self, solver, shape, geometry):
+        super().__init__(solver, shape, geometry)
+
+    def calculate_diffusion_states(self, filenames, size) -> pd.Series:
+        paths = PathWithoutSelfLoops(self.solver, size, self.shape, self.geometry)
+        paths.load_paths(filenames=filenames)
+        my_network = Network.init_from_paths(paths, self.solver, size, self.shape)
+        my_network.get_results()
+        # my_network.save(my_network.to_dict())
+        t = my_network.t.sort_values(0, ascending=False)
+        return t
+
+
+class DiffusionStatesHuman(DiffusionStates):
+    def __init__(self):
+        super().__init__('human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+
+    def y_label(self):
+        return 'states passed before humans solve [s]'
+
+    def saving_name(self):
+        return 'human_expected_solving_states'
+
+    def get_diffusion(self):
+        diff_times = {}
+        for i, size in enumerate(exp_types[self.shape][self.solver]):
+            for communication in [True, False]:
+                filenames = choose_experiments(self.solver, self.shape, size, self.geometry,
+                                               communication=communication).filename
                 if len(filenames) > 0:
-                    t = calculate_diffusion_time(filenames, paths, self.solver, size, self.shape)
-                    diff_times[size] = t
+                    diff_times[size + '_comm_' + str(communication)] = \
+                        self.calculate_diffusion_states(filenames, size)
+        return diff_times
+
+
+class DiffusionStatesAnt(DiffusionStates):
+    def __init__(self):
+        super().__init__('ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+
+    def y_label(self):
+        return 'states passed before ants solve [s]'
+
+    def saving_name(self):
+        return 'ants_expected_solving_states'
+
+    def get_diffusion(self):
+        diff_times = {}
+        for i, size in enumerate(exp_types[self.shape][self.solver]):
+            filenames = choose_experiments(self.solver, self.shape, size, self.geometry).filename
+            if len(filenames) > 0:
+                diff_times[size] = self.calculate_diffusion_states(filenames, size)
         return diff_times
 
 
 if __name__ == '__main__':
-    diff_time_human = DiffusionTimeHuman()
-    diff_time_human.plot()
+    # diff_time_human = DiffusionTimeHuman()
+    # diff_time_human.plot()
+    #
+    # diff_time_ant = DiffusionTimeAnt()
+    # diff_time_ant.plot()
+    #
+    # diff_state_human = DiffusionStatesHuman()
+    # diff_state_human.plot()
 
-    diff_time_human = DiffusionTimeAnt()
-    diff_time_human.plot()
+    diff_state_ant = DiffusionStatesAnt()
+    diff_state_ant.plot()
