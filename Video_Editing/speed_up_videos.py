@@ -50,7 +50,6 @@ if __name__ == '__main__':
         cv2.imshow('frame', img)
         video_writer.write(img)
 
-
         count += speed_up
         cap.set(cv2.CAP_PROP_POS_FRAMES, count)
 
