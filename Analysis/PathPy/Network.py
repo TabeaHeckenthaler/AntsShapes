@@ -8,8 +8,9 @@ import os
 from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.PathPy.AbsorbingMarkovChain import *
 from Analysis.PathPy.Paths import Paths, PathsTimeStamped, PathWithoutSelfLoops
+import pandas as pd
+import numpy as np
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
 colors = {0: 'black', 1: 'red', 2: 'blue'}
@@ -157,52 +158,40 @@ class Network(pathpy.Network):
         m = m.reindex(columns=order, index=order)
         return m
 
-    def find_canonical_from(self, T):
+    def find_P(self, T):
         """
-        reorganize matrix so zero-rows go last (preserving zero rows order)
+        reorganize matrix to canonical form
         """
-        absorbing = 1
+        num_absorbing = 0
         for i, r in enumerate(T.index):
             if 1.0 == T.loc[r][r]:
-                for ii in range(absorbing, i+1)[::-1]:
-                    T = self.swap(T, ii, ii-1)
-                absorbing += 1
-        return T
+                num_absorbing += 1
+                for ii in range(num_absorbing, i+1)[::-1]:
+                    T = self.swap(T, ii, ii - 1)
+        return T, num_absorbing
 
     def markovian_analysis(self):
-        self.T = pd.DataFrame(self.transition_matrix().toarray(),
+        # self.T = pd.DataFrame([[1, 0, 0, 0, 0], [1/2, 0, 1/2, 0, 0], [0, 1/2, 0, 1/2, 0],
+        #                        [0, 0, 1/2, 0, 1/2], [0, 0, 0, 0, 1]],
+        #                       columns='0,1,2,3,4'.split(','),
+        #                       index='0,1,2,3,4'.split(','))
+
+        self.T = pd.DataFrame(self.transition_matrix().toarray().transpose(),
                               columns=list(self.node_to_name_map()),
                               index=list(self.node_to_name_map()))
         self.T['j']['j'] = 1
-        sorted_transition_matrix = self.find_canonical_from(self.T.transpose())
-        # self.T = pd.DataFrame(normalize(sorted_transition_matrix.to_numpy()),
-        #                       columns=sorted_transition_matrix.columns,
-        #                       index=sorted_transition_matrix.columns)
-
-        number_of_transient_states = num_of_transients(self.T)
-        number_of_transient_states = 3
-        number_of_absorbing_states = self.T.shape[0] - number_of_transient_states
-        transient_state_order = sorted_transition_matrix.columns[:number_of_transient_states]
-
-        self.Q, self.R = decompose(self.T)
-        self.R.set_index(transient_state_order, inplace=True)
-        self.Q.set_index(transient_state_order, inplace=True)
-        self.Q.set_axis(transient_state_order, inplace=True, axis=1)
-
-        columns = sorted_transition_matrix.columns[number_of_transient_states:].tolist() + \
-                  sorted_transition_matrix.columns[:number_of_transient_states].tolist()
-
-        self.P = pd.DataFrame(np.vstack([np.hstack([identity(number_of_absorbing_states),
-                                         np.zeros([number_of_absorbing_states, number_of_transient_states])]),
-                              np.hstack([self.R, self.Q])]),
-                              columns=columns, index=columns)
-        self.N = pd.DataFrame(np.linalg.inv(identity(self.Q.shape[-1]) - self.Q),
+        self.P, num_absorbing = self.find_P(self.T)
+        self.Q, self.R = self.P.iloc[num_absorbing:, num_absorbing:], self.P.iloc[num_absorbing:, 0:num_absorbing]
+        transient_state_order = self.P.columns[num_absorbing:]
+        self.N = pd.DataFrame(np.linalg.inv(np.identity(self.Q.shape[-1]) - self.Q),
                               columns=transient_state_order,
-                              index=transient_state_order)  # fundamental matrix
+                              index=transient_state_order
+                              )  # fundamental matrix
         self.B = pd.DataFrame(np.matmul(self.N.to_numpy(), self.R.to_numpy()),
                               index=transient_state_order,
-                              columns=self.T.index[-number_of_absorbing_states:])  # absorption probabilities
-        self.t = np.matmul(self.N, np.ones(self.N.shape[0]))  # TODO: There is something really off here, with the ant state transitions.
+                              columns=self.T.index[-num_absorbing:]
+                              )  # absorption probabilities
+        self.t = np.matmul(self.N, np.ones(self.N.shape[0]))
 
     # def create_higher_order_network(self, k: int = 2) -> pp.Network:
     #     hon = pp.HigherOrderNetwork(self.paths, k=k, null_model=True)

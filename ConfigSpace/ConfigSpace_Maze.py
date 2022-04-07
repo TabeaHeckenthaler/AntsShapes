@@ -565,16 +565,13 @@ class ConfigSpace_Maze(ConfigSpace):
 
         return np.logical_or(space1, space2)  # have to check, if its really a logical or...
 
-    def split_connected_components(self, space: np.array) -> (list, list):
+    def split_connected_components(self, space: np.array) -> tuple:
         """
         from self find connected components
         Take into account periodicity
         :param space: which space should be split
         :return: list of ps spaces, that have only single connected components
         """
-        ps_states = []
-        letters = list(string.ascii_lowercase)
-        centroids = np.empty((0, 3))
         labels, number_cc = cc3d.connected_components(space, connectivity=6, return_N=True)
         stats = cc3d.statistics(labels)
         voxel_counts = [stats['voxel_counts'][label] for label in range(stats['voxel_counts'].shape[0])]
@@ -582,41 +579,78 @@ class ConfigSpace_Maze(ConfigSpace):
         max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
         min_cc_size = np.sort(voxel_counts)[-cc_to_keep] - 1
         chosen_cc = np.where((max_cc_size > stats['voxel_counts']) & (stats['voxel_counts'] > min_cc_size))[0]
-        assert chosen_cc.shape[0] == 10, 'calculate_diffusion_time is off'
+        assert chosen_cc.shape[0] == 10, 'We dont have the right number of connected components: ' + str(chosen_cc.shape[0])
+        return chosen_cc, labels, stats['centroids']
 
-        for label in chosen_cc:
-            ps = PS_Area(self, np.bool_(labels == label), letters.pop(0))
+    def extend_ps_states_to_eroded_states(self, ps_states):
+        for ps_state in tqdm(ps_states):
+            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~self.space)
 
-            # if this is part of a another ps that is split by 0 or 2pi
-            centroid = np.array(self.indices_to_coords(*np.floor(stats['centroids'][label])))
+        distance_stack = np.stack([ps_state.distance for ps_state in ps_states], axis=3)
 
-            border_bottom = np.any(ps.space[:, :, 0])
-            border_top = np.any(ps.space[:, :, -1])
+        for indices in self.iterate_space_index():
+            ps_state_to_add_to = np.argmin(distance_stack[indices])
+            ps_states[ps_state_to_add_to][indices] = True
 
-            if (border_bottom and not border_top) or (border_top and not border_bottom):
-                index = np.where(np.abs(centroid[0] - centroids[:, 0]) < 0.1)[0]
-                if len(index) > 0:
-                    ps_states[index[0]].space = np.logical_or(ps_states[index[0]].space, ps.space)
-                    centroids[index[0]][-1] = 0
+        # distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        # far_away = distance_stack > self.max_distance_for_transition()
+        # distance_stack[far_away] = np.inf
+        #
+        # ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}  # TODO: this is not quite good.
+        #
+        # self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
+        # print('Iterating over every node and assigning label')
+        # [self.assign_label(indices, distance_stack, distance_stack_original, ps_name_dict)
+        #  for indices in self.iterate_space_index()]
 
-                else:
-                    ps_states.append(ps)
-                    centroids = np.vstack([centroids, centroid])
-            else:
+        return
+
+    def create_ps_states(self, space):
+        chosen_cc, labels, centroids = self.split_connected_components(space)
+
+        spaces = [np.bool_(labels == cc) for cc in chosen_cc]
+        centroids = [centroids[cc] for cc in chosen_cc]
+
+        ps_states = []
+        letters = list(string.ascii_lowercase)
+
+        for space, centroid in zip(spaces, centroids):
+            connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states]
+
+            if not np.any(connected):
+                ps = PS_Area(self, space, letters.pop(0), centroid=centroid)
                 ps_states.append(ps)
-                centroids = np.vstack([centroids, centroid])
-        return ps_states, centroids
+
+        self.extend_ps_states_to_eroded_states(ps_states)
+        return ps_states
 
 
 class PS_Area(ConfigSpace_Maze):
-    def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str):
+    def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str, centroid=None):
         super().__init__(solver=ps.solver, size=ps.size, shape=ps.shape, geometry=ps.geometry)
         self.space: np.array = space
         self.fig = ps.fig
         self.name: str = name
         self.distance: np.array = None
+        self.centroid = centroid
 
-    def calculate_distance(self, mask: np.array) -> np.array:
+    def try_to_connect_periodically(self, space, centroid) -> bool:
+        # if this is part of a another ps that is split by 0 or 2pi
+        border_bottom = np.any(ps.space[:, :, 0])
+        border_top = np.any(space[:, :, -1])
+
+        if (border_bottom and not border_top) or (border_top and not border_bottom):
+            if len(np.where(np.abs(centroid[0] - self.centroid[0]) < 0.1)[0]) > 0:
+                self.extend_by_periodic(space)
+                return True
+        return False
+
+    def extend_by_periodic(self, space):
+        self.space = np.logical_or(self.space, space)
+        self.centroid[-1] = 0
+
+    @staticmethod
+    def calculate_distance(space: np.array, mask: np.array) -> np.array:
         """
         Calculate the distance to every other node in the array.
         :param mask: Distances have to be calculated according to the available nodes.
@@ -625,9 +659,9 @@ class PS_Area(ConfigSpace_Maze):
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-        phi = np.array(~self.space, dtype=int)
+        phi = np.array(~space, dtype=int)
         masked_phi = np.ma.MaskedArray(phi, mask=mask)
-        self.distance = distance(masked_phi, periodic=(0, 0, 1))
+        return distance(masked_phi, periodic=(0, 0, 1))
 
         # node at (105, 36, 102)
 
@@ -767,7 +801,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                 print('Wrong number of cc')
         else:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
-            self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
+            self.ps_states = self.create_ps_states(self.eroded_space)
             # self.visualize_states(reduction=5)
             self.label_space()
             self.save_labeled()
@@ -945,47 +979,49 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
         if self.ps_states is None:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
-            self.ps_states, self.centroids = self.split_connected_components(self.eroded_space)
+            self.ps_states = self.create_ps_states(self.eroded_space)
         dilated_space = self.dilate(self.space, self.erosion_radius_default())
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
-        [ps_state.calculate_distance(~dilated_space) for ps_state in tqdm(self.ps_states)]
-        distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        for ps_state in tqdm(self.ps_states):
+            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~dilated_space)
 
+        distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
-        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
-
-        def assign_label(ind: tuple):
-            """
-            Assign label to node in space.
-            :param ind: indices of node in configuration space
-            :return:
-            """
-            # everything not in self.space.
-            if not self.space[ind]:
-                self.space_labeled[ind] = '0'
-                return
-
-            # everything in self.ps_states.
-            for i, ps_state in enumerate(self.ps_states):
-                if ps_state.space[ind]:
-                    self.space_labeled[ind] = ps_state.name
-                    return
-
-            # in eroded space
-            # self.visualize_states()
-            # self.draw_ind(indices)
-            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
-                                               if distance_stack[ind].data[ii] < np.inf])
-            if len(self.space_labeled[ind]) == 0:
-                self.space_labeled[ind] = ''.join(
-                    [ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
+        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}  # TODO: this is not quite good.
 
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
-        [assign_label(indices) for indices in self.iterate_space_index()]
+        [self.assign_label(indices, distance_stack, distance_stack_original, ps_name_dict)
+         for indices in self.iterate_space_index()]
+
+    def assign_label(self, ind: tuple, distance_stack: np.array, distance_stack_original: np.array, ps_name_dict: dict):
+        """
+        Assign label to node in space.
+        :param ind: indices of node in configuration space
+        :return:
+        """
+        # everything not in self.space.
+        if not self.space[ind]:
+            self.space_labeled[ind] = '0'
+            return
+
+        # everything in self.ps_states.
+        for i, ps_state in enumerate(self.ps_states):
+            if ps_state.space[ind]:
+                self.space_labeled[ind] = ps_state.name
+                return
+
+        # in eroded space
+        # self.visualize_states()
+        # self.draw_ind(indices)
+        self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+                                           if distance_stack[ind].data[ii] < np.inf])
+
+        if len(self.space_labeled[ind]) == 0:
+            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
 
 if __name__ == '__main__':
@@ -995,7 +1031,7 @@ if __name__ == '__main__':
     for size in sizes_to_reerode:
         ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
         ps.load_eroded_labeled_space()
-        reduction = 4
+        reduction = 1
         ps.visualize_states(reduction=reduction)
         ps.visualize_transitions(reduction=reduction)
 
