@@ -395,9 +395,9 @@ class ConfigSpace_Maze(ConfigSpace):
             self.calculate_boundary()
         if directory is None:
             if os.path.exists(self.directory()):
-                now = datetime.now()
-                date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-                directory = self.directory(addition=date_string)
+                # now = datetime.now()
+                # date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
+                directory = self.directory(addition='')
             else:
                 directory = self.directory()
         print('Saving ' + self.name + ' in path: ' + directory)
@@ -582,31 +582,21 @@ class ConfigSpace_Maze(ConfigSpace):
         assert chosen_cc.shape[0] == 10, 'We dont have the right number of connected components: ' + str(chosen_cc.shape[0])
         return chosen_cc, labels, stats['centroids']
 
-    def extend_ps_states_to_eroded_states(self, ps_states):
+    def extend_ps_states_to_eroded_space(self, ps_states):
         for ps_state in tqdm(ps_states):
             ps_state.distance = ps_state.calculate_distance(ps_state.space, ~self.space)
 
         distance_stack = np.stack([ps_state.distance for ps_state in ps_states], axis=3)
-
         for indices in self.iterate_space_index():
-            ps_state_to_add_to = np.argmin(distance_stack[indices])
-            ps_states[ps_state_to_add_to][indices] = True
+            if self.space[indices]:
+                ps_state_to_add_to = np.argmin(distance_stack[indices])
+                ps_states[ps_state_to_add_to].space[indices] = True
+        return ps_states
 
-        # distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
-        # far_away = distance_stack > self.max_distance_for_transition()
-        # distance_stack[far_away] = np.inf
-        #
-        # ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}  # TODO: this is not quite good.
-        #
-        # self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
-        # print('Iterating over every node and assigning label')
-        # [self.assign_label(indices, distance_stack, distance_stack_original, ps_name_dict)
-        #  for indices in self.iterate_space_index()]
-
-        return
-
-    def create_ps_states(self, space):
-        chosen_cc, labels, centroids = self.split_connected_components(space)
+    def create_ps_states(self):
+        if self.eroded_space is None:
+            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
+        chosen_cc, labels, centroids = self.split_connected_components(self.eroded_space)
 
         spaces = [np.bool_(labels == cc) for cc in chosen_cc]
         centroids = [centroids[cc] for cc in chosen_cc]
@@ -615,13 +605,14 @@ class ConfigSpace_Maze(ConfigSpace):
         letters = list(string.ascii_lowercase)
 
         for space, centroid in zip(spaces, centroids):
+            self.visualize_space(space=space, reduction=4)
             connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states]
 
             if not np.any(connected):
                 ps = PS_Area(self, space, letters.pop(0), centroid=centroid)
                 ps_states.append(ps)
 
-        self.extend_ps_states_to_eroded_states(ps_states)
+        ps_states = self.extend_ps_states_to_eroded_space(ps_states)
         return ps_states
 
 
@@ -636,11 +627,11 @@ class PS_Area(ConfigSpace_Maze):
 
     def try_to_connect_periodically(self, space, centroid) -> bool:
         # if this is part of a another ps that is split by 0 or 2pi
-        border_bottom = np.any(ps.space[:, :, 0])
-        border_top = np.any(space[:, :, -1])
+        border_bottom = np.any(self.space[:, :, 0])
+        border_top = np.any(self.space[:, :, -1])
 
         if (border_bottom and not border_top) or (border_top and not border_bottom):
-            if len(np.where(np.abs(centroid[0] - self.centroid[0]) < 0.1)[0]) > 0:
+            if len(np.where(np.abs(centroid[0] - self.centroid[0]) < 1)[0]) > 0:
                 self.extend_by_periodic(space)
                 return True
         return False
@@ -796,12 +787,14 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
         if os.path.exists(directory):
             print('Loading labeled from ', directory, '...')
-            self.eroded_space, self.ps_states, self.centroids, self.space_labeled = pickle.load(open(directory, 'rb'))
-            if len(self.centroids) != cc_to_keep - 2:
+            self.eroded_space, self.ps_states, self.space_labeled = pickle.load(open(directory, 'rb'))
+            if len(self.ps_states) != cc_to_keep - 2:
                 print('Wrong number of cc')
         else:
-            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
-            self.ps_states = self.create_ps_states(self.eroded_space)
+            if self.ps_states is None:
+                self.ps_states = self.create_ps_states()
+                # pickle.dump(self.ps_states, open('ps_states.pkl', 'wb'))
+
             # self.visualize_states(reduction=5)
             self.label_space()
             self.save_labeled()
@@ -867,7 +860,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
     #     matrices = Parallel(n_jobs=4)(delayed(label_slice)(x_i) for x_i in range(self.space.shape[0]))
     #     self.space_labeled = np.stack(matrices, axis=0)
 
-    def visualize_states(self, fig=None, colormap='Oranges', reduction: int = 1) -> None:
+    def visualize_states(self, fig=None, reduction: int = 1) -> None:
         """
 
         :param fig: mylab figure reference
@@ -884,18 +877,20 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw states')
-        if len(self.centroids) != cc_to_keep - 2:
+        if len(self.ps_states) != cc_to_keep - 2:
             print('Wrong number of cc')
 
-        for centroid, ps_state in tqdm(zip(self.centroids, self.ps_states)):
-            # ps_state.extent = self.extent # This was only because I had made a mistake
+        colors = itertools.cycle(['Reds', 'Purples', 'Greens'])
+
+        for ps_state, colormap in tqdm(zip(self.ps_states, colors)):
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
-            mlab.text3d(*(centroid * [1, 1, self.average_radius]), ps_state.name,
+            mlab.text3d(*(np.array(ps.indices_to_coords(*ps_state.centroid)) * [1, 1, self.average_radius]),
+                        ps_state.name,
                         scale=self.scale_of_letters(reduction))
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
-                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size]/reduction
+                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size]/reduction * 4
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -930,16 +925,23 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         :return:
         """
         if directory is None:
+            directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition='')
+
+        if os.path.exists(directory):
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string)
 
         print('Saving ' + self.name + ' in path: ' + directory)
-        pickle.dump((self.eroded_space, self.ps_states, self.centroids, self.space_labeled), open(directory, 'wb'))
+        pickle.dump((self.eroded_space, self.ps_states, self.space_labeled), open(directory, 'wb'))
 
         # Actually, I don't really need all this information.  self.space_labeled should be enough
-        directory = self.directory(point_particle=False,
-                                   erosion_radius=self.erosion_radius, addition=date_string, small=True)
+        directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition='', small=True)
+
+        if os.path.exists(directory):
+            now = datetime.now()
+            date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
+            directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
         print('Saving reduced in' + self.name + ' in path: ' + directory)
         pickle.dump(self.space_labeled, open(directory, 'wb'))
@@ -978,30 +980,27 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         :return:
         """
         if self.ps_states is None:
-            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
-            self.ps_states = self.create_ps_states(self.eroded_space)
-        dilated_space = self.dilate(self.space, self.erosion_radius_default())
+            self.ps_states = self.create_ps_states()
+
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
         for ps_state in tqdm(self.ps_states):
-            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~dilated_space)
+            if ps_state.distance.size == 0:
+                ps_state.distance = ps_state.calculate_distance(ps_state.space, ~self.space)
 
-        distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        # distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
-        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}  # TODO: this is not quite good.
+        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
-        [self.assign_label(indices, distance_stack, distance_stack_original, ps_name_dict)
-         for indices in self.iterate_space_index()]
+        [self.assign_label(indices, distance_stack, ps_name_dict) for indices in self.iterate_space_index()]
 
-    def assign_label(self, ind: tuple, distance_stack: np.array, distance_stack_original: np.array, ps_name_dict: dict):
+    def assign_label(self, ind: tuple, distance_stack: np.array, ps_name_dict: dict):
         """
-        Assign label to node in space.
-        :param ind: indices of node in configuration space
-        :return:
+
         """
         # everything not in self.space.
         if not self.space[ind]:
@@ -1011,28 +1010,43 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # everything in self.ps_states.
         for i, ps_state in enumerate(self.ps_states):
             if ps_state.space[ind]:
-                self.space_labeled[ind] = ps_state.name
+                self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+                                           if distance_stack[ind].data[ii] < np.inf])
                 return
 
         # in eroded space
         # self.visualize_states()
         # self.draw_ind(indices)
-        self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
-                                           if distance_stack[ind].data[ii] < np.inf])
+        # self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+        #                                    if distance_stack[ind].data[ii] < np.inf])
 
-        if len(self.space_labeled[ind]) == 0:
-            self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
+        # if len(self.space_labeled[ind]) == 0:
+        #     self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
 
 if __name__ == '__main__':
-    sizes_to_reerode = ['S']
-    solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+    shape = 'SPT'
+    # sizes_to_reerode = ['XL', 'L', 'M', 'S']
+    # solver, geometry = 'ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    for size in sizes_to_reerode:
-        ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-        ps.load_eroded_labeled_space()
-        reduction = 1
-        ps.visualize_states(reduction=reduction)
-        ps.visualize_transitions(reduction=reduction)
+    geometries = {('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
+                  # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
+                  ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small'],
+                  }
 
-        DEBUG = 1
+    for (solver, geometry), sizes in list(geometries.items())[1:]:
+        for size in sizes:
+            ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
+            # ps.eroded_space = np.load('eroded.npy')
+            # ps.ps_states = ps.create_ps_states()
+
+            # pickle.dump(ps.ps_states, open('ps_states.pkl', 'wb'))
+            # ps.ps_states = pickle.load(open('ps_states.pkl', 'rb'))
+            # ps.visualize_states(reduction=reduction)
+
+            ps.load_eroded_labeled_space()
+
+            # reduction = 1
+            # ps.visualize_transitions(reduction=reduction)
+
+            # DEBUG = 1
