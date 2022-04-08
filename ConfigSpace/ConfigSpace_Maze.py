@@ -890,7 +890,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
-                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size]/reduction * 4
+                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size] * reduction
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -917,7 +917,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label,
                         scale=self.scale_of_letters(reduction))
 
-    def save_labeled(self, directory=None, date_string='') -> None:
+    def save_labeled(self, directory=None) -> None:
         """
         Save the labeled PhaseSpace in directory
         :param directory: where to save PhaseSpace
@@ -1031,7 +1031,7 @@ if __name__ == '__main__':
 
     geometries = {('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
                   # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
-                  ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small'],
+                  ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
                   }
 
     for (solver, geometry), sizes in list(geometries.items())[1:]:
@@ -1042,11 +1042,8 @@ if __name__ == '__main__':
 
             # pickle.dump(ps.ps_states, open('ps_states.pkl', 'wb'))
             # ps.ps_states = pickle.load(open('ps_states.pkl', 'rb'))
-            # ps.visualize_states(reduction=reduction)
-
-            ps.load_eroded_labeled_space()
-
-            # reduction = 1
-            # ps.visualize_transitions(reduction=reduction)
+            ps.load_labeled_space()
+            # ps.visualize_states(reduction=1)
+            ps.visualize_transitions(reduction=1)
 
             # DEBUG = 1
