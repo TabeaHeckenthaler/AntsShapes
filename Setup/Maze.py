@@ -296,8 +296,10 @@ class Maze_parent(b2World):
                 dimensions = [le * resize_factor for le in [9, 6.2, 1.2]]
             return dimensions
 
-        if self.excel_file_load in ['LoadDimensions_ant.xlsx', 'LoadDimensions_ant_L_I_425.xlsx',
-                                    'LoadDimensions_new2021_SPT_ant.xlsx']:
+        # if self.excel_file_load in ['LoadDimensions_ant.xlsx']:
+        #     d = df.loc[df['Name'] == self.size + '_' + self.shape]
+
+        elif self.excel_file_load in ['LoadDimensions_ant_L_I_425.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx']:
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
         elif self.excel_file_load in ['LoadDimensions_human.xlsx']:
@@ -305,8 +307,10 @@ class Maze_parent(b2World):
 
         elif self.excel_file_load in ['LoadDimensions_humanhand.xlsx']:
             d = df.loc[0]
+
         else:
-            raise ValueError('Unclear Load dimensions')
+            raise ValueError('Gave dimensions for ' + self.excel_file_load + ' but not matching ' +
+                             ' '.join([self.solver, self.shape, self.size]))
 
         dimensions = [d['long edge'].values[0], d['length'].values[0], d['width'].values[0],
                       d['short edge'].values[0]]
