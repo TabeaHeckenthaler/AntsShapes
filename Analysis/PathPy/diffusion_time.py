@@ -158,3 +158,4 @@ if __name__ == '__main__':
 
     diff_state_ant = DiffusionStatesAnt()
     diff_state_ant.plot()
+    DEBUG = 1

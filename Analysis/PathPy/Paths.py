@@ -143,7 +143,8 @@ def humans():
 def ants():
     solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    for size in exp_types[shape][solver]:
+    # for size in exp_types[shape][solver]:
+    for size in ['XL']:
         paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
         paths.load_time_stamped_paths()
@@ -161,3 +162,4 @@ def ants():
 
 if __name__ == '__main__':
     ants()
+    humans()

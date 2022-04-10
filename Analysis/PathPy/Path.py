@@ -39,16 +39,16 @@ class Path:
         labels = self.add_missing_transitions(labels)
         return labels
 
-    @staticmethod
-    def get_rid_of_short_lived_states(labels, min=5):
-        grouped = [(k[0], sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
+    def get_rid_of_short_lived_states(self, labels, min=5):
+        grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
-        for label, length in grouped[1:]:
-            if length >= min:
-                new_labels = new_labels + [label for _ in range(length)]
-            else:
+        for i, (label, length) in enumerate(grouped[1:-1], 1):
+            if length <= min and self.valid_transition(grouped[i-1][0], grouped[i+1][0]):
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
-        return labels
+            else:
+                new_labels = new_labels + [label for _ in range(length)]
+        new_labels = new_labels + [grouped[-1][0] for _ in range(grouped[-1][1])]
+        return new_labels
 
     @staticmethod
     def delete_false_transitions(labels):
@@ -83,22 +83,24 @@ class Path:
 
     @staticmethod
     def valid_transition(state1, state2):
-        if set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
+        if set(state1) == set(state2):
+            return True
+        elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
             return False
-        return len(set(state1) & set(state2)) > 0 or state1 == state2
+        return len(set(state1) & set(state2)) > 0
 
     @staticmethod
     def neccessary_transitions(state1, state2) -> list:
-        if state1 == 'd' and state2 == 'gj':
-            return ['df', 'f', 'fg', 'g']
-        if state1 == 'd' and state2 == 'g':
-            return ['df', 'f', 'fg']
-        if state1 == 'ba' and state2 == 'di':
-            return ['a', 'ad', 'd']
+        if state1 == 'c' and state2 == 'fh':
+            return ['ce', 'e', 'ef', 'f']
+        if state1 == 'c' and state2 == 'f':
+            return ['ce', 'e', 'ef']
+        if state1 == 'ba' and state2 == 'cg':
+            return ['a', 'ac', 'c']
 
         # otherwise, our Markov chain is not absorbing for L ants
-        if set(state1) in [set('fg'), set('fd')] and set(state1) in [set('fg'), set('fd')]:
-            return ['f']
+        if set(state1) in [set('ef'), set('ec')] and set(state1) in [set('ef'), set('ec')]:
+            return ['e']
 
         if len(state1) == len(state2) == 1:
             transition = ''.join(sorted(state1 + state2))
@@ -108,7 +110,8 @@ class Path:
                 raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2)
 
         elif len(state1) == len(state2) == 2:
-            raise ValueError('Moved from transition to transition:' + state1 + '_' + state2)
+            print('Moved from transition to transition: ' + state1 + '_' + state2)
+            return []
 
         elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
             return [''.join(sorted(state1 + state2[0])), state2[0]]
@@ -168,8 +171,8 @@ class Path:
                     if self.valid_transition(labels[i-1], labels[index]):
                         transitions = [labels[i-1], labels[index]]
                     else:
-                        if labels[i-1] == 'f' and labels[index] == 'i':
-                            transitions = ['f', 'f']  # this occurs only in small SPT ants
+                        if labels[i-1] == 'e' and labels[index] == 'g':
+                            transitions = ['e', 'e']  # this occurs only in small SPT ants
                         else:
                             transitions = [labels[i-1], *self.neccessary_transitions(labels[i-1], labels[index]), labels[index]]
 

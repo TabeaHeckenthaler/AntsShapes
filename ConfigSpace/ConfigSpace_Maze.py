@@ -1014,10 +1014,15 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # # everything in self.ps_states.
         # for i, ps_state in enumerate(self.ps_states):
         #     if ps_state.space[ind]:
-        self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+        label = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
                                    if distance_stack[ind].data[ii] < np.inf])
+        if label in forbidden_transition_attempts + allowed_transition_attempts:
+            self.space_labeled[ind] = label
+        else:
+            self.space_labeled[ind] = np.argsort(distance_stack[ind])[:1]
+
         if len(self.space_labeled[ind]) == 0:
-            DEBUG = 1
+            raise ValueError(ind)
         return
         # in eroded space
         # self.visualize_states()
@@ -1040,10 +1045,10 @@ if __name__ == '__main__':
                   }
 
     for (solver, geometry), sizes in list(geometries.items()):
-        for size in sizes:
+        for size in ['S']:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-            # ps.label_space()
+            ps.label_space()
             ps.load_labeled_space()
 
             # ps.visualize_states(reduction=1)
