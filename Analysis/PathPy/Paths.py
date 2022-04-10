@@ -1,6 +1,6 @@
 from Analysis.PathPy.Path import Path
 import os
-from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled, final_state
 import pathpy as pp
 from Directories import network_dir
 import json
@@ -59,8 +59,7 @@ class Paths(pp.Paths):
         cs_labeled.load_labeled_space()
         trajectories = choose_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry,
                                            communication=self.communication)
-        self.single_paths = {x.filename: Path(self.time_step, conf_space_labeled=cs_labeled, x=x)
-                             for x in trajectories}
+        self.single_paths = {x.filename: Path(self.time_step, conf_space_labeled=cs_labeled, x=x) for x in trajectories}
         self.time_series = {name: path.time_series for name, path in self.single_paths.items()}
 
     def save_paths(self):
@@ -149,10 +148,8 @@ def ants():
         paths.load_time_stamped_paths()
 
         for p in paths.time_series:
-            if len(np.where(p == 'j')[0]) > 1:
+            if len(np.where(p == final_state)[0]) > 1:
                 DEBUG = 1
-
-
         DEBUG = 1
 
     # filename = list(paths.time_series.keys())[0]

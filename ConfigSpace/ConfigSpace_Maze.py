@@ -15,6 +15,7 @@ from Analysis.PathPy.SPT_states import forbidden_transition_attempts, allowed_tr
 import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy
+from Analysis.PathPy.SPT_states import cc_to_keep
 
 try:
     from mayavi import mlab
@@ -29,7 +30,6 @@ except:
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
-cc_to_keep = 10
 
 # TODO: fix the x.winner attribute
 # I want the resolution (in cm) for x and y and archlength to be all the same.
@@ -577,7 +577,7 @@ class ConfigSpace_Maze(ConfigSpace):
         voxel_counts = [stats['voxel_counts'][label] for label in range(stats['voxel_counts'].shape[0])]
 
         max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
-        min_cc_size = np.sort(voxel_counts)[-cc_to_keep] - 1
+        min_cc_size = np.sort(voxel_counts)[-cc_to_keep-2] - 1
         chosen_cc = np.where((max_cc_size > stats['voxel_counts']) & (stats['voxel_counts'] > min_cc_size))[0]
         assert chosen_cc.shape[0] == 10, 'We dont have the right number of connected components: ' + str(chosen_cc.shape[0])
         return chosen_cc, labels, stats['centroids']
@@ -591,6 +591,10 @@ class ConfigSpace_Maze(ConfigSpace):
             if self.space[indices]:
                 ps_state_to_add_to = np.argmin(distance_stack[indices])
                 ps_states[ps_state_to_add_to].space[indices] = True
+
+        for ps_state in tqdm(ps_states):
+            ps_state.distance = None
+
         return ps_states
 
     def create_ps_states(self):
@@ -605,7 +609,7 @@ class ConfigSpace_Maze(ConfigSpace):
         letters = list(string.ascii_lowercase)
 
         for space, centroid in zip(spaces, centroids):
-            self.visualize_space(space=space, reduction=4)
+            # self.visualize_space(space=space, reduction=4)
             connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states]
 
             if not np.any(connected):
@@ -788,7 +792,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if os.path.exists(directory):
             print('Loading labeled from ', directory, '...')
             self.eroded_space, self.ps_states, self.space_labeled = pickle.load(open(directory, 'rb'))
-            if len(self.ps_states) != cc_to_keep - 2:
+            if len(self.ps_states) != cc_to_keep:
                 print('Wrong number of cc')
         else:
             if self.ps_states is None:
@@ -877,7 +881,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         print('Draw states')
-        if len(self.ps_states) != cc_to_keep - 2:
+        if len(self.ps_states) != cc_to_keep:
             print('Wrong number of cc')
 
         colors = itertools.cycle(['Reds', 'Purples', 'Greens'])
@@ -943,7 +947,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string, small=True)
 
-        print('Saving reduced in' + self.name + ' in path: ' + directory)
+        print('Saving reduced in ' + self.name + ' in path: ' + directory)
         pickle.dump(self.space_labeled, open(directory, 'wb'))
         print('Finished saving')
 
@@ -972,7 +976,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             distance_cm = (maze.slits[1] - maze.slits[0]) / 3
         else:
             distance_cm = maze.exit_size / 2
-        return self.coords_to_index(0, distance_cm) + self.erosion_radius * 2
+        return (self.coords_to_index(0, distance_cm) + self.erosion_radius * 2) * 1
 
     def label_space(self) -> None:
         """
@@ -983,12 +987,12 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.ps_states = self.create_ps_states()
 
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
+        dilated_space = self.dilate(self.space, self.erosion_radius_default())
         for ps_state in tqdm(self.ps_states):
-            if ps_state.distance.size == 0:
-                ps_state.distance = ps_state.calculate_distance(ps_state.space, ~self.space)
+            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~dilated_space)
 
         # distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
-        distance_stack = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
+        distance_stack = copy(np.stack([ps_state.distance for ps_state in self.ps_states], axis=3))
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
@@ -1007,13 +1011,14 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.space_labeled[ind] = '0'
             return
 
-        # everything in self.ps_states.
-        for i, ps_state in enumerate(self.ps_states):
-            if ps_state.space[ind]:
-                self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
-                                           if distance_stack[ind].data[ii] < np.inf])
-                return
-
+        # # everything in self.ps_states.
+        # for i, ps_state in enumerate(self.ps_states):
+        #     if ps_state.space[ind]:
+        self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
+                                   if distance_stack[ind].data[ii] < np.inf])
+        if len(self.space_labeled[ind]) == 0:
+            DEBUG = 1
+        return
         # in eroded space
         # self.visualize_states()
         # self.draw_ind(indices)
@@ -1034,16 +1039,14 @@ if __name__ == '__main__':
                   ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
                   }
 
-    for (solver, geometry), sizes in list(geometries.items())[1:]:
-        for size in sizes:
+    for (solver, geometry), sizes in list(geometries.items()):
+        for size in sizes[:1]:
+            print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-            # ps.eroded_space = np.load('eroded.npy')
-            # ps.ps_states = ps.create_ps_states()
-
-            # pickle.dump(ps.ps_states, open('ps_states.pkl', 'wb'))
-            # ps.ps_states = pickle.load(open('ps_states.pkl', 'rb'))
+            # ps.label_space()
             ps.load_labeled_space()
-            # ps.visualize_states(reduction=1)
-            ps.visualize_transitions(reduction=1)
 
-            # DEBUG = 1
+            # ps.visualize_states(reduction=1)
+            # ps.visualize_transitions(reduction=1)
+
+            DEBUG = 1

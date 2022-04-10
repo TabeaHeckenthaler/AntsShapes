@@ -1,3 +1,4 @@
+import string
 
 states = ['0', 'a', 'b', 'd', 'e', 'f', 'g', 'i', 'j']
 
@@ -16,4 +17,7 @@ allowed_transition_attempts = ['ab', 'ad',
                                'gf', 'ge', 'gj',
                                'ij',
                                'jg', 'ji']
-final_state = 'j'
+
+cc_to_keep = 8
+final_state = string.ascii_lowercase[cc_to_keep-1]
+pre_final_state = string.ascii_lowercase[cc_to_keep-2]

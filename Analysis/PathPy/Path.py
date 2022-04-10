@@ -2,7 +2,7 @@ from itertools import groupby
 import numpy as np
 from trajectory_inheritance.trajectory import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
-from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts
+from Analysis.PathPy.SPT_states import pre_final_state, final_state, allowed_transition_attempts
 
 
 class Path:
@@ -33,19 +33,31 @@ class Path:
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [conf_space_labeled.space_labeled[index] for index in indices]
         labels = self.cut_off_after_final_state(labels)
-        labels = self.interpolate_zeros(labels)
-        labels = self.clean(labels)
+        labels = self.interpolate_zeros(labels)  # TODO: it would be better to find the closest non-zero state.
+        labels = self.delete_false_transitions(labels)
+        labels = self.get_rid_of_short_lived_states(labels)
         labels = self.add_missing_transitions(labels)
         return labels
 
     @staticmethod
-    def clean(labels):
+    def get_rid_of_short_lived_states(labels, min=5):
+        grouped = [(k[0], sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
+        new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
+        for label, length in grouped[1:]:
+            if length >= min:
+                new_labels = new_labels + [label for _ in range(length)]
+            else:
+                new_labels = new_labels + [new_labels[-1] for _ in range(length)]
+        return labels
+
+    @staticmethod
+    def delete_false_transitions(labels):
         not_allowed = [('bg', 'gb')]
         last_state = labels[0]
         labels_copy = labels.copy()
         for ii, next_state in enumerate(labels[1:], start=1):
-            if (last_state, next_state) == ('bg', 'gb'):
-                DEBUG = 1
+            # if (last_state, next_state) == ('bg', 'gb'):
+            #     DEBUG = 1
             if (last_state, next_state) in not_allowed:
                 labels_copy[ii] = last_state
             last_state = labels_copy[ii]
@@ -146,8 +158,8 @@ class Path:
                 where = np.where(np.array(labels[i:]) != '0')[0]
 
                 if len(where) < 1:
-                    if labels[i-1] == 'jg':
-                        labels[i:] = ['j' for _ in range(len(labels[i:]))]
+                    if labels[i-1] == final_state + pre_final_state:
+                        labels[i:] = [final_state for _ in range(len(labels[i:]))]
                     else:
                         labels[i:] = [labels[i-1] for _ in range(len(labels[i:]))]
 

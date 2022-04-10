@@ -8,9 +8,10 @@ import os
 from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.PathPy.Paths import Paths, PathsTimeStamped, PathWithoutSelfLoops
+from Analysis.PathPy.Paths import Paths, PathsTimeStamped, PathWithoutSelfLoops, final_state
 import pandas as pd
 import numpy as np
+
 
 sizes = {0: 5.0, 1: 10.0, 2: 5.0}
 colors = {0: 'black', 1: 'red', 2: 'blue'}
@@ -179,7 +180,7 @@ class Network(pathpy.Network):
         self.T = pd.DataFrame(self.transition_matrix().toarray().transpose(),
                               columns=list(self.node_to_name_map()),
                               index=list(self.node_to_name_map()))
-        self.T['j']['j'] = 1
+        self.T[final_state][final_state] = 1
         self.P, num_absorbing = self.find_P(self.T)
         self.Q, self.R = self.P.iloc[num_absorbing:, num_absorbing:], self.P.iloc[num_absorbing:, 0:num_absorbing]
         transient_state_order = self.P.columns[num_absorbing:]

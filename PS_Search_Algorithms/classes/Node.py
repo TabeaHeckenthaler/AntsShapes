@@ -114,7 +114,7 @@ class Node2D(Node):
         :param radius:
         :return:
         """
-        # TODO: this is not clean
+        # TODO: this is not delete_false_transitions
         return np.ones((3, 3))
 
     def coord(self):
