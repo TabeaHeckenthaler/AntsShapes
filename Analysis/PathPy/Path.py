@@ -177,7 +177,7 @@ class Path:
                         if len(array > 0):
                             labels[array[0]: array[-1] + 1] = [state for _ in range(len(array))]
 
-        if len([1 for state1, state2 in zip(labels[:-1], labels[1:]) if state1 == 'j' and state2 != 'j']):
+        if len([1 for state1, state2 in zip(labels[:-1], labels[1:]) if state1 == final_state and state2 != final_state]):
             print('something')
 
         return labels

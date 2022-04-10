@@ -1,6 +1,7 @@
 from Analysis.PathPy.Path import Path
+from Analysis.PathPy.SPT_states import final_state
 import os
-from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled, final_state
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 import pathpy as pp
 from Directories import network_dir
 import json

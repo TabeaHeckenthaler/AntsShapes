@@ -1040,7 +1040,7 @@ if __name__ == '__main__':
                   }
 
     for (solver, geometry), sizes in list(geometries.items()):
-        for size in sizes[:1]:
+        for size in sizes:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
             # ps.label_space()
