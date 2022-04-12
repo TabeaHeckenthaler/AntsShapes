@@ -31,10 +31,11 @@ class Path:
         self.state_series = self.calculate_state_series()
 
     def get_time_series(self, conf_space_labeled, x):
+        print(x)
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [self.label_configuration(index, conf_space_labeled) for index in indices]
         labels = self.cut_off_after_final_state(labels)
-        # labels = self.interpolate_zeros(labels)  # TODO: it would be better to find the closest non-zero state.
+        print(labels[6675:6695])
         labels = self.delete_false_transitions(labels)
         labels = self.get_rid_of_short_lived_states(labels)
         labels = self.add_missing_transitions(labels)
@@ -50,8 +51,10 @@ class Path:
         grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
         for i, (label, length) in enumerate(grouped[1:-1], 1):
-            if length <= min and self.valid_transition(grouped[i - 1][0], grouped[i + 1][0]):
+            if length <= min and self.valid_transition(new_labels[-1], grouped[i + 1][0]):
+                print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
+                DEBUG = 1
             else:
                 new_labels = new_labels + [label for _ in range(length)]
         new_labels = new_labels + [grouped[-1][0] for _ in range(grouped[-1][1])]
@@ -94,10 +97,10 @@ class Path:
             return True
         elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
             return False
-        return len(set(state1) & set(state2)) > 0
+        return state1[0] == state2[0] or len(set(state1) & set(state2)) == 2
 
     @staticmethod
-    def neccessary_transitions(state1, state2) -> list:
+    def neccessary_transitions(state1, state2, ii: int ='', frame_step=1) -> list:
         if state1 == 'c' and state2 == 'fh':
             return ['ce', 'e', 'ef', 'f']
         if state1 == 'c' and state2 == 'f':
@@ -114,10 +117,10 @@ class Path:
             if transition in allowed_transition_attempts:
                 return [transition]
             else:
-                raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2)
+                raise ValueError('Skipped 3 states: ' + state1 + ' -> ' + state2 + ' in frame ' + str(frame_step * ii))
 
         elif len(state1) == len(state2) == 2:
-            print('Moved from transition to transition: ' + state1 + '_' + state2)
+            print('Moved from transition to transition: ' + state1 + '_' + state2 + ' in frame ' + str(frame_step * ii))
             return []
 
         elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
@@ -130,7 +133,7 @@ class Path:
         elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
             return [state1[1], ''.join(sorted(state1[1] + state2))]
         else:
-            raise ValueError('What happened: ' + state1 + ' -> ' + state2)
+            raise ValueError('What happened: ' + state1 + ' -> ' + state2 + ' in frame ' + str(frame_step * ii))
 
     def add_missing_transitions(self, labels) -> list:
         """
@@ -140,11 +143,16 @@ class Path:
         i = 1
 
         for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
+            if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
+                DEBUG = 1
+
             if not self.valid_transition(state1, state2):
                 if state1 in ['f', 'e'] and state2 == 'i':
                     labels_copy[ii + i] = state1  # only for small SPT ants
                 else:
-                    for t in self.neccessary_transitions(state1, state2):
+                    if ii == 6678:
+                        DEBUG = 1
+                    for t in self.neccessary_transitions(state1, state2, ii=ii, frame_step=self.frame_step):
                         labels_copy.insert(ii + i, t)
                         i += 1
 
@@ -211,12 +219,13 @@ class Path:
 
 
 if __name__ == '__main__':
-    filename = 'M_SPT_4700005_MSpecialT_1_ants'
+    filename = 'M_SPT_4700001_MSpecialT_1_ants'
+    time_step = 0.25  # seconds
     x = get(filename)
     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
     cs_labeled.load_labeled_space()
-    # cs_labeled.visualize_space()
-    # x.play(cs=cs_labeled, step=5)
+    cs_labeled.visualize_space()
+    x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
 
-    path = Path(0.25, x=x, conf_space_labeled=cs_labeled)
+    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
     DEBUG = 1

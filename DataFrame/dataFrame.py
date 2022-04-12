@@ -146,6 +146,10 @@ class DataFrame(pd.DataFrame):
         new_data_frame = new_data_frame + single
         return new_data_frame
 
+    def drop_experiment(self, filename):
+        myDataFrame.drop(index=myDataFrame[myDataFrame['filename'] == filename].index, inplace=True)
+        myDataFrame.reset_index(drop=True, inplace=True)
+
 
 def choose_relevant_experiments(df, shape, solver, geometry, winner: bool = None, init_cond='back', size=None):
     """
@@ -175,7 +179,7 @@ tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
-    # myDataFrame.drop(columns='maze size', inplace=True)
+    myDataFrame.drop(columns='maze size', inplace=True)
     # myDataFrame.save()
     # myDataFrame.add_column()
     DEBUG = 1
