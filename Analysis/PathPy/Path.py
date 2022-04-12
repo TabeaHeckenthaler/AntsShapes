@@ -74,7 +74,7 @@ class Path:
     def cut_off_after_final_state(labels):
         first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
         if len(first_time_in_final_state) > 1:
-            print(labels[:first_time_in_final_state[0] + 1][-10:])
+            # print(labels[:first_time_in_final_state[0] + 1][-10:])
             return labels[:first_time_in_final_state[0] + 1]
         else:
             return labels

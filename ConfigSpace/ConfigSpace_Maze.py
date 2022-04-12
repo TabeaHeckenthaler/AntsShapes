@@ -31,6 +31,7 @@ traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
 scale = 5
 
+
 # TODO: fix the x.winner attribute
 # I want the resolution (in cm) for x and y and archlength to be all the same.
 
@@ -204,6 +205,28 @@ class ConfigSpace_Maze(ConfigSpace):
         y_num = np.ceil(self.extent['y'][1] / res)
         theta_num = np.ceil(self.extent['theta'][1] * self.average_radius / res)
         return {'x': None, 'y': y_num, 'theta': theta_num}
+
+    @staticmethod
+    def calculate_distance(space: np.array, mask: np.array) -> np.array:
+        """
+        Calculate the distance to every other node in the array.
+        :param mask: Distances have to be calculated according to the available nodes.
+        The available nodes are saved in 'mask'
+        :return: np.array with distances from each node
+        """
+
+        # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
+        phi = np.array(~space, dtype=int)
+        masked_phi = np.ma.MaskedArray(phi, mask=mask)
+        return distance(masked_phi, periodic=(0, 0, 1))
+
+        # node at (105, 36, 102)
+
+        # point = (105, 36, 102)
+        # self.draw(self.indices_to_coords(*point)[:2], self.indices_to_coords(*point)[-1])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
+        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
 
     def initialize_maze_edges(self) -> None:
         """
@@ -577,9 +600,10 @@ class ConfigSpace_Maze(ConfigSpace):
         voxel_counts = [stats['voxel_counts'][label] for label in range(stats['voxel_counts'].shape[0])]
 
         max_cc_size = np.sort(voxel_counts)[-1] - 1  # this one is the largest, empty space
-        min_cc_size = np.sort(voxel_counts)[-cc_to_keep-2] - 1
+        min_cc_size = np.sort(voxel_counts)[-cc_to_keep - 2] - 1
         chosen_cc = np.where((max_cc_size > stats['voxel_counts']) & (stats['voxel_counts'] > min_cc_size))[0]
-        assert chosen_cc.shape[0] == 10, 'We dont have the right number of connected components: ' + str(chosen_cc.shape[0])
+        assert chosen_cc.shape[0] == 10, 'We dont have the right number of connected components: ' + str(
+            chosen_cc.shape[0])
         return chosen_cc, labels, stats['centroids']
 
     def extend_ps_states_to_eroded_space(self, ps_states):
@@ -643,28 +667,6 @@ class PS_Area(ConfigSpace_Maze):
     def extend_by_periodic(self, space):
         self.space = np.logical_or(self.space, space)
         self.centroid[-1] = 0
-
-    @staticmethod
-    def calculate_distance(space: np.array, mask: np.array) -> np.array:
-        """
-        Calculate the distance to every other node in the array.
-        :param mask: Distances have to be calculated according to the available nodes.
-        The available nodes are saved in 'mask'
-        :return: np.array with distances from each node
-        """
-
-        # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-        phi = np.array(~space, dtype=int)
-        masked_phi = np.ma.MaskedArray(phi, mask=mask)
-        return distance(masked_phi, periodic=(0, 0, 1))
-
-        # node at (105, 36, 102)
-
-        # point = (105, 36, 102)
-        # self.draw(self.indices_to_coords(*point)[:2], self.indices_to_coords(*point)[-1])
-        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[point[0], :, :])
-        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, point[1], :])
-        # plt.imshow(distance(masked_phi, periodic=(0, 0, 1))[:, :, point[2]])
 
 
 class PS_Mask(ConfigSpace):
@@ -894,7 +896,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
-                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size] * reduction
+                'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size] * reduction
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -945,7 +947,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if os.path.exists(directory):
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
-            directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string, small=True)
+            directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string,
+                                       small=True)
 
         print('Saving reduced in ' + self.name + ' in path: ' + directory)
         pickle.dump(self.space_labeled, open(directory, 'wb'))
@@ -1015,7 +1018,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # for i, ps_state in enumerate(self.ps_states):
         #     if ps_state.space[ind]:
         label = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
-                                   if distance_stack[ind].data[ii] < np.inf])
+                         if distance_stack[ind].data[ii] < np.inf])
         if label in forbidden_transition_attempts + allowed_transition_attempts:
             self.space_labeled[ind] = label
         else:
@@ -1038,30 +1041,45 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
         """
         index_theta = index[2]
-        if index_theta-border < 0 or index_theta-border > self.space_labeled.shape[2]:
-            cut_out = np.stack([self.space_labeled[index[0] - border:index[0] + border,
-                                                   index[1] - border:index[1] + border,
-                                                   index_theta - border:],
-                                self.space_labeled[index[0] - border:index[0] + border,
-                                                   index[1] - border:index[1] + border,
-                                                   0:index[2] + border]
-                                ], axis=2)
-        else:
-            cut_out = self.space_labeled[index[0]-border:index[0]+border,
-                                         index[1]-border:index[1]+border,
-                                         index[2]-border:index[2]+border]
+        found_close_state = False
+        border = 5
+        while not found_close_state:
+            if border > 50:
+                raise ValueError('Cant find closest state')
+            if index_theta - border < 0 or index_theta + border > self.space_labeled.shape[2]:
+                cut_out = np.concatenate([self.space_labeled[index[0] - border:index[0] + border,
+                                          index[1] - border:index[1] + border,
+                                          (index_theta - border) % self.space_labeled.shape[2]:],
+                                          self.space_labeled[index[0] - border:index[0] + border,
+                                          index[1] - border:index[1] + border,
+                                          0:(index_theta + border) % self.space_labeled.shape[2]]
+                                          ], axis=-1)
+            else:
+                cut_out = self.space_labeled[index[0] - border:index[0] + border,
+                          index[1] - border:index[1] + border,
+                          index[2] - border:index[2] + border]
 
-        return '0'
+            distances = {}
+            states = np.unique(cut_out).tolist()
+            states.remove('0')
+            if len(states) > 0:
+                found_close_state = True
+            else:
+                border += 10
+        for state in states:
+            distances[state] = self.calculate_distance(cut_out == state, np.zeros(shape=cut_out.shape))[border, border, border]
+        return min(distances, key=distances.get)
 
 
 if __name__ == '__main__':
     shape = 'SPT'
     # sizes_to_reerode = ['XL', 'L', 'M', 'S']
     # solver, geometry = 'ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
-    geometries = {('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-                  # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
-                  ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
-                  }
+    geometries = {
+        ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
+        # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
+        ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
+        }
 
     for (solver, geometry), sizes in list(geometries.items()):
         for size in sizes:
