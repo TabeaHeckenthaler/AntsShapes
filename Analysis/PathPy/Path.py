@@ -10,6 +10,7 @@ class Path:
     States is a class which represents the transitions of states of a trajectory. States are defined by eroding the CS,
     and then finding connected components.
     """
+
     def __init__(self, time_step: float, time_series=None, x=None, conf_space_labeled=None):
         """
         :param step: after how many frames I add a label to my label list
@@ -31,19 +32,25 @@ class Path:
 
     def get_time_series(self, conf_space_labeled, x):
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
-        labels = [conf_space_labeled.space_labeled[index] for index in indices]
+        labels = [self.label_configuration(index, conf_space_labeled) for index in indices]
         labels = self.cut_off_after_final_state(labels)
-        labels = self.interpolate_zeros(labels)  # TODO: it would be better to find the closest non-zero state.
+        # labels = self.interpolate_zeros(labels)  # TODO: it would be better to find the closest non-zero state.
         labels = self.delete_false_transitions(labels)
         labels = self.get_rid_of_short_lived_states(labels)
         labels = self.add_missing_transitions(labels)
         return labels
 
+    def label_configuration(self, index, conf_space_labeled) -> str:
+        label = conf_space_labeled.space_labeled[index]
+        if label == '0':
+            label = conf_space_labeled.find_closest_state(index)
+        return label
+
     def get_rid_of_short_lived_states(self, labels, min=5):
         grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
         for i, (label, length) in enumerate(grouped[1:-1], 1):
-            if length <= min and self.valid_transition(grouped[i-1][0], grouped[i+1][0]):
+            if length <= min and self.valid_transition(grouped[i - 1][0], grouped[i + 1][0]):
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
             else:
                 new_labels = new_labels + [label for _ in range(length)]
@@ -67,8 +74,8 @@ class Path:
     def cut_off_after_final_state(labels):
         first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
         if len(first_time_in_final_state) > 1:
-            print(labels[:first_time_in_final_state[0]+1][-10:])
-            return labels[:first_time_in_final_state[0]+1]
+            print(labels[:first_time_in_final_state[0] + 1][-10:])
+            return labels[:first_time_in_final_state[0] + 1]
         else:
             return labels
 
@@ -144,46 +151,49 @@ class Path:
         return labels_copy
 
     def state_at_time(self, time: float) -> str:
-        return self.time_series[int(time/self.time_step)]
+        return self.time_series[int(time / self.time_step)]
 
-    def interpolate_zeros(self, labels: list) -> list:
-        """
-        Interpolate over all the states, that are not inside Configuration space (due to the computer representation of
-        the maze not being exactly the same as the real maze)
-        :return:
-        """
-
-        if labels[0] == '0':
-            labels[0] = [l for l in labels if l != '0'][:1000][0]
-
-        for i, l in enumerate(labels):
-            if l == '0':
-                where = np.where(np.array(labels[i:]) != '0')[0]
-
-                if len(where) < 1:
-                    if labels[i-1] == final_state + pre_final_state:
-                        labels[i:] = [final_state for _ in range(len(labels[i:]))]
-                    else:
-                        labels[i:] = [labels[i-1] for _ in range(len(labels[i:]))]
-
-                else:
-                    index = where[0] + i
-                    if self.valid_transition(labels[i-1], labels[index]):
-                        transitions = [labels[i-1], labels[index]]
-                    else:
-                        if labels[i-1] == 'e' and labels[index] == 'g':
-                            transitions = ['e', 'e']  # this occurs only in small SPT ants
-                        else:
-                            transitions = [labels[i-1], *self.neccessary_transitions(labels[i-1], labels[index]), labels[index]]
-
-                    for array, state in zip(np.array_split(range(i, index), len(transitions)), transitions):
-                        if len(array > 0):
-                            labels[array[0]: array[-1] + 1] = [state for _ in range(len(array))]
-
-        if len([1 for state1, state2 in zip(labels[:-1], labels[1:]) if state1 == final_state and state2 != final_state]):
-            print('something')
-
-        return labels
+    # def interpolate_zeros(self, labels: list) -> list:
+    #     """
+    #     Interpolate over all the states, that are not inside Configuration space (due to the computer representation of
+    #     the maze not being exactly the same as the real maze)
+    #     :return:
+    #     """
+    #
+    #     if labels[0] == '0':
+    #         labels[0] = [l for l in labels if l != '0'][:1000][0]
+    #
+    #     for i, l in enumerate(labels):
+    #         if l == '0':
+    #
+    #             where = np.where(np.array(labels[i:]) != '0')[0]
+    #
+    #             if len(where) < 1:
+    #                 if labels[i - 1] == final_state + pre_final_state:
+    #                     labels[i:] = [final_state for _ in range(len(labels[i:]))]
+    #                 else:
+    #                     labels[i:] = [labels[i - 1] for _ in range(len(labels[i:]))]
+    #
+    #             else:
+    #                 index = where[0] + i
+    #                 if self.valid_transition(labels[i - 1], labels[index]):
+    #                     transitions = [labels[i - 1], labels[index]]
+    #                 else:
+    #                     if labels[i - 1] == 'e' and labels[index] == 'g':
+    #                         transitions = ['e', 'e']  # this occurs only in small SPT ants
+    #                     else:
+    #                         transitions = [labels[i - 1], *self.neccessary_transitions(labels[i - 1], labels[index]),
+    #                                        labels[index]]
+    #
+    #                 for array, state in zip(np.array_split(range(i, index), len(transitions)), transitions):
+    #                     if len(array > 0):
+    #                         labels[array[0]: array[-1] + 1] = [state for _ in range(len(array))]
+    #
+    #     if len([1 for state1, state2 in zip(labels[:-1], labels[1:]) if
+    #             state1 == final_state and state2 != final_state]):
+    #         print('something')
+    #
+    #     return labels
 
     def calculate_state_series(self):
         """

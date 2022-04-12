@@ -1019,7 +1019,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if label in forbidden_transition_attempts + allowed_transition_attempts:
             self.space_labeled[ind] = label
         else:
-            self.space_labeled[ind] = np.argsort(distance_stack[ind])[:1]
+            self.space_labeled[ind] = [ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:1]][0]
 
         if len(self.space_labeled[ind]) == 0:
             raise ValueError(ind)
@@ -1033,23 +1033,43 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # if len(self.space_labeled[ind]) == 0:
         #     self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
+    def find_closest_state(self, index: list, border=10) -> str:
+        """
+        :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
+        """
+        index_theta = index[2]
+        if index_theta-border < 0 or index_theta-border > self.space_labeled.shape[2]:
+            cut_out = np.stack([self.space_labeled[index[0] - border:index[0] + border,
+                                                   index[1] - border:index[1] + border,
+                                                   index_theta - border:],
+                                self.space_labeled[index[0] - border:index[0] + border,
+                                                   index[1] - border:index[1] + border,
+                                                   0:index[2] + border]
+                                ], axis=2)
+        else:
+            cut_out = self.space_labeled[index[0]-border:index[0]+border,
+                                         index[1]-border:index[1]+border,
+                                         index[2]-border:index[2]+border]
+
+        return '0'
+
 
 if __name__ == '__main__':
     shape = 'SPT'
     # sizes_to_reerode = ['XL', 'L', 'M', 'S']
     # solver, geometry = 'ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
-
     geometries = {('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
                   # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
                   ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
                   }
 
     for (solver, geometry), sizes in list(geometries.items()):
-        for size in ['S']:
+        for size in sizes:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
             ps.label_space()
-            ps.load_labeled_space()
+            ps.save_labeled()
+            # ps.load_labeled_space()
 
             # ps.visualize_states(reduction=1)
             # ps.visualize_transitions(reduction=1)
