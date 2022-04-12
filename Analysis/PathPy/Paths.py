@@ -162,4 +162,4 @@ def ants():
 
 if __name__ == '__main__':
     ants()
-    # humans()
+    humans()

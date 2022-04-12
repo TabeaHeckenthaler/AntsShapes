@@ -139,24 +139,26 @@ class Path:
         """
         I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
         """
-        labels_copy = labels.copy()
-        i = 1
+        new_labels = [labels[0]]
 
-        for ii, (state1, state2) in enumerate(zip(labels[:-1], labels[1:])):
-            if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
-                DEBUG = 1
-
+        for ii, state2 in enumerate(labels[1:]):
+            # if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
+            #     DEBUG = 1
+            state1 = new_labels[-1]
             if not self.valid_transition(state1, state2):
                 if state1 in ['f', 'e'] and state2 == 'i':
-                    labels_copy[ii + i] = state1  # only for small SPT ants
+                    new_labels.append(state1)  # only for small SPT ants
+                elif state1 in ['eg', 'dg', 'cg'] and state2 == 'g':
+                    new_labels.append(state1)  # only for small SPT ants
+                elif len(state2) == 2 and state1 == state2[1]:
+                    new_labels.append(state2[1] + state2[0])
                 else:
-                    if ii == 6678:
-                        DEBUG = 1
                     for t in self.neccessary_transitions(state1, state2, ii=ii, frame_step=self.frame_step):
-                        labels_copy.insert(ii + i, t)
-                        i += 1
-
-        return labels_copy
+                        new_labels.append(t)
+                    new_labels.append(state2)
+            else:
+                new_labels.append(state2)
+        return new_labels
 
     def state_at_time(self, time: float) -> str:
         return self.time_series[int(time / self.time_step)]
@@ -219,13 +221,13 @@ class Path:
 
 
 if __name__ == '__main__':
-    filename = 'M_SPT_4700001_MSpecialT_1_ants'
+    filename = 'S_SPT_4760017_SSpecialT_1_ants (part 1)'
     time_step = 0.25  # seconds
     x = get(filename)
     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
     cs_labeled.load_labeled_space()
-    cs_labeled.visualize_space()
-    x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
+    # cs_labeled.visualize_space()
+    # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
 
     path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
     DEBUG = 1

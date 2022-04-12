@@ -1040,18 +1040,20 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
         :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
         """
+        if index == (161, 14, 460):
+            DEBUG = 1
         index_theta = index[2]
         found_close_state = False
         border = 5
         while not found_close_state:
             if border > 100:
-                raise ValueError('Cant find closest state')
+                raise ValueError('Cant find closest state: ' + str(index))
             if index_theta - border < 0 or index_theta + border > self.space_labeled.shape[2]:
-                cut_out = np.concatenate([self.space_labeled[index[0] - border:index[0] + border,
-                                          index[1] - border:index[1] + border,
+                cut_out = np.concatenate([self.space_labeled[max(0, index[0] - border):index[0] + border,
+                                          max(0, index[1] - border):index[1] + border,
                                           (index_theta - border) % self.space_labeled.shape[2]:],
-                                          self.space_labeled[index[0] - border:index[0] + border,
-                                          index[1] - border:index[1] + border,
+                                          self.space_labeled[max(0, index[0] - border):index[0] + border,
+                                          max(0, index[1] - border):index[1] + border,
                                           0:(index_theta + border) % self.space_labeled.shape[2]]
                                           ], axis=-1)
             else:
@@ -1069,6 +1071,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                 found_close_state = True
             else:
                 border += 10
+        if len(states) == 1:
+            return states[0]
         for state in states:
             distances[state] = self.calculate_distance(cut_out == state, np.zeros(shape=cut_out.shape))[border, border, border]
         return min(distances, key=distances.get)
