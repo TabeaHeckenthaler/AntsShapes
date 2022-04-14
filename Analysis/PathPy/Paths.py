@@ -60,7 +60,10 @@ class Paths(pp.Paths):
         cs_labeled.load_labeled_space()
         trajectories = choose_trajectories(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry,
                                            communication=self.communication)
-        self.single_paths = {x.filename: Path(self.time_step, conf_space_labeled=cs_labeled, x=x) for x in trajectories}
+        self.single_paths = {}
+        for i, x in enumerate(trajectories):
+            print(i)
+            self.single_paths[x.filename] = Path(self.time_step, conf_space_labeled=cs_labeled, x=x)
         self.time_series = {name: path.time_series for name, path in self.single_paths.items()}
 
     def save_paths(self):
@@ -133,6 +136,7 @@ def humans():
             paths = PathsTimeStamped(solver, size, shape, geometry, communication=None)
             paths.load_paths()
             paths.load_time_stamped_paths()
+            paths.save_csv()
             DEBUG = 1
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
@@ -144,15 +148,10 @@ def ants():
     solver, shape, geometry = 'ant', 'SPT', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
     for size in exp_types[shape][solver]:
-    # for size in ['XL']:
         paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
         paths.load_time_stamped_paths()
-
-        for p in paths.time_series:
-            if len(np.where(p == final_state)[0]) > 1:
-                DEBUG = 1
-        DEBUG = 1
+        paths.save_csv()
 
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)

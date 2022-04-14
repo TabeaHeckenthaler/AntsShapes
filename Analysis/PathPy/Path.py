@@ -2,7 +2,7 @@ from itertools import groupby
 import numpy as np
 from trajectory_inheritance.trajectory import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
-from Analysis.PathPy.SPT_states import pre_final_state, final_state, allowed_transition_attempts
+from Analysis.PathPy.SPT_states import pre_final_state, final_state, allowed_transition_attempts, forbidden_transition_attempts
 
 
 class Path:
@@ -35,7 +35,6 @@ class Path:
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
         labels = [self.label_configuration(index, conf_space_labeled) for index in indices]
         labels = self.cut_off_after_final_state(labels)
-        print(labels[6675:6695])
         labels = self.delete_false_transitions(labels)
         labels = self.get_rid_of_short_lived_states(labels)
         labels = self.add_missing_transitions(labels)
@@ -54,24 +53,27 @@ class Path:
             if length <= min and self.valid_transition(new_labels[-1], grouped[i + 1][0]):
                 print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
-                DEBUG = 1
             else:
                 new_labels = new_labels + [label for _ in range(length)]
         new_labels = new_labels + [grouped[-1][0] for _ in range(grouped[-1][1])]
         return new_labels
 
     @staticmethod
+    def valid_state_transition(state1, state2):
+        if len(state1) == 2 and state1[::-1] == state2:  # is transition like ab -> ba
+            return state1 in allowed_transition_attempts
+        else:
+            return True
+
+    @staticmethod
     def delete_false_transitions(labels):
-        not_allowed = [('bg', 'gb')]
-        last_state = labels[0]
-        labels_copy = labels.copy()
+        new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
-            # if (last_state, next_state) == ('bg', 'gb'):
-            #     DEBUG = 1
-            if (last_state, next_state) in not_allowed:
-                labels_copy[ii] = last_state
-            last_state = labels_copy[ii]
-        return labels_copy
+            if not Path.valid_state_transition(new_labels[-1], next_state):
+                new_labels.append(new_labels[-1])
+            else:
+                new_labels.append(next_state)
+        return new_labels
 
     @staticmethod
     def cut_off_after_final_state(labels):
@@ -93,6 +95,8 @@ class Path:
 
     @staticmethod
     def valid_transition(state1, state2):
+        if not Path.valid_state_transition(state1, state2):
+            return False
         if set(state1) == set(state2):
             return True
         elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
@@ -150,6 +154,8 @@ class Path:
                     new_labels.append(state1)  # only for small SPT ants
                 elif state1 in ['eg', 'dg', 'cg'] and state2 == 'g':
                     new_labels.append(state1)  # only for small SPT ants
+                elif state1 == 'ba' and state2 in ['d', 'e']:
+                    new_labels.append(state1)
                 elif len(state2) == 2 and state1 == state2[1]:
                     new_labels.append(state2[1] + state2[0])
                 else:
@@ -221,7 +227,7 @@ class Path:
 
 
 if __name__ == '__main__':
-    filename = 'S_SPT_4760017_SSpecialT_1_ants (part 1)'
+    filename = 'S_SPT_4780009_SSpecialT_1_ants (part 1)'
     time_step = 0.25  # seconds
     x = get(filename)
     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())

@@ -37,4 +37,5 @@ def choose_trajectories(solver='human', size='Large', shape='SPT',
     df = choose_experiments(solver, shape, size, geometry, communication=communication)
     filenames = df['filename'][:number]
     # filenames = ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]
+    # bad_filename = 'S_SPT_4750002_SSpecialT_1_ants (part 1)' # TODO: fix this trajecotry
     return [get(filename) for filename in filenames]

@@ -180,6 +180,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
     myDataFrame.drop(columns='maze size', inplace=True)
+    myDataFrame.drop_experiment(filename='S_SPT_4750002_SSpecialT_1_ants (part 1)')
     # myDataFrame.save()
     # myDataFrame.add_column()
     DEBUG = 1
