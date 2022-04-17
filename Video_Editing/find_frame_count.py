@@ -19,7 +19,7 @@ frames_dict = {}
 for movie_name in movie_names:
     address = os.path.join(video_directory, movie_name)
     cap = cv2.VideoCapture(address)
-    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
     cap.release()
 
     frames_dict[movie_name] = frames

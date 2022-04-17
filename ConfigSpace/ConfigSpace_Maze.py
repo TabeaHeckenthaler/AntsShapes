@@ -622,6 +622,7 @@ class ConfigSpace_Maze(ConfigSpace):
         return ps_states
 
     def create_ps_states(self):
+        # interesting_indices = (207, 175, 407), (207, 176, 408)  # human large
         if self.eroded_space is None:
             self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
         chosen_cc, labels, centroids = self.split_connected_components(self.eroded_space)
@@ -986,6 +987,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         Calculate the labeled space.
         :return:
         """
+        # interesting_indices = (207, 175, 407) # human large
         if self.ps_states is None:
             self.ps_states = self.create_ps_states()
 
@@ -1003,7 +1005,9 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
+        # self.assign_label(interesting_indices, distance_stack, ps_name_dict)
         [self.assign_label(indices, distance_stack, ps_name_dict) for indices in self.iterate_space_index()]
+        self.fix_edges_called_a()
 
     def assign_label(self, ind: tuple, distance_stack: np.array, ps_name_dict: dict):
         """
@@ -1036,12 +1040,10 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # if len(self.space_labeled[ind]) == 0:
         #     self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
-    def find_closest_state(self, index: list, border=10) -> str:
+    def find_closest_state(self, index: list, border=10, last_label=None) -> str:
         """
         :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
         """
-        if index == (161, 14, 460):
-            DEBUG = 1
         index_theta = index[2]
         found_close_state = False
         border = 5
@@ -1075,28 +1077,59 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             return states[0]
         for state in states:
             distances[state] = self.calculate_distance(cut_out == state, np.zeros(shape=cut_out.shape))[border, border, border]
-        return min(distances, key=distances.get)
+        closest = min(distances, key=distances.get)
+        return closest
+
+    def fix_edges_labeling(self):
+        """
+        for some reason some single states for larger x are called a. I make them empty states, here.
+        """
+        problematic_states = {'a': {'human': {'Large': 200, 'Medium': 140, 'Small Far': 250},
+                                    'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}},
+                              'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
+                                     'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}}
+
+        for problematic_state, border in problematic_states.items():
+            border_index = border[self.solver][self.size]
+            if border_index is not None:
+                indices = np.where(self.space_labeled == problematic_state)
+                false = np.where(indices[0] > border_index)[0]
+                delete = np.stack(indices)[:, false]
+
+                print(self.space_labeled.shape)
+                print('Deleting', delete.shape[1], problematic_state, 'elements')
+                for i in range(delete.shape[1]):
+                    to_change = tuple(delete[:, i])
+                    if to_change[0] > self.space_labeled.shape[0]:
+                        print(to_change)
+                    # print(cs_labeled.space_labeled[to_change])
+                    self.space_labeled[tuple(to_change)] = '0'
 
 
 if __name__ == '__main__':
     shape = 'SPT'
-    # sizes_to_reerode = ['XL', 'L', 'M', 'S']
-    # solver, geometry = 'ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+
     geometries = {
         ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
         # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
         ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
         }
 
-    for (solver, geometry), sizes in list(geometries.items()):
-        for size in sizes:
-            print(solver, size)
-            ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-            ps.label_space()
-            ps.save_labeled()
-            # ps.load_labeled_space()
+    (solver, geometry), sizes = ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')), ['Medium']
+    # for (solver, geometry), sizes in list(geometries.items()):
+    for size in sizes:
+        print(solver, size)
+        ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
+        # ps.create_ps_states()
+        ps.load_eroded_labeled_space()
+        # ps.visualize_space(space=ps.space_labeled == 'ca')
+        # problem: 146, 55, 149
+        ps.fix_edges_labeling()
+        ps.save_labeled()
 
-            # ps.visualize_states(reduction=1)
-            # ps.visualize_transitions(reduction=1)
+        # ps.visualize_states(reduction=1)
+        # ps.visualize_transitions(reduction=1)
 
-            DEBUG = 1
+        # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
+
+        DEBUG = 1

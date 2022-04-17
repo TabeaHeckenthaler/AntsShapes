@@ -136,7 +136,7 @@ def humans():
             paths = PathsTimeStamped(solver, size, shape, geometry, communication=None)
             paths.load_paths()
             paths.load_time_stamped_paths()
-            paths.save_csv()
+            # paths.save_csv()
             DEBUG = 1
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
@@ -151,7 +151,7 @@ def ants():
         paths = PathsTimeStamped(solver, size, shape, geometry)
         paths.load_paths()
         paths.load_time_stamped_paths()
-        paths.save_csv()
+        # paths.save_csv()
 
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
