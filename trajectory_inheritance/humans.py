@@ -39,34 +39,36 @@ def get_excel_worksheet_index(filename) -> int:
     :param filename: filename of the tracked movie (like 'medium_20211006172352_20211006172500')
     :return: index of the excel worksheet line
     """
+    # number of experiments listed in the excel sheet.
     number_exp = [i for i in range(1, int(sheet.dimensions.split(':')[1][1:]))
                   if sheet.cell(row=i, column=1).value is not None][-1]
 
     times_list = filename.split('_')[1:3]
-    indices = []
 
-    for i in range(2, number_exp + 1):
-        if i == 191:
+    possible_lines = []
+
+    for i in range(2, number_exp + 2):
+        if i == 211:
             DEBUG = 1
-        in_filled_lines = (i <= number_exp and sheet.cell(row=i, column=1).value is not None)
-        old_filename_times = sheet.cell(row=i, column=1).value.split(' ')[0].split('_')
+        in_filled_lines = (i <= number_exp+1 and sheet.cell(row=i, column=1).value is not None)
+        old_filename_times = sheet.cell(row=i, column=1).value.split('\n')[0].split(' ')[0].split('_')
         if len([ii for ii in range(len(times_list))
                 if in_filled_lines and times_list[ii] in old_filename_times]) > 1:
-            indices.append(i)
+            possible_lines.append(i)
 
     if filename == 'medium_20201220103118_20201220110157_2':
         return 4
     if filename == 'medium_20201220103118_20201220110157':
         return 5
 
-    if len(indices) == 1:
-        return indices[0]
+    if len(possible_lines) == 1:
+        return possible_lines[0]
     elif len(times_list[-1]) > 1:  # has to be the first run
-        return indices[int(np.argmin([sheet.cell(row=index, column=6).value for index in indices]))]
+        return possible_lines[int(np.argmin([sheet.cell(row=index, column=6).value for index in possible_lines]))]
     elif len(times_list[-1]) == 1:
-        return indices[np.argsort([sheet.cell(row=index, column=6).value
-                                   for index in indices])[int(times_list[-1]) - 1]]
-    elif len(indices) == 0:
+        return possible_lines[np.argsort([sheet.cell(row=index, column=6).value
+                                   for index in possible_lines])[int(times_list[-1]) - 1]]
+    elif len(possible_lines) == 0:
         print('cant find your movie')
 
 
@@ -82,6 +84,7 @@ class Humans_Frame:
 class Humans(Participants, ABC):
     def __init__(self, x, color=''):
         super().__init__(x, color='')
+        self.x = x
 
         self.excel_index = get_excel_worksheet_index(self.filename)
         self.number = len(self.gender())
@@ -89,7 +92,8 @@ class Humans(Participants, ABC):
         # contains list of occupied sites, where site A carries index 0 and Z carries index 25 (for size 'large').
         self.occupied = list(self.gender().keys())
 
-        self.matlab_loading(x)
+    def load_from_matlab(self):
+        self.matlab_loading()
         self.angles = self.get_angles()
         self.positions = self.get_positions()
         self.gender_string = self.gender()
@@ -105,7 +109,7 @@ class Humans(Participants, ABC):
         """
         Check if I noticed any switch:
         """
-        hats_initial = set(np.array(matlab_cell[0][:, 4], dtype=int))
+        hats_initial = set(np.array(matlab_cell[:, 4], dtype=int))
         if len(hats_initial) != len(self.occupied):
             raise ValueError('Your list of participants in Testable.xlxs line ' + str(self.excel_index) +
                              ' is not the same as the tracking.')
@@ -159,9 +163,10 @@ class Humans(Participants, ABC):
                 delete(hat)
         return matlab_cell
 
-    def matlab_loading(self, x) -> None:
-        file = sio.loadmat(MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.filename)
-        matlab_cell = np.squeeze(file['hats'])
+    def matlab_loading(self) -> None:
+        file = sio.loadmat(MatlabFolder(self.x.solver, self.x.size, self.x.shape) +
+                           path.sep + self.x.filename)
+        matlab_cell = np.concatenate(np.squeeze(file['hats']))
 
         self.interpolate_falling_hats(matlab_cell)
         my_maze = Maze(x)

@@ -46,9 +46,8 @@ class SingleExperiment(pd.DataFrame):
         self['shape'] = str(x.shape)
         self['winner'] = bool(x.winner)
         self['fps'] = int(x.fps)
-        self['communication'] = bool(x.communication())
+        self['communication'] = bool(x.communication)
         self['length unit'] = str(length_unit_func(x.solver))
-        self['maze size'] = str(x.size[0])
         self['path length [length unit]'] = float(PathLength(x).per_experiment())
 
         if x.shape != 'SPT':
@@ -103,7 +102,8 @@ class DataFrame(pd.DataFrame):
             self.to_json(df_dir + ' - backup.json')
 
     def new_experiments(self, solver: str = 'ant', size: str = '', shape: str = '', free=False):
-        to_load = set(get_filenames(solver, size=size, shape=shape)) - set(self['filename'].unique())
+        to_load = set(get_filenames(solver, size=size, shape=shape, free=free)) \
+                  - set(self['filename'].unique())
         for filename in tqdm(to_load):
             print('Loading ' + filename + ' to df')
             yield SingleExperiment(filename, solver)
@@ -179,17 +179,16 @@ tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
-    myDataFrame.drop(columns='maze size', inplace=True)
-    myDataFrame.drop_experiment(filename='S_SPT_4750002_SSpecialT_1_ants (part 1)')
-    # myDataFrame.save()
-    # myDataFrame.add_column()
-    DEBUG = 1
-
     # TODO: add new contacts to contacts json file
-    # from DataFrame.plot_dataframe import how_many_experiments
-    # how_many_experiments(myDataFrame)
 
-    # for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
-    #     print(new_experiment['filename'])
-    #     myDataFrame = myDataFrame + new_experiment
-    #     myDataFrame.save()
+    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+        print(new_experiment['filename'].values[0])
+        myDataFrame = myDataFrame + new_experiment
+
+        ratio = new_experiment['path length [length unit]'].values[0]/new_experiment['minimal path length [length unit]'].values[0]
+        print(ratio)
+
+        if ratio < 1.2 or ratio > 10:
+            raise ValueError('weirdness in ' + new_experiment['filename'])
+
+        myDataFrame.save()

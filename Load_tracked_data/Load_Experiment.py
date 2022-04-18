@@ -188,7 +188,7 @@ def parts(filename, solver, size, shape):
     return VideoChain
 
 
-def load(filename, solver, size, shape, fps, winner=None, free=False):
+def load(filename, solver, size, shape, fps, falseTracking, winner=None, free=False):
     if not free:
 
         if winner is None:
@@ -197,7 +197,7 @@ def load(filename, solver, size, shape, fps, winner=None, free=False):
             winner = winner_dict[filename]
     filename = filename[:-4]
     print('\n' + filename)
-    return Load_Experiment(solver, filename, [], winner, fps, size=size, shape=shape, free=free)
+    return Load_Experiment(solver, filename, falseTracking, winner, fps, size=size, shape=shape, free=free)
 
 
 def connector(part1, part2, frames_missing, filename=None):
@@ -233,8 +233,8 @@ if __name__ == '__main__':
         if len(unpickled) > 0:
             for mat_filename in tqdm(unpickled):
                 print(mat_filename)
-                x = load(mat_filename, solver, size, shape, fps[solver])
-                chain = [x] + [load(filename, solver, size, shape, fps[solver], winner=x.winner)
+                x = load(mat_filename, solver, size, shape, fps[solver], [])
+                chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(mat_filename, solver, size, shape)[1:]]
                 total_time_seconds = np.sum([traj.timer() for traj in chain])
 
@@ -246,7 +246,7 @@ if __name__ == '__main__':
                         connection = connector(x, part, frames_missing_per_movie)
                         x = x + connection
                     x = x + part
-
+                x.play(wait=3)
                 x.save()
                 # file_object = open('check_trajectories.txt', 'a')
                 # file_object.write(x.filename + '\n')

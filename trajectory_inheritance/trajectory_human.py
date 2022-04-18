@@ -83,5 +83,5 @@ class Trajectory_human(Trajectory):
     def averageCarrierNumber(self):
         if not hasattr(self, 'participants'):
             self.load_participants()
-        self.participants.averageCarrierNumber()
-        return self.participants.number
+        # self.participants.averageCarrierNumber()
+        return len(self.participants.occupied)

@@ -148,6 +148,9 @@ class Trajectory:
                          [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 == f2 - 1] + \
                          [len(self.frames)]
 
+        if len(self.VideoChain) == 0:
+            self.VideoChain = [self.filename]
+
         if len(frame_dividers) - 1 != len(self.VideoChain):
             raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
 
@@ -309,7 +312,7 @@ class Trajectory:
             except pickle.PicklingError as e:
                 print(e)
 
-        print('Saving minimal' + self.filename + ' in path: ' + mini_SaverDirectories[self.solver])
+        print('Saving minimal', self.filename, ' in path: ', mini_SaverDirectories[self.solver])
         pickle.dump((self.shape, self.size, self.solver, self.filename, self.fps,
                      self.position, self.angle, self.frames, self.winner),
                     open(mini_SaverDirectories[self.solver] + path.sep + self.filename, 'wb'))

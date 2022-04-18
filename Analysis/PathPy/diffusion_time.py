@@ -147,14 +147,14 @@ class DiffusionStatesAnt(DiffusionStates):
 
 
 if __name__ == '__main__':
-    # diff_time_human = DiffusionTimeHuman()
-    # diff_time_human.plot()
-    #
-    # diff_time_ant = DiffusionTimeAnt()
-    # diff_time_ant.plot()
-    #
-    # diff_state_human = DiffusionStatesHuman()
-    # diff_state_human.plot()
+    diff_time_human = DiffusionTimeHuman()
+    diff_time_human.plot()
+
+    diff_time_ant = DiffusionTimeAnt()
+    diff_time_ant.plot()
+
+    diff_state_human = DiffusionStatesHuman()
+    diff_state_human.plot()
 
     diff_state_ant = DiffusionStatesAnt()
     diff_state_ant.plot()
