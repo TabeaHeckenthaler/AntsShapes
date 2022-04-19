@@ -55,7 +55,7 @@ def mirror(decimated):
 
 
 solver, shape = 'human', 'SPT'
-geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')`
 
 for size in ['Large']:
     conf_space = ConfigSpace_Maze.ConfigSpace_Maze(solver, size, shape, geometry, name='')
