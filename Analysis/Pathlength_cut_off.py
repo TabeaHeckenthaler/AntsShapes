@@ -244,7 +244,6 @@ def relevant_columns(df):
     columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]', 'minimal path length [length unit]',
                'average Carrier Number']
     df = df[columns]
-    df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
     return df
 
 
@@ -257,9 +256,14 @@ if __name__ == '__main__':
 
     for solver, geometry in solvers.items():
         df = Altered_DataFrame()
-        df_relevant_exp = df.choose_experiments(solver, shape, geometry, init_cond='back').df
-        relevant_df = relevant_columns(df_relevant_exp)
-        plot_path_length_cutoff(relevant_df, solver, ax, marker='x')
+        df.choose_experiments(solver, shape, geometry, init_cond='back')
+        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
+                   'minimal path length [length unit]',
+                   'average Carrier Number']
+        df.choose_columns(columns)
+        df.df['path length/minimal path length[]'] = df.df['path length [length unit]'] \
+                                                     / df.df['minimal path length [length unit]']
+        plot_path_length_cutoff(df.df, solver, ax, marker='x')
 
     adjust_figure()
     save_fig(fig, 'back_path_length_humans')

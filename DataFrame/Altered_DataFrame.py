@@ -16,13 +16,21 @@ class Altered_DataFrame:
         :param shape: str
         :return: list of objects, that are of the class or subclass Trajectory
         """
-        df = self.df.clone()
-        df = df[
-            (df['shape'] == shape) &
-            (df['solver'] == solver) &
-            (df['initial condition'] == init_cond) &
-            (df['maze dimensions'] == geometry[0]) &
-            (df['load dimensions'] == geometry[1])]
+        df = self.df
+        if 'shape' in df.columns:
+            df = df[(df['shape'] == shape)]
+
+        if 'solver' in df.columns:
+            df = df[(df['solver'] == solver)]
+
+        if 'initial condition' in df.columns:
+            df = df[(df['initial condition'] == init_cond)]
+
+        if 'maze dimensions' in df.columns:
+            df = df[(df['maze dimensions'] == geometry[0])]
+
+        if 'load dimensions' in df.columns:
+            df = df[(df['load dimensions'] == geometry[1])]
 
         if size is not None:
             if 'Small' in size:
