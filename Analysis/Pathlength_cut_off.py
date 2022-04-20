@@ -5,20 +5,18 @@ from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers, get
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
-from DataFrame.dataFrame import myDataFrame as df
-from DataFrame.dataFrame import choose_relevant_experiments
+from DataFrame.choose_experiments import Altered_DataFrame
 import json
 from Analysis.PathLength import PathLength
 import os
-import pandas as pd
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
 plot_group_size_seperately = {'ant': [1], 'human': [2]}
 
 
 def plot_path_length_cutoff(df, solver, ax, marker='.'):
-    if os.path.exists('cut_off.json'):
-        with open('cut_off.json', 'r') as json_file:
+    if os.path.exists('../DataFrame/cut_off.json'):
+        with open('../DataFrame/cut_off.json', 'r') as json_file:
             values = json.loads(json.load(json_file)).values()
             df['pathlength cut off'] = np.array(list(values))[:, 0]
             df['winner'] = np.array(list(values))[:, 1]
@@ -27,7 +25,7 @@ def plot_path_length_cutoff(df, solver, ax, marker='.'):
     else:
         results = df['filename'].progress_apply(lambda x: PathLength(get(x)).comparable())
 
-        with open('cut_off.json', 'w') as json_file:
+        with open('../DataFrame/cut_off.json', 'w') as json_file:
             json.dump(results.to_json(), json_file)
 
     for communication in [0, 1]:
@@ -258,7 +256,8 @@ if __name__ == '__main__':
                'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
 
     for solver, geometry in solvers.items():
-        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, geometry, init_cond='back')
+        df = Altered_DataFrame()
+        df_relevant_exp = df.choose_experiments(solver, shape, geometry, init_cond='back').df
         relevant_df = relevant_columns(df_relevant_exp)
         plot_path_length_cutoff(relevant_df, solver, ax, marker='x')
 

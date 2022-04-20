@@ -4,6 +4,7 @@ from Analysis.PathPy.Paths import PathWithoutSelfLoops
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
 import os
+import numpy as np
 
 
 class Network_comparison:
@@ -18,7 +19,8 @@ class Network_comparison:
                 paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
                 paths.load_paths()
                 my_network = Network.init_from_paths(paths, solver, size, shape)
-                my_network.get_results()
+                # we could also do: get results, if we are sure that we saved the right thing
+                my_network.markovian_analysis()
                 networks[solver][size] = my_network
         return networks
 
@@ -32,6 +34,24 @@ class Network_comparison:
             print('Saving transition matrix in ', directory)
             fig.savefig(directory)
 
+    def plot_diffusion_speed_up(self):
+        speed_up_dict = {solver: {} for solver in solvers}
+        fig, axs = plt.subplots(1, len(solvers))
+        for solver, ax in zip(solvers, axs):
+
+            for size, network in self.networks[solver].items():
+                diff_speed_up = network.diffusion_speed_up()
+                if diff_speed_up > 0:
+                    speed_up_dict[solver][size] = diff_speed_up
+                else:
+                    speed_up_dict[solver][size] = np.NaN
+
+            ax.plot(self.networks[solver].keys(), speed_up_dict[solver].values())
+
+        directory = graph_dir() + os.path.sep + 'diffusion_speedup_' + '.pdf'
+        print('Saving transition matrix in ', directory)
+        fig.savefig(directory)
+
 
 shape = 'SPT'
 solvers = ['human', 'ant']
@@ -41,6 +61,7 @@ if __name__ == '__main__':
     my_networks = Network_comparison.load_networks()
     my_network_comparison = Network_comparison(my_networks)
     my_network_comparison.plot_transition_matrices()
+    my_network_comparison.plot_diffusion_speed_up()
 
     # TODO: Check whether the right solver number is involved (especially for human Medium).
     # TODO: Plot with equal state order

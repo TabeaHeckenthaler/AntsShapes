@@ -6,8 +6,7 @@ distributions of path lengths for successful and unsuccessful experiments
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
 from trajectory_inheritance.trajectory import solver_geometry
-from DataFrame.dataFrame import myDataFrame as df
-from DataFrame.dataFrame import choose_relevant_experiments
+from DataFrame.choose_experiments import Altered_DataFrame
 import numpy as np
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
@@ -98,20 +97,17 @@ def plot_path_length_distributions_ant(df, axs):
         axs[j].yaxis.set_label_coords(labelx, 0.5)
 
 
-def relevant_columns(df):
-    columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-               'minimal path length [length unit]', 'average Carrier Number']
-    df = df[columns]
-    df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
-    return df
+class DataFrame_altered:
+    def __init__(self, df):
+        self.df = DataFrame_altered.relevant_columns(df)
 
-
-# def adjust_figure():
-#     ax.set_ylim(0, 50)
-#     ax.set_xscale('log')
-#     # ax.set_yscale('log')
-#     # ax.set_ylim(0, 25)
-#     plt.show()
+    @staticmethod
+    def relevant_columns(df):
+        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
+                   'minimal path length [length unit]', 'average Carrier Number']
+        df = df[columns]
+        df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
+        return df
 
 
 if __name__ == '__main__':
@@ -123,8 +119,8 @@ if __name__ == '__main__':
     n_rows = {'human': 5, 'ant': 5}
 
     for solver, image_name, plot_function in zip(solvers, image_names, plot_functions):
-        df_relevant_exp = choose_relevant_experiments(df.clone(), shape, solver, solver_geometry[solver],
-                                                      init_cond='back')
+        df = Altered_DataFrame()
+        df_relevant_exp = df.choose_experiments(solver, shape, solver_geometry[solver], init_cond='back').df
         relevant_df = relevant_columns(df_relevant_exp)
         fig, axs = plt.subplots(nrows=n_rows[solver], sharex=True)
         fig.subplots_adjust(hspace=0.2)

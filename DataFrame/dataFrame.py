@@ -151,30 +151,6 @@ class DataFrame(pd.DataFrame):
         myDataFrame.reset_index(drop=True, inplace=True)
 
 
-def choose_relevant_experiments(df, shape, solver, geometry, winner: bool = None, init_cond='back', size=None):
-    """
-    Reduce df to relevant experiments
-    :param df: dataFrame
-    :param shape: shape of the load ('H', 'I', 'SPT'...)
-    :param solver: ('human', 'ant', ...)
-    :param winner: Do you want to include only successful trajectories?
-    :param init_cond: Do you want to restrict the included experiments only to a specific initial condition?
-    (front, back or None)
-    :return: DataFrame with relevant experiments
-    """
-    df = df[df['shape'] == shape]
-    df = df[df['solver'] == solver]
-    df = df[df['maze dimensions'] == geometry[0]]
-    df = df[df['load dimensions'] == geometry[1]]
-    if size is not None:
-        df = df[df['size'] == size]
-    if winner is not None:
-        df = df[df['winner'] == winner]
-    if init_cond == 'back':
-        df = df[df['initial condition'] == init_cond]
-    return df
-
-
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
