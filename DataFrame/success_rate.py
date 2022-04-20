@@ -1,4 +1,4 @@
-from DataFrame.choose_experiments import Altered_DataFrame
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 import pandas as pd
 
 shape = 'SPT'

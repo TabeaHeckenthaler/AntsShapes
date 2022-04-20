@@ -5,7 +5,7 @@ from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers, get
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
-from DataFrame.choose_experiments import Altered_DataFrame
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 import json
 from Analysis.PathLength import PathLength
 import os

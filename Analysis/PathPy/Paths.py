@@ -7,7 +7,7 @@ from Directories import network_dir
 import json
 from trajectory_inheritance.exp_types import exp_types
 import csv
-from DataFrame.choose_experiments import choose_trajectories
+from DataFrame.Altered_DataFrame import choose_trajectories
 import numpy as np
 
 

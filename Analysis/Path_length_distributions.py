@@ -6,7 +6,7 @@ distributions of path lengths for successful and unsuccessful experiments
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
 from trajectory_inheritance.trajectory import solver_geometry
-from DataFrame.choose_experiments import Altered_DataFrame
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
@@ -97,19 +97,6 @@ def plot_path_length_distributions_ant(df, axs):
         axs[j].yaxis.set_label_coords(labelx, 0.5)
 
 
-class DataFrame_altered:
-    def __init__(self, df):
-        self.df = DataFrame_altered.relevant_columns(df)
-
-    @staticmethod
-    def relevant_columns(df):
-        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]', 'average Carrier Number']
-        df = df[columns]
-        df['path length/minimal path length[]'] = df['path length [length unit]'] / df['minimal path length [length unit]']
-        return df
-
-
 if __name__ == '__main__':
     shape = 'SPT'
 
@@ -120,10 +107,17 @@ if __name__ == '__main__':
 
     for solver, image_name, plot_function in zip(solvers, image_names, plot_functions):
         df = Altered_DataFrame()
-        df_relevant_exp = df.choose_experiments(solver, shape, solver_geometry[solver], init_cond='back').df
-        relevant_df = relevant_columns(df_relevant_exp)
+        df.choose_experiments(solver, shape, solver_geometry[solver], init_cond='back')
+
+        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
+                   'minimal path length [length unit]', 'average Carrier Number']
+        df.choose_columns(columns)
+
+        df.df['path length/minimal path length[]'] = df.df['path length [length unit]'] \
+                                                     / df.df['minimal path length [length unit]']
+
         fig, axs = plt.subplots(nrows=n_rows[solver], sharex=True)
         fig.subplots_adjust(hspace=0.2)
         plt.show(block=False)
-        plot_function(relevant_df, axs)
+        plot_function(df.df, axs)
         save_fig(fig, image_name)

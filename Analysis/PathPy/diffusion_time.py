@@ -1,5 +1,5 @@
 from Analysis.PathPy.Network import *
-from DataFrame.choose_experiments import Altered_DataFrame
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 
 
 class Diffusion:
