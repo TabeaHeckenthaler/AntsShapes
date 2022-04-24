@@ -55,8 +55,8 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
 
-    def cut_off_after_path_length(self):
-        self.df['maximal path length [length unit]'] = 10 * self.df['minimal path length [length unit]']
+    def cut_off_after_path_length(self, max_path=15):
+        self.df['maximal path length [length unit]'] = max_path * self.df['minimal path length [length unit]']
         not_successful = ~ self.df['winner']
         measured_overpath = self.df['path length [length unit]'] > self.df['maximal path length [length unit]']
         exclude = (~ measured_overpath & not_successful)
@@ -64,16 +64,13 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df['winner'] = ~ (measured_overpath | not_successful)
 
         def path_length(exp) -> float:
-            x = get(exp['filename'])
-            frames = [0, int(exp['maximal time [s]'] * exp['fps'])]
-            return min(PathLength(x).calculate_path_length(frames=frames), 10 * self.df['minimal path length [length unit]'])
+            # x = get(exp['filename'])
+            # return min(PathLength(x).calculate_path_length(), exp['maximal path length [length unit]'])
+            return min(exp['path length [length unit]'], exp['maximal path length [length unit]'])
 
-        self.df['path length [length unit]'] = \
-            self.df.progress_apply(path_length, axis=1)
-
+        self.df['path length [length unit]'] = self.df.progress_apply(path_length, axis=1)
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
-        pass
 
     def plot_path_length_distributions(self, axs, **kwargs):
         pass
@@ -105,11 +102,11 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
             return [communication, non_communication]
 
         df_to_plot = {'Large': split_NC_C(['Large'], self.df),
-                      'Medium (>7)': [dataframe[~self.df['average Carrier Number'].isin(self.plot_seperately['Medium'])]
+                      'M (>7)': [dataframe[~self.df['average Carrier Number'].isin(self.plot_seperately['Medium'])]
                                      for dataframe in split_NC_C(['Medium'], self.df)],
-                      'Medium (2)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][0]])]
+                      'M (2)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][0]])]
                                      for dataframe in split_NC_C(['Medium'], self.df)],
-                      'Medium (1)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][1]])]
+                      'M (1)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][1]])]
                                      for dataframe in split_NC_C(['Medium'], self.df)],
                       'Small': split_NC_C(['Small Far', 'Small Near'], self.df)
                       }
@@ -165,7 +162,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 
     def plot_path_length_distributions(self, axs, max_path=70):
         colors = ['green', 'red']
-        bins = range(0, max_path, 3)
+        bins = range(0, max_path, max_path//6)
 
         for i, (size, df_sizes) in enumerate(self.get_separate_data_frames().items()):
             axs[i].hist(df_sizes, color=colors, bins=bins)
@@ -184,6 +181,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         for size, dfs in data_frames.items():
             percent_of_winning[size] = len(dfs[0])/(len(dfs[0]) + len(dfs[1]))
         plt.bar(*zip(*percent_of_winning.items()))
+        plt.ylabel('percent of success')
         save_fig(fig, 'percent_solving_ants')
         pass
 
@@ -191,8 +189,8 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 if __name__ == '__main__':
     shape = 'SPT'
 
-    Plot_classes = [Path_length_cut_off_df_human, Path_length_cut_off_df_ant]
-    # Plot_classes = [Path_length_cut_off_df_ant]
+    # Plot_classes = [Path_length_cut_off_df_human, Path_length_cut_off_df_ant]
+    Plot_classes = [Path_length_cut_off_df_ant]
 
     for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
@@ -201,12 +199,19 @@ if __name__ == '__main__':
         my_plot_class.plot_path_length_distributions(axs, max_path=25)
         save_fig(fig, 'back_path_length_' + my_plot_class.solver + 'cut_of_time')
 
-        my_plot_class = Plot_class()
-        fig, axs = my_plot_class.open_figure()
-        my_plot_class.cut_off_after_path_length()
-        my_plot_class.plot_path_length_distributions(axs, max_path=25)
-        save_fig(fig, 'back_path_length_' + my_plot_class.solver + 'cut_of_path')
+        if my_plot_class.solver == 'ant':
+            fig = plt.figure()
+            my_plot_class.percent_of_solving(fig)
+            save_fig(fig, 'percent_solving_ants_cut_time')
 
-        fig = plt.figure()
-        my_plot_class.percent_of_solving(fig)
-        save_fig(fig, 'percent_solving_ants')
+        # my_plot_class = Plot_class()
+        # fig, axs = my_plot_class.open_figure()
+        # max_path = 18
+        # my_plot_class.cut_off_after_path_length(max_path=max_path)
+        # my_plot_class.plot_path_length_distributions(axs, max_path=max_path+1)
+        # save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
+        #
+        # if my_plot_class.solver == 'ant':
+        #     fig = plt.figure()
+        #     my_plot_class.percent_of_solving(fig)
+        #     save_fig(fig, 'percent_solving_ants_cut_path')

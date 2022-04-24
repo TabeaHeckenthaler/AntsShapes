@@ -27,34 +27,31 @@ class Path:
         self.time_series = time_series
         if self.frame_step is not None and self.time_series is None and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x)
+            # x.play(path=self, wait=20)
+            self.correct_time_series()
 
         self.state_series = self.calculate_state_series()
 
     def get_time_series(self, conf_space_labeled, x):
         print(x)
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
-
         labels = [None]
         for i, index in enumerate(indices):
-            if i == 721:
-                DEBUG = 0
             labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
+        return labels[1:]
 
-        labels = labels[1:]
-        DEBUG = 1
-        ii = 721
-        labels = self.cut_off_after_final_state(labels)
-        labels = self.delete_false_transitions(labels)
-        labels = self.get_rid_of_short_lived_states(labels)
-        labels = self.add_missing_transitions(labels)
-        return labels
+    def correct_time_series(self):
+        self.time_series = self.cut_off_after_final_state(self.time_series)
+        self.time_series = self.delete_false_transitions(self.time_series)
+        self.time_series = self.get_rid_of_short_lived_states(self.time_series)
+        self.time_series = self.add_missing_transitions(self.time_series)
 
     def label_configuration(self, index, conf_space_labeled, last_label=None) -> str:
         label = conf_space_labeled.space_labeled[index]
         if label == '0':
             label = conf_space_labeled.find_closest_state(index, last_label=last_label)
-        if set(label) == set('d'):
-            conf_space_labeled.draw_ind(index)
+        # if set(label) == set('d'):
+        #     conf_space_labeled.draw_ind(index)
         return label
 
     def get_rid_of_short_lived_states(self, labels, min=5):
@@ -239,13 +236,17 @@ class Path:
 
 
 if __name__ == '__main__':
-    filename = 'medium_20210413093054_20210413093503'
-    time_step = 0.25  # seconds
-    x = get(filename)
-    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    cs_labeled.load_labeled_space()
-    # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'a')
-    # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
+    filenames = ['large_20210805171741_20210805172610_perfect',
+                'medium_20210507225832_20210507230303_perfect',
+                'small2_20220308120548_20220308120613_perfect']
+    for filename in filenames:
+        time_step = 0.25  # seconds
+        x = get(filename)
+        cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+        cs_labeled.load_labeled_space()
+        # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'a')
+        # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
 
-    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    DEBUG = 1
+        path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+        print(path.time_series)
+        DEBUG = 1

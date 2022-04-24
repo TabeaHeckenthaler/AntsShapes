@@ -107,7 +107,7 @@ def part2_filename(part1_filename):
     return ''.join(l[:1]) + '_' + str(int(l[1]) + 1) + '_' + '_'.join(l[2:-1]) + "_" + l[-1].replace('1', '2')
 
 
-def continue_winner_dict(solver, shape):
+def continue_winner_dict(solver, shape) -> dict:
     with open('winner_dictionary.txt', 'r') as json_file:
         winner_dict = json.load(json_file)
 
@@ -120,7 +120,7 @@ def continue_winner_dict(solver, shape):
             winner_dict.update(new)
             with open('winner_dictionary.txt', 'w') as json_file:
                 json.dump(winner_dict, json_file)
-    return
+    return winner_dict
 
 
 def continue_time_dict(solver, shape):
@@ -190,10 +190,8 @@ def parts(filename, solver, size, shape):
 
 def load(filename, solver, size, shape, fps, falseTracking, winner=None, free=False):
     if not free:
-
         if winner is None:
-            if filename not in winner_dict.keys():
-                continue_winner_dict(solver, shape)
+            winner_dict = continue_winner_dict(solver, shape)
             winner = winner_dict[filename]
     filename = filename[:-4]
     print('\n' + filename)

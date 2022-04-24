@@ -8,6 +8,7 @@ exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 
 geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
               'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
 
+
 def is_exp_valid(shape, solver, size):
     error_msg = 'Shape ' + shape + ', Solver ' + solver + ', Size ' + size + ' is not valid.'
     if shape not in exp_types.keys():
