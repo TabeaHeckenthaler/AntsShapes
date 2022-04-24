@@ -8,6 +8,12 @@ from DataFrame.plot_dataframe import save_fig
 from trajectory_inheritance.trajectory import solver_geometry
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
+from Analysis.PathLength import PathLength
+from trajectory_inheritance.trajectory import get
+
+ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+                 'human': {'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},
+                 'humanhand': {'': 1}}
 
 color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
 
@@ -18,16 +24,61 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.choose_experiments(solver, 'SPT', solver_geometry[solver], init_cond='back')
 
         columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]', 'average Carrier Number']
+                   'minimal path length [length unit]', 'average Carrier Number', 'time [s]', 'fps']
         self.choose_columns(columns)
 
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
 
-    def cut_off_after_time(self):
-        pass
+    def open_figure(self):
+        fig, axs = plt.subplots(nrows=my_plot_class.n_group_sizes, sharex=True)
+        fig.subplots_adjust(hspace=0.2)
+        plt.show(block=False)
+        return fig, axs
+
+    def cut_off_after_time(self, seconds_max=30 * 60):
+        self.df['maximal time [s]'] = seconds_max * self.df['size'].map(ResizeFactors[self.solver])
+        not_successful = ~ self.df['winner']
+        measured_overtime = self.df['time [s]'] > self.df['maximal time [s]']
+        exclude = (~ measured_overtime & not_successful)
+        self.df.drop(self.df[exclude].index, inplace=True)
+        self.df['winner'] = ~ (measured_overtime | not_successful)
+
+        def path_length(exp) -> float:
+            x = get(exp['filename'])
+            frames = [0, int(exp['maximal time [s]'] * exp['fps'])]
+            return PathLength(x).calculate_path_length(frames=frames)
+
+        self.df['path length [length unit]'] = \
+            self.df.progress_apply(path_length, axis=1)
+
+        self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
+                                                       / self.df['minimal path length [length unit]']
 
     def cut_off_after_path_length(self):
+        self.df['maximal path length [length unit]'] = 10 * self.df['minimal path length [length unit]']
+        not_successful = ~ self.df['winner']
+        measured_overpath = self.df['path length [length unit]'] > self.df['maximal path length [length unit]']
+        exclude = (~ measured_overpath & not_successful)
+        self.df.drop(self.df[exclude].index, inplace=True)
+        self.df['winner'] = ~ (measured_overpath | not_successful)
+
+        def path_length(exp) -> float:
+            x = get(exp['filename'])
+            frames = [0, int(exp['maximal time [s]'] * exp['fps'])]
+            return min(PathLength(x).calculate_path_length(frames=frames), 10 * self.df['minimal path length [length unit]'])
+
+        self.df['path length [length unit]'] = \
+            self.df.progress_apply(path_length, axis=1)
+
+        self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
+                                                       / self.df['minimal path length [length unit]']
+        pass
+
+    def plot_path_length_distributions(self, axs, **kwargs):
+        pass
+
+    def get_separate_data_frames(self):
         pass
 
 
@@ -38,48 +89,45 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         self.n_group_sizes = 5
         self.plot_seperately = {'Medium': [2, 1]}
 
-    def plot_path_length_distributions(self, axs):
-        df = self.df
-        colors = ['blue', 'orange']
-        bins = np.arange(0, 9, 0.5)
-        kwargs = {'bins': bins, 'histtype': 'bar'}
+    def average_participants(self, sizes, df):
+        d = df[df['size'].isin(sizes)]
 
-        def data_frames(sizes, df):
+        if sizes[0] in self.plot_seperately.keys():
+            d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+
+        [print(sizes, d['average Carrier Number'].mean()) for sizes in
+         [['Large'], ['Medium'], ['Small Far', 'Small Near']]]
+
+    def get_separate_data_frames(self):
+        def split_NC_C(sizes, df):
             communication = df[df['communication'] & (df['size'].isin(sizes))]['path length/minimal path length[]']
             non_communication = df[~df['communication'] & (df['size'].isin(sizes))]['path length/minimal path length[]']
             return [communication, non_communication]
 
-        def average_participants(sizes, df):
-            d = df[df['size'].isin(sizes)]
+        df_to_plot = {'Large': split_NC_C(['Large'], self.df),
+                      'Medium (>7)': [dataframe[~self.df['average Carrier Number'].isin(self.plot_seperately['Medium'])]
+                                     for dataframe in split_NC_C(['Medium'], self.df)],
+                      'Medium (2)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][0]])]
+                                     for dataframe in split_NC_C(['Medium'], self.df)],
+                      'Medium (1)': [dataframe[self.df['average Carrier Number'].isin([self.plot_seperately['Medium'][1]])]
+                                     for dataframe in split_NC_C(['Medium'], self.df)],
+                      'Small': split_NC_C(['Small Far', 'Small Near'], self.df)
+                      }
+        return df_to_plot
 
-            if sizes[0] in self.plot_seperately.keys():
-                d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+    def plot_path_length_distributions(self, axs, max_path=25):
+        colors = ['blue', 'orange']
+        bins = np.arange(0, 9, 0.5)
+        kwargs = {'bins': bins, 'histtype': 'bar'}
 
-            return d['average Carrier Number'].mean()
+        for i, (size, df_sizes) in enumerate(self.get_separate_data_frames().items()):
+            axs[i].hist(df_sizes, color=colors, **kwargs)
+            axs[i].set_ylabel(size)
 
-        [print(sizes, average_participants(sizes, df)) for sizes in
-         [['Large'], ['Medium'], ['Small Far', 'Small Near']]]
-
-        axs[0].hist(data_frames(['Large'], df), color=colors, **kwargs)
-
-        axs[1].hist(
-            [dataframe[~df['average Carrier Number'].isin(self.plot_seperately['Medium'])] for dataframe in data_frames(['Medium'], df)],
-            color=colors, **kwargs)
-        axs[2].hist([dataframe[df['average Carrier Number'].isin([self.plot_seperately['Medium'][0]])] for dataframe in
-                     data_frames(['Medium'], df)],
-                    color=colors, **kwargs)
-        axs[3].hist([dataframe[df['average Carrier Number'].isin([self.plot_seperately['Medium'][1]])] for dataframe in
-                     data_frames(['Medium'], df)],
-                    color=colors, **kwargs)
-        axs[4].hist(data_frames(['Small Far', 'Small Near'], df), color=colors, **kwargs)
-
-        for ax, label in zip(axs, ['L', 'M', 'M', 'M', 'S']):
-            ax.set_xlim(0, np.max(bins))
-            ax.set_ylabel(label)
         axs[-1].legend(['communicating', 'non-communicating'])
         axs[-1].set_xlabel('path length/minimal path length')
-        labelx = -0.05  # axes coords
 
+        labelx = -0.05  # axes coords
         for j in range(len(axs)):
             axs[j].yaxis.set_label_coords(labelx, 0.5)
 
@@ -88,51 +136,41 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
     def __init__(self):
         self.solver = 'ant'
         super().__init__(self.solver)
-        self.choose_experiments('ant', 'SPT', solver_geometry['ant'], init_cond='back')
 
-        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]', 'average Carrier Number']
-        self.choose_columns(columns)
-
-        self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
-                                                     / self.df['minimal path length [length unit]']
         self.n_group_sizes = 5
         self.plot_seperately = {'S': [1]}
 
-    def plot_path_length_distributions(self, axs):
-        colors = ['green', 'red']
-        bins = range(0, 70, 3)
-        df = self.df
+    def average_participants(self, sizes, df):
+        d = df[df['size'] == sizes]
 
-        def average_participants(sizes, df):
-            d = df[df['size'] == sizes]
+        if sizes[0] in self.plot_seperately.keys():
+            d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
 
-            if sizes[0] in self.plot_seperately.keys():
-                d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+        [print(sizes, d['average Carrier Number'].mean()) for sizes in ['XL', 'L', 'M', 'S']]
 
-            return d['average Carrier Number'].mean()
-
-        [print(sizes, average_participants(sizes, df)) for sizes in ['XL', 'L', 'M', 'S']]
-
-        def data_frames(size, df):
+    def get_separate_data_frames(self):
+        def split_winners_loosers(size, df):
             winner = df[df['winner'] & (df['size'] == size)]['path length/minimal path length[]']
             looser = df[~df['winner'] & (df['size'] == size)]['path length/minimal path length[]']
             return [winner, looser]
 
-        for i, size in enumerate(['XL', 'L', 'M']):
-            axs[i].hist(data_frames(size, df), color=colors, bins=bins)
+        df_to_plot = {'XL': split_winners_loosers('XL', self.df),
+                      'L': split_winners_loosers('L', self.df),
+                      'M': split_winners_loosers('M', self.df),
+                      'S (> 1)': [data_frame[~self.df['average Carrier Number'].isin(self.plot_seperately['S'])]
+                     for data_frame in split_winners_loosers('S', self.df)],
+                      'Single (1)': [data_frame[self.df['average Carrier Number'].isin(self.plot_seperately['S'])]
+                     for data_frame in split_winners_loosers('S', self.df)]}
+        return df_to_plot
+
+    def plot_path_length_distributions(self, axs, max_path=70):
+        colors = ['green', 'red']
+        bins = range(0, max_path, 3)
+
+        for i, (size, df_sizes) in enumerate(self.get_separate_data_frames().items()):
+            axs[i].hist(df_sizes, color=colors, bins=bins)
             axs[i].set_ylabel(size)
 
-        axs[3].hist([data_frame[~df['average Carrier Number'].isin(self.plot_seperately['S'])]
-                     for data_frame in data_frames('S', df)], color=colors, bins=bins)
-        axs[3].set_ylabel('S')
-
-        axs[4].hist([data_frame[df['average Carrier Number'].isin(self.plot_seperately['S'])]
-                     for data_frame in data_frames('S', df)], color=colors, bins=bins)
-        axs[4].set_ylabel('Single')
-
-        # m = max([ax.get_xlim()[1] for ax in axs])
-        # [ax.set_xlim(0, m) for ax in axs]
         axs[-1].legend(['successful', 'unsuccessfull'])
         axs[-1].set_xlabel('path length/minimal path length')
 
@@ -140,20 +178,35 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         for j in range(len(axs)):
             axs[j].yaxis.set_label_coords(labelx, 0.5)
 
+    def percent_of_solving(self, fig):
+        data_frames = self.get_separate_data_frames()
+        percent_of_winning = {}
+        for size, dfs in data_frames.items():
+            percent_of_winning[size] = len(dfs[0])/(len(dfs[0]) + len(dfs[1]))
+        plt.bar(*zip(*percent_of_winning.items()))
+        save_fig(fig, 'percent_solving_ants')
+        pass
+
 
 if __name__ == '__main__':
     shape = 'SPT'
 
-    image_names = ['back_path_length_ants', 'back_path_length_humans']
-    Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human]
+    Plot_classes = [Path_length_cut_off_df_human, Path_length_cut_off_df_ant]
+    # Plot_classes = [Path_length_cut_off_df_ant]
 
-    for image_name, Plot_class in zip(image_names, Plot_classes):
+    for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
+        fig, axs = my_plot_class.open_figure()
+        my_plot_class.cut_off_after_time()
+        my_plot_class.plot_path_length_distributions(axs, max_path=25)
+        save_fig(fig, 'back_path_length_' + my_plot_class.solver + 'cut_of_time')
 
-        fig, axs = plt.subplots(nrows=my_plot_class.n_group_sizes, sharex=True)
-        fig.subplots_adjust(hspace=0.2)
-        plt.show(block=False)
+        my_plot_class = Plot_class()
+        fig, axs = my_plot_class.open_figure()
+        my_plot_class.cut_off_after_path_length()
+        my_plot_class.plot_path_length_distributions(axs, max_path=25)
+        save_fig(fig, 'back_path_length_' + my_plot_class.solver + 'cut_of_path')
 
-        my_plot_class.plot_path_length_distributions(axs)
-
-        save_fig(fig, image_name)
+        fig = plt.figure()
+        my_plot_class.percent_of_solving(fig)
+        save_fig(fig, 'percent_solving_ants')
