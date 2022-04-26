@@ -2,7 +2,10 @@ from itertools import groupby
 import numpy as np
 from trajectory_inheritance.trajectory import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
-from Analysis.PathPy.SPT_states import pre_final_state, final_state, allowed_transition_attempts, forbidden_transition_attempts
+from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts
+from Analysis.PathLength import PathLength
+from Setup.Maze import Maze
+from PhysicsEngine.Display import Display
 
 
 class Path:
@@ -11,7 +14,7 @@ class Path:
     and then finding connected components.
     """
 
-    def __init__(self, time_step: float, time_series=None, x=None, conf_space_labeled=None):
+    def __init__(self, time_step: float, time_series=None, x=None, conf_space_labeled=None, only_states=False):
         """
         :param step: after how many frames I add a label to my label list
         :param x: trajectory
@@ -26,18 +29,48 @@ class Path:
 
         self.time_series = time_series
         if self.frame_step is not None and self.time_series is None and x is not None:
-            self.time_series = self.get_time_series(conf_space_labeled, x)
-            # x.play(path=self, wait=20)
+            self.time_series = self.get_time_series(conf_space_labeled, x, only_states=only_states)
+            self.save_transition_images(x)
+
+            # for 'small_20220308115942_20220308120334'
+            if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
+                self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
+            # x.play(path=self, wait=15)
+
             self.correct_time_series()
 
         self.state_series = self.calculate_state_series()
 
-    def get_time_series(self, conf_space_labeled, x):
+    @staticmethod
+    def show_configuration(x, coords, save_dir='', text_in_snapshot='', frame=0):
+        maze = Maze(x)
+        display = Display(text_in_snapshot, 1, maze, frame=frame)
+        maze.set_configuration(coords[0:2], coords[2])
+        maze.draw(display)
+        display.display()
+        if len(save_dir) > 0:
+            display.snapshot(save_dir)
+
+    def save_transition_images(self, x):
+        coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
+        Path.show_configuration(x, coords[0],
+                                'State_transition_images\\' + str(int(0 * self.time_step)) + '.png',
+                                text_in_snapshot=self.time_series[0], frame=0)
+        for i, (label0, label1) in enumerate(zip(self.time_series[:-1], self.time_series[1:])):
+            if label0 != label1:
+                Path.show_configuration(x, coords[i],
+                                        'State_transition_images\\' + str(int(i * self.time_step)) + '.png',
+                                        text_in_snapshot=label1, frame=int(i * self.time_step * x.fps))
+
+    def get_time_series(self, conf_space_labeled, x, only_states=False):
         print(x)
-        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in x.iterate_coords(step=self.frame_step)]
+        coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
+        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
         for i, index in enumerate(indices):
             labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
+        if only_states:
+            labels = [l[0] for l in labels]
         return labels[1:]
 
     def correct_time_series(self):
@@ -147,6 +180,7 @@ class Path:
             return [state1[1], ''.join(sorted(state1[1] + state2))]
         else:
             print('What happened: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
+            return []
 
     def add_missing_transitions(self, labels) -> list:
         """
@@ -230,15 +264,36 @@ class Path:
         labels = self.cut_off_after_final_state(labels)
         return labels
 
-    def time_stamped_series(self) -> list:
-        groups = groupby(self.time_series)
-        return [(label, sum(1 for _ in group) * self.time_step) for label, group in groups]
+    @staticmethod
+    def time_stamped_series(time_series, time_step) -> list:
+        groups = groupby(time_series)
+        return [(label, sum(1 for _ in group) * time_step) for label, group in groups]
+
+    @staticmethod
+    def path_length_stamped_series(filename, time_series, time_step) -> list:
+        x = get(filename)
+        hey = Path.time_stamped_series(time_series, time_step)
+        frames = [(h[0], int(h[1] * x.fps)) for h in hey]
+        hey_path_length = []
+        current = 0
+
+        for (state, frame_number) in frames:
+            new_end_frame = min(current + frame_number, len(x.frames))
+            path_l = PathLength(x).calculate_path_length(frames=[current, new_end_frame])
+            current = new_end_frame
+            hey_path_length.append((state, path_l))
+        # TODO: 'XL_SPT_4640014_XLSpecialT_1_ants' for example is a bit off...
+        # x.play()
+        return hey_path_length
 
 
 if __name__ == '__main__':
-    filenames = ['large_20210805171741_20210805172610_perfect',
-                'medium_20210507225832_20210507230303_perfect',
-                'small2_20220308120548_20220308120613_perfect']
+    # filenames = ['large_20210805171741_20210805172610_perfect',
+    #             'medium_20210507225832_20210507230303_perfect',
+    #             'small2_20220308120548_20220308120613_perfect']
+    # filenames = ['small_20220308115942_20220308120334']
+
+    filenames = ['XL_SPT_4640014_XLSpecialT_1_ants']
     for filename in filenames:
         time_step = 0.25  # seconds
         x = get(filename)

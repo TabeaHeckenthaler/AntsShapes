@@ -16,16 +16,17 @@ except:
 
 
 class Display:
-    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None, path=None):
+    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None, path=None,
+                 frame=0):
         self.my_maze = my_maze
         self.fps = fps
-        self.filename = name
+        self.name = name
         self.ppm = int(1100 / self.my_maze.arena_length)  # pixels per meter
         self.height = int(self.my_maze.arena_height * self.ppm)
         self.width = 1100
 
         pygame.font.init()  # display and fonts
-        self.font = pygame.font.Font('freesansbold.ttf', 25)
+        self.font = pygame.font.Font('freesansbold.ttf', 50)
         # self.monitor = {'left': 0, 'top': 0,
         #                 'width': int(Tk().winfo_screenwidth() * 0.9), 'height': int(Tk().winfo_screenheight() * 0.8)}
         self.monitor = {'left': 0, 'top': 0, 'width': self.width, 'height': self.height}
@@ -35,14 +36,14 @@ class Display:
         self.polygons = []
         self.points = []
         self.wait = wait
-        self.i = i
+        self.i = frame
         self.path = path
         if path is not None:
             path.frame_step = int(self.fps * path.time_step)
         if config is not None:
             my_maze.set_configuration(config[0], config[1])
 
-        self.renew_screen()
+        self.renew_screen(movie_name=name)
         self.cs = cs
         if self.cs is not None:
             self.scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
@@ -89,23 +90,22 @@ class Display:
         end = self.keyboard_events()
         return end
 
-    def renew_screen(self, frame=0, movie_name=None):
+    def renew_screen(self, movie_name=None):
         self.screen.fill(colors['background'])
 
         self.drawGrid()
         self.polygons = self.circles = self.points = self.arrows = []
 
-        if frame is not None:
-            text = self.font.render(movie_name, True, colors['text'])
-            text_rect = text.get_rect()
-            text2 = self.font.render('Frame: ' + str(self.i), True, colors['text'])
-            self.screen.blit(text2, [0, 25])
-            self.screen.blit(text, text_rect)
+        text = self.font.render(movie_name, True, colors['text'])
+        text_rect = text.get_rect()
+        text2 = self.font.render('Frame: ' + str(self.i), True, colors['text'])
+        self.screen.blit(text2, [0, 50])
+        self.screen.blit(text, text_rect)
 
         if self.path is not None:
             state = self.path.state_at_time(self.time())
             text_state = self.font.render('state: ' + state, True, colors['text'])
-            self.screen.blit(text_state, [0, 50])
+            self.screen.blit(text_state, [0, 100])
 
     def time(self) -> float:
         return self.i/self.fps

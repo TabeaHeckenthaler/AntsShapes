@@ -49,6 +49,44 @@ class Altered_DataFrame:
     def choose_columns(self, columns):
         self.df = self.df[columns]
 
+    def get_separate_data_frames(self, solver, plot_seperately, shape=None, geometry=None, initial_cond='back'):
+        if 'solver' in self.df.columns:
+            df = self.df[self.df['solver'] == solver]
+        else:
+            df = self.df
+        if 'shape' in self.df.columns and shape is not None:
+            df = df[df['shape'] == shape]
+        if 'maze dimensions' in self.df.columns and geometry is not None:
+            df = df[(df['maze dimensions'] == geometry[0])]
+        df = df[df['initial condition'] == 'back']
+        if solver == 'ant':
+            def split_winners_loosers(size, df):
+                winner = df[df['winner'] & (df['size'] == size)]
+                looser = df[~df['winner'] & (df['size'] == size)]
+                return [winner, looser]
+
+            df_to_plot = {'XL': split_winners_loosers('XL', df),
+                          'L': split_winners_loosers('L', df),
+                          'M': split_winners_loosers('M', df),
+                          'S (> 1)': split_winners_loosers('S', df[~df['average Carrier Number'].isin(plot_seperately['S'])]),
+                          'Single (1)': split_winners_loosers('S', df[df['average Carrier Number'].isin(plot_seperately['S'])])}
+
+        elif solver == 'human':
+            def split_NC_C(sizes, df):
+                communication = df[df['communication'] & (df['size'].isin(sizes))]
+                non_communication = df[~df['communication'] & (df['size'].isin(sizes))]
+                return [communication, non_communication]
+
+            df_to_plot = {'Large': split_NC_C(['Large'], df),
+                          'M (>7)': split_NC_C(['Medium'], df[~df['average Carrier Number'].isin(plot_seperately['Medium'])]),
+                          'M (2)': split_NC_C(['Medium'], df[df['average Carrier Number'].isin([plot_seperately['Medium'][0]])]),
+                          'M (1)': split_NC_C(['Medium'], df[df['average Carrier Number'].isin([plot_seperately['Medium'][1]])]),
+                          'Small': split_NC_C(['Small Far', 'Small Near'], df)
+                          }
+        else:
+            raise ValueError('What type of solver?')
+        return df_to_plot
+
 
 def choose_trajectories(solver='human', size='Large', shape='SPT',
                         geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
