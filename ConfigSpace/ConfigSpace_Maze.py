@@ -11,7 +11,7 @@ from datetime import datetime
 import string
 from skfmm import distance
 from tqdm import tqdm
-from Analysis.PathPy.SPT_states import forbidden_transition_attempts, allowed_transition_attempts, states
+from Analysis.PathPy.SPT_states import forbidden_transition_attempts, allowed_transition_attempts, states, short_forbidden
 import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy
@@ -207,18 +207,19 @@ class ConfigSpace_Maze(ConfigSpace):
         return {'x': None, 'y': y_num, 'theta': theta_num}
 
     @staticmethod
-    def calculate_distance(space: np.array, mask: np.array) -> np.array:
+    def calculate_distance(zero_distance_space: np.array, available_states: np.array) -> np.array:
         """
-        Calculate the distance to every other node in the array.
-        :param mask: Distances have to be calculated according to the available nodes.
-        The available nodes are saved in 'mask'
+        Calculate the distance of every node in mask to space.
+        :param zero_distance_space: Area, which has zero distance.
+        :param available_states: Nodes, where distance to the zero_distance_space should be calculated.
         :return: np.array with distances from each node
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
-        phi = np.array(~space, dtype=int)
-        masked_phi = np.ma.MaskedArray(phi, mask=mask)
-        return distance(masked_phi, periodic=(0, 0, 1))
+        phi = np.array(~zero_distance_space, dtype=int)
+        masked_phi = np.ma.MaskedArray(phi, mask=~available_states)
+        d = distance(masked_phi, periodic=(0, 0, 1))
+        return d
 
         # node at (105, 36, 102)
 
@@ -654,6 +655,9 @@ class PS_Area(ConfigSpace_Maze):
         self.distance: np.array = None
         self.centroid = centroid
 
+    def get_indices(self):
+        return list(map(tuple, np.array(np.where(self.space)).transpose()))
+
     def try_to_connect_periodically(self, space, centroid) -> bool:
         # if this is part of a another ps that is split by 0 or 2pi
         border_bottom = np.any(self.space[:, :, 0])
@@ -879,7 +883,6 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.load_eroded_labeled_space()
         if self.fig is None or not self.fig.running:
             self.visualize_space(reduction=reduction)
-
         else:
             self.fig = fig
 
@@ -971,16 +974,75 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         return default
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
-    def max_distance_for_transition(self):
+    def max_distance_for_transition(self) -> int:
         """
-        :return: maximum distance so that it is noted as transition area
+        :return: maximum distance (in pixels in CS) so that it is noted as transition area
         """
         maze = Maze(solver=self.solver, size=self.size, shape=self.shape, geometry=self.geometry)
         if self.shape == 'SPT':
-            distance_cm = (maze.slits[1] - maze.slits[0]) / 3
+            distance_cm = (maze.slits[1] - maze.slits[0]) / 2
         else:
             distance_cm = maze.exit_size / 2
-        return (self.coords_to_index(0, distance_cm) + self.erosion_radius * 2) * 1
+        return self.coords_to_index(0, distance_cm)
+        # return (self.coords_to_index(0, distance_cm) + self.erosion_radius * 2)
+
+    def add_false_connections(self) -> np.array:
+        ps_name_dict = {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
+        space_with_false_connections = copy(self.space)
+
+
+        state1, state2 = 'bf'
+        axis_connect = 0
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[1]==int(self.space.shape[1]/2)], key=lambda x: x[2])[-1]
+        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])),
+                        s1[1], s1[2])
+        space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
+
+        state1, state2 = 'cg'
+        axis_connect = 0
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()
+                               if inds[2]==int(self.space.shape[2]/2) and inds[1]==int(self.space.shape[1]/2)],
+                              key=lambda x: x[2])[-1]
+        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])),
+                        s1[1], s1[2])
+        space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
+
+        state1, state2 = 'bd'
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] > 100],
+                              key = lambda x: x[1])[0]
+        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
+                              key=lambda x: x[2])[-1]
+        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
+        space_with_false_connections[s2[0], s2[1]-1:s1[1]+1, s1[2]] = True
+        space_with_false_connections[s2[0], s2[1], s2[2]-1:s1[2]+1] = True
+
+        state1, state2 = 'be'
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] < 200],
+                              key = lambda x: x[1])[-1]
+        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
+                              key=lambda x: x[2])[0]
+        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
+        space_with_false_connections[s2[0], s1[1]-1:s2[1]+1, s1[2]] = True
+        space_with_false_connections[s2[0], s2[1], s1[2]-1:s2[2]+1] = True
+
+        state1, state2 = 'eg'
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
+                              key=lambda x: x[2])[-1]
+        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] < self.space.shape[2]//2],
+                              key=lambda x: x[1])[-1]
+        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
+        space_with_false_connections[s2[0], min(s1[1], s2[1])-1: max(s1[1], s2[1])+1, s1[2]] = True
+        space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2])-1: max(s1[2], s2[2])-1] = True
+
+        state1, state2 = 'dg'
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
+                              key=lambda x: x[2])[0]
+        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] > self.space.shape[2]//2],
+                              key=lambda x: x[1])[0]
+        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
+        space_with_false_connections[s2[0], min(s1[1], s2[1])-1: max(s1[1], s2[1])+1, s1[2]] = True
+        space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2])-1: max(s1[2], s2[2])-1] = True
+        return space_with_false_connections
 
     def label_space(self) -> None:
         """
@@ -990,24 +1052,25 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # interesting_indices = (207, 175, 407) # human large
         if self.ps_states is None:
             self.ps_states = self.create_ps_states()
+        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
-        dilated_space = self.dilate(self.space, self.erosion_radius_default())
+        space_with_false_connections = self.add_false_connections()
+        # dilated_space = self.dilate(self.space, self.erosion_radius_default())
+
         for ps_state in tqdm(self.ps_states):
-            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~dilated_space)
+            ps_state.distance = ps_state.calculate_distance(ps_state.space, space_with_false_connections)
 
         # distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
         distance_stack = copy(np.stack([ps_state.distance for ps_state in self.ps_states], axis=3))
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
-        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
-
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
         # self.assign_label(interesting_indices, distance_stack, ps_name_dict)
         [self.assign_label(indices, distance_stack, ps_name_dict) for indices in self.iterate_space_index()]
-        self.fix_edges_called_a()
+        self.fix_edges_labeling()
 
     def assign_label(self, ind: tuple, distance_stack: np.array, ps_name_dict: dict):
         """
@@ -1120,16 +1183,16 @@ if __name__ == '__main__':
     for size in sizes:
         print(solver, size)
         ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-        # ps.create_ps_states()
+
         ps.load_eroded_labeled_space()
+        ps.label_space()
+
         # ps.visualize_space(space=ps.space_labeled == 'ca')
-        # problem: 146, 55, 149
-        ps.fix_edges_labeling()
-        ps.save_labeled()
-
         # ps.visualize_states(reduction=1)
-        # ps.visualize_transitions(reduction=1)
 
+        ps.visualize_transitions(reduction=1)
+
+        ps.save_labeled()
         # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
 
         DEBUG = 1

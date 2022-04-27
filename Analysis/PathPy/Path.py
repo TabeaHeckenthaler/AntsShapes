@@ -30,7 +30,6 @@ class Path:
         self.time_series = time_series
         if self.frame_step is not None and self.time_series is None and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x, only_states=only_states)
-            self.save_transition_images(x)
 
             # for 'small_20220308115942_20220308120334'
             if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
@@ -38,6 +37,7 @@ class Path:
             # x.play(path=self, wait=15)
 
             self.correct_time_series()
+            self.save_transition_images(x)
 
         self.state_series = self.calculate_state_series()
 
@@ -298,7 +298,9 @@ if __name__ == '__main__':
         x = get(filename)
         cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
         cs_labeled.load_labeled_space()
-        # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'a')
+        # cs_labeled.visualize_space()
+        # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'cd')
+        # cs_labeled.visualize_transitions()
         # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
 
         path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
