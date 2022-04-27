@@ -58,12 +58,13 @@ class Altered_DataFrame:
             df = df[df['shape'] == shape]
         if 'maze dimensions' in self.df.columns and geometry is not None:
             df = df[(df['maze dimensions'] == geometry[0])]
-        df = df[df['initial condition'] == 'back']
+        if 'initial condition' in self.df.columns:
+            df = df[df['initial condition'] == initial_cond]
         if solver == 'ant':
             def split_winners_loosers(size, df):
                 winner = df[df['winner'] & (df['size'] == size)]
                 looser = df[~df['winner'] & (df['size'] == size)]
-                return [winner, looser]
+                return {'winner': winner, 'looser': looser}
 
             df_to_plot = {'XL': split_winners_loosers('XL', df),
                           'L': split_winners_loosers('L', df),
@@ -75,7 +76,7 @@ class Altered_DataFrame:
             def split_NC_C(sizes, df):
                 communication = df[df['communication'] & (df['size'].isin(sizes))]
                 non_communication = df[~df['communication'] & (df['size'].isin(sizes))]
-                return [communication, non_communication]
+                return {'communication': communication, 'non_communication': non_communication}
 
             df_to_plot = {'Large': split_NC_C(['Large'], df),
                           'M (>7)': split_NC_C(['Medium'], df[~df['average Carrier Number'].isin(plot_seperately['Medium'])]),

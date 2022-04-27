@@ -206,7 +206,7 @@ def perfect_human():
 
 def ants():
     solver, shape, geometry = 'ant', 'SPT', (
-    'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+        'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
     # for size in exp_types[shape][solver]:
     for size in ['XL']:
@@ -252,28 +252,30 @@ def av_time_in_states():
         dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
                                           initial_cond='back')
 
-        for key, d in dfs.items():
-            experiments_df = pd.concat(d)
-            filenames = experiments_df['filename']
-            if len(filenames) > 0:
-                size = get_size(experiments_df)
-                paths = PathsTimeStamped(solver, size, shape, solver_geometry[solver])
-                paths.load_paths(only_states=True)
-                paths.time_stamped_series = paths.calculate_timestamped()
+        for key, ds in dfs.items():
+            # experiments_df = pd.concat(ds)
+            for experiments_df in ds:
+                filenames = experiments_df['filename']
+                if len(filenames) > 0:
+                    size = get_size(experiments_df)
+                    paths = PathsTimeStamped(solver, size, shape, solver_geometry[solver])
+                    paths.load_paths(only_states=True)
+                    paths.time_stamped_series = paths.calculate_timestamped()
 
-                time_stamped_states = []
-                for filename in filenames:
-                    if filename in paths.time_stamped_series.keys():
-                        time_stamped_states.append(paths.time_stamped_series[filename])
-                    else:
-                        print(filename)
-                average_time_in_states[solver][key] = PathsTimeStamped.measure_in_state(time_stamped_states)
+                    time_stamped_states = []
+                    for filename in filenames:
+                        if filename in paths.time_stamped_series.keys():
+                            time_stamped_states.append(paths.time_stamped_series[filename])
+                        else:
+                            print(filename)
+                    average_time_in_states[solver][key] = PathsTimeStamped.measure_in_state(time_stamped_states)
 
-            average_time_in_states[solver][key] = {state: np.mean(time_list) for state, time_list
-                                                   in average_time_in_states[solver][key].items() if len(time_list) > 0}
-        fig = plot_dict(average_time_in_states[solver])
-        plt.ylabel('average time spent in state')
-        save_fig(fig, solver + 'average_time_spent_in_states')
+                average_time_in_states[solver][key] = {state: np.mean(time_list) for state, time_list
+                                                       in average_time_in_states[solver][key].items() if
+                                                       len(time_list) > 0}
+            fig = plot_dict(average_time_in_states[solver])
+            plt.ylabel('average time spent in state')
+            save_fig(fig, solver + 'average_time_spent_in_states')
 
 
 def av_path_in_states():
@@ -281,48 +283,59 @@ def av_path_in_states():
     shape = 'SPT'
     average_path_in_states = {}
 
-    for solver in solvers.keys():
+    # for solver in solvers.keys():
+    for solver in ['human']:
         average_path_in_states[solver] = {}
 
         df = Altered_DataFrame()
         dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
                                           initial_cond='back')
 
-        for key, d in dfs.items():
-            experiments_df = pd.concat(d)
-            filenames = experiments_df['filename']
-            if len(filenames) > 0:
-                size = get_size(experiments_df)
-                paths = PathsTimeStamped(solver, size, shape, solver_geometry[solver])
-                paths.load_paths(only_states=True)
-                paths.time_stamped_series = paths.calculate_path_length_stamped()
+        for size_split, list_of_dataframes in dfs.items():
+            # experiments_df = pd.concat(list_of_dataframes)
+            for splitter, experiments_df in list_of_dataframes.items():
+                if splitter not in average_path_in_states[solver].keys():
+                    average_path_in_states[solver][splitter] = {}
+                filenames = experiments_df['filename']
+                # if "large_20211006174255_20211006174947" in filenames:
+                #     DEBUG = 1
+                if len(filenames) > 0:
+                    size = get_size(experiments_df)
+                    paths = PathsTimeStamped(solver, size, shape, solver_geometry[solver])
+                    paths.load_paths(only_states=True, filenames=filenames)
+                    paths.time_stamped_series = paths.calculate_path_length_stamped()
 
-                path_length_stamped_states = []
-                for filename in filenames:
-                    if filename in paths.time_stamped_series.keys():
-                        path_length_stamped_states.append(paths.time_stamped_series[filename])
-                    else:
-                        print(filename)
-                average_path_in_states[solver][key] = PathsTimeStamped.measure_in_state(path_length_stamped_states)
+                    path_length_stamped_states = []
+                    for filename in filenames:
+                        if filename in paths.time_stamped_series.keys():
+                            path_length_stamped_states.append(paths.time_stamped_series[filename])
+                        else:
+                            print(filename)
+                    paths_in_states = {state: pathlength_list for state, pathlength_list in
+                                       PathsTimeStamped.measure_in_state(path_length_stamped_states).items()
+                                       if len(pathlength_list) > 0}
+                    minimal_path = experiments_df['minimal path length [length unit]'].iloc[0]
+                    average_path_in_states[solver][splitter][size_split] = {state: np.mean(pathlength_list) / minimal_path
+                                                                            for state, pathlength_list in paths_in_states.items()}
 
-            average_path_in_states[solver][key] = {state: np.mean(pathlength_list)
-                                                          /experiments_df['minimal path length [length unit]'].iloc[0]
-                                                   for state, pathlength_list
-                                                   in average_path_in_states[solver][key].items() if len(pathlength_list) > 0}
-        fig = plot_dict(average_path_in_states[solver])
-        plt.ylabel('average path length walked in state/minimal total path length')
+        fig, axs = plt.subplots(ncols=len(average_path_in_states[solver].keys()))
+        for ax, splitter in zip(axs, average_path_in_states[solver].keys()):
+            plot_dict(average_path_in_states[solver][splitter], ax)
+            plt.ylabel('average path length walked in state/minimal total path length')
+            ax.title.set_text(splitter)
+        axs[-1].get_legend().remove()
         save_fig(fig, solver + 'average_path_spent_in_states')
 
 
-def plot_dict(dic: dict):
+def plot_dict(dic: dict, ax):
     df = pd.DataFrame(dic)
     df = df.transpose()
-    df.plot(kind="bar", stacked=True)
+    df.plot(kind="bar", stacked=True, ax=ax)
     return plt.gcf()
 
 
 if __name__ == '__main__':
-    av_time_in_states()
+    # av_time_in_states()
     av_path_in_states()
     # ants()
     # humans()

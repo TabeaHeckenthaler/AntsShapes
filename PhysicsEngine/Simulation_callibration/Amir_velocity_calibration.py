@@ -26,7 +26,7 @@ def get(filename, local_address):
    """
     if filename in os.listdir(local_address):
         with open(os.path.join(local_address, filename), 'rb') as f:
-            print('You are loading ' + filename + 'from local copy.')
+            print('You are loading ' + filename + ' from local copy.')
             x = pickle.load(f)
         return x
     else:

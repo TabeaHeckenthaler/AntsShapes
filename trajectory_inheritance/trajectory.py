@@ -415,7 +415,7 @@ def get(filename) -> Trajectory:
     local_address = path.join(home, 'trajectory_inheritance', 'trajectories_local')
     if filename in os.listdir(local_address):
         with open(path.join(local_address, filename), 'rb') as f:
-            print('You are loading ' + filename + 'from local copy.')
+            print('You are loading ' + filename + ' from local copy.')
             x = pickle.load(f)
         return x
 

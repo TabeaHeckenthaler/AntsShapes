@@ -282,7 +282,6 @@ class Path:
             path_l = PathLength(x).calculate_path_length(frames=[current, new_end_frame])
             current = new_end_frame
             hey_path_length.append((state, path_l))
-        # TODO: 'XL_SPT_4640014_XLSpecialT_1_ants' for example is a bit off...
         # x.play()
         return hey_path_length
 
