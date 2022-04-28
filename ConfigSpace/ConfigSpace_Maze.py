@@ -990,7 +990,6 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         ps_name_dict = {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
         space_with_false_connections = copy(self.space)
 
-
         state1, state2 = 'bf'
         axis_connect = 0
         s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[1]==int(self.space.shape[1]/2)], key=lambda x: x[2])[-1]
@@ -1007,41 +1006,38 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                         s1[1], s1[2])
         space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
 
+        def connect_dots():
+            space_with_false_connections[s1[0] - 1: s2[0] + 1, s1[1], s1[2]] = True
+            space_with_false_connections[s2[0], min(s1[1], s2[1]) - 1: max(s1[1], s2[1]) + 1, s1[2]] = True
+            space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2]) - 1: max(s1[2], s2[2]) + 1] = True
+
         state1, state2 = 'bd'
         s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] > 100],
                               key = lambda x: x[1])[0]
         s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
                               key=lambda x: x[2])[-1]
-        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
-        space_with_false_connections[s2[0], s2[1]-1:s1[1]+1, s1[2]] = True
-        space_with_false_connections[s2[0], s2[1], s2[2]-1:s1[2]+1] = True
+        connect_dots()
 
         state1, state2 = 'be'
         s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] < 200],
                               key = lambda x: x[1])[-1]
         s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
                               key=lambda x: x[2])[0]
-        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
-        space_with_false_connections[s2[0], s1[1]-1:s2[1]+1, s1[2]] = True
-        space_with_false_connections[s2[0], s2[1], s1[2]-1:s2[2]+1] = True
+        connect_dots()
 
         state1, state2 = 'eg'
         s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
                               key=lambda x: x[2])[-1]
         s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] < self.space.shape[2]//2],
                               key=lambda x: x[1])[-1]
-        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
-        space_with_false_connections[s2[0], min(s1[1], s2[1])-1: max(s1[1], s2[1])+1, s1[2]] = True
-        space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2])-1: max(s1[2], s2[2])-1] = True
+        connect_dots()
 
         state1, state2 = 'dg'
         s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
                               key=lambda x: x[2])[0]
         s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] > self.space.shape[2]//2],
                               key=lambda x: x[1])[0]
-        space_with_false_connections[s1[0]-1:s2[0]+1, s1[1], s1[2]] = True
-        space_with_false_connections[s2[0], min(s1[1], s2[1])-1: max(s1[1], s2[1])+1, s1[2]] = True
-        space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2])-1: max(s1[2], s2[2])-1] = True
+        connect_dots()
         return space_with_false_connections
 
     def label_space(self) -> None:
@@ -1172,27 +1168,32 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 if __name__ == '__main__':
     shape = 'SPT'
 
+    # geometries = {
+    #     ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
+    #     # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
+    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
+    #     }
+    # (solver, geometry), sizes = ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')), ['Small Far', 'Large']
+
     geometries = {
         ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-        # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
         ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
         }
 
-    (solver, geometry), sizes = ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')), ['Medium']
-    # for (solver, geometry), sizes in list(geometries.items()):
-    for size in sizes:
-        print(solver, size)
-        ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
-        ps.load_eroded_labeled_space()
-        ps.label_space()
+    for (solver, geometry), sizes in list(geometries.items()):
+        for size in sizes:
+            print(solver, size)
+            ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
-        # ps.visualize_space(space=ps.space_labeled == 'ca')
-        # ps.visualize_states(reduction=1)
+            ps.load_eroded_labeled_space()
+            ps.label_space()
 
-        ps.visualize_transitions(reduction=1)
+            # ps.visualize_space(space=ps.space_labeled == 'ca')
+            # ps.visualize_states(reduction=1)
 
-        ps.save_labeled()
-        # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
+            ps.visualize_transitions(reduction=4)
+            ps.save_labeled()
+            # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
 
-        DEBUG = 1
+            DEBUG = 1
