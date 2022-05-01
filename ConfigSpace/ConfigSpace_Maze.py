@@ -643,8 +643,75 @@ class ConfigSpace_Maze(ConfigSpace):
                 ps_states.append(ps)
 
         ps_states = self.extend_ps_states_to_eroded_space(ps_states)
+
+        self.correct_ps_states()
+
         return ps_states
 
+    def ps_name_dict(self):
+        return {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
+
+    def correct_ps_states(self):
+        """
+        States e and d are differently eroded for different sizes. Some leave the area elongated in y , some dont. This
+        makes a difference in the state definition.
+        """
+        ps_name_dict = self.ps_name_dict()
+
+        """
+        Correction of e
+        """
+
+        g_indices = np.array(np.where(self.ps_states[ps_name_dict['g']].space))
+        index = np.argmin(g_indices[2])
+        g_ind = g_indices[:, index]
+
+        b_indices_low = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, :self.space.shape[2]//2]))
+        index = np.argmax(b_indices_low[2])
+        b_ind = b_indices_low[:, index]
+
+        transfer_from_c_to_e = np.array(np.where(self.ps_states[ps_name_dict['c']].space[:, :, :g_ind[2]]))
+        for i in range(transfer_from_c_to_e.shape[1]):
+            self.ps_states[ps_name_dict['c']].space[tuple(transfer_from_c_to_e[:, i])] = False
+            self.ps_states[ps_name_dict['e']].space[tuple(transfer_from_c_to_e[:, i])] = True
+
+        transfer_from_f_to_e = np.array(np.where(self.ps_states[ps_name_dict['f']].space[:, :, b_ind[2]:self.space.shape[2]//2]))
+        transfer_from_f_to_e = transfer_from_f_to_e + np.array([[0, 0, b_ind[2]] for _ in range(transfer_from_f_to_e.shape[1])]).transpose()
+        for i in range(transfer_from_f_to_e.shape[1]):
+            self.ps_states[ps_name_dict['f']].space[tuple(transfer_from_f_to_e[:, i])] = False
+            self.ps_states[ps_name_dict['e']].space[tuple(transfer_from_f_to_e[:, i])] = True
+
+        """
+        Correction of d
+        """
+
+        b_indices_high = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, self.space.shape[2]//2:]))
+        b_indices_high = b_indices_high + np.array([[0, 0, self.space.shape[2]//2] for _ in range(b_indices_high.shape[1])]).transpose()
+        index = np.argmin(b_indices_high[2])
+        b_ind = b_indices_high[:, index]
+
+        g_indices = np.array(np.where(self.ps_states[ps_name_dict['g']].space))
+        index = np.argmax(g_indices[2])
+        g_ind = g_indices[:, index]
+
+        transfer_from_c_to_d = np.array(np.where(self.ps_states[ps_name_dict['c']].space[:, :, g_ind[2]:]))
+        transfer_from_c_to_d = transfer_from_c_to_d + np.array([[0, 0, g_ind[2]] for _ in range(transfer_from_c_to_d.shape[1])]).transpose()
+        for i in range(transfer_from_c_to_d.shape[1]):
+            self.ps_states[ps_name_dict['c']].space[tuple(transfer_from_c_to_d[:, i])] = False
+            self.ps_states[ps_name_dict['d']].space[tuple(transfer_from_c_to_d[:, i])] = True
+
+        transfer_from_f_to_d = np.array(np.where(self.ps_states[ps_name_dict['f']].space[:, :, self.space.shape[2]//2:b_ind[2]]))
+        transfer_from_f_to_d = transfer_from_f_to_d + np.array([[0, 0, self.space.shape[2]//2] for _ in range(transfer_from_f_to_d.shape[1])]).transpose()
+        for i in range(transfer_from_f_to_d.shape[1]):
+            self.ps_states[ps_name_dict['f']].space[tuple(transfer_from_f_to_d[:, i])] = False
+            self.ps_states[ps_name_dict['d']].space[tuple(transfer_from_f_to_d[:, i])] = True
+
+
+        self.ps_states[ps_name_dict['e']].clean()
+        self.ps_states[ps_name_dict['d']].clean()
+
+        self.visualize_space(space=self.ps_states[ps_name_dict['e']].space)
+        self.visualize_space(space=self.ps_states[ps_name_dict['d']].space)
 
 class PS_Area(ConfigSpace_Maze):
     def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str, centroid=None):
@@ -657,6 +724,15 @@ class PS_Area(ConfigSpace_Maze):
 
     def get_indices(self):
         return list(map(tuple, np.array(np.where(self.space)).transpose()))
+
+    def clean(self, num_cc=1):
+        labels, number_cc = cc3d.connected_components(self.space, connectivity=6, return_N=True)
+        stats = cc3d.statistics(labels)
+        while len(stats['voxel_counts']) > 1 + num_cc:
+            self.space[labels == np.argmin(stats['voxel_counts'])] = False
+            labels, number_cc = cc3d.connected_components(self.space, connectivity=6,
+                                                          return_N=True)
+            stats = cc3d.statistics(labels)
 
     def try_to_connect_periodically(self, space, centroid) -> bool:
         # if this is part of a another ps that is split by 0 or 2pi
@@ -814,7 +890,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
     def load_labeled_space(self, point_particle: bool = False) -> None:
         """
         Load Phase Space pickle.
-        :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
+        :param point_particle: point_particles=True means that the load had no fixtures when ps was calculafted.
         """
         directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius, small=True)
 
@@ -987,7 +1063,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # return (self.coords_to_index(0, distance_cm) + self.erosion_radius * 2)
 
     def add_false_connections(self) -> np.array:
-        ps_name_dict = {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
+        ps_name_dict = self.ps_name_dict()
         space_with_false_connections = copy(self.space)
 
         state1, state2 = 'bf'
@@ -1167,33 +1243,31 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 if __name__ == '__main__':
     shape = 'SPT'
-
-    # geometries = {
-    #     ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-    #     # ('ant', ('MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx')): ['XL', 'L', 'M'], # TODO: what happened here?
-    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
-    #     }
-    # (solver, geometry), sizes = ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')), ['Small Far', 'Large']
-
-    geometries = {
+    geometries_to_change = {
+        ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Small Far'],
         ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-        ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
         }
 
+    #
+    # geometries = {
+    #     ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
+    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
+    #     }
 
-    for (solver, geometry), sizes in list(geometries.items()):
+    for (solver, geometry), sizes in list(geometries_to_change.items()):
         for size in sizes:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
             ps.load_eroded_labeled_space()
-            ps.label_space()
+            ps.visualize_states(reduction=4)
+
+            # ps.correct_ps_states()
+            # ps.label_space()
+            # ps.save_labeled()
 
             # ps.visualize_space(space=ps.space_labeled == 'ca')
             # ps.visualize_states(reduction=1)
-
-            ps.visualize_transitions(reduction=4)
-            ps.save_labeled()
             # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
 
             DEBUG = 1

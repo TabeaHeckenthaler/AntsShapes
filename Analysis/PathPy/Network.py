@@ -8,7 +8,8 @@ import os
 from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.PathPy.Paths import Paths, PathsTimeStamped, PathWithoutSelfLoops, final_state
+from Analysis.PathPy.Paths import PathWithoutSelfLoops
+from Analysis.PathPy.SPT_states import final_state
 import pandas as pd
 import numpy as np
 
@@ -138,18 +139,25 @@ class Network(pathpy.Network):
             g.add_edge(e[0], e[1], weight=self.edges[e]['weight'])
         return g
 
-    def plot_transition_matrix(self, title: str = '', axis=None):
+    def plot_transition_matrix(self, title: str = '', axis=None, state_order=None):
         if self.T is None:
             self.markovian_analysis()
         if axis is None:
             fig, axis = plt.subplots(1, 1)
-        _ = axis.imshow(self.T)
+        if state_order is not None:
+            for state in state_order:
+                if state not in self.T.columns:
+                    self.T[state] = np.NaN
+            to_plot = self.T.reindex(state_order)[state_order]
+        else:
+            to_plot = self.T
+        _ = axis.imshow(to_plot)
 
-        axis.set_xticks(range(len(self.T)))
-        axis.set_xticklabels(self.T.columns)
+        axis.set_xticks(range(len(to_plot)))
+        axis.set_xticklabels(to_plot.columns)
 
-        axis.set_yticks(range(len(self.T)))
-        axis.set_yticklabels(self.T.columns)
+        axis.set_yticks(range(len(to_plot)))
+        axis.set_yticklabels(to_plot.columns)
         axis.set_title(title)
 
     @staticmethod

@@ -3,6 +3,7 @@ from trajectory_inheritance.exp_types import geometries, exp_types
 from Analysis.PathPy.Paths import PathWithoutSelfLoops
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
+from Analysis.PathPy.SPT_states import states, forbidden_transition_attempts, allowed_transition_attempts
 import os
 import numpy as np
 
@@ -25,10 +26,11 @@ class Network_comparison:
         return networks
 
     def plot_transition_matrices(self):
+        state_order = states[1:] + allowed_transition_attempts + forbidden_transition_attempts
         for solver in self.networks.keys():
             fig, axs = plt.subplots(1, len(self.networks[solver]))
             for (size, network), ax in zip(self.networks[solver].items(), axs):
-                network.plot_transition_matrix(title=size, axis=ax)
+                network.plot_transition_matrix(title=size, axis=ax, state_order=state_order)
 
             directory = graph_dir() + os.path.sep + 'transition_matrix_' + solver + '.pdf'
             print('Saving transition matrix in ', directory)
