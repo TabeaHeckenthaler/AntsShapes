@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from trajectory_inheritance.humans import angle_shift, participant_number

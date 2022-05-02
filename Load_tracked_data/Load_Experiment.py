@@ -6,19 +6,13 @@ Created on Sun May  3 10:35:01 2020
 """
 from DataFrame.dataFrame import get_filenames
 from os import listdir
-from Directories import MatlabFolder
-from Directories import NewFileName
+from Directories import MatlabFolder, NewFileName, trackedHumanHandMovieDirectory
 from tqdm import tqdm
-from copy import copy
-# from Load_tracked_data.PostTracking_Manipulations import SmoothConnector
-import numpy as np
 import json
 from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
-from PS_Search_Algorithms.Path_planning_full_knowledge import run_full_knowledge
-from datetime import datetime
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.trajectory_humanhand import Trajectory_humanhand
 
 
 def is_extension(name) -> bool:
@@ -28,7 +22,7 @@ def is_extension(name) -> bool:
         return True
 
 
-def get_mat_files(solver, size, shape, free=False):
+def get_image_analysis_results_files(solver, size, shape, free=False):
     if solver == 'ant':
         return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if
                 size + shape in mat_file]
@@ -36,6 +30,8 @@ def get_mat_files(solver, size, shape, free=False):
         human_size_dict = {'Large': 'large', 'Medium': 'medium', 'Small Near': 'small', 'Small Far': 'small2'}
         return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if
                 human_size_dict[size] in mat_file]
+    elif solver == 'humanhand':
+        return listdir(trackedHumanHandMovieDirectory)
     else:
         raise Exception('Where are you mat files for the solver ' + solver)
 
@@ -51,14 +47,14 @@ def find_unpickled(solver, size, shape, free=False):
     else:
         expORsim = 'sim'
 
-    mat_files = get_mat_files(solver, size, shape, free=free)
-    new_names = [NewFileName(mat_file[:-4], solver, size, shape, expORsim) for mat_file in mat_files]
+    results_files = get_image_analysis_results_files(solver, size, shape, free=free)
+    new_names = [NewFileName(results_files[:-4], solver, size, shape, expORsim) for results_files in results_files]
 
-    unpickled = [mat_file
-                 for new_name, mat_file in zip(new_names, mat_files)
+    unpickled = [results_file
+                 for new_name, results_file in zip(new_names, results_files)
                  if (new_name not in set(pickled)
                      and not is_extension(new_name)
-                     and not mat_file.startswith('SSPT_45100'))]
+                     and not results_file.startswith('SSPT_45100'))]
     return unpickled
 
 
@@ -86,6 +82,10 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
                              fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
                              falseTracking=falseTracking)
 
+    elif solver == 'humanhand':
+        shape = 'SPT'
+        x = Trajectory_humanhand(size=size, shape=shape, filename=filename, winner=winner, fps=fps, x_error=x_error,
+                                 y_error=y_error, angle_error=angle_error, falseTracking=falseTracking)
     else:
         raise Exception('Not a valid solver')
 
@@ -121,45 +121,6 @@ def continue_winner_dict(solver, shape) -> dict:
             with open('winner_dictionary.txt', 'w') as json_file:
                 json.dump(winner_dict, json_file)
     return winner_dict
-
-
-def continue_time_dict(solver, shape):
-    """
-    Saves the length of experiments in seconds. I need this because I am missing part of my trajectories.
-    :param solver:
-    :param shape:
-    :return:
-    """
-
-    def delta_t(name):
-        """
-        :return: in seconds
-        """
-        print(name)
-        l = name.split('_')
-        name = str(int(l[1]))[-2:]
-        start_string = input(name + '  start: ')
-        start_string = (start_string.split('.')[0].lstrip('0') or '0') + '.' \
-                       + (start_string.split('.')[1].lstrip('0') or '0')
-
-        end_string = input(name + '  end: ')
-        end_string = (end_string.split('.')[0].lstrip('0') or '0') + '.' \
-                     + (end_string.split('.')[1].lstrip('0') or '0')
-        return int((datetime.strptime(end_string, '%H.%M') - datetime.strptime(start_string, '%H.%M')).total_seconds())
-
-    with open('time_dictionary.txt', 'r') as json_file:
-        time_dict = json.load(json_file)
-
-    for size in exp_types[shape][solver]:
-        to_save = [unpickled for unpickled in find_unpickled(solver, size, shape) if unpickled not in time_dict.keys()]
-        while to_save:
-            name = to_save[0]
-            time_dict.update({name: delta_t(name)})
-            with open('time_dictionary.txt', 'w') as json_file:
-                json.dump(time_dict, json_file)
-            to_save.remove(name)
-
-    return
 
 
 def extension_exists(filename, solver, size, shape) -> list:
@@ -198,22 +159,6 @@ def load(filename, solver, size, shape, fps, falseTracking, winner=None, free=Fa
     return Load_Experiment(solver, filename, falseTracking, winner, fps, size=size, shape=shape, free=free)
 
 
-def connector(part1, part2, frames_missing, filename=None):
-    if filename is None:
-        filename = part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename
-
-    connector_load = run_full_knowledge(shape=part1.shape, size=part1.size, solver=part1.solver,
-                                        starting_point=(part1.position[-1][0], part1.position[-1][1], part1.angle[-1]),
-                                        ending_point=(part2.position[0][0], part2.position[0][1], part2.angle[0]),
-                                        geometry=part1.geometry())
-    connector_load.filename = filename
-    connector_load.stretch(frames_missing)
-    connector_load.tracked_frames = [connector_load.frames[0], connector_load.frames[-1]]
-    connector_load.falseTracking = []
-    connector_load.free = part1.free
-    return connector_load
-
-
 with open('time_dictionary.txt', 'r') as json_file:
     time_dict = json.load(json_file)
 
@@ -222,28 +167,26 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    solver, shape = 'human', 'SPT'
-    fps = {'human': 30, 'ant': 50}
-    continue_time_dict(solver, shape)
+    solver, shape = 'humanhand', 'SPT'
+    fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
         unpickled = find_unpickled(solver, size, shape)
         if len(unpickled) > 0:
-            for mat_filename in tqdm(unpickled):
-                print(mat_filename)
-                x = load(mat_filename, solver, size, shape, fps[solver], [])
+            for results_filename in tqdm(unpickled):
+                print(results_filename)
+                x = load(results_filename, solver, size, shape, fps[solver], [])
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
-                               for filename in parts(mat_filename, solver, size, shape)[1:]]
-                total_time_seconds = np.sum([traj.timer() for traj in chain])
-
-                frames_missing = (time_dict[mat_filename] - total_time_seconds) * x.fps
-
-                for part in chain[1:]:
-                    frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
-                    if frames_missing_per_movie > 10 * x.fps:
-                        connection = connector(x, part, frames_missing_per_movie)
-                        x = x + connection
-                    x = x + part
+                               for filename in parts(results_filename, solver, size, shape)[1:]]
+                x.add_missing_frames(chain)
+                # frames_missing = (time_dict[results_filename] - total_time_seconds) * x.fps
+                #
+                # for part in chain[1:]:
+                #     frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+                #     if frames_missing_per_movie > 10 * x.fps:
+                #         connection = connector(x, part, frames_missing_per_movie)
+                #         x = x + connection
+                #     x = x + part
                 x.play(wait=3)
                 x.save()
                 # file_object = open('check_trajectories.txt', 'a')

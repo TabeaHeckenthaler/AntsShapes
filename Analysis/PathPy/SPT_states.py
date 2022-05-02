@@ -8,6 +8,7 @@ states = ['0'] + list(string.ascii_lowercase[:cc_to_keep])
 
 short_forbidden = ['bd', 'be', 'bf', 'cg', 'dg', 'eg']
 forbidden_transition_attempts = short_forbidden + [s[::-1] for s in short_forbidden]
+
 # forbidden_transition_attempts = ['be', 'bd', 'bf',
 #                                  'cg',
 #                                  'eb', 'eg',

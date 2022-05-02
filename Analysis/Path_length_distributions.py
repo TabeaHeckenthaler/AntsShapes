@@ -9,7 +9,7 @@ from trajectory_inheritance.trajectory import solver_geometry
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
 from Analysis.PathLength import PathLength
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},

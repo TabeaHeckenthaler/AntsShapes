@@ -1,6 +1,6 @@
 from itertools import groupby
 import numpy as np
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts
 from Analysis.PathLength import PathLength
@@ -30,14 +30,14 @@ class Path:
         self.time_series = time_series
         if self.frame_step is not None and self.time_series is None and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x, only_states=only_states)
-
-            # for 'small_20220308115942_20220308120334'
-            if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
-                self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
-            # x.play(path=self, wait=15)
+            #
+            # # for 'small_20220308115942_20220308120334'
+            # if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
+            #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
+            # # x.play(path=self, wait=15)
 
             self.correct_time_series()
-            self.save_transition_images(x)
+            # self.save_transition_images(x)
 
         self.state_series = self.calculate_state_series()
 
@@ -101,15 +101,26 @@ class Path:
 
     @staticmethod
     def valid_state_transition(state1, state2):
-        if len(state1) == 2 and state1[::-1] == state2:  # is transition like ab -> ba
-            return state1 in allowed_transition_attempts
-        else:
+        # transition like ab -> ba or b -> b
+        if len(state1) == len(state2) and set(state1) == set(state2):
+            if len(state1) == 2 and state1 not in allowed_transition_attempts and state1 == state2[::-1]:
+                return False
             return True
+
+        # transition like b -> ba
+        if len(state2 + state1) == 3 and len(set(state1 + state2)) == 2:
+            if state1[0] == state2[0]:
+                return True
+            if ''.join(list(set(state1+state2))) in allowed_transition_attempts:
+                return True
+        return False
 
     @staticmethod
     def delete_false_transitions(labels):
         new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
+            if ii == 243:
+                DEBUG = 1
             if not Path.valid_state_transition(new_labels[-1], next_state):
                 new_labels.append(new_labels[-1])
             else:
@@ -292,17 +303,19 @@ if __name__ == '__main__':
     #             'small2_20220308120548_20220308120613_perfect']
     # filenames = ['small_20220308115942_20220308120334']
 
-    filenames = ['XL_SPT_4640014_XLSpecialT_1_ants']
+    filenames = ['medium_20210422115548_20210422120405']
     for filename in filenames:
         time_step = 0.25  # seconds
         x = get(filename)
         cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
         cs_labeled.load_labeled_space()
+
         # cs_labeled.visualize_space()
         # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'cd')
         # cs_labeled.visualize_transitions()
         # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
 
         path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+        x.play(path=path)
         print(path.time_series)
         DEBUG = 1

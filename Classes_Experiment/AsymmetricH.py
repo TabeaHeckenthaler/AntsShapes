@@ -5,7 +5,7 @@ from Setup.Maze import Maze
 from os import listdir, path, walk
 from Analysis.GeneralFunctions import read_text_file
 from Directories import SaverDirectories, trackedAntMovieDirectory, NewFileName
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from Load_tracked_data.Load_Experiment import Load_Experiment
 
 c = getcwd()

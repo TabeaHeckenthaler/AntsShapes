@@ -8,6 +8,8 @@ import numpy as np
 from os import path
 import os
 import pickle
+from trajectory_inheritance.exp_types import exp_types
+import json
 from Directories import SaverDirectories, work_dir, mini_SaverDirectories, home
 from copy import deepcopy
 from Setup.Maze import Maze
@@ -17,6 +19,7 @@ from scipy.signal import savgol_filter
 from Analysis.Velocity import velocity
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
+from datetime import datetime
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -31,8 +34,36 @@ solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
 
 
-def length_unit_func(solver):
-    return length_unit[solver]
+def continue_time_dict(name):
+    """
+    Saves the length of experiments in seconds. I need this because I am missing part of my trajectories.
+    :param solver:
+    :param shape:
+    :return:
+    """
+
+    def delta_t(name):
+        """
+        :return: in seconds
+        """
+        print(name)
+        l = name.split('_')
+        name = str(int(l[1]))[-2:]
+        start_string = input(name + '  start: ')
+        start_string = (start_string.split('.')[0].lstrip('0') or '0') + '.' \
+                       + (start_string.split('.')[1].lstrip('0') or '0')
+
+        end_string = input(name + '  end: ')
+        end_string = (end_string.split('.')[0].lstrip('0') or '0') + '.' \
+                     + (end_string.split('.')[1].lstrip('0') or '0')
+        return int((datetime.strptime(end_string, '%H.%M') - datetime.strptime(start_string, '%H.%M')).total_seconds())
+
+    with open('time_dictionary.txt', 'r') as json_file:
+        time_dict = json.load(json_file)
+
+    time_dict.update({name: delta_t(name)})
+    with open('time_dictionary.txt', 'w') as json_file:
+        json.dump(time_dict, json_file)
 
 
 class Trajectory:
@@ -59,7 +90,6 @@ class Trajectory:
     def __str__(self):
         string = '\n' + self.filename
         return string
-
 
     def __add__(self, file2):
         #     max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}
@@ -260,7 +290,7 @@ class Trajectory:
         :param frames_list: list of lists of frame indices (not the yellow numbers on top)
         :return:
         """
-        from Load_tracked_data.Load_Experiment import connector
+        from PS_Search_Algorithms.Path_planning_full_knowledge import connector
         new = copy(self)
         for frames in frames_list:
             con = connector(new.cut_off([0, frames[0]]), new.cut_off([frames[1], -1]), frames[1] - frames[0],
@@ -288,6 +318,21 @@ class Trajectory:
                 [new.position[frames[0]] for _ in range(frames[1] - frames[0])])
             new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1] - frames[0])])
         return new
+
+    def add_missing_frames(self, chain: list):
+        from PS_Search_Algorithms.Path_planning_full_knowledge import connector
+        total_time_seconds = np.sum([traj.timer() for traj in chain])
+        continue_time_dict(self.filename)
+        with open('time_dictionary.txt', 'r') as json_file:
+            time_dict = json.load(json_file)
+        frames_missing = (time_dict[self.filename] - total_time_seconds) * self.fps
+
+        for part in chain[1:]:
+            frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
+            if frames_missing_per_movie > 10 * x.fps:
+                connection = connector(x, part, frames_missing_per_movie)
+                x = x + connection
+            x = x + part
 
     def geometry(self):
         pass
@@ -359,7 +404,7 @@ class Trajectory:
                     display.end_screen()
                     self.frames = self.frames[:i]
                     break
-                display.renew_screen(frame=self.frames[i], movie_name=self.filename)
+                display.renew_screen(movie_name=self.filename)
         if display is not None:
             display.end_screen()
 
@@ -404,28 +449,3 @@ class Trajectory_part(Trajectory):
     def geometry(self):
         return self.parent_traj.geometry()
 
-
-def get(filename) -> Trajectory:
-    """
-    Allows the loading of saved trajectory objects.
-    :param filename: Name of the trajectory that is supposed to be unpickled
-    :return: trajectory object
-    """
-    # this is local on your computer
-    local_address = path.join(home, 'trajectory_inheritance', 'trajectories_local')
-    if filename in os.listdir(local_address):
-        with open(path.join(local_address, filename), 'rb') as f:
-            print('You are loading ' + filename + ' from local copy.')
-            x = pickle.load(f)
-        return x
-
-    # this is on labs network
-    for root, dirs, files in os.walk(work_dir):
-        for dir in dirs:
-            if filename in os.listdir(path.join(root, dir)):
-                address = path.join(root, dir, filename)
-                with open(address, 'rb') as f:
-                    x = pickle.load(f)
-                return x
-    else:
-        raise ValueError('I cannot find ' + filename)

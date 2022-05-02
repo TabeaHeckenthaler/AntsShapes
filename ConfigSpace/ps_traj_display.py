@@ -1,4 +1,4 @@
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from DataFrame.dataFrame import myDataFrame
 import seaborn as sns

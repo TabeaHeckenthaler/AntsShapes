@@ -1,4 +1,4 @@
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from Load_tracked_data.Load_Experiment import load, connector, parts, time_dict
 import numpy as np
 import os

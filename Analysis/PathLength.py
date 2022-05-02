@@ -1,10 +1,10 @@
-from trajectory_inheritance.trajectory import get, sizes, Trajectory_part
+from trajectory_inheritance.trajectory import Trajectory_part
 import numpy as np
 from Setup.MazeFunctions import ConnectAngle
 from Setup.Attempts import Attempts
 from Analysis.resolution import resolution
 from copy import copy
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 from PS_Search_Algorithms.Path_planning_full_knowledge import minimal_filename
@@ -98,7 +98,7 @@ class PathLength:
         if frames is None:
             frames = [0, -1]
 
-        # the connector parts have to short of a path length.
+        # the connector parts dont have long enough path length.
         if isinstance(self.x, Trajectory_part) and self.x.is_connector():
             raise ValueError('Check here')
 

@@ -1,13 +1,19 @@
 import pandas as pd
 from os import listdir
 from Directories import SaverDirectories, df_dir
-from trajectory_inheritance.trajectory import get, length_unit_func
+from trajectory_inheritance.get import get
 from Analysis.PathLength import PathLength
 from Setup.Attempts import Attempts
 from tqdm import tqdm
 from copy import copy
 
 pd.options.mode.chained_assignment = None
+
+length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
+
+
+def length_unit_func(solver):
+    return length_unit[solver]
 
 
 def get_filenames(solver, size='', shape='', free=False):
@@ -19,10 +25,14 @@ def get_filenames(solver, size='', shape='', free=False):
                                '': ''}
         return [filename for filename in listdir(SaverDirectories[solver])
                 if ('_' in filename and shape_folder_naming[size] in filename)]
-    else:
+    if solver == 'ant':
         return [filename for filename in listdir(SaverDirectories[solver][free])
                 if size in filename and shape in filename]
-
+    if solver == 'humanhand':
+        return [filename for filename in listdir(SaverDirectories[solver])
+                if size in filename and shape in filename]
+    else:
+        raise Exception('unknown solver: ' + solver)
 
 columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',

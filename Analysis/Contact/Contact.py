@@ -2,7 +2,7 @@ from tqdm import tqdm
 from DataFrame.dataFrame import myDataFrame
 from Setup.Maze import Maze
 import numpy as np
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 import pandas as pd
 import os
 from Directories import contacts_dir

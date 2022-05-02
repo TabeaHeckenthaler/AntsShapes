@@ -35,6 +35,22 @@ class Path_planning_full_knowledge(Path_planning_in_Maze):
         raise Exception('You should not have to add any information. Something went wrong.')
 
 
+def connector(part1, part2, frames_missing, filename=None):
+    if filename is None:
+        filename = part1.VideoChain[-1] + '_CONNECTOR_' + part2.filename
+
+    connector_load = run_full_knowledge(shape=part1.shape, size=part1.size, solver=part1.solver,
+                                        starting_point=(part1.position[-1][0], part1.position[-1][1], part1.angle[-1]),
+                                        ending_point=(part2.position[0][0], part2.position[0][1], part2.angle[0]),
+                                        geometry=part1.geometry())
+    connector_load.filename = filename
+    connector_load.stretch(frames_missing)
+    connector_load.tracked_frames = [connector_load.frames[0], connector_load.frames[-1]]
+    connector_load.falseTracking = []
+    connector_load.free = part1.free
+    return connector_load
+
+
 def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, starting_node: Node3D = None,
                        ending_node: Node3D = None, initial_cond: str = '', show_animation: bool = False) \
         -> Trajectory_ps_simulation:

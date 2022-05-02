@@ -1,7 +1,7 @@
 import os
 from Directories import PhaseSpaceDirectory
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 
 # x = get('XL_H_4100020_1_ants')
 #

@@ -4,7 +4,7 @@ import numpy as np
 from Setup.MazeFunctions import extend
 from Setup.Maze import Maze
 from Setup.Load import loops
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 
 smoothing_window = 6
 

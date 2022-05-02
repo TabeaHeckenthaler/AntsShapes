@@ -1,4 +1,4 @@
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 
 
 if __name__ == '__main__':

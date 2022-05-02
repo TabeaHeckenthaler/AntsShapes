@@ -10,7 +10,7 @@ from trajectory_inheritance.exp_types import exp_types
 import csv
 from DataFrame.Altered_DataFrame import choose_trajectories, Altered_DataFrame
 import numpy as np
-from trajectory_inheritance.trajectory import get, solver_geometry
+from trajectory_inheritance.get import get, solver_geometry
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -169,15 +169,28 @@ class PathWithoutSelfLoops(Paths):
 
 def humans():
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    # communication = [True, False]
+    communication = [True, False]
+    solvers = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}}
 
     for size in exp_types[shape][solver]:
-        # for com in communication:
-        paths = PathsTimeStamped(solver, size, shape, geometry, communication=None)
-        paths.load_paths()
-        paths.load_time_stamped_paths()
-        paths.save_csv()
+        for com in communication:
+            paths = PathsTimeStamped(solver, size, shape, geometry, communication=com)
+            paths.load_paths()
+            paths.load_time_stamped_paths()
+            # paths.save_csv()
+
         DEBUG = 1
+
+        df = Altered_DataFrame()
+        dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
+                                          initial_cond='back')
+
+        for key, ds in dfs.items():
+            # experiments_df = pd.concat(ds)
+            for experiments_df in ds:
+                filenames = experiments_df['filename']
+
+
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
     # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
@@ -208,13 +221,15 @@ def ants():
     solver, shape, geometry = 'ant', 'SPT', (
         'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    # for size in exp_types[shape][solver]:
-    for size in ['XL']:
+    for size in exp_types[shape][solver]:
+    # for size in ['XL']:
         paths = PathsTimeStamped(solver, size, shape, geometry)
 
         paths.load_paths()
         paths.load_time_stamped_paths()
-        # paths.save_csv()
+        paths.save_paths()
+        paths.save_timestamped_paths()
+        paths.save_csv()
 
     # filename = list(paths.time_series.keys())[0]
     # x = get(filename)
@@ -336,7 +351,7 @@ def plot_dict(dic: dict, ax):
 
 if __name__ == '__main__':
     # av_time_in_states()
-    av_path_in_states()
+    # av_path_in_states()
     # ants()
-    # humans()
+    humans()
     # perfect_human()

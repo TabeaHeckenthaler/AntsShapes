@@ -175,7 +175,7 @@ def velocity_distribution_fitting(x):
 
 
 if __name__ == '__main__':
-    # from trajectory_inheritance.trajectory import get
+    # from trajectory_inheritance.get import get
     # from tqdm import tqdm
     # # I want to calculate the average speed during an experiment (scaled by maze size?)
     # df_dir = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.json'
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     # df.to_json('C:\\Users\\tabea\\PycharmProjects\\Python_Adv_Course_2021' +
     #            '\\MachineLearning\\data_frame_machineLearning.json')
 
-    from trajectory_inheritance.trajectory import get
+    from trajectory_inheritance.get import get
     from DataFrame.dataFrame import get_filenames
     import json
     size = 'XL'

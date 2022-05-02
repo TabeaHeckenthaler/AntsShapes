@@ -1,5 +1,5 @@
 from DataFrame.dataFrame import myDataFrame
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 
 
 class Altered_DataFrame:

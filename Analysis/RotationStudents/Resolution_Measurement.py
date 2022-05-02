@@ -1,4 +1,4 @@
-from trajectory_inheritance.trajectory import get
+from trajectory_inheritance.get import get
 from Analysis.PathLength import PathLength
 from matplotlib import pyplot as plt
 import numpy as np

@@ -1211,9 +1211,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if len(states) == 1:
             return states[0]
         for state in states:
-            distances[state] = self.calculate_distance(cut_out == state, np.zeros(shape=cut_out.shape))[border, border, border]
-        closest = min(distances, key=distances.get)
-        return closest
+            distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[border, border, border]
+        return min(distances, key=distances.get)
 
     def fix_edges_labeling(self):
         """
@@ -1223,6 +1222,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                                     'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}},
                               'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
                                      'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}}
+        problematic_states['ab'] = {'human': {'Large': 220, 'Medium': 160, 'Small Far': 270},
+                                    'ant': {'XL': 200, 'L': 200, 'M': 170, 'S': 270}}
 
         for problematic_state, border in problematic_states.items():
             border_index = border[self.solver][self.size]
@@ -1243,28 +1244,29 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 if __name__ == '__main__':
     shape = 'SPT'
-    geometries_to_change = {
-        ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Small Far'],
-        ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-        }
-
-    #
-    # geometries = {
+    # geometries_to_change = {
+    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Small Far'],
     #     ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
     #     }
 
-    for (solver, geometry), sizes in list(geometries_to_change.items()):
+
+    geometries = {
+        ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
+        ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
+        }
+
+    for (solver, geometry), sizes in list(geometries.items()):
         for size in sizes:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
             ps.load_eroded_labeled_space()
-            ps.visualize_states(reduction=4)
+            ps.fix_edges_labeling()
+            ps.save_labeled()
+            # ps.visualize_states(reduction=4)
 
             # ps.correct_ps_states()
             # ps.label_space()
-            # ps.save_labeled()
 
             # ps.visualize_space(space=ps.space_labeled == 'ca')
             # ps.visualize_states(reduction=1)
