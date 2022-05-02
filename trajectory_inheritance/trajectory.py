@@ -260,7 +260,7 @@ class Trajectory:
                 x.participants.forces.abs_values = x.participants.forces.abs_values[f1:f2:step, :]
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
-        my_maze = Maze(x)
+        my_maze = Maze(x, geometry=x.geometry())
         return x.run_trj(my_maze, display=Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter,
                                                   path=path))
 

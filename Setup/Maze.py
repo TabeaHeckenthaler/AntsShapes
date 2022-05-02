@@ -307,6 +307,7 @@ class Maze_parent(b2World):
 
         elif self.excel_file_load in ['LoadDimensions_humanhand.xlsx']:
             d = df.loc[0]
+            return [d['long edge'], d['length'], d['width'], d['short edge']]
 
         else:
             raise ValueError('Gave dimensions for ' + self.excel_file_load + ' but not matching ' +
@@ -479,7 +480,7 @@ class Maze(Maze_parent):
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
                                                         'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
-                                                        'Trajectory_part']:
+                                                        'Trajectory_part', 'Trajectory_humanhand']:
             x = args[0]
             self.excel_file_maze, self.excel_file_load = x.geometry()
             self.shape = x.shape

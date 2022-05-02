@@ -179,15 +179,7 @@ if __name__ == '__main__':
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
                 x.add_missing_frames(chain)
-                # frames_missing = (time_dict[results_filename] - total_time_seconds) * x.fps
-                #
-                # for part in chain[1:]:
-                #     frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
-                #     if frames_missing_per_movie > 10 * x.fps:
-                #         connection = connector(x, part, frames_missing_per_movie)
-                #         x = x + connection
-                #     x = x + part
-                x.play(wait=3)
+                x.play(wait=30)
                 x.save()
                 # file_object = open('check_trajectories.txt', 'a')
                 # file_object.write(x.filename + '\n')
