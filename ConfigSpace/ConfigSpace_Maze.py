@@ -256,7 +256,7 @@ class ConfigSpace_Maze(ConfigSpace):
         self.space = self.empty_space()
         print("PhaseSpace: Calculating space " + self.name)
 
-        maze_corners = np.array_split(maze.corners(), int(maze.corners().shape[0] / 4))
+        maze_corners = np.array_split(maze.corners(), maze.corners().shape[0]//4)
         former_found = (0, 0)
         for x, y, theta in self.iterate_coordinates(mask=mask):
             indices = self.coords_to_indices(x, y, theta)
