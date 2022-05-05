@@ -175,7 +175,7 @@ class Trajectory:
         :return:
         """
         frame_dividers = [-1] + \
-                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 == f2 - 1] + \
+                         [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 < f2] + \
                          [len(self.frames)]
 
         if len(self.VideoChain) == 0:

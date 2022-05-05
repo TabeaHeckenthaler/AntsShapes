@@ -33,11 +33,12 @@ def get_filenames(solver, size='', shape='', free=False):
     else:
         raise Exception('unknown solver: ' + solver)
 
+
 columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
                     'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment', 'counted carrier number'],
+                    'comment', 'counted carrier number', 'time [s]'],
                    dtype='object')
 
 
@@ -69,6 +70,7 @@ class SingleExperiment(pd.DataFrame):
         self['force meter'] = bool(x.has_forcemeter())
         self['maze dimensions'], self['load dimensions'] = x.geometry()
         self['counted carrier number'] = None
+        self['time [s]'] = x.timer()
 
         # self = self[list_of_columns]
 
@@ -165,7 +167,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
-
+    # TODO: Some of the human experiments don't have time [s].
     for new_experiment in myDataFrame.new_experiments(solver='humanhand', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
@@ -173,7 +175,7 @@ if __name__ == '__main__':
         ratio = new_experiment['path length [length unit]'].values[0]/new_experiment['minimal path length [length unit]'].values[0]
         print(ratio)
 
-        if ratio < 1.2 or ratio > 10:
+        if ratio < 1.2 or ratio > 15:
             raise ValueError('weirdness in ' + new_experiment['filename'])
 
         myDataFrame.save()

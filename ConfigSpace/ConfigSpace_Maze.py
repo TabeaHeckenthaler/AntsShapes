@@ -1312,8 +1312,9 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         problematic_states = {'a': {'human': {'Large': 200, 'Medium': 140, 'Small Far': 250},
                                     'humanhand': {'': 250},
                                     'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}},
-                              'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
-                                     'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}}
+                              # 'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
+                              #        'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}
+                              }
         problematic_states['ab'] = {'human': {'': 270},
                                     'humanhand': {'Large': 220, 'Medium': 160, 'Small Far': 270},
                                     'ant': {'XL': 200, 'L': 200, 'M': 170, 'S': 270}}

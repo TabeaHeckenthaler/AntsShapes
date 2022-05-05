@@ -23,7 +23,7 @@ class Trajectory_humanhand(Trajectory):
         return trackedHumanHandMovieDirectory
 
     def matlab_loading(self, old_filename):
-        load_center, angle, frames = pickle.load(open(self.matlabFolder() + path.sep + self.filename + '.pkl', 'rb'))
+        load_center, angle, frames, videoChain = pickle.load(open(self.matlabFolder() + path.sep + self.filename + '.pkl', 'rb'))
 
         if len(load_center) == 2:
             self.position = np.array([load_center])
@@ -32,6 +32,7 @@ class Trajectory_humanhand(Trajectory):
             self.position = np.array(load_center)  # array to store the position and angle of the load
             self.angle = np.array(angle)
         self.frames = np.array(frames)
+        self.VideoChain = videoChain
         # self.interpolate_over_NaN()
 
     def load_participants(self):
