@@ -29,8 +29,7 @@ def get_filenames(solver, size='', shape='', free=False):
         return [filename for filename in listdir(SaverDirectories[solver][free])
                 if size in filename and shape in filename]
     if solver == 'humanhand':
-        return [filename for filename in listdir(SaverDirectories[solver])
-                if size in filename and shape in filename]
+        return [filename for filename in listdir(SaverDirectories[solver])]
     else:
         raise Exception('unknown solver: ' + solver)
 
@@ -167,7 +166,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
 
-    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+    for new_experiment in myDataFrame.new_experiments(solver='humanhand', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
 

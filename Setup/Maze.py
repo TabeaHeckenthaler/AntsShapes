@@ -38,7 +38,7 @@ StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
                  'humanhand': {'': 1}}
-ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'])
+ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
 
 
 def start(x, initial_cond: str):
@@ -524,7 +524,7 @@ class Maze(Maze_parent):
                 self.slits = [d['slits'].values[0]]
 
         elif self.excel_file_maze in ['MazeDimensions_humanhand.xlsx']:  # only SPT
-            d = df.loc[df['Name'] == self.solver]
+            d = df.loc[df['Name'] == 'humanhand']
             self.arena_length = d['arena_length'].values[0]
             self.arena_height = d['arena_height'].values[0]
             self.exit_size = d['exit_size'].values[0]
