@@ -3,14 +3,16 @@ from math import pi
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
+from trajectory_inheritance.exp_types import solver_geometry
 
 from ConfigSpace import Raster_ConfigSpace_Maze
 from Setup.Maze import Maze
 
 shape = 'SPT'
-solver = 'human'
-geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-size = 'Large'
+solver = 'humanhand'
+geometry = solver_geometry[solver]
+size = ''
+
 
 maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
 raster = Raster_ConfigSpace_Maze.Raster_ConfigSpace_Maze(maze)

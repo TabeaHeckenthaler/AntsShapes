@@ -53,7 +53,6 @@ class Raster_ConfigSpace_Maze:
     # Note: this is unoptimal - we duplicate points and use unnecessary edges. Could be like, 15% faster with
     # smarter edge placement and such
 
-
     def __call__(self, theta, res_x, res_y, xbounds, ybounds):
         arr = np.ones((res_x, res_y), bool)
         im = Image.fromarray(arr)  # .astype('uint8')?

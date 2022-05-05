@@ -6,13 +6,15 @@ import pathpy as pp
 from Directories import network_dir
 from DataFrame.plot_dataframe import save_fig
 import json
-from trajectory_inheritance.exp_types import exp_types
+from trajectory_inheritance.exp_types import exp_types, solver_geometry
 import csv
 from DataFrame.Altered_DataFrame import choose_trajectories, Altered_DataFrame
 import numpy as np
-from trajectory_inheritance.get import get, solver_geometry
+from trajectory_inheritance.get import get
 import pandas as pd
 from matplotlib import pyplot as plt
+
+solvers = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}}
 
 
 def flatten(t):
@@ -20,7 +22,7 @@ def flatten(t):
 
 
 class Paths(pp.Paths):
-    def __init__(self, solver, size, shape, geometry, time_step=0.25, communication=None):
+    def __init__(self, solver, size, shape, geometry, time_step=0.25):
         super().__init__()
         if size is not None and 'Small' in size:
             size = 'Small'
@@ -32,13 +34,12 @@ class Paths(pp.Paths):
         self.time_series = None
         self.single_paths = None
         self.max_subpath_length = 2
-        self.communication = communication
 
     def save_dir(self, name=None):
         if name is None:
             name = '_'.join(['paths', self.solver, self.size, self.shape])
-        if self.communication is not None:
-            name = name + '_comm_' + str(self.communication)
+        # if self.communication is not None:
+        #     name = name + '_comm_' + str(self.communication)
         return os.path.join(network_dir, 'ExperimentalPaths', name + '_transitions')
 
     def load_paths(self, filenames=None, only_states=False):
@@ -53,7 +54,7 @@ class Paths(pp.Paths):
                                         self.time_series.items()}
                 self.single_paths = {name: Path(self.time_step, time_s) for name, time_s in self.time_series.items()}
 
-        elif self.time_series is None:
+        elif len(self.time_series) == 0:
             trajectories = choose_trajectories(solver=self.solver, size=self.size, shape=self.shape,
                                                geometry=self.geometry, communication=self.communication)
             self.time_series = self.calculate_time_series(trajectories, only_states=only_states)
@@ -94,10 +95,10 @@ class Paths(pp.Paths):
 
 
 class PathsTimeStamped(Paths):
-    def __init__(self, solver, size, shape, geometry, time_step=0.25, communication=None):
-        super().__init__(solver, size, shape, geometry, communication=communication)
-        self.time_series = None
-        self.time_stamped_series = None
+    def __init__(self, solver, size, shape, geometry, time_step=0.25):
+        super().__init__(solver, size, shape, geometry)
+        self.time_series = {}
+        self.time_stamped_series = {}
         self.time_step = time_step
 
     @staticmethod
@@ -110,13 +111,13 @@ class PathsTimeStamped(Paths):
         return average_time
 
     def calculate_timestamped(self):
-        if self.time_series is None:
+        if len(self.time_series) == 0:
             self.load_paths()
         return {name: Path.time_stamped_series(time_series, self.time_step)
                 for name, time_series in self.time_series.items()}
 
     def calculate_path_length_stamped(self):
-        if self.time_series is None:
+        if len(self.time_series) == 0:
             self.load_paths()
         DEBUG = 1
         return {name: Path.path_length_stamped_series(name, time_series, self.time_step)
@@ -125,8 +126,6 @@ class PathsTimeStamped(Paths):
     def save_dir_timestamped(self, name=None):
         if name is None:
             name = '_'.join([self.solver, self.size, self.shape])
-        if self.communication is not None:
-            name = name + '_comm_' + str(self.communication)
         return os.path.join(network_dir, 'ExperimentalPaths', name + '_states_timestamped')
 
     def save_timestamped_paths(self, save_dir_timestamped=None):
@@ -169,32 +168,44 @@ class PathWithoutSelfLoops(Paths):
 
 def humans():
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-    communication = [True, False]
-    solvers = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}}
 
     for size in exp_types[shape][solver]:
-        for com in communication:
-            paths = PathsTimeStamped(solver, size, shape, geometry, communication=com)
-            paths.load_paths()
-            paths.load_time_stamped_paths()
-            # paths.save_csv()
-
-        DEBUG = 1
-
-        df = Altered_DataFrame()
-        dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
-                                          initial_cond='back')
-
-        for key, ds in dfs.items():
-            # experiments_df = pd.concat(ds)
-            for experiments_df in ds:
-                filenames = experiments_df['filename']
+        paths = PathsTimeStamped(solver, size, shape, geometry)
+        paths.load_paths()
+        paths.load_time_stamped_paths()
+        paths.save_paths()
+        paths.save_timestamped_paths()
+        paths.save_csv()
 
 
-    # filename = list(paths.time_series.keys())[0]
-    # x = get(filename)
-    # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
-    # DEBUG = 1
+def humans_split_up():
+    solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
+
+    all_paths = PathsTimeStamped(solver, '', shape, geometry)
+    for size in exp_types[shape][solver]:
+        paths_of_size = PathsTimeStamped(solver, size, shape, geometry)
+        paths_of_size.load_paths()
+        paths_of_size.load_time_stamped_paths()
+
+        all_paths.time_series.update(paths_of_size.time_series)
+        all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
+
+    df = Altered_DataFrame()
+    dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
+                                      initial_cond='back')
+
+    for key_group_size, ds in dfs.items():
+        for key_communication, experiments_df in ds.items():
+            filenames = list(experiments_df['filename'])
+            paths = PathsTimeStamped(solver, None, shape, geometry)
+
+            paths.time_series = {filename: all_paths.time_series[filename] for filename in filenames}
+            paths.time_stamped_series = {filename: all_paths.time_stamped_series[filename] for filename in filenames}
+
+            name = 'paths_humans_' + key_group_size.replace('>', 'more_than') + '_' + key_communication
+            paths.save_paths(paths.save_dir(name=name))
+            paths.save_timestamped_paths(paths.save_dir_timestamped(name=name))
+            paths.save_csv(paths.save_dir_timestamped(name=name))
 
 
 def perfect_human():
@@ -207,7 +218,7 @@ def perfect_human():
 
     trajectories = [get(filename) for filename in filenames]
 
-    paths = PathsTimeStamped(solver, None, shape, geometry, communication=None)
+    paths = PathsTimeStamped(solver, None, shape, geometry)
     paths.time_series = paths.calculate_time_series(trajectories)
     paths.time_stamped_series = paths.calculate_timestamped()
 
@@ -235,6 +246,36 @@ def ants():
     # x = get(filename)
     # x.play(path=paths.single_paths[filename], videowriter=True, step=2)
     # DEBUG = 1
+
+
+def split_up(solver):
+    shape = 'SPT'
+
+    all_paths = PathsTimeStamped(solver, '', shape, solver_geometry[solver])
+    for size in exp_types[shape][solver]:
+        paths_of_size = PathsTimeStamped(solver, size, shape, solver_geometry[solver])
+        paths_of_size.load_paths()
+        paths_of_size.load_time_stamped_paths()
+
+        all_paths.time_series.update(paths_of_size.time_series)
+        all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
+
+    df = Altered_DataFrame()
+    dfs = df.get_separate_data_frames(solver, solvers[solver], shape='SPT', geometry=solver_geometry[solver],
+                                      initial_cond='back')
+
+    for key_group_size, ds in dfs.items():
+        for key_communication, experiments_df in ds.items():
+            filenames = list(experiments_df['filename'])
+            paths = PathsTimeStamped(solver, None, shape, solver_geometry[solver])
+
+            paths.time_series = {filename: all_paths.time_series[filename] for filename in filenames}
+            paths.time_stamped_series = {filename: all_paths.time_stamped_series[filename] for filename in filenames}
+
+            name = 'paths_ants_' + key_group_size.replace('>', 'more_than') + '_' + key_communication
+            paths.save_paths(paths.save_dir(name=name))
+            paths.save_timestamped_paths(paths.save_dir_timestamped(name=name))
+            paths.save_csv(paths.save_dir_timestamped(name=name))
 
 
 def get_size(df):
@@ -353,5 +394,6 @@ if __name__ == '__main__':
     # av_time_in_states()
     # av_path_in_states()
     # ants()
-    humans()
+    # humans()
+    split_up('ant')
     # perfect_human()

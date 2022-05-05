@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from trajectory_inheritance.exp_types import geometries, exp_types
+from trajectory_inheritance.exp_types import solver_geometry, exp_types
 from Analysis.PathPy.Paths import PathWithoutSelfLoops
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
@@ -17,7 +17,7 @@ class Network_comparison:
         networks = {solver: {} for solver in solvers}
         for solver in solvers:
             for size in sizes[solver]:
-                paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
+                paths = PathWithoutSelfLoops(solver, size, shape, solver_geometry[solver])
                 paths.load_paths()
                 my_network = Network.init_from_paths(paths, solver, size, shape)
                 # we could also do: get results, if we are sure that we saved the right thing

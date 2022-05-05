@@ -31,12 +31,14 @@ except AttributeError:
     def itervalues(d):
         return iter(d.values())
 
+
     def iteritems(d):
         return iter(d.items())
 else:
     # Python 2
     def itervalues(d):
         return d.itervalues()
+
 
     def iteritems(d):
         return d.iteritems()
@@ -81,6 +83,7 @@ def is_canonical(G):
         return True
     else:
         return False
+
 
 def canonical_relabel_nodes(G):
     """Relabels the nodes in the graph, such that the new names belong in
@@ -167,7 +170,6 @@ def compute_fundamental_matrix(P, fast=True, drop_tol=1e-5, fill_factor=1000):
     return F
 
 
-
 def compute_personalized_transition_matrix(G, alpha=0.85,
                                            restart_set=[SUPER_NODE]):
     """Returns the transition matrix of the random walk with restarts.
@@ -215,7 +217,6 @@ def compute_personalized_transition_matrix(G, alpha=0.85,
     return P_final
 
 
-
 def compute_transition_matrix(G):
     r"""Builds the random transition matrix P. The probability of going from
     node `i` to node`j` is equal to:
@@ -240,7 +241,6 @@ def compute_transition_matrix(G):
     inverse_degrees = 1 / degrees
     P = diags(inverse_degrees.T.tolist(), [0]) * adjacency
     return P
-
 
 
 def _fast_update_fundamental_rows(P, F, row=0, row_previous=0):
@@ -411,12 +411,11 @@ def update_fundamental_matrix(P, F, next, previous, previous_index=0,
                                                   col_previous=previous_index)
     P_updated = P[list(chain(range(previous_index),
                              range(previous_index + 1, P.shape[0]))), :] \
-                 [:, list(chain(range(previous_index),
-                                range(previous_index + 1, P.shape[0])))]
+        [:, list(chain(range(previous_index),
+                       range(previous_index + 1, P.shape[0])))]
     F_updated = col_update[1:, 1:]
     node_order_updated = node_order.tolist()
     return P_updated, F_updated, node_order_updated, next_index
-
 
 
 def add_supernode(G, query=None):
@@ -466,7 +465,6 @@ def add_supernode(G, query=None):
     return G
 
 
-
 def has_supernode(G):
     """Checks if there exist a supernode in the graph.
 
@@ -484,7 +482,6 @@ def has_supernode(G):
         return True
     else:
         return False
-
 
 
 def absorbing_centrality_inversion(G, team, query=None, with_restarts=False,
@@ -540,7 +537,6 @@ def absorbing_centrality_inversion(G, team, query=None, with_restarts=False,
     row_sums = F.sum(axis=1)
     score = row_sums[-1].sum()
     return score
-
 
 
 def absorbing_centrality(G, team, query=None, P=None, epsilon=1e-5,
@@ -615,7 +611,7 @@ def absorbing_centrality(G, team, query=None, P=None, epsilon=1e-5,
     # Don't count the first jump, from the supernode to the queries
     score = 0
     i = 1
-    while step >= epsilon :
+    while step >= epsilon:
         X_current = P_non_absorbing.T.dot(X_current)
         # Disregard the steps from the supernode to the queries
         step = X_current.sum() - X_current[-1, 0]
@@ -624,4 +620,3 @@ def absorbing_centrality(G, team, query=None, P=None, epsilon=1e-5,
         if max_iterations is not None and i > max_iterations:
             break
     return score
-

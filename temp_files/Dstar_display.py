@@ -1,4 +1,4 @@
-from ConfigSpace import ConfigSpace_Maze, check_critical_points_in_CS
+from ConfigSpace import ConfigSpace_Maze, humanHandpreerosionSpace
 from trajectory_inheritance.get import get
 from copy import copy
 

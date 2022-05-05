@@ -3,7 +3,7 @@ import numpy as np
 from trajectory_inheritance.trajectory import sizes
 from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
-from trajectory_inheritance.trajectory import solvers, get
+from trajectory_inheritance.trajectory import solvers
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import json

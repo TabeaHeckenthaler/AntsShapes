@@ -5,7 +5,7 @@ distributions of path lengths for successful and unsuccessful experiments
 
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
-from trajectory_inheritance.trajectory import solver_geometry
+from trajectory_inheritance.exp_types import solver_geometry
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
 from Analysis.PathLength import PathLength

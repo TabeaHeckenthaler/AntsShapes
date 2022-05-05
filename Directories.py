@@ -102,7 +102,7 @@ def NewFileName(old_filename: str, solver: str, size: str, shape: str, expORsim:
                     return filename.replace(size + shape, size + '_' + shape)
                 else:
                     raise ValueError('Your filename does not seem to be right.')
-            elif solver == 'human':
+            elif solver in ['human', 'humanhand']:
                 return filename
 
 

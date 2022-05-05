@@ -6,8 +6,9 @@ exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 
              'I': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']},
              'T': {'ant': ['XL', 'SL', 'L', 'M', 'S', 'XS']}}
 
-geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-              'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
+solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                   'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                   'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
 
 
 def is_exp_valid(shape, solver, size):

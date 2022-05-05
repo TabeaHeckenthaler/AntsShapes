@@ -16,6 +16,9 @@ import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy
 from Analysis.PathPy.SPT_states import cc_to_keep
+from Analysis.GeneralFunctions import flatten
+from Setup.Load import loops
+from PIL import Image, ImageDraw
 
 try:
     from mayavi import mlab
@@ -159,6 +162,26 @@ class ConfigSpace_Maze(ConfigSpace):
         self.space_boundary = None
         self.fig = None
 
+        load = maze.bodies[-1]
+        maze_corners = np.array_split(maze.corners(), maze.corners().shape[0]//4)
+        load_corners = np.array(flatten(loops(load)))
+        # loop_indices = [0, 1, 2, 3, 0]
+
+        rect_edge_indices = np.array(((0, 1), (1, 2), (2, 3), (3, 0)))
+
+        self.load_points = []
+        self.load_edges = []
+        for i, load_vertices_list in enumerate(np.array_split(load_corners, int(load_corners.shape[0]/4))):
+            self.load_points.extend(load_vertices_list)
+            self.load_edges.extend(rect_edge_indices + 4*i)
+        self.load_points = np.array(self.load_points, float)
+
+        self.maze_points = []
+        self.maze_edges = []
+        for i, maze_vertices_list in enumerate(maze_corners):
+            self.maze_points.extend(maze_vertices_list)
+            self.maze_edges.extend(rect_edge_indices + 4*i)
+
         # self.monitor = {'left': 3800, 'top': 160, 'width': 800, 'height': 800}
         # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
         #                                    (self.monitor['width'], self.monitor['height']))
@@ -247,32 +270,67 @@ class ConfigSpace_Maze(ConfigSpace):
         :return:
         """
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry)
-        load = maze.bodies[-1]
+        # use same shape and bounds as original phase space calculator
+        space_shape = (415, 252, 616)  # x, y, theta.
+        space_shape = self.empty_space().shape  # x, y, theta.
 
-        maze_bb = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry, bb=True)
-        load_bb = maze_bb.bodies[-1]
+        xbounds = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
+        ybounds = (0, maze.arena_height)
 
-        # initialize 3d map for the phase_space
-        self.space = self.empty_space()
-        print("PhaseSpace: Calculating space " + self.name)
+        final_arr = np.empty(space_shape, bool)  # better to use space_shape[::-1] in terms of access speed
+        thet_arr = np.linspace(0, 2 * np.pi, space_shape[2], False)
 
-        maze_corners = np.array_split(maze.corners(), maze.corners().shape[0]//4)
-        former_found = (0, 0)
-        for x, y, theta in self.iterate_coordinates(mask=mask):
-            indices = self.coords_to_indices(x, y, theta)
+        # make the final array slice by slice
+        for i, theta in enumerate(thet_arr):
+            if not i % 50: print(f"{i}/{space_shape[2]}")
+            final_arr[:, :, i] = self.calc_theta_slice(theta, space_shape[0], space_shape[1], xbounds, ybounds)
 
-            # first check the bounding box
-            maze_bb.set_configuration([x, y], float(theta))
-            if possible_configuration(load_bb, maze_corners, former_found)[0]:
-                self.space[indices], former_found = True, (0, 0)
-            else:
-                maze.set_configuration([x, y], float(theta))
-                self.space[indices], former_found = possible_configuration(load, maze_corners, former_found)
-            # load.position, load.angle = [x, y], float(theta)
-            # from PhysicsEngine.Display import Display
-            # display = Display('', maze)
-            # maze.draw(display)
-            # display.display()
+        self.space = final_arr
+
+    def calc_theta_slice(self, theta, res_x, res_y, xbounds, ybounds):
+        arr = np.ones((res_x, res_y), bool)
+        im = Image.fromarray(arr)  # .astype('uint8')?
+        draw = ImageDraw.Draw(im)
+
+        s, c = np.sin(theta), np.cos(theta)
+        rotation_mat = np.array(((c, -s), (s, c)))
+        load_points = (rotation_mat@(self.load_points.T)).T
+
+        for maze_edge in self.maze_edges:
+            maze_edge = (self.maze_points[maze_edge[0]],
+                         self.maze_points[maze_edge[1]])
+            for load_edge in self.load_edges:
+                load_edge = (load_points[load_edge[0]],
+                             load_points[load_edge[1]])
+                self.imprint_boundary(draw, arr.shape, load_edge, maze_edge, xbounds, ybounds)
+
+        return np.array(im)  # type: ignore  # this is the canonical way to convert Image to ndarray
+
+    @staticmethod
+    def imprint_boundary(draw, shape, edge_1, edge_2, xbounds, ybounds):
+        """
+        Takes arr, and sets to 0 all pixels which intersect/lie inside the quad roughly describing
+        the pixels which contain a point such that a shift by it causes the two edges to intersect
+
+        @param draw: PIL ImageDraw object
+        @param shape: the image shape (res_y, res_x)
+        @param edge_1: first edge
+        @param edge_2: second edge
+        """
+
+        # Reflected Binary Code~
+        points = tuple(p + edge_2[0] for p in edge_1) + tuple(p + edge_2[1] for p in edge_1[::-1])
+
+        # project into array space
+        points = np.array(points)
+        points[:, 0] -= xbounds[0];
+        points[:, 0] *= shape[0] / (xbounds[1] - xbounds[0])
+        points[:, 1] -= ybounds[0];
+        points[:, 1] *= shape[1] / (ybounds[1] - ybounds[0])
+        points += .5;
+        points = points.astype(int)  # round to nearest integer
+
+        draw.polygon(tuple(points[:, ::-1].flatten()), fill=0, outline=0)
 
     def new_fig(self):
         """
@@ -587,7 +645,7 @@ class ConfigSpace_Maze(ConfigSpace):
         space2 = erode_space(np.concatenate([space[:, :, slice:], space[:, :, :slice]], axis=2), struct)
         space2 = np.concatenate([space2[:, :, slice:], space2[:, :, :slice]], axis=2)
 
-        return np.logical_or(space1, space2)  # have to check, if its really a logical or...
+        return np.logical_or(space1, space2)
 
     def split_connected_components(self, space: np.array) -> tuple:
         """
@@ -609,7 +667,7 @@ class ConfigSpace_Maze(ConfigSpace):
 
     def extend_ps_states_to_eroded_space(self, ps_states):
         for ps_state in tqdm(ps_states):
-            ps_state.distance = ps_state.calculate_distance(ps_state.space, ~self.space)
+            ps_state.distance = ps_state.calculate_distance(ps_state.space, self.space)
 
         distance_stack = np.stack([ps_state.distance for ps_state in ps_states], axis=3)
         for indices in self.iterate_space_index():
@@ -625,28 +683,59 @@ class ConfigSpace_Maze(ConfigSpace):
     def create_ps_states(self):
         # interesting_indices = (207, 175, 407), (207, 176, 408)  # human large
         if self.eroded_space is None:
-            self.eroded_space = self.erode(self.space, radius=self.erosion_radius)
+            if self.solver == 'humanhand':
+                directory = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \
+                            '_SPT_MazeDimensions_humanhand_pre_erosion.pkl'
+                if os.path.exists(directory):
+                    (space, _, _) = pickle.load(open(directory, 'rb'))
+
+            else:
+                space = self.space
+            self.eroded_space = self.erode(space, radius=self.erosion_radius)
         chosen_cc, labels, centroids = self.split_connected_components(self.eroded_space)
 
         spaces = [np.bool_(labels == cc) for cc in chosen_cc]
         centroids = [centroids[cc] for cc in chosen_cc]
 
         ps_states = []
-        letters = list(string.ascii_lowercase)
+        given_names = []
 
         for space, centroid in zip(spaces, centroids):
             # self.visualize_space(space=space, reduction=4)
             connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states]
 
             if not np.any(connected):
-                ps = PS_Area(self, space, letters.pop(0), centroid=centroid)
+                name = self.name_for_state(space)
+                if name in given_names:
+                    raise ValueError
+                given_names.append(name)
+
+                ps = PS_Area(self, space, name, centroid=centroid)
                 ps_states.append(ps)
 
-        ps_states = self.extend_ps_states_to_eroded_space(ps_states)
-
+        self.ps_states = self.extend_ps_states_to_eroded_space(ps_states)
         self.correct_ps_states()
 
-        return ps_states
+    def name_for_state(self, space):
+        shape = self.space.shape
+        if np.mean(np.where(space)[0])/shape[0] < 0.25:
+            return 'a'
+        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and 0 in np.where(space)[2]:
+            return 'b'
+        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and shape[2]//2 in np.where(space)[2]:
+            return 'c'
+        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and 0 in np.where(space)[2]:
+            return 'f'
+        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and shape[2]//2 in np.where(space)[2]:
+            return 'g'
+        if 0.75 < np.mean(np.where(space)[0])/shape[0]:
+            return 'h'
+        if np.mean(np.where(space)[2])/shape[2] < 0.5:
+            return 'e'
+        if 0.5 < np.mean(np.where(space)[2])/shape[2]:
+            return 'd'
+        raise ValueError
+
 
     def ps_name_dict(self):
         return {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
@@ -656,7 +745,7 @@ class ConfigSpace_Maze(ConfigSpace):
         States e and d are differently eroded for different sizes. Some leave the area elongated in y , some dont. This
         makes a difference in the state definition.
         """
-        ps_name_dict = self.ps_name_dict()
+        ps_name_dict = {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
 
         """
         Correction of e
@@ -879,7 +968,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                 print('Wrong number of cc')
         else:
             if self.ps_states is None:
-                self.ps_states = self.create_ps_states()
+                self.create_ps_states()
                 # pickle.dump(self.ps_states, open('ps_states.pkl', 'wb'))
 
             # self.visualize_states(reduction=5)
@@ -976,7 +1065,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
-                'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25}[self.size] * reduction
+                'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25, '': 1}[self.size] * reduction
 
     def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
         """
@@ -1047,6 +1136,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             if self.size == 'S':
                 return default + 4
             return default + 3
+        if self.solver == 'humanhand':
+            return default - 2
         return default
         # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
 
@@ -1068,9 +1159,9 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
         state1, state2 = 'bf'
         axis_connect = 0
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[1]==int(self.space.shape[1]/2)], key=lambda x: x[2])[-1]
-        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])),
-                        s1[1], s1[2])
+        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()
+                     if inds[1]==int(self.space.shape[1]/2)], key=lambda x: x[2])[-1]
+        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])), s1[1], s1[2])
         space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
 
         state1, state2 = 'cg'
@@ -1123,7 +1214,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
         # interesting_indices = (207, 175, 407) # human large
         if self.ps_states is None:
-            self.ps_states = self.create_ps_states()
+            self.create_ps_states()
         ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
 
         print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
@@ -1219,10 +1310,12 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         for some reason some single states for larger x are called a. I make them empty states, here.
         """
         problematic_states = {'a': {'human': {'Large': 200, 'Medium': 140, 'Small Far': 250},
+                                    'humanhand': {'': 250},
                                     'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}},
                               'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
                                      'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}}
-        problematic_states['ab'] = {'human': {'Large': 220, 'Medium': 160, 'Small Far': 270},
+        problematic_states['ab'] = {'human': {'': 270},
+                                    'humanhand': {'Large': 220, 'Medium': 160, 'Small Far': 270},
                                     'ant': {'XL': 200, 'L': 200, 'M': 170, 'S': 270}}
 
         for problematic_state, border in problematic_states.items():
@@ -1244,25 +1337,20 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
 if __name__ == '__main__':
     shape = 'SPT'
-    # geometries_to_change = {
-    #     ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Small Far'],
-    #     ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
-    #     }
-
+    geometries_to_change = {('humanhand', ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')): ['']}
 
     geometries = {
         ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
         ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
+        ('humanhand', ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')): ['']
         }
 
-    for (solver, geometry), sizes in list(geometries.items()):
+    for (solver, geometry), sizes in list(geometries_to_change.items()):
         for size in sizes:
             print(solver, size)
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
             ps.load_eroded_labeled_space()
-            ps.fix_edges_labeling()
-            ps.save_labeled()
             # ps.visualize_states(reduction=4)
 
             # ps.correct_ps_states()

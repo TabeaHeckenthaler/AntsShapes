@@ -28,7 +28,7 @@ class Path:
             self.frame_step = None
 
         self.time_series = time_series
-        if self.frame_step is not None and self.time_series is None and x is not None:
+        if self.frame_step is not None and len(self.time_series) == 0 and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x, only_states=only_states)
             #
             # # for 'small_20220308115942_20220308120334'

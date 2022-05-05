@@ -42,7 +42,7 @@ def find_unpickled(solver, size, shape, free=False):
     :return: list of un-pickled .mat file names (without .mat extension)
     """
     pickled = get_filenames(solver, size=size, free=free)
-    if solver in ['ant', 'human']:
+    if solver in ['ant', 'human', 'humanhand']:
         expORsim = 'exp'
     else:
         expORsim = 'sim'
@@ -91,14 +91,14 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
 
     x.matlab_loading(filename)  # this is already after we added all the errors...
 
-    if 'frames' in kwargs:
-        frames = kwargs['frames']
-    else:
-        frames = [x.frames[0], x.frames[-1]]
-    if len(frames) == 1:
-        frames.append(frames[0] + 2)
-    f1, f2 = int(frames[0]) - int(x.frames[0]), int(frames[1]) - int(x.frames[0]) + 1
-    x.position, x.angle, x.frames = x.position[f1:f2, :], x.angle[f1:f2], x.frames[f1:f2]
+    # if 'frames' in kwargs:
+    #     frames = kwargs['frames']
+    # else:
+    #     frames = [x.frames[0], x.frames[-1]]
+    # if len(frames) == 1:
+    #     frames.append(frames[0] + 2)
+    # f1, f2 = int(frames[0]) - int(x.frames[0]), int(frames[1]) - int(x.frames[0]) + 1
+    # x.position, x.angle, x.frames = x.position[f1:f2, :], x.angle[f1:f2], x.frames[f1:f2]
     return x
 
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
                 x.add_missing_frames(chain)
-                x.play(wait=30)
+                x.play(wait=5)
                 x.save()
                 # file_object = open('check_trajectories.txt', 'a')
                 # file_object.write(x.filename + '\n')
