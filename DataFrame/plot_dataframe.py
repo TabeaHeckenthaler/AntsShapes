@@ -10,8 +10,10 @@ df_gr_solver = df.groupby(by='solver')
 df_gr_shape = df.groupby(by='shape')
 
 
-def reduce_legend():
-    handles, labels = plt.gca().get_legend_handles_labels()
+def reduce_legend(ax):
+    if ax is None:
+        ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 

@@ -5,125 +5,8 @@ from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers
 from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
-from DataFrame.Altered_DataFrame import Altered_DataFrame
-import json
-from Analysis.PathLength import PathLength
-import os
-
-color = {'ant': {0: 'black', 1: 'black'}, 'human': {0: 'red', 1: 'blue'}}
-plot_group_size_seperately = {'ant': [1], 'human': [2]}
-
-
-def plot_path_length_cutoff(df, solver, ax, marker='.'):
-    if os.path.exists('../DataFrame/cut_off.json'):
-        with open('../DataFrame/cut_off.json', 'r') as json_file:
-            values = json.loads(json.load(json_file)).values()
-            df['pathlength cut off'] = np.array(list(values))[:, 0]
-            df['winner'] = np.array(list(values))[:, 1]
-            df['winner'] = df['winner'].astype(bool)
-
-    else:
-        results = df['filename'].progress_apply(lambda x: PathLength(get(x)).comparable())
-
-        with open('../DataFrame/cut_off.json', 'w') as json_file:
-            json.dump(results.to_json(), json_file)
-
-    for communication in [0, 1]:
-        df_solver_comm = df[df['communication'] == communication]
-
-        seperate_group_df = \
-            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-        not_seperate_group_df = \
-            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-        for part in [seperate_group_df, not_seperate_group_df]:
-            groups = part.groupby(by=['size'])
-            means = groups.mean()
-            sem = groups.sem()
-            # std = groups.std()
-
-            means.plot.scatter(x='average Carrier Number',
-                               y='winner',
-                               label='comm: ' + str(communication),
-                               xerr=sem['average Carrier Number'],
-                               yerr=sem['winner'],
-                               c=color[solver][communication],
-                               ax=ax[1],
-                               marker=marker,
-                               s=150)
-
-            if len(means) > 0:
-                xs = list(means['average Carrier Number'] + 0.5)
-                ys = list(means['winner'] + 0.5)
-                for txt, x, y in zip(list(means.index), xs, ys):
-                    ax[1].annotate(txt, (x, y), fontsize=13)
-
-    for communication in [0, 1]:
-        df_solver_comm = df[df['communication'] == communication][df['winner']]
-
-        seperate_group_df = \
-            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-        not_seperate_group_df = \
-            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-
-        for part in [seperate_group_df, not_seperate_group_df]:
-            groups = part.groupby(by=['size'])
-            means = groups.mean()
-            sem = groups.sem()
-            # std = groups.std()
-
-            means.plot.scatter(x='average Carrier Number',
-                               y='pathlength cut off',
-                               label='comm: ' + str(communication),
-                               xerr=sem['average Carrier Number'],
-                               yerr=sem['pathlength cut off'],
-                               c=color[solver][communication],
-                               ax=ax[0],
-                               marker=marker,
-                               s=150)
-
-            if len(means) > 0:
-                xs = list(means['average Carrier Number'] + 0.5)
-                ys = list(means['pathlength cut off'] + 0.5)
-                for txt, x, y in zip(list(means.index), xs, ys):
-                    ax[0].annotate(txt, (x, y), fontsize=13)
-
-    reduce_legend()
-    DEBUG = 1
-
-
-def plot_path_length(df, solver, ax, marker='.'):
-    for communication in [0, 1]:
-        df_solver_comm = df[df['communication'] == communication]
-
-        seperate_group_df = \
-            df_solver_comm[df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-        not_seperate_group_df = \
-            df_solver_comm[~df_solver_comm['average Carrier Number'].isin(plot_group_size_seperately[solver])]
-
-        for part in [seperate_group_df, not_seperate_group_df]:
-            groups = part.groupby(by=['size'])
-            means = groups.mean()
-            sem = groups.sem()
-            # std = groups.std()
-
-            means.plot.scatter(x='average Carrier Number',
-                               y='path length/minimal path length[]',
-                               label='comm: ' + str(communication),
-                               xerr=sem['average Carrier Number'],
-                               yerr=sem['path length/minimal path length[]'],
-                               c=color[solver][communication],
-                               ax=ax,
-                               marker=marker,
-                               s=150)
-
-            if len(means) > 0:
-                xs = list(means['average Carrier Number'] + 0.5)
-                ys = list(means['path length/minimal path length[]'] + 0.5)
-                for txt, x, y in zip(list(means.index), xs, ys):
-                    ax.annotate(txt, (x, y), fontsize=13)
-
-    reduce_legend()
-
+from Analysis.Path_length_distributions import Path_length_cut_off_df_ant, Path_length_cut_off_df_human,\
+    Path_length_cut_off_df_humanhand
 
 def SPT_figure(df, ax):
     """
@@ -232,11 +115,12 @@ def ant_HIT_figure_path_length(df_gr_solver):
         save_fig(fig, 'ants_' + y)
 
 
-def adjust_figure():
+def adjust_figure(ax):
+    if type(ax) == np.ndarray:
+        [adjust_figure(a) for a in ax]
+        return
     ax.set_ylim(0, 50)
     ax.set_xscale('log')
-    # ax.set_yscale('log')
-    # ax.set_ylim(0, 25)
     plt.show()
 
 
@@ -248,26 +132,4 @@ def relevant_columns(df):
 
 
 if __name__ == '__main__':
-
-    fig, ax = plt.subplots(2, 1)
-    shape = 'SPT'
-    solvers = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-               'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
-
-    for solver, geometry in solvers.items():
-        df = Altered_DataFrame()
-        df.choose_experiments(solver, shape, geometry, init_cond='back')
-        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]',
-                   'average Carrier Number']
-        df.choose_columns(columns)
-        df.df['path length/minimal path length[]'] = df.df['path length [length unit]'] \
-                                                     / df.df['minimal path length [length unit]']
-        plot_path_length_cutoff(df.df, solver, ax, marker='x')
-
-    adjust_figure()
-    save_fig(fig, 'back_path_length_humans')
-
-    # fig, ax = plt.subplots(1, 1)
-    # SPT_figure(df, ax)
-    # save_fig(fig, 'SPT_different_solver')
+    pass

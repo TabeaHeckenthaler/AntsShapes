@@ -1,12 +1,14 @@
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.get import get
+from trajectory_inheritance.trajectory_humanhand import ExcelSheet
 
 
 class Altered_DataFrame:
     def __init__(self):
         self.df = myDataFrame.clone()
 
-    def choose_experiments(self, solver, shape, geometry, size=None, communication=None, init_cond: str = 'back', winner: bool = None):
+    def choose_experiments(self, solver, shape, geometry, size=None, communication=None, init_cond: str = 'back',
+                           winner: bool = None):
         """
         Get trajectories based on the trajectories saved in myDataFrame.
         :param geometry: geometry of the maze, given by the names of the excel files with the dimensions
@@ -60,38 +62,63 @@ class Altered_DataFrame:
             df = df[(df['maze dimensions'] == geometry[0])]
         if 'initial condition' in self.df.columns:
             df = df[df['initial condition'] == initial_cond]
+        df_to_plot = {}
         if solver == 'ant':
             def split_winners_loosers(size, df):
                 winner = df[df['winner'] & (df['size'] == size)]
                 looser = df[~df['winner'] & (df['size'] == size)]
                 return {'winner': winner, 'looser': looser}
 
-            df_to_plot = {'XL': split_winners_loosers('XL', df),
-                          'L': split_winners_loosers('L', df),
-                          'M': split_winners_loosers('M', df),
-                          'S (> 1)': split_winners_loosers('S', df[~df['average Carrier Number'].isin(plot_seperately['S'])]),
-                          'Single (1)': split_winners_loosers('S', df[df['average Carrier Number'].isin(plot_seperately['S'])])}
+            df_add = {'XL': split_winners_loosers('XL', df),
+                      'L': split_winners_loosers('L', df),
+                      'M': split_winners_loosers('M', df),
+                      'S (> 1)': split_winners_loosers('S',
+                                                       df[~df['average Carrier Number'].isin(plot_seperately['S'])]),
+                      'Single (1)': split_winners_loosers('S',
+                                                          df[df['average Carrier Number'].isin(plot_seperately['S'])])}
+            df_to_plot.update(df_add)
 
-        elif solver == 'human':
+        if 'human' in solver.split('_'):
             def split_NC_C(sizes, df):
                 communication = df[df['communication'] & (df['size'].isin(sizes))]
                 non_communication = df[~df['communication'] & (df['size'].isin(sizes))]
                 return {'communication': communication, 'non_communication': non_communication}
 
-            df_to_plot = {'Large': split_NC_C(['Large'], df),
-                          'M (>7)': split_NC_C(['Medium'], df[~df['average Carrier Number'].isin(plot_seperately['Medium'])]),
-                          'M (2)': split_NC_C(['Medium'], df[df['average Carrier Number'].isin([plot_seperately['Medium'][0]])]),
-                          'M (1)': split_NC_C(['Medium'], df[df['average Carrier Number'].isin([plot_seperately['Medium'][1]])]),
-                          'Small': split_NC_C(['Small Far', 'Small Near'], df)
-                          }
-        else:
-            raise ValueError('What type of solver?')
+            df_add = {'Large': split_NC_C(['Large'], df),
+                      'M (>7)': split_NC_C(['Medium'],
+                                           df[~df['average Carrier Number'].isin(plot_seperately['Medium'])]),
+                      'M (2)': split_NC_C(['Medium'],
+                                          df[df['average Carrier Number'].isin([plot_seperately['Medium'][0]])]),
+                      'M (1)': split_NC_C(['Medium'],
+                                          df[df['average Carrier Number'].isin([plot_seperately['Medium'][1]])]),
+                      'Small': split_NC_C(['Small Far', 'Small Near'], df)
+                      }
+            df_to_plot.update(df_add)
+
+        if 'humanhand' in solver.split('_'):
+            e = ExcelSheet()
+            with_eyesight, without_eyesight = [], []
+            for filename in df['filename']:
+                if filename[0] == 'Y':
+                    if e.with_eyesight(filename):
+                        with_eyesight.append(filename)
+                    else:
+                        without_eyesight.append(filename)
+
+            def split_NC_C(sizes, df):
+                with_eyesight_df = df[df['filename'].isin(with_eyesight)]
+                without_eyesight_df = df[df['filename'].isin(without_eyesight)]
+                return {'with_eyesight': with_eyesight_df, 'without_eyesight': without_eyesight_df, }
+
+            df_add = {'humanhand': split_NC_C(None, df)}
+            df_to_plot.update(df_add)
+
         return df_to_plot
 
 
 def choose_trajectories(solver='human', size='Large', shape='SPT',
                         geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
-                        communication=None, number: int = None, init_cond: str ='back') \
+                        communication=None, number: int = None, init_cond: str = 'back') \
         -> list:
     df = Altered_DataFrame()
     df.choose_experiments(solver, shape, geometry, size=size, communication=communication,

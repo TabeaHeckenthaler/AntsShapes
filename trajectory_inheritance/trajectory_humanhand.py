@@ -2,9 +2,13 @@ from trajectory_inheritance.trajectory import Trajectory, length_unit
 from os import path
 import pickle
 import numpy as np
+from openpyxl import load_workbook, worksheet
+import pandas as pd
 
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'
 length_unit = 'cm'
+excel_dir = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Hand Experiments'.format(path.sep, path.sep, path.sep,
+                                                                                path.sep, path.sep)
 
 
 class Trajectory_humanhand(Trajectory):
@@ -52,3 +56,37 @@ class Humanhand:
     def __init__(self, filename):
         self.filename = filename
         return
+
+
+class ExcelSheet:
+    def __init__(self):
+        self.sheet = pd.DataFrame(load_workbook(filename=excel_dir + path.sep + "video_data.xlsx").active.values)
+        self.sheet.columns = self.sheet.iloc[0]
+        self.sheet = self.sheet[1:]
+
+    def get_experiments(self):
+        for i in range(1, len(self.sheet['raw video name'])):
+            movies = self.sheet['raw video name'][i].value.split('; ')
+            frames_string = self.sheet['frames'][i].value.split('; ')
+            frames = [list(range(*list(map(int, frame.split(', '))))) for frame in frames_string]
+            light = self.sheet['light'][i].value != 'n'
+            movies_frames = dict(zip(movies, frames))
+            eyesight = self.sheet['eyesight'][i].value == 'y'
+
+            if self.sheet['frames to exclude'][i].value:
+                movie = self.sheet['frames to exclude'][i].value.split(': ')[0]
+                frames_to_remove = list(range(*[int(f) for f in self.sheet['F'][i].value.split(': ')[1].split(', ')]))
+                movies_frames[movie] = [fr for fr in movies_frames[movie] if fr not in frames_to_remove]
+
+            filename = movies[0] + '_' + str(frames[0][0])
+
+    def with_eyesight(self, filename) -> bool:
+        [first_movie, first_frame] = filename.split('_')
+        k = self.sheet[(self.sheet['raw video name'].apply(lambda x: x.split('; ')[0]) == first_movie) &
+                        (self.sheet['frames'].apply(lambda x: x.split(', ')[0]) == first_frame)]
+        return k['eyesight'].iloc[0] == 'y'
+    
+        
+if __name__ == '__main__':
+    e = ExcelSheet()
+    print(e.with_eyesight('YI029701_6249'))

@@ -1315,8 +1315,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                               # 'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
                               #        'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}
                               }
-        problematic_states['ab'] = {'human': {'': 270},
-                                    'humanhand': {'Large': 220, 'Medium': 160, 'Small Far': 270},
+        problematic_states['ab'] = {'humanhand': {'': 270},
+                                    'human': {'Large': 220, 'Medium': 160, 'Small Far': 270},
                                     'ant': {'XL': 200, 'L': 200, 'M': 170, 'S': 270}}
 
         for problematic_state, border in problematic_states.items():
@@ -1352,7 +1352,7 @@ if __name__ == '__main__':
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
 
             ps.load_eroded_labeled_space()
-            # ps.visualize_states(reduction=4)
+            ps.visualize_states(reduction=4)
 
             # ps.correct_ps_states()
             # ps.label_space()

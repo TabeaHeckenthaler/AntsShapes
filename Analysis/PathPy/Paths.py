@@ -248,6 +248,21 @@ def ants():
     # DEBUG = 1
 
 
+def humanhand():
+    solver, shape, geometry = 'humanhand', 'SPT', (
+        'MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')
+
+    for size in exp_types[shape][solver]:
+    # for size in ['XL']:
+        paths = PathsTimeStamped(solver, size, shape, geometry)
+
+        paths.load_paths()
+        paths.load_time_stamped_paths()
+        paths.save_paths()
+        paths.save_timestamped_paths()
+        paths.save_csv()
+
+
 def split_up(solver):
     shape = 'SPT'
 
