@@ -16,8 +16,8 @@ except:
 
 
 class Display:
-    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, i=0, videowriter=False, config=None, path=None,
-                 frame=0):
+    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, videowriter=False, config=None, path=None,
+                 frame=0, position=None):
         self.my_maze = my_maze
         self.fps = fps
         self.name = name
@@ -30,7 +30,7 @@ class Display:
         # self.monitor = {'left': 0, 'top': 0,
         #                 'width': int(Tk().winfo_screenwidth() * 0.9), 'height': int(Tk().winfo_screenheight() * 0.8)}
         self.monitor = {'left': 0, 'top': 0, 'width': self.width, 'height': self.height}
-        self.screen = self.create_screen()
+        self.screen = self.create_screen(position=position)
         self.arrows = []
         self.circles = []
         self.polygons = []
@@ -63,20 +63,19 @@ class Display:
     def video_directory():
         return os.path.join(video_directory, sys.argv[0].split('/')[-1].split('.')[0] + '.mp4v')
 
-    def create_screen(self, caption=str(), free=False) -> pygame.surface:
+    def create_screen(self, position=None) -> pygame.surface:
         pygame.font.init()  # display and fonts
         pygame.font.Font('freesansbold.ttf', 25)
 
-        if free:  # screen size dependent on trajectory_inheritance
-            position = None  # TODO
+        if self.my_maze.free:  # screen size dependent on trajectory_inheritance
             self.ppm = int(1000 / (np.max(position[:, 0]) - np.min(position[:, 0]) + 10))  # pixels per meter
             self.width = int((np.max(position[:, 0]) - np.min(position[:, 0]) + 10) * self.ppm)
             self.height = int((np.max(position[:, 1]) - np.min(position[:, 1]) + 10) * self.ppm)
 
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (self.monitor['left'], self.monitor['top'])
-        screen = pygame.display.set_mode((self.width, self.height), 0, 32)
+        screen = pygame.display.set_mode((self.width, self.height))
         if self.my_maze is not None:
-            pygame.display.set_caption(self.my_maze.shape + ' ' + self.my_maze.size + ' ' + self.my_maze.solver + ': ' + caption)
+            pygame.display.set_caption(self.my_maze.shape + ' ' + self.my_maze.size + ' ' + self.my_maze.solver)
         return screen
 
     def m_to_pixel(self, r):

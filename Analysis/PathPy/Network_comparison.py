@@ -5,6 +5,7 @@ from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
 from Analysis.PathPy.SPT_states import states, forbidden_transition_attempts, allowed_transition_attempts
 import os
+from Analysis.GeneralFunctions import flatten
 import numpy as np
 
 
@@ -28,12 +29,13 @@ class Network_comparison:
     def plot_transition_matrices(self):
         state_order = states[1:] + allowed_transition_attempts + forbidden_transition_attempts
         for solver in self.networks.keys():
-            fig, axs = plt.subplots(1, len(self.networks[solver]))
-            for (size, network), ax in zip(self.networks[solver].items(), axs):
+            fig, axs = plt.subplots(2, len(self.networks[solver])//2)
+            for (size, network), ax in zip(self.networks[solver].items(), flatten(axs)):
                 network.plot_transition_matrix(title=size, axis=ax, state_order=state_order)
 
             directory = graph_dir() + os.path.sep + 'transition_matrix_' + solver + '.pdf'
             print('Saving transition matrix in ', directory)
+            plt.subplots_adjust(wspace=0.01, hspace=0.3)
             fig.savefig(directory)
 
     def plot_diffusion_speed_up(self):
@@ -56,14 +58,14 @@ class Network_comparison:
 
 
 shape = 'SPT'
-solvers = ['human', 'ant']
+solvers = ['human', 'ant']  # add humanhand
 sizes = exp_types[shape]
 
 if __name__ == '__main__':
     my_networks = Network_comparison.load_networks()
     my_network_comparison = Network_comparison(my_networks)
     my_network_comparison.plot_transition_matrices()
-    my_network_comparison.plot_diffusion_speed_up()
+    # my_network_comparison.plot_diffusion_speed_up()
 
     # TODO: Check whether the right solver number is involved (especially for human Medium).
     # TODO: Plot with equal state order

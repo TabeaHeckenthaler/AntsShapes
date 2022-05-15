@@ -101,7 +101,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
 
         for size, dfs in d.items():
             for key, df in dfs.items():
-                for i, part in enumerate(self.split_seperate_groups(df)):
+                for part in self.split_seperate_groups(df):
                     if not part.empty:
                         part.loc[part['size'].isin(['Small Far', 'Small Near']), 'size'] = 'Small'
                         groups = part.groupby(by=['size'])

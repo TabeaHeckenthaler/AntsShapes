@@ -154,10 +154,11 @@ class Network(pathpy.Network):
         _ = axis.imshow(to_plot)
 
         axis.set_xticks(range(len(to_plot)))
-        axis.set_xticklabels(to_plot.columns)
+        axis.set_xticklabels(to_plot.columns, fontsize=4)
 
         axis.set_yticks(range(len(to_plot)))
-        axis.set_yticklabels(to_plot.columns)
+        axis.set_yticklabels(to_plot.columns, fontsize=4)
+
         axis.set_title(title)
 
     @staticmethod

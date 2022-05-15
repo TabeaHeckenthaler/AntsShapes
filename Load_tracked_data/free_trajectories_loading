@@ -6,11 +6,12 @@ from Load_tracked_data.Load_Experiment import find_unpickled, load
 if __name__ == '__main__':
 
     solver, shape = 'ant', 'SPT'
-    size = 'XL'
+    size = 'S'
     free = True
     fps = 50
 
     for mat_filename in tqdm(find_unpickled(solver, size, shape, free=True)):
         print(mat_filename)
-        x = load(mat_filename, solver, size, shape, fps, free=free)
+        x = load(mat_filename, solver, size, shape, fps, falseTracking=[], free=free)
+        x.play()
         x.save(address=path.join(SaverDirectories[solver][free], x.filename))

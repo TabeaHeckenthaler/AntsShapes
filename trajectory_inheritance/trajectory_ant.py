@@ -201,8 +201,6 @@ class Trajectory_ant(Trajectory):
         self.falseTracker()
         self.interpolate_over_NaN()
 
-        return
-
     def falseTracker(self):
         x = self
         from Setup.Load import periodicity
@@ -263,4 +261,8 @@ class Trajectory_ant(Trajectory):
             my_maze = Maze(x)
         else:
             my_maze = Maze_free_space(x)
-        return x.run_trj(my_maze, display=Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter))
+            x.position[:, 0] = x.position[:, 0] - np.min(x.position[:, 0])
+            x.position[:, 1] = x.position[:, 1] - np.min(x.position[:, 1])
+
+        display = Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter, position=x.position)
+        return x.run_trj(my_maze, display=display)

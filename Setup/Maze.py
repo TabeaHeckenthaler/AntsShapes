@@ -65,7 +65,7 @@ def end(x):
 
 
 class Maze_parent(b2World):
-    def __init__(self, position=None, angle=0, point_particle=False, bb: bool = False):
+    def __init__(self, position=None, angle=0, point_particle=False, bb: bool = False, free=False):
         super().__init__(gravity=(0, 0), doSleep=True)
 
         if not hasattr(self, 'size'):
@@ -82,6 +82,7 @@ class Maze_parent(b2World):
             self.excel_file_load = 'LoadDimensions_new2021_SPT_ant.xlsx'
 
         self.maze = self.create_Maze()
+        self.free = free
         self.create_Load(position=position, angle=angle, point_particle=point_particle, bb=bb)
 
     def create_Maze(self):
@@ -695,7 +696,7 @@ class Maze_free_space(Maze_parent):
             self.size = size
             self.solver = solver
 
-        super().__init__(position=position, angle=angle, point_particle=point_particle, bb=bb)
+        super().__init__(position=position, angle=angle, point_particle=point_particle, bb=bb, free=True)
 
     def create_Maze(self):
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
