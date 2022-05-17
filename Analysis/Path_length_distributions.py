@@ -12,6 +12,7 @@ from Analysis.PathLength import PathLength
 from trajectory_inheritance.get import get
 import pandas as pd
 from DataFrame.plot_dataframe import reduce_legend
+from Analysis.GeneralFunctions import flatten
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},
@@ -251,6 +252,7 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
         percent_of_winning = {}
         for size, dfs in data_frames.items():
             percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
+        # TODO: Add errorbars.
         plt.bar(*zip(*percent_of_winning.items()))
         plt.ylabel('percent of success')
 
@@ -319,13 +321,39 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             axs[j].set_ylim([0, max_num_experiments + 1.5])
             axs[j].yaxis.set_label_coords(labelx, 0.5)
 
-    def percent_of_solving(self, fig):
+    def percent_of_solving(self):
         data_frames = self.get_separate_data_frames(self.solver, self.plot_seperately)
-        percent_of_winning = {}
+        percent_of_winning, error = {}, {}
+
         for size, dfs in data_frames.items():
             percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
-        plt.bar(*zip(*percent_of_winning.items()))
-        plt.ylabel('percent of success')
+            error[size] = 1/np.sqrt(np.sum([len(df) for df in dfs.values()]))
+
+        return percent_of_winning, error
+
+
+def plot_means():
+    shape = 'SPT'
+    PLs = [Path_length_cut_off_df_ant,
+           # Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand
+           ]
+    fig, axs = plt.subplots(len(PLs), 1)
+
+    for PL, ax in zip(PLs, axs):
+        my_PL = PL()
+        my_PL.choose_experiments(my_PL.solver, shape, my_PL.geometry, init_cond='back')
+        # columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
+        #            'minimal path length [length unit]',
+        #            'average Carrier Number']
+        # df.choose_columns(columns)
+        my_PL.cut_off_after_path_length(max_path=15)
+        my_PL.plot_means(ax)
+
+        # adjust_figure(ax)
+
+    [ax.set_xlabel('') for ax in axs[:-1]]
+    [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
+    save_fig(fig, 'back_path_length_all')
 
 
 def cut_time():
@@ -350,46 +378,51 @@ def cut_time():
             save_fig(fig, 'percent_solving_ants_cut_time')
 
 
-def cut_path_length():
-    Plot_classes = [Path_length_cut_off_df_human, Path_length_cut_off_df_ant, Path_length_cut_off_df_humanhand]
-    # Plot_classes = [Path_length_cut_off_df_humanhand, Path_length_cut_off_df_human]
+def cut_path_length_distribution(max_path=15, ax=None):
+    Plot_classes = [Path_length_cut_off_df_ant,
+                    # Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand
+                    ]
 
     for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
         fig, axs = my_plot_class.open_figure()
-        max_path = 25
         my_plot_class.cut_off_after_path_length(max_path=max_path)
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                       my_plot_class.plot_seperately)
-        my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=12 + 4)
+        my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=max_path)
         save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
 
-        if my_plot_class.solver == 'ant':
-            fig = plt.figure()
-            my_plot_class.percent_of_solving(fig)
-            save_fig(fig, 'percent_solving_ants_cut_path')
+
+def percent_of_solving_ants(max_path=15, ax=None):
+    my_plot_class = Path_length_cut_off_df_ant()
+    my_plot_class.cut_off_after_path_length(max_path=max_path)
+    percent_of_winning, error = my_plot_class.percent_of_solving()
+
+    if ax is not None:
+        ax = plt.figure()
+        ax.bar(*zip(*percent_of_winning.items()), yerr=error.values())
+        ax.set_title('min_path ' + str(max_path))
+        ax.set_ylim([-0.5, 1.2])
+        plt.ylabel('percent of success')
+
+    return percent_of_winning, error
 
 
 if __name__ == '__main__':
-    shape = 'SPT'
-    PLs = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand]
-    fig, axs = plt.subplots(len(PLs), 1)
+    max_paths = list(range(10, 26, 2))
+    # fig, axs = plt.subplots(nrows=len(max_paths)//2, ncols=2, sharey=True, sharex=True)
+    fig = plt.figure()
+    percent_for_cutoffs, errors = {}, {}
 
-    for PL, ax in zip(PLs, axs):
-        my_PL = PL()
-        my_PL.choose_experiments(my_PL.solver, shape, my_PL.geometry, init_cond='back')
-        # columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-        #            'minimal path length [length unit]',
-        #            'average Carrier Number']
-        # df.choose_columns(columns)
-        my_PL.cut_off_after_path_length(max_path=15)
-        my_PL.plot_means(ax)
+    # for ax, max_path in zip(flatten(axs), max_paths):
+    for max_path in max_paths:
+        percent_for_cutoffs[max_path], errors[max_path] = percent_of_solving_ants(max_path=max_path)
 
-        # adjust_figure(ax)
+    d = pd.DataFrame(percent_for_cutoffs)
+    e = pd.DataFrame(errors)
+    d.transpose().plot(yerr=e.transpose(), capsize=4, capthick=1)
 
-    [ax.set_xlabel('') for ax in axs[:-1]]
-    [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
-    save_fig(fig, 'back_path_length_all')
+    save_fig(fig, 'percent_solving_ants_cut_path_all')
 
     # my_plot_class = Path_length_cut_off_df_human() + Path_length_cut_off_df_humanhand()
     # fig, axs = my_plot_class.open_figure()
