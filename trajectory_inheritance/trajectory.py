@@ -319,13 +319,18 @@ class Trajectory:
             new.angle[frames[0]:frames[1]] = np.hstack([new.angle[frames[0]] for _ in range(frames[1] - frames[0])])
         return new
 
-    def add_missing_frames(self, chain: list):
+    def add_missing_frames(self, chain: list, free):
         from PS_Search_Algorithms.Path_planning_full_knowledge import connector
         total_time_seconds = np.sum([traj.timer() for traj in chain])
-        continue_time_dict(self.filename)
-        with open('time_dictionary.txt', 'r') as json_file:
-            time_dict = json.load(json_file)
-        frames_missing = (time_dict[self.filename] - total_time_seconds) * self.fps
+        if not free:
+            continue_time_dict(self.filename)
+            with open('time_dictionary.txt', 'r') as json_file:
+                time_dict = json.load(json_file)
+            frames_missing = (time_dict[self.filename] - total_time_seconds) * self.fps
+        else:
+            frames_missing = 0
+
+        x = deepcopy(self)
 
         for part in chain[1:]:
             frames_missing_per_movie = int(frames_missing / (len(chain) - 1))
@@ -333,6 +338,7 @@ class Trajectory:
                 connection = connector(x, part, frames_missing_per_movie)
                 x = x + connection
             x = x + part
+        return x
 
     def geometry(self):
         pass

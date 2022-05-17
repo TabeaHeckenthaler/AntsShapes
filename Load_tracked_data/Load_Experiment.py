@@ -123,29 +123,32 @@ def continue_winner_dict(solver, shape) -> dict:
     return winner_dict
 
 
-def extension_exists(filename, solver, size, shape) -> list:
+def extension_exists(filename, solver, size, shape, free=False) -> list:
     """
     :return: list with candidates for being an extension.
     """
     movie_number = str(int(filename.split('_')[1]) + 1)
+    iteration_number = str(int(filename.split('_')[-1][0]) + 1)
     part_number = str(int(filename.split('part ')[1][0]) + 1)
 
     same_movie = '_'.join(filename.split('_')[:2])
     next_movie = '_'.join(filename.split('_')[:1] + [movie_number])
 
-    extension_candidates = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape))
+    extension_candidates = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free))
                             if
-                            ((same_movie in mat_file or next_movie in mat_file) and 'part ' + part_number in mat_file)]
+                            (((same_movie in mat_file and iteration_number == mat_file.split('_')[-1][0])
+                              or next_movie in mat_file)
+                             and 'part ' + part_number in mat_file)]
     if len(extension_candidates) > 1:
-        input('to many extensions')
+        raise ValueError('to many extensions')
     return extension_candidates
 
 
-def parts(filename, solver, size, shape):
+def parts(filename, solver, size, shape, free=False):
     VideoChain = [filename]
     if 'part ' in filename:
-        while extension_exists(VideoChain[-1], solver, size, shape):
-            VideoChain.append(extension_exists(VideoChain[-1], solver, size, shape)[0])
+        while extension_exists(VideoChain[-1], solver, size, shape, free=free):
+            VideoChain.append(extension_exists(VideoChain[-1], solver, size, shape, free=free)[0])
     return VideoChain
 
 
@@ -178,13 +181,27 @@ if __name__ == '__main__':
                 x = load(results_filename, solver, size, shape, fps[solver], [])
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
-                x.add_missing_frames(chain)
+                x = x.add_missing_frames(chain)
                 x.play(wait=5)
                 x.save()
-                # file_object = open('check_trajectories.txt', 'a')
-                # file_object.write(x.filename + '\n')
-                # file_object.close()
 
                 # TODO: Check that the winner is correctly saved!!
                 # TODO: add new file to contacts json file
                 # TODO: add new file to pandas DataFrame
+
+    # free trajectories
+    # solver, shape = 'ant', 'SPT'
+    # size = 'XL'
+    # free = True
+    # fps = 50
+    #
+    # for results_filename in tqdm(find_unpickled(solver, size, shape, free=True)):
+    #     print(results_filename)
+    #     x = load(results_filename, solver, size, shape, fps, falseTracking=[], free=free)
+    #     chain = [x] + [load(filename, solver, size, shape, fps, [], winner=x.winner, free=free)
+    #                    for filename in parts(results_filename, solver, size, shape, free=free)[1:]]
+    #
+    #     x = x.add_missing_frames(chain, free=free)
+    #     x.play()
+    #     x.save(address=path.join(SaverDirectories[solver][free], x.filename))
+
