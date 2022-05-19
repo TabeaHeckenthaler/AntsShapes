@@ -2,7 +2,7 @@ from itertools import groupby
 import numpy as np
 from trajectory_inheritance.get import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
-from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts
+from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts, pre_final_state
 from Analysis.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
@@ -28,9 +28,9 @@ class Path:
             self.frame_step = None
 
         self.time_series = time_series
-        if self.frame_step is not None and len(self.time_series) == 0 and x is not None:
-            self.time_series = self.get_time_series(conf_space_labeled, x, only_states=only_states)
-            #
+        if self.frame_step is not None and self.time_series is None and x is not None:
+            self.time_series = self.get_time_series(conf_space_labeled, x)
+
             # # for 'small_20220308115942_20220308120334'
             # if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
             #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
@@ -38,7 +38,8 @@ class Path:
 
             self.correct_time_series()
             # self.save_transition_images(x)
-
+            if only_states:
+                self.time_series = [l[0] for l in self.time_series]
         self.state_series = self.calculate_state_series()
 
     @staticmethod
@@ -62,19 +63,22 @@ class Path:
                                         'State_transition_images\\' + str(int(i * self.time_step)) + '.png',
                                         text_in_snapshot=label1, frame=int(i * self.time_step * x.fps))
 
-    def get_time_series(self, conf_space_labeled, x, only_states=False):
+    def get_time_series(self, conf_space_labeled, x):
         print(x)
         coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
         for i, index in enumerate(indices):
             labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
-        if only_states:
-            labels = [l[0] for l in labels]
-        return labels[1:]
+        labels = labels[1:]
+
+        if pre_final_state in labels[-1] and pre_final_state != labels[-1]:
+            labels.append(pre_final_state)
+
+        return labels
 
     def correct_time_series(self):
-        self.time_series = self.cut_off_after_final_state(self.time_series)
+        self.time_series = self.add_final_state(self.time_series)
         self.time_series = self.delete_false_transitions(self.time_series)
         self.time_series = self.get_rid_of_short_lived_states(self.time_series)
         self.time_series = self.add_missing_transitions(self.time_series)
@@ -113,26 +117,36 @@ class Path:
                 return True
             if ''.join(list(set(state1+state2))) in allowed_transition_attempts:
                 return True
+
+        # transition like bf -> ba
+        if len(state2 + state1) == 4 and len(set(state1 + state2)) == 3:
+            if state1[0] == state2[0]:
+                return True
+
+        if state1 == pre_final_state and state2 == final_state:
+            return True
+
         return False
 
     @staticmethod
     def delete_false_transitions(labels):
         new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
-            if ii == 243:
-                DEBUG = 1
             if not Path.valid_state_transition(new_labels[-1], next_state):
+                print(new_labels[-1], next_state)
                 new_labels.append(new_labels[-1])
             else:
                 new_labels.append(next_state)
         return new_labels
 
     @staticmethod
-    def cut_off_after_final_state(labels):
-        first_time_in_final_state = np.where(np.array(labels) == final_state)[0]
-        if len(first_time_in_final_state) > 1:
+    def add_final_state(labels):
+        # I have to open a new final state called i, which is in PS equivalent to h, but is an absorbing state, meaning,
+        # it is never left.
+        times_in_final_state = np.where(np.array(labels) == pre_final_state)[0]
+        if len(times_in_final_state) > 1:
             # print(labels[:first_time_in_final_state[0] + 1][-10:])
-            return labels[:first_time_in_final_state[0] + 1]
+            return labels + [final_state]
         else:
             return labels
 
@@ -153,7 +167,8 @@ class Path:
             return True
         elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
             return False
-        return state1[0] == state2[0] or len(set(state1) & set(state2)) == 2
+        return state1[0] == state2[0] or len(set(state1) & set(state2)) == 2 or \
+               (state1 == pre_final_state and state2 == final_state)
 
     @staticmethod
     def necessary_transitions(state1, state2, ii: int = '', frame_step=1) -> list:
@@ -272,7 +287,7 @@ class Path:
         """
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
         labels = self.combine_transitions(labels)
-        labels = self.cut_off_after_final_state(labels)
+        labels = self.add_final_state(labels)
         return labels
 
     @staticmethod

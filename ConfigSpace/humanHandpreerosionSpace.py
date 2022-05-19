@@ -1,6 +1,6 @@
 from ConfigSpace import ConfigSpace_Maze
 from trajectory_inheritance.exp_types import solver_geometry
-
+import numpy as np
 
 def erode_centers():
     """for humanhand maze, which is not eroded correctly"""
@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
         for centers in [erode_centers()]:
             mask = mask_around_centers(conf_space, centers)
+            mask = conf_space.shift_by_pi(space=mask)
             conf_space.visualize_space(space=mask, colormap='Oranges')
-            import numpy as np
             space_to_delete = np.logical_and(conf_space.space, mask)
             conf_space.space = np.logical_and(conf_space.space, np.invert(space_to_delete))
             dir = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \

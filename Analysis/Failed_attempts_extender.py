@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     my_failed_attempt = FailedAttempt(exp.filename, exp.path_length, exp.time, exp.final_state)
     my_network = Network(exp.solver, exp.size, exp.shape, None)
-    my_network.get_results()
+    my_network.markovian_analysis()
 
     extender = FailedAttemptPathLengthExtender(my_failed_attempt, my_network.t)
     print(extender.expected_solving_time())

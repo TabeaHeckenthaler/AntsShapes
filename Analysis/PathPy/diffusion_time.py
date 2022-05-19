@@ -45,7 +45,7 @@ class DiffusionTime(Diffusion):
         paths.load_paths(filenames=filenames)
 
         my_network = Network.init_from_paths(paths, self.solver, size, self.shape)
-        my_network.get_results()
+        my_network.markovian_analysis()
         t = my_network.t.sort_values(0, ascending=False) * paths.time_step  # TODO: this easily leads to mistakes
         return t
 
@@ -101,7 +101,7 @@ class DiffusionStates(Diffusion):
         paths = PathWithoutSelfLoops(self.solver, size, self.shape, self.geometry)
         paths.load_paths(filenames=filenames)
         my_network = Network.init_from_paths(paths, self.solver, size, self.shape)
-        my_network.get_results()
+        my_network.markovian_analysis()
         # my_network.save(my_network.to_dict())
         t = my_network.t.sort_values(0, ascending=False)
         return t

@@ -187,6 +187,12 @@ class ConfigSpace_Maze(ConfigSpace):
         #                                    (self.monitor['width'], self.monitor['height']))
         # self._initialize_maze_edges()
 
+    @staticmethod
+    def shift_by_pi(space):
+        middle = space.shape[2]//2
+        space = np.concatenate([space[:, :, middle:], space[:, :, :middle], ], axis=-1)
+        return space
+
     def directory(self, point_particle: bool = False, erosion_radius: int = None, addition: str = '',
                   small: bool = False) \
             -> str:
@@ -268,10 +274,11 @@ class ConfigSpace_Maze(ConfigSpace):
         :param point_particle:
         :param mask: If a mask is given only the unmasked area is calcuted. This is used to finetune maze dimensions.
         :return:
+        This was beautifully created by Rotem!!!
         """
         maze = Maze(size=self.size, shape=self.shape, solver=self.solver, geometry=self.geometry)
         # use same shape and bounds as original phase space calculator
-        space_shape = (415, 252, 616)  # x, y, theta.
+        # space_shape = (415, 252, 616)  # x, y, theta.
         space_shape = self.empty_space().shape  # x, y, theta.
 
         xbounds = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
@@ -285,7 +292,9 @@ class ConfigSpace_Maze(ConfigSpace):
             if not i % 50: print(f"{i}/{space_shape[2]}")
             final_arr[:, :, i] = self.calc_theta_slice(theta, space_shape[0], space_shape[1], xbounds, ybounds)
 
-        self.space = final_arr
+
+        self.space = self.shift_by_pi(final_arr) # somehow this was shifted by pi...
+
 
     def calc_theta_slice(self, theta, res_x, res_y, xbounds, ybounds):
         arr = np.ones((res_x, res_y), bool)
@@ -567,7 +576,7 @@ class ConfigSpace_Maze(ConfigSpace):
         :return:
         """
         if self.space is None:
-            self.calculate_space(point_particle=point_particle, mask=mask)
+            self.calculate_space(mask=mask)
         self.space_boundary = self.empty_space()
         print("PhaseSpace: Calculating boundaries " + self.name)
         for ix, iy, itheta in self.iterate_space_index(mask=mask):
@@ -683,7 +692,8 @@ class ConfigSpace_Maze(ConfigSpace):
     def create_ps_states(self):
         # interesting_indices = (207, 175, 407), (207, 176, 408)  # human large
         if self.eroded_space is None:
-            if self.solver == 'humanhand':
+
+            if self.solver == 'humanhand': # somehow otherwise the states will not properly be seperated.
                 directory = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \
                             '_SPT_MazeDimensions_humanhand_pre_erosion.pkl'
                 if os.path.exists(directory):
@@ -707,7 +717,7 @@ class ConfigSpace_Maze(ConfigSpace):
             if not np.any(connected):
                 name = self.name_for_state(space)
                 if name in given_names:
-                    raise ValueError
+                    raise ValueError()
                 given_names.append(name)
 
                 ps = PS_Area(self, space, name, centroid=centroid)
@@ -720,11 +730,11 @@ class ConfigSpace_Maze(ConfigSpace):
         shape = self.space.shape
         if np.mean(np.where(space)[0])/shape[0] < 0.25:
             return 'a'
-        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and 0 in np.where(space)[2]:
+        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and (0 in np.where(space)[2] or shape[2]-1 in np.where(space)[2]):
             return 'b'
         if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and shape[2]//2 in np.where(space)[2]:
             return 'c'
-        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and 0 in np.where(space)[2]:
+        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and (0 in np.where(space)[2] or shape[2]-1 in np.where(space)[2]):
             return 'f'
         if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and shape[2]//2 in np.where(space)[2]:
             return 'g'
@@ -1336,6 +1346,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                     self.space_labeled[tuple(to_change)] = '0'
 
 
+
 if __name__ == '__main__':
     shape = 'SPT'
     geometries_to_change = {('humanhand', ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')): ['']}
@@ -1349,16 +1360,33 @@ if __name__ == '__main__':
     for (solver, geometry), sizes in list(geometries_to_change.items()):
         for size in sizes:
             print(solver, size)
+            # ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape, geometry=geometry)
+            # ps.load_space()
+            # ps.space = ps.shift_by_pi(ps.space)
+            # ps.visualize_space(reduction=4)
+            # ps.save_space()
+            # DEBUG = 1
+
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
-
             ps.load_eroded_labeled_space()
-            ps.visualize_states(reduction=4)
 
-            # ps.correct_ps_states()
+            # ps.eroded_space = ps.shift_by_pi(ps.eroded_space)
+            # ps.visualize_space(space=ps.eroded_space, reduction=4)
+            #
+            # for i in range(len(ps.ps_states)):
+            #     ps.ps_states[i].space = ps.shift_by_pi(ps.ps_states[i].space)
+            #
+            # ps.space_labeled = None
             # ps.label_space()
+            #
+            #
+            # # ps.visualize_states(reduction=4)
+            # # ps.visualize_transitions(reduction=4)
+            #
+            #
+            # ps.save_labeled()
+            # # ps.save_labeled()
+            # DEBUG = 1
 
-            # ps.visualize_space(space=ps.space_labeled == 'ca')
-            # ps.visualize_states(reduction=1)
             # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
 
-            DEBUG = 1

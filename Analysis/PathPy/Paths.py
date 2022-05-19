@@ -22,7 +22,7 @@ def flatten(t):
 
 
 class Paths(pp.Paths):
-    def __init__(self, solver, size, shape, geometry, time_step=0.25):
+    def __init__(self, solver, size, shape, geometry, time_step=0.25, communication=None):
         super().__init__()
         if size is not None and 'Small' in size:
             size = 'Small'
@@ -34,6 +34,7 @@ class Paths(pp.Paths):
         self.time_series = None
         self.single_paths = None
         self.max_subpath_length = 2
+        self.communication = None
 
     def save_dir(self, name=None):
         if name is None:
@@ -54,7 +55,7 @@ class Paths(pp.Paths):
                                         self.time_series.items()}
                 self.single_paths = {name: Path(self.time_step, time_s) for name, time_s in self.time_series.items()}
 
-        elif len(self.time_series) == 0:
+        elif self.time_series is None:
             trajectories = choose_trajectories(solver=self.solver, size=self.size, shape=self.shape,
                                                geometry=self.geometry, communication=self.communication)
             self.time_series = self.calculate_time_series(trajectories, only_states=only_states)
@@ -83,6 +84,7 @@ class Paths(pp.Paths):
                 cs_labeled.load_labeled_space()
             self.single_paths[x.filename] = Path(self.time_step, conf_space_labeled=cs_labeled, x=x,
                                                  only_states=only_states)
+
         return {name: path.time_series for name, path in self.single_paths.items()}
 
     def save_paths(self, save_dir=None):

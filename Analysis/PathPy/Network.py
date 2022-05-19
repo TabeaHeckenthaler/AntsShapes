@@ -71,20 +71,21 @@ class Network(pathpy.Network):
             json.dump(results, json_file)
             print('Saved Markovian results in ', self.save_dir_results())
 
-    def get_results(self):
-        if os.path.exists(self.save_dir_results()):
-            with open(self.save_dir_results(), 'r') as json_file:
-                attribute_dict = json.load(json_file)
-            self.T = pd.read_json(attribute_dict['T'])
-            self.N = pd.read_json(attribute_dict['N'])
-            self.Q = pd.read_json(attribute_dict['Q'])
-            self.t = pd.read_json(attribute_dict['t'], typ='series')
-            self.R = pd.read_json(attribute_dict['R'])
-            self.P = pd.read_json(attribute_dict['P'])
-            self.B = pd.read_json(attribute_dict['B'])
-        else:
-            self.markovian_analysis()
-            # self.save_results(self.to_dict())
+    # def get_results(self):
+    #     self.markovian_analysis()
+        # if os.path.exists(self.save_dir_results()):
+        #     with open(self.save_dir_results(), 'r') as json_file:
+        #         attribute_dict = json.load(json_file)
+        #     self.T = pd.read_json(attribute_dict['T'])
+        #     self.N = pd.read_json(attribute_dict['N'])
+        #     self.Q = pd.read_json(attribute_dict['Q'])
+        #     self.t = pd.read_json(attribute_dict['t'], typ='series')
+        #     self.R = pd.read_json(attribute_dict['R'])
+        #     self.P = pd.read_json(attribute_dict['P'])
+        #     self.B = pd.read_json(attribute_dict['B'])
+        # else:
+        #     self.markovian_analysis()
+        #     # self.save_results(self.to_dict())
 
     def add_edges(self):
         for states, weight in self.paths.paths[1].items():
@@ -142,22 +143,25 @@ class Network(pathpy.Network):
     def plot_transition_matrix(self, title: str = '', axis=None, state_order=None):
         if self.T is None:
             self.markovian_analysis()
+
         if axis is None:
             fig, axis = plt.subplots(1, 1)
+
         if state_order is not None:
             for state in state_order:
                 if state not in self.T.columns:
                     self.T[state] = np.NaN
-            to_plot = self.T.reindex(state_order)[state_order]
         else:
-            to_plot = self.T
+            state_order = sorted(list(self.T.columns))
+
+        to_plot = self.T.reindex(state_order)[state_order]
         _ = axis.imshow(to_plot)
 
         axis.set_xticks(range(len(to_plot)))
-        axis.set_xticklabels(to_plot.columns, fontsize=4)
+        axis.set_xticklabels(to_plot.columns, fontsize=5)
 
         axis.set_yticks(range(len(to_plot)))
-        axis.set_yticklabels(to_plot.columns, fontsize=4)
+        axis.set_yticklabels(to_plot.columns, fontsize=7)
 
         axis.set_title(title)
 
@@ -238,7 +242,7 @@ class Network(pathpy.Network):
         model. Its not via the diffusion speedup/slow down but via statistical likelihood. They already have the
         estimate of the order. Seems that for both cases best order that describes the data is second order model.
         """
-        p = my_network.paths
+        p = self.paths
         mog = pathpy.MultiOrderModel(p, max_order=10)
         print('Optimal order = ', mog.estimate_order())
 
@@ -268,8 +272,8 @@ class Network(pathpy.Network):
 #     order = ms.estimate_order(4)
 
 
-def plot_diffusion_time(networks):
-    for my_network in networks:
+def plot_diffusion_time(networks, index, ax, size, shape, solver):
+    for i, my_network in enumerate(networks):
         if i == 0:
             t = my_network.t.sort_values(0, ascending=False)
             index = t.index
@@ -284,28 +288,43 @@ def plot_diffusion_time(networks):
     plt.show(block=False)
     ax.set_ylabel('humans: number of states to pass before solving')
     ax.legend(exp_types[shape][solver])
-    fig.savefig(os.path.join(graph_dir(), 'diffusion_time_' + solver + '.png'),
+    plt.gcf().savefig(os.path.join(graph_dir(), 'diffusion_time_' + solver + '.png'),
                 format='png', pad_inches=0.5, bbox_inches='tight')
 
 
-if __name__ == '__main__':
+def all():
     shape = 'SPT'
-    solvers = ['human', 'ant']
-    geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-                  'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
-    sizes = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far']}
+    solvers = ['human', 'ant', 'humanhand']
+    sizes = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far'], 'humanhand': ['']}
     figures = {solver: plt.subplots(1, len(sizes[solver])) for solver in solvers}
 
     index = None
     networks = []
     for solver in list(geometries.keys()):
+        print(solver)
         fig, axs = figures[solver]
+        if type(axs) != np.ndarray:
+            axs = [axs]
         for size, ax in zip(sizes[solver], axs):
+            print(size)
             paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
             paths.load_paths()
             my_network = Network.init_from_paths(paths, solver, size, shape)
-            my_network.get_results()
+            my_network.markovian_analysis()
             networks.append(my_network)
+            # plot_diffusion_time(networks, index, ax, size, shape, solver)
+        DEBUG = 1
 
-    plot_diffusion_time(networks)
-    DEBUG = 1
+
+if __name__ == '__main__':
+    geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                  'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                  'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
+    all()
+    # shape, solver, size, communication = 'SPT', 'human', 'Large', None
+    # paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
+    # paths.load_paths(only_states=True)
+    # my_network = Network.init_from_paths(paths, solver, size, shape)
+    # # my_network.markovian_analysis()
+    # my_network.plot_transition_matrix()
+    # DEBUG = 1

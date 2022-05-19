@@ -14,22 +14,28 @@ class Network_comparison:
         self.networks = networks
 
     @classmethod
-    def load_networks(cls) -> dict:
+    def load_networks(cls, only_states=True) -> dict:
         networks = {solver: {} for solver in solvers}
         for solver in solvers:
             for size in sizes[solver]:
                 paths = PathWithoutSelfLoops(solver, size, shape, solver_geometry[solver])
-                paths.load_paths()
+                paths.load_paths(only_states=only_states)
                 my_network = Network.init_from_paths(paths, solver, size, shape)
                 # we could also do: get results, if we are sure that we saved the right thing
                 my_network.markovian_analysis()
                 networks[solver][size] = my_network
         return networks
 
+    def all_networks(self):
+        return flatten([list(v1) for v1 in [v.values() for v in self.networks.values()]])
+
     def plot_transition_matrices(self):
-        state_order = states[1:] + allowed_transition_attempts + forbidden_transition_attempts
+        # state_order = states[1:] + allowed_transition_attempts + forbidden_transition_attempts
+        state_order = sorted(set(flatten([n.T.columns for n in self.all_networks()])))
+        DEBUG = 1
+
         for solver in self.networks.keys():
-            fig, axs = plt.subplots(2, len(self.networks[solver])//2)
+            fig, axs = plt.subplots(2, np.ceil(len(self.networks[solver])/2).astype(int))
             for (size, network), ax in zip(self.networks[solver].items(), flatten(axs)):
                 network.plot_transition_matrix(title=size, axis=ax, state_order=state_order)
 
@@ -60,6 +66,7 @@ class Network_comparison:
 shape = 'SPT'
 solvers = ['human', 'ant']  # add humanhand
 sizes = exp_types[shape]
+sizes['human'] = ['Large', 'Medium', 'Small']
 
 if __name__ == '__main__':
     my_networks = Network_comparison.load_networks()
