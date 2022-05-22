@@ -65,7 +65,7 @@ class DiffusionTimeHuman(DiffusionTime):
         for i, size in enumerate(exp_types[self.shape][self.solver]):
             for communication in [True, False]:
                 df = Altered_DataFrame()
-                filenames = df.choose_experiments(self.solver, self.shape, self.geometry, size=size,
+                filenames = df.choose_experiments(self.solver, self.shape,  geometry=self.geometry, size=size,
                                                   communication=communication).df.filename
                 if len(filenames) > 0:
                     diff_times[size + '_comm_' + str(communication)] = \
@@ -87,7 +87,7 @@ class DiffusionTimeAnt(DiffusionTime):
         diff_times = {}
         for i, size in enumerate(exp_types[self.shape][self.solver]):
             df = Altered_DataFrame()
-            filenames = df.choose_experiments(self.solver, self.shape, self.geometry, size=size).df.filename
+            filenames = df.choose_experiments(self.solver, self.shape, geometry=self.geometry, size=size).df.filename
             if len(filenames) > 0:
                 diff_times[size] = self.calculate_diffusion_time(filenames, size)
         return diff_times
@@ -122,7 +122,7 @@ class DiffusionStatesHuman(DiffusionStates):
         for i, size in enumerate(exp_types[self.shape][self.solver]):
             for communication in [True, False]:
                 df = Altered_DataFrame()
-                filenames = df.choose_experiments(self.solver, self.shape, self.geometry, size=size,
+                filenames = df.choose_experiments(self.solver, self.shape, geometry=self.geometry, size=size,
                                                   communication=communication).df.filename
                 if len(filenames) > 0:
                     diff_times[size + '_comm_' + str(communication)] = \
@@ -144,7 +144,7 @@ class DiffusionStatesAnt(DiffusionStates):
         diff_times = {}
         for i, size in enumerate(exp_types[self.shape][self.solver]):
             df = Altered_DataFrame()
-            filenames = df.choose_experiments(self.solver, self.shape, self.geometry, size=size).df.filename
+            filenames = df.choose_experiments(self.solver, self.shape, geometry=self.geometry, size=size).df.filename
             if len(filenames) > 0:
                 diff_times[size] = self.calculate_diffusion_states(filenames, size)
         return diff_times

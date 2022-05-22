@@ -36,7 +36,9 @@ class Network_comparison:
 
         for solver in self.networks.keys():
             fig, axs = plt.subplots(2, np.ceil(len(self.networks[solver])/2).astype(int))
-            for (size, network), ax in zip(self.networks[solver].items(), flatten(axs)):
+            if axs.ndim != 1:
+                axs = flatten(axs)
+            for (size, network), ax in zip(self.networks[solver].items(), axs):
                 network.plot_transition_matrix(title=size, axis=ax, state_order=state_order)
 
             directory = graph_dir() + os.path.sep + 'transition_matrix_' + solver + '.pdf'
@@ -64,7 +66,7 @@ class Network_comparison:
 
 
 shape = 'SPT'
-solvers = ['human', 'ant']  # add humanhand
+solvers = ['humanhand', 'human', 'ant']  # add humanhand
 sizes = exp_types[shape]
 sizes['human'] = ['Large', 'Medium', 'Small']
 

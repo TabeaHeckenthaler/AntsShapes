@@ -22,7 +22,7 @@ ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, '
 class Path_length_cut_off_df(Altered_DataFrame):
     def __init__(self, solver):
         super().__init__()
-        self.choose_experiments(solver, 'SPT', solver_geometry[solver], init_cond='back')
+        self.choose_experiments(solver, 'SPT', geometry=solver_geometry[solver], init_cond='back')
 
         columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
                    'minimal path length [length unit]', 'average Carrier Number', 'time [s]', 'fps', ]
@@ -327,7 +327,8 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 
         for size, dfs in data_frames.items():
             percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
-            error[size] = 1/np.sqrt(np.sum([len(df) for df in dfs.values()]))
+            error[size] = np.sqrt(percent_of_winning[size] * (1-percent_of_winning[size])/
+                                  np.sum([len(df) for df in dfs.values()]))
 
         return percent_of_winning, error
 
@@ -341,7 +342,7 @@ def plot_means():
 
     for PL, ax in zip(PLs, axs):
         my_PL = PL()
-        my_PL.choose_experiments(my_PL.solver, shape, my_PL.geometry, init_cond='back')
+        my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
         # columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
         #            'minimal path length [length unit]',
         #            'average Carrier Number']
@@ -411,7 +412,7 @@ def percent_of_solving_ants(max_path=15, ax=None):
 if __name__ == '__main__':
     max_paths = list(range(10, 26, 2))
     # fig, axs = plt.subplots(nrows=len(max_paths)//2, ncols=2, sharey=True, sharex=True)
-    fig = plt.figure()
+    # fig = plt.figure()
     percent_for_cutoffs, errors = {}, {}
 
     # for ax, max_path in zip(flatten(axs), max_paths):
@@ -422,7 +423,7 @@ if __name__ == '__main__':
     e = pd.DataFrame(errors)
     d.transpose().plot(yerr=e.transpose(), capsize=4, capthick=1)
 
-    save_fig(fig, 'percent_solving_ants_cut_path_all')
+    save_fig(plt.gcf(), 'percent_solving_ants_cut_path_all')
 
     # my_plot_class = Path_length_cut_off_df_human() + Path_length_cut_off_df_humanhand()
     # fig, axs = my_plot_class.open_figure()

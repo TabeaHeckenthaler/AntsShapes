@@ -11,7 +11,7 @@ for solver in solvers:
     columns = ['filename', 'winner', 'size', 'communication', 'average Carrier Number', 'time [s]']
 
     df = Altered_DataFrame()
-    df.choose_experiments(shape, solver, geometry, init_cond='back')
+    df.choose_experiments(shape, solver, geometry=geometry, init_cond='back')
     df.choose_columns(columns)
 
     df.df.to_json('success_rate.txt', orient='split')

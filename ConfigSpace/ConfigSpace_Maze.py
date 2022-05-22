@@ -1369,6 +1369,9 @@ if __name__ == '__main__':
 
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
             ps.load_eroded_labeled_space()
+            ps.visualize_transitions(reduction=2)
+            DEBUG = 1
+
 
             # ps.eroded_space = ps.shift_by_pi(ps.eroded_space)
             # ps.visualize_space(space=ps.eroded_space, reduction=4)

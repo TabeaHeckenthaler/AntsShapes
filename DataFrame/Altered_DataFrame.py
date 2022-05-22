@@ -7,7 +7,7 @@ class Altered_DataFrame:
     def __init__(self):
         self.df = myDataFrame.clone()
 
-    def choose_experiments(self, solver, shape, geometry, size=None, communication=None, init_cond: str = 'back',
+    def choose_experiments(self, solver, shape, geometry=None, size=None, communication=None, init_cond: str = 'back',
                            winner: bool = None):
         """
         Get trajectories based on the trajectories saved in myDataFrame.
@@ -28,10 +28,10 @@ class Altered_DataFrame:
         if 'initial condition' in df.columns:
             df = df[(df['initial condition'] == init_cond)]
 
-        if 'maze dimensions' in df.columns:
+        if 'maze dimensions' in df.columns and geometry is not None:
             df = df[(df['maze dimensions'] == geometry[0])]
 
-        if 'load dimensions' in df.columns:
+        if 'load dimensions' in df.columns and geometry is not None:
             df = df[(df['load dimensions'] == geometry[1])]
 
         if size is not None:
@@ -121,10 +121,15 @@ def choose_trajectories(solver='human', size='Large', shape='SPT',
                         communication=None, number: int = None, init_cond: str = 'back') \
         -> list:
     df = Altered_DataFrame()
-    df.choose_experiments(solver, shape, geometry, size=size, communication=communication,
+    df.choose_experiments(solver, shape, geometry=geometry, size=size, communication=communication,
                           init_cond=init_cond)
     filenames = df.df.filename[:number]
 
     # filenames = ['XL_SPT_dil9_sensing' + str(ii) for ii in [5, 6, 7, 8, 9]]
     # bad_filename = 'S_SPT_4750002_SSpecialT_1_ants (part 1)' # TODO: fix this trajectory
     return [get(filename) for filename in filenames]
+
+
+if __name__ == '__main__':
+    ad = Altered_DataFrame()
+    ad.choose_experiments(solver='ant', size='S', shape='SPT', init_cond='back', winner=True)

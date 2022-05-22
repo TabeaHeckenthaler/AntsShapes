@@ -1,4 +1,5 @@
 from trajectory_inheritance.trajectory import Trajectory
+from trajectory_inheritance.ants import *
 
 
 class Trajectory_ps_simulation(Trajectory):
@@ -15,6 +16,14 @@ class Trajectory_ps_simulation(Trajectory):
             self.g = geometry
 
     def load_participants(self):
+
+        # TODO: this is awful. Some of the ants are saved as PS_simulations, eg. 'L_SPT_4080033_SpecialT_1_ants (part 1)'
+
+        if self.solver == 'ant':
+            from trajectory_inheritance.ants import Ants
+            if not hasattr(self, 'participants') or self.participants is None:
+                self.participants = Ants(self)
+
         self.participants = PS_simulation(self)
 
     def step(self, my_maze, i, **kwargs):

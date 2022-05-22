@@ -7,6 +7,7 @@ from os import path
 from Setup.Load import periodicity
 from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
+from trajectory_inheritance.get import get
 
 length_unit = 'cm'
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
@@ -266,3 +267,18 @@ class Trajectory_ant(Trajectory):
 
         display = Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter, position=x.position)
         return x.run_trj(my_maze, display=display)
+
+
+if __name__ == '__main__':
+    # TODO: fix that ant traj are saved as simulations
+    k_on, k_off = {}, {}
+    experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',
+                   'L': 'L_SPT_4080033_SpecialT_1_ants (part 1)',
+                   'M': 'M_SPT_4680005_MSpecialT_1_ants',
+                   'S': 'S_SPT_4800001_SSpecialT_1_ants (part 1)'}
+
+    for size in experiments.keys():
+        x = get('L_SPT_4080033_SpecialT_1_ants (part 1)')
+        # x.play()
+        x = Trajectory_ant(size=x.size, shape=x.shape, old_filename=x.old_filenames(0), free=False, fps=x.fps, winner=x.winner,
+                           x_error=0, y_error=0, angle_error=0, falseTracking=x.falseTracking)

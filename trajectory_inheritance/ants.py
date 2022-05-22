@@ -4,6 +4,9 @@ import numpy as np
 from copy import deepcopy
 from os import path
 from trajectory_inheritance.participants import Participants
+from trajectory_inheritance.get import get
+from scipy.signal import medfilt
+import json
 
 
 class Ants_Frame:
@@ -33,11 +36,51 @@ class Ants(Participants):
         ants_combined.VideoChain = ants_combined.VideoChain + other.VideoChain
         return ants_combined
 
+    def carrierCount(self, fps):
+        # many short lived attachment and detachment events. We get rid of them with a median filter.
+        medfilt_cc = medfilt([frame.carrierCount() for frame in self.frames], 2 * fps + 1)
+        return medfilt_cc
+
     def averageCarrierNumber(self):
         if len(self.frames):
-            return np.ceil(np.mean([frame.carrierCount() for frame in self.frames]))
+            return np.ceil(np.mean(self.carrierCount(0)))
         else:
             return None
+
+    # def k_on1(self, fps):
+    #     """
+    #     Attachment events per second
+    #     """
+    #     cc = self.carrierCount(fps)
+    #     total_time = len(cc)/fps
+    #     attachment_events = 0
+    #     for fr1, fr2 in zip(cc[:-1], cc[1:]):
+    #         attachment_events += max(0, fr2 - fr1)
+    #     return attachment_events / (self.averageCarrierNumber() * total_time)
+
+    def k_on(self, fps):
+        """
+        Attachment events per second
+        """
+        cc = self.carrierCount(fps)
+        attachment_events = [0]
+        for i, (fr1, fr2) in enumerate(zip(cc[:-1], cc[1:])):
+            if fr2 > fr1:
+                dt = i/fps - np.sum(attachment_events)
+                attachment_events += [dt/(fr2 - fr1) for _ in range(int(fr2 - fr1))]
+        return (1/np.mean(attachment_events)) / self.averageCarrierNumber()
+
+    def k_off(self, fps):
+        """
+        Detachment events per second
+        """
+        cc = self.carrierCount(fps)
+        detachment_events = [0]
+        for i, (fr1, fr2) in enumerate(zip(cc[:-1], cc[1:])):
+            if fr2 < fr1:
+                dt = i/fps - np.sum(detachment_events)
+                detachment_events += [dt/(fr1 - fr2) for _ in range(int(fr1 - fr2))]
+        return (1/np.mean(detachment_events)) / self.averageCarrierNumber()
 
     def matlab_loading(self, x):
         if not (x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
@@ -103,3 +146,4 @@ class Ants(Participants):
 
     def get_positions(self) -> list:
         return [fr.position for fr in self.frames]
+
