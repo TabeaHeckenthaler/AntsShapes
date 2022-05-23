@@ -110,8 +110,8 @@ class Altered_DataFrame:
                 without_eyesight_df = df[df['filename'].isin(without_eyesight)]
                 return {'with_eyesight': with_eyesight_df, 'without_eyesight': without_eyesight_df, }
 
-            df_add = {'humanhand': split_NC_C(None, df)}
-            df_to_plot.update(df_add)
+            # df_add = {'': split_NC_C(None, df)}
+            df_to_plot.update(split_NC_C(None, df))
 
         return df_to_plot
 

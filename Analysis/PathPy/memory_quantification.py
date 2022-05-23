@@ -26,7 +26,7 @@ for (solver, geometry), sizes in list(geometries.items()):
     for size in sizes:
         paths = PathWithoutSelfLoops(solver, size, shape, geometry)
         paths.load_paths()
-        my_network = Network.init_from_paths(paths, solver, size, shape)
+        my_network = Network.init_from_paths(paths, solver, shape, size)
         my_network.markovian_analysis()
         speed_up_dict[solver][size] = my_network.diffusion_speed_up()
         print(size)

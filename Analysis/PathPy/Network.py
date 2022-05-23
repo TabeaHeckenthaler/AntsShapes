@@ -38,11 +38,15 @@ class Network(pathpy.Network):
     #     #         self.add_edge(state1, state2, weight=0)
 
     @classmethod
-    def init_from_paths(cls, paths, solver, size, shape):
+    def init_from_paths(cls, paths, solver, shape, size=None):
         self = super(Network, cls).from_paths(paths)
-        if 'Small' in size:
+        if size is not None and 'Small' in size:
             size = 'Small'
-        self.name = '_'.join(['network', solver, size, shape])
+        if size is None:
+            size_string = ''
+        else:
+            size_string = size
+        self.name = '_'.join(['network', solver, size_string, shape])
         self.paths = paths
         if type(self.paths) is PathWithoutSelfLoops:
             self.name = self.name + '_state_transitions'
@@ -140,7 +144,7 @@ class Network(pathpy.Network):
             g.add_edge(e[0], e[1], weight=self.edges[e]['weight'])
         return g
 
-    def plot_transition_matrix(self, title: str = '', axis=None, state_order=None):
+    def plot_transition_matrix(self, title: str = '', axis=None, state_order=None, scale='log'):
         if self.T is None:
             self.markovian_analysis()
 
@@ -155,6 +159,8 @@ class Network(pathpy.Network):
             state_order = sorted(list(self.T.columns))
 
         to_plot = self.T.reindex(state_order)[state_order]
+        if scale == 'log':
+            to_plot = np.log(to_plot)
         _ = axis.imshow(to_plot)
 
         axis.set_xticks(range(len(to_plot)))
@@ -165,7 +171,7 @@ class Network(pathpy.Network):
 
         axis.set_title(title)
 
-    @staticmethod
+    @staticmethodj
     def swap(m, row2, row1):
         order = m.index.tolist()
         order[row2], order[row1] = copy(order[row1]), copy(order[row2])
@@ -309,7 +315,7 @@ def all():
             print(size)
             paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
             paths.load_paths()
-            my_network = Network.init_from_paths(paths, solver, size, shape)
+            my_network = Network.init_from_paths(paths, solver, shape, size)
             my_network.markovian_analysis()
             networks.append(my_network)
             # plot_diffusion_time(networks, index, ax, size, shape, solver)
