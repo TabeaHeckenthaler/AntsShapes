@@ -33,31 +33,50 @@ class Network_comparison:
                 dfs = flatten_dict(dfs)
             for key, df in dfs.items():
                 print(key)
+                # if key == 'XL looser':
+                #     DEBUG = 2
                 paths = Path_class(solver, shape, solver_geometry[solver])
                 paths.load_paths(filenames=df.filename, only_states=only_states, symmetric_states=symmetric_states)
                 my_network = Network.init_from_paths(paths, solver, shape)
                 # we could also do: get results, if we are sure that we saved the right thing
-                my_network.markovian_analysis()
-                networks[solver][key] = my_network
+                if len(paths.nodes) > 0:
+                    my_network.markovian_analysis()
+                    networks[solver][key] = my_network
         return networks
 
     def all_networks(self):
         return flatten([list(v1) for v1 in [v.values() for v in self.networks.values()]])
 
+    def get_state_order(self):
+        states_ = set(flatten([n.T.columns for n in self.all_networks()]))
+        # state_order = sorted(set(flatten([n.T.columns for n in self.all_networks()])))
+        # alphabet_string = 'bacdefghi'
+        alphabet_string = 'bf b be ba ab a ac ca c cg ' \
+                          'ce cd ec dc e d ef df fe fd ' \
+                          'f fb fh hf h i'.split(' ')
+        # alphabet = {c: i for i, c in enumerate(alphabet_string)}
+        # state_order = sorted(states_, key=lambda word: [alphabet.get(c, ord(c)) for c in word])
+        state_order = [a for a in alphabet_string if a in states_]
+        return state_order
+
     def plot_transition_matrices(self, scale='log'):
         # state_order = states[1:] + allowed_transition_attempts + forbidden_transition_attempts
-        state_order = sorted(set(flatten([n.T.columns for n in self.all_networks()])))
+        state_order = self.get_state_order()
 
         for solver in self.networks.keys():
-            fig, axs = plt.subplots(2, np.ceil(len(self.networks[solver])/2).astype(int))
+            ncols = 2
+            n_networks = len(self.networks[solver])
+            fig, axs = plt.subplots(np.ceil(n_networks/ncols).astype(int), min(ncols, n_networks))
             if axs.ndim != 1:
                 axs = flatten(axs)
             for (size, network), ax in zip(self.networks[solver].items(), axs):
-                network.plot_transition_matrix(title=size, axis=ax, state_order=state_order, scale='log')
+                network.plot_transition_matrix(title=size, axis=ax, state_order=state_order, scale=scale)
 
             directory = graph_dir() + os.path.sep + 'transition_matrix_' + solver + '.pdf'
             print('Saving transition matrix in ', directory)
-            plt.subplots_adjust(wspace=0.01, hspace=0.3)
+            fig.set_figheight(np.ceil(n_networks/ncols).astype(int) * 2.3)
+            fig.set_figwidth(ncols * 2)
+            # plt.subplots_adjust(wspace=0.01, hspace=0.3)
             fig.savefig(directory)
 
     def plot_diffusion_speed_up(self):
@@ -88,7 +107,8 @@ if __name__ == '__main__':
     my_networks = Network_comparison.load_networks(only_states=False, Path_class=PathsTimeStamped,
                                                    symmetric_states=True)
     my_network_comparison = Network_comparison(my_networks)
-    my_network_comparison.plot_transition_matrices()
+    my_network_comparison.plot_transition_matrices(scale='log')
+
     # my_network_comparison.plot_diffusion_speed_up()
 
     # TODO: Check whether the right solver number is involved (especially for human Medium).

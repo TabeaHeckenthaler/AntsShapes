@@ -50,7 +50,8 @@ class Paths(pp.Paths):
 
         if self.size is None and size is None:
             for size in exp_types[self.shape][self.solver]:
-                self.load_paths(save_dir=self.save_dir(size=size), size=size)
+                self.load_paths(save_dir=self.save_dir(size=size), size=size, filenames=filenames,
+                                only_states=only_states, symmetric_states=symmetric_states)
 
         else:
             if save_dir is None:

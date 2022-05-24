@@ -27,7 +27,8 @@ sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'humanhand': ''}
 
 solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-                   'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')}
+                   'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                   'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
 
 solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
 
