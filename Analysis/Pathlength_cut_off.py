@@ -8,6 +8,7 @@ from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
 from Analysis.Path_length_distributions import Path_length_cut_off_df_ant, Path_length_cut_off_df_human,\
     Path_length_cut_off_df_humanhand
 
+
 def SPT_figure(df, ax):
     """
     Ant Maze: Path length SPT divided by winner and loser

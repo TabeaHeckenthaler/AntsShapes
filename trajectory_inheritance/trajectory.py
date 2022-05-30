@@ -323,7 +323,7 @@ class Trajectory:
     def add_missing_frames(self, chain: list, free):
         from PS_Search_Algorithms.Path_planning_full_knowledge import connector
         total_time_seconds = np.sum([traj.timer() for traj in chain])
-        if not free:
+        if not free and self.solver == 'ant':
             continue_time_dict(self.filename)
             with open('time_dictionary.txt', 'r') as json_file:
                 time_dict = json.load(json_file)

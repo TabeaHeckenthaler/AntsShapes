@@ -170,7 +170,7 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    solver, shape = 'humanhand', 'SPT'
+    solver, shape, free = 'human', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
@@ -181,7 +181,7 @@ if __name__ == '__main__':
                 x = load(results_filename, solver, size, shape, fps[solver], [])
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
-                x = x.add_missing_frames(chain)
+                x = x.add_missing_frames(chain, free)
                 x.play(wait=5)
                 x.save()
 

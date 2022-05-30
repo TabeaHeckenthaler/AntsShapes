@@ -7,7 +7,7 @@ from copy import copy
 from trajectory_inheritance.get import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
-from PS_Search_Algorithms.Path_planning_full_knowledge import minimal_filename
+from PS_Search_Algorithms.Path_planning_full_knowledge import Path_planning_full_knowledge
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
@@ -137,7 +137,7 @@ class PathLength:
 
     def minimal(self) -> float:
         if self.x.shape in ['SPT']:
-            ideal_filename = minimal_filename(self.x.size, self.x.shape, self.x.geometry(), self.x.initial_cond())
+            ideal_filename = Path_planning_full_knowledge.minimal_filename(self.x, self.x.initial_cond())
             ideal = get(ideal_filename)
             return PathLength(ideal).per_experiment() * \
                    Maze(self.x).exit_size/Maze(ideal, geometry=self.x.geometry).exit_size

@@ -168,7 +168,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
-    for new_experiment in myDataFrame.new_experiments(solver='humanhand', shape='SPT'):
+    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
 

@@ -1,11 +1,12 @@
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 import numpy as np
-from matplotlib import pyplot as plt
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from trajectory_inheritance.get import get
 from Analysis.PathPy.Paths import plot_seperately
 import json
 from trajectory_inheritance.trajectory import solver_geometry
+from Setup.Maze import Maze
+from matplotlib import pyplot as plt
 
 
 def flatten_dict(dict1):
@@ -16,16 +17,17 @@ def flatten_dict(dict1):
     return new
 
 
-def wall_closeness(distance: np.array, traj, config_space):
-    coords = np.stack([x.position[:, 1], x.position[:, 0], x.angle]).transpose().tolist()
+def av_distance_from_wall(distance: np.array, traj, config_space, exit_size):
+    coords = np.stack([traj.position[:, 1], traj.position[:, 0], traj.angle]).transpose().tolist()
     inds = [config_space.coords_to_indices(*coord) for coord in coords]
     dist_integral = np.sum([distance[ind] for ind in inds])/len(inds)
+    if type(config_space.indices_to_coords(dist_integral, 0, 0)[0]) is tuple or exit_size is tuple:
+        DEBUG = 1
+    dist_integral = config_space.indices_to_coords(dist_integral, 0, 0)[0]/exit_size
     return dist_integral
 
 
-if __name__ == '__main__':
-    shape = 'SPT'
-    solvers = ['ant', 'human', 'humanhand']
+def calc_aver_distance():
     integral = {}
 
     for solver in solvers:
@@ -38,21 +40,28 @@ if __name__ == '__main__':
             dfs = flatten_dict(dfs)
 
         for key, df in dfs.items():
+            integral[solver][key] = {}
             print(key)
-            d, cs = None, None
+            d, cs, exit_size = None, None, None
 
             for filename in df['filename']:
                 x = get(filename)
-
-                if d is None or cs is None:
+                if d is None or cs is None or exit_size is None:
                     cs = ConfigSpace_Maze(x.solver, x.size, shape, geometry)
                     cs.load_space()
                     d = cs.calculate_distance(cs.space, np.ones_like(cs.space))
+                    exit_size = Maze(x).exit_size
 
-                integral[solver][filename] = wall_closeness(d, x, cs)
-                print(filename, integral[solver][filename])
-                # plt.imshow(distance[200])
-                # ps.visualize_space(reduction=4)
+                integral[solver][key][filename] = av_distance_from_wall(d, x, cs, exit_size)
+                print(filename, integral[solver][key][filename])
+    return integral
 
-    with open('sliding_behaviour.json', 'w') as fp:
-        json.dump(integral, fp)
+
+if __name__ == '__main__':
+    shape = 'SPT'
+    solvers = ['ant', 'human', 'humanhand']
+
+    aver_distance = calc_aver_distance()
+
+    with open('average_distance_to_boundary_scaled.json', 'w') as fp:
+        json.dump(aver_distance, fp)

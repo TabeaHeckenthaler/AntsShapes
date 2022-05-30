@@ -6,27 +6,26 @@ from Directories import SaverDirectories
 import os
 
 
-def minimal_filename(size: str, shape: str, geometry: tuple, initial_cond) -> str:
-    if initial_cond is None:
-        initial_cond = ''
-    if len(initial_cond) > 0:
-        initial_cond = '_' + initial_cond
-    geometry_string = "_".join([string[:-5] for string in geometry])
-    return 'minimal_' + size + '_' + shape + initial_cond + '_' + geometry_string
-
-
 class Path_planning_full_knowledge(Path_planning_in_Maze):
     def __init__(self, x: Trajectory_ps_simulation, starting_node: Node3D, ending_node: Node3D,
                  initial_cond: str = '', max_iter: int = 100000):
         super().__init__(x, starting_node, ending_node, initial_cond, max_iter)
         x.filename = self.choose_filename(x, initial_cond)
 
-    @staticmethod
-    def choose_filename(x: Trajectory_ps_simulation, initial_cond: str = '') -> str:
-        filename = minimal_filename(x.size, x.shape, x.geometry(), initial_cond)
+    def choose_filename(self, x: Trajectory_ps_simulation, initial_cond: str = '') -> str:
+        filename = Path_planning_full_knowledge.minimal_filename(x, initial_cond)
         if filename in os.listdir(SaverDirectories['ps_simulation']):
             print('You are calculating a trajectory, which you already have saved:' + filename)
         return filename
+
+    @classmethod
+    def minimal_filename(self, traj, initial_cond) -> str:
+        if initial_cond is None:
+            initial_cond = ''
+        if len(initial_cond) > 0:
+            initial_cond = '_' + initial_cond
+        geometry_string = "_".join([string[:-5] for string in traj.geometry()])
+        return 'minimal_' + traj.size + '_' + traj.shape + initial_cond + '_' + geometry_string
 
     def warp_conf_space(self) -> np.array:
         return copy(self.conf_space)
