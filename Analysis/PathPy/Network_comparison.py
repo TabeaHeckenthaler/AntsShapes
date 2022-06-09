@@ -8,6 +8,10 @@ import os
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from Analysis.GeneralFunctions import flatten
 import numpy as np
+from Analysis.PathPy.diffusion_time import DiffusionTime
+from Analysis.PathPy.Path import time_step
+import pandas as pd
+from matplotlib.pyplot import cm
 
 
 def flatten_dict(dict1):
@@ -97,6 +101,46 @@ class Network_comparison:
         print('Saving transition matrix in ', directory)
         fig.savefig(directory)
 
+    def calc_diffusion_times(self):
+        diffusion_time = {solver: {} for solver in plot_seperately}
+        for solver in plot_seperately:
+            for size, n in self.networks[solver].items():
+                print(size)
+                if 'looser' in size:
+                    pass
+                else:
+                    if 'winner' in size:
+                        n_plot = Network.init_from_paths(n.paths + self.networks[solver][size.replace('winner', 'looser')].paths,
+                                                        solver, shape, size)
+                    else:
+                        n_plot = n
+                    diff_time_calc = DiffusionTime(solver, shape, solver_geometry[solver], network=n_plot,
+                                                   time_step=time_step)
+                    diffusion_time[solver][size] = diff_time_calc.calculate_diffusion_time()
+        return diffusion_time
+
+    def plot_diffusion_times(self, diffusion_time):
+        fig, axs = plt.subplots(1, len(plot_seperately))
+        state_order = self.get_state_order()
+
+        for solver, ax in zip(plot_seperately, axs):
+            ax.set_title(solver)
+            color = dict(zip(self.networks[solver].keys(),
+                             cm.rainbow(np.linspace(0, 1, len(self.networks[solver].keys())))))
+
+            for size, series in diffusion_time[solver].items():
+                missing = pd.Series({s: np.NaN for s in state_order if s not in series.index})
+                series = series.append(missing)
+                series = series.loc[state_order]
+                ax.plot(series, label=size.split(' winner')[0], color=color[size], linewidth=2)
+
+            ax.legend()
+        axs[0].set_ylabel('absorption time [s]')
+        directory = graph_dir() + os.path.sep + 'diffusion_time' + '.pdf'
+        print('Saving diffusion times in ', directory)
+        plt.show()
+        fig.savefig(directory)
+
 
 shape = 'SPT'
 solvers = ['humanhand', 'human', 'ant']  # add humanhand
@@ -107,7 +151,11 @@ if __name__ == '__main__':
     my_networks = Network_comparison.load_networks(only_states=False, Path_class=PathsTimeStamped,
                                                    symmetric_states=True)
     my_network_comparison = Network_comparison(my_networks)
-    my_network_comparison.plot_transition_matrices(scale='log')
+    diffusion_time = my_network_comparison.calc_diffusion_times()
+    my_network_comparison.plot_diffusion_times(diffusion_time)
+    plt.show()
+    # my_network_comparison.plot_transition_matrices(scale='log')
+    DEBUG = 1
 
     # my_network_comparison.plot_diffusion_speed_up()
 

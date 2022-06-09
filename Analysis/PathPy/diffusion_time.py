@@ -1,4 +1,5 @@
 from Analysis.PathPy.Network import *
+from Analysis.PathPy.Paths import Paths
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 
 
@@ -37,16 +38,21 @@ class Diffusion:
 
 
 class DiffusionTime(Diffusion):
-    def __init__(self, solver, shape, geometry):
+    def __init__(self, solver, shape, geometry, network=None, time_step=None):
         super().__init__(solver, shape, geometry)
+        self.network = network
+        self.time_step = time_step
 
-    def calculate_diffusion_time(self, filenames, size) -> pd.Series:
-        paths = Paths(self.solver, size, self.shape, self.geometry)
-        paths.load_paths(filenames=filenames)
+    def calculate_diffusion_time(self, filenames=None, size=None) -> pd.Series:
+        if self.network is None or self.time_step is None:
+            if filenames is None or size is None:
+                raise ValueError('Pass some filenames and a size!')
+            paths = Paths(self.solver, self.shape, self.geometry, size=size)
+            paths.load_paths(filenames=filenames, symmetric_states=True)
+            self.network = Network.init_from_paths(paths, self.solver, self.shape, size)
 
-        my_network = Network.init_from_paths(paths, self.solver, self.shape, size)
-        my_network.markovian_analysis()
-        t = my_network.t.sort_values(0, ascending=False) * paths.time_step  # TODO: this easily leads to mistakes
+        self.network.markovian_analysis()
+        t = self.network.t.sort_values(0, ascending=False) * self.time_step  # TODO: this easily leads to mistakes
         return t
 
 

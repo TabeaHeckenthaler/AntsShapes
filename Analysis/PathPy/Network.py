@@ -202,18 +202,20 @@ class Network(pathpy.Network):
         if final_state in self.T.columns:
             self.T[final_state][final_state] = 1
         self.P, num_absorbing = self.find_P(self.T)
+        self.Q, self.R = self.P.iloc[num_absorbing:, num_absorbing:], self.P.iloc[num_absorbing:, 0:num_absorbing]
+        transient_state_order = self.P.columns[num_absorbing:]
+        self.N = pd.DataFrame(np.linalg.inv(np.identity(self.Q.shape[-1]) - self.Q),
+                              columns=transient_state_order,
+                              index=transient_state_order
+                              )  # fundamental matrix
+        self.t = np.matmul(self.N, np.ones(self.N.shape[0]))
         if num_absorbing > 0:
-            self.Q, self.R = self.P.iloc[num_absorbing:, num_absorbing:], self.P.iloc[num_absorbing:, 0:num_absorbing]
-            transient_state_order = self.P.columns[num_absorbing:]
-            self.N = pd.DataFrame(np.linalg.inv(np.identity(self.Q.shape[-1]) - self.Q),
-                                  columns=transient_state_order,
-                                  index=transient_state_order
-                                  )  # fundamental matrix
             self.B = pd.DataFrame(np.matmul(self.N.to_numpy(), self.R.to_numpy()),
                                   index=transient_state_order,
                                   columns=self.T.index[-num_absorbing:]
                                   )  # absorption probabilities
             self.t = np.matmul(self.N, np.ones(self.N.shape[0]))
+
 
     def create_higher_order_network(self, k=2, null_model=True) -> pathpy.Network:
         hon = pathpy.HigherOrderNetwork(self.paths, k=k, null_model=null_model)

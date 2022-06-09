@@ -7,6 +7,8 @@ from Analysis.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 
+time_step = 0.25  # seconds
+
 
 class Path:
     """
@@ -320,7 +322,6 @@ if __name__ == '__main__':
 
     filenames = ['medium_20210422115548_20210422120405']
     for filename in filenames:
-        time_step = 0.25  # seconds
         x = get(filename)
         cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
         cs_labeled.load_labeled_space()
