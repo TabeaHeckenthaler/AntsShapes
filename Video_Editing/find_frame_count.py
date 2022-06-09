@@ -24,12 +24,11 @@ class Experiment:
     def matlab_line(self):
         line = np.array([
             np.array(self.movie_name),
-            np.array(self.frames_first_movie()),
-            np.array(self.size),
+            np.array(self.frames_first_movie()), np.array(self.size),
             np.array(self.video_extensions()),
             np.array(force_meters[self.size]),
             np.array(switching[self.size]),
-            np.array(switching[self.num_part])
+            np.array(self.num_part)
                   ], dtype=object)
 
         # array([array(['NVR_ch1_main_20220527112227_20220527112931'], dtype='<U42'),
