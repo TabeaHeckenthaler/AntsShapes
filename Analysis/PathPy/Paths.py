@@ -139,7 +139,6 @@ class PathsTimeStamped(Paths):
     def calculate_path_length_stamped(self):
         if len(self.time_series) == 0:
             self.load_paths()
-        DEBUG = 1
         return {name: Path.path_length_stamped_series(name, time_series, self.time_step)
                 for name, time_series in self.time_series.items()}
 

@@ -5,7 +5,7 @@ distributions of path lengths for successful and unsuccessful experiments
 
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
-from trajectory_inheritance.exp_types import solver_geometry
+from trajectory_inheritance.exp_types import solver_geometry, ResizeFactors
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
 from Analysis.PathLength import PathLength
@@ -13,10 +13,6 @@ from trajectory_inheritance.get import get
 import pandas as pd
 from DataFrame.plot_dataframe import reduce_legend
 from Analysis.GeneralFunctions import flatten
-
-ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'human': {'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},
-                 'humanhand': {'': 1}}
 
 
 class Path_length_cut_off_df(Altered_DataFrame):

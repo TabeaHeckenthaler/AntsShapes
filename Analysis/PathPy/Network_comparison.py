@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from trajectory_inheritance.exp_types import solver_geometry, exp_types
+from trajectory_inheritance.exp_types import solver_geometry, exp_types, ResizeFactors
 from Analysis.PathPy.Paths import PathWithoutSelfLoops, PathsTimeStamped, plot_seperately
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
@@ -56,7 +56,7 @@ class Network_comparison:
         # state_order = sorted(set(flatten([n.T.columns for n in self.all_networks()])))
         # alphabet_string = 'bacdefghi'
         alphabet_string = 'bf b be ba ab a ac ca c cg ' \
-                          'ce cd ec dc e d ef df fe fd ' \
+                          'ce cd ec dc e d eg dg ef df fe fd ' \
                           'f fb fh hf h i'.split(' ')
         # alphabet = {c: i for i, c in enumerate(alphabet_string)}
         # state_order = sorted(states_, key=lambda word: [alphabet.get(c, ord(c)) for c in word])
@@ -101,7 +101,18 @@ class Network_comparison:
         print('Saving transition matrix in ', directory)
         fig.savefig(directory)
 
-    def calc_diffusion_times(self):
+    @staticmethod
+    def key_to_size(size, solver):
+        s = size.split(' ')[0]
+        if s == 'Single' and solver == 'ant':
+            s = 'S'
+        if s == 'M' and solver == 'human':
+            s = 'Medium'
+        if solver == 'humanhand':
+            s = ''
+        return s
+
+    def calc_diffusion_times(self, normalized=False):
         diffusion_time = {solver: {} for solver in plot_seperately}
         for solver in plot_seperately:
             for size, n in self.networks[solver].items():
@@ -111,15 +122,20 @@ class Network_comparison:
                 else:
                     if 'winner' in size:
                         n_plot = Network.init_from_paths(n.paths + self.networks[solver][size.replace('winner', 'looser')].paths,
-                                                        solver, shape, size)
+                                                         solver, shape, size)
                     else:
                         n_plot = n
+
+                    norm_fact = 1
+                    if normalized:
+                        norm_fact = ResizeFactors[solver][self.key_to_size(size, solver)]
+
                     diff_time_calc = DiffusionTime(solver, shape, solver_geometry[solver], network=n_plot,
-                                                   time_step=time_step)
+                                                   time_step=time_step/norm_fact)
                     diffusion_time[solver][size] = diff_time_calc.calculate_diffusion_time()
         return diffusion_time
 
-    def plot_diffusion_times(self, diffusion_time):
+    def plot_diffusion_times(self, diffusion_time, normalized=False):
         fig, axs = plt.subplots(1, len(plot_seperately))
         state_order = self.get_state_order()
 
@@ -133,10 +149,16 @@ class Network_comparison:
                 series = series.append(missing)
                 series = series.loc[state_order]
                 ax.plot(series, label=size.split(' winner')[0], color=color[size], linewidth=2)
+                if normalized:
+                    ax.set_yscale('log')
 
             ax.legend()
-        axs[0].set_ylabel('absorption time [s]')
-        directory = graph_dir() + os.path.sep + 'diffusion_time' + '.pdf'
+        if normalized:
+            axs[0].set_ylabel('absorption time normalized [s]')
+            directory = graph_dir() + os.path.sep + 'diffusion_time_normalized.pdf'
+        else:
+            axs[0].set_ylabel('absorption time [s]')
+            directory = graph_dir() + os.path.sep + 'diffusion_time.pdf'
         print('Saving diffusion times in ', directory)
         plt.show()
         fig.savefig(directory)
@@ -151,9 +173,9 @@ if __name__ == '__main__':
     my_networks = Network_comparison.load_networks(only_states=False, Path_class=PathsTimeStamped,
                                                    symmetric_states=True)
     my_network_comparison = Network_comparison(my_networks)
-    diffusion_time = my_network_comparison.calc_diffusion_times()
-    my_network_comparison.plot_diffusion_times(diffusion_time)
-    plt.show()
+    normalized = False
+    diffusion_time = my_network_comparison.calc_diffusion_times(normalized=normalized)
+    my_network_comparison.plot_diffusion_times(diffusion_time, normalized=normalized)
     # my_network_comparison.plot_transition_matrices(scale='log')
     DEBUG = 1
 

@@ -8,7 +8,12 @@ exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 
 
 solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                    'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
-                   'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
+                   'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx'),
+                   }
+
+ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+                 'human': {'Small': 0.25, 'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},
+                 'humanhand': {'': 1}}
 
 
 def is_exp_valid(shape, solver, size):
