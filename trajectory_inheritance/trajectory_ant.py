@@ -269,20 +269,24 @@ class Trajectory_ant(Trajectory):
         return x.run_trj(my_maze, display=display)
 
     def solving_time(self) -> float:
-        DEBUG = 1
-        return 1.0
+        self.load_participants()
+        cC = self.participants.carriers_attached(self.fps)
+        return np.sum(cC != 0) / self.fps
 
 
 if __name__ == '__main__':
+    x = get('S_SPT_4380002_SSpecialT_1_ants')
+    print(x.solving_time())
     # TODO: fix that ant traj are saved as simulations
-    k_on, k_off = {}, {}
-    experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',
-                   'L': 'L_SPT_4080033_SpecialT_1_ants (part 1)',
-                   'M': 'M_SPT_4680005_MSpecialT_1_ants',
-                   'S': 'S_SPT_4800001_SSpecialT_1_ants (part 1)'}
 
-    for size in experiments.keys():
-        x = get('L_SPT_4080033_SpecialT_1_ants (part 1)')
-        # x.play()
-        x = Trajectory_ant(size=x.size, shape=x.shape, old_filename=x.old_filenames(0), free=False, fps=x.fps, winner=x.winner,
-                           x_error=0, y_error=0, angle_error=0, falseTracking=x.falseTracking)
+    # k_on, k_off = {}, {}
+    # experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',
+    #                'L': 'L_SPT_4080033_SpecialT_1_ants (part 1)',
+    #                'M': 'M_SPT_4680005_MSpecialT_1_ants',
+    #                'S': 'S_SPT_4800001_SSpecialT_1_ants (part 1)'}
+    #
+    # for size in experiments.keys():
+    #     x = get('L_SPT_4080033_SpecialT_1_ants (part 1)')
+    #     # x.play()
+    #     x = Trajectory_ant(size=x.size, shape=x.shape, old_filename=x.old_filenames(0), free=False, fps=x.fps, winner=x.winner,
+    #                        x_error=0, y_error=0, angle_error=0, falseTracking=x.falseTracking)
