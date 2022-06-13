@@ -181,7 +181,8 @@ class PathsTimeStamped(Paths):
 
 
 class PathWithoutSelfLoops(Paths):
-    def add_paths(self):
+    def add_paths(self, _):
+        # [self.add_path(p) for p in time_series.values()]
         [self.add_path(p.state_series) for p in self.single_paths.values()]
 
 

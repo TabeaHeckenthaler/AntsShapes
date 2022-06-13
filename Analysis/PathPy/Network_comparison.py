@@ -22,6 +22,15 @@ def flatten_dict(dict1):
     return new
 
 
+def label_description(size):
+    string = size.split(' winner')[0]
+
+    string = string.replace('non_communication', 'NC')
+    string = string.replace('communication', 'C')
+
+    return string
+
+
 class Network_comparison:
     def __init__(self, networks: dict = None):
         self.networks = networks
@@ -37,8 +46,6 @@ class Network_comparison:
                 dfs = flatten_dict(dfs)
             for key, df in dfs.items():
                 print(key)
-                # if key == 'XL looser':
-                #     DEBUG = 2
                 paths = Path_class(solver, shape, solver_geometry[solver])
                 paths.load_paths(filenames=df.filename, only_states=only_states, symmetric_states=symmetric_states)
                 my_network = Network.init_from_paths(paths, solver, shape)
@@ -83,23 +90,48 @@ class Network_comparison:
             # plt.subplots_adjust(wspace=0.01, hspace=0.3)
             fig.savefig(directory)
 
-    def plot_diffusion_speed_up(self):
+    def calc_diffusion_speed_up(self):
         speed_up_dict = {solver: {} for solver in plot_seperately}
+        for solver in plot_seperately:
+            for size, n in self.networks[solver].items():
+                print(size)
+                if 'looser' in size:
+                    pass
+                else:
+                    if 'winner' in size:
+                        n_plot = Network.init_from_paths(n.paths +
+                                                         self.networks[solver][size.replace('winner', 'looser')].paths,
+                                                         solver, shape, size)
+                    else:
+                        n_plot = n
+
+                    # norm_fact = 1 # TODO: necessary to add normalization?
+                    # if normalized:
+                    #     norm_fact = ResizeFactors[solver][self.key_to_size(size, solver)]+
+                    speed_up_dict[solver][size] = n_plot.diffusion_speed_up(k=3)
+        return speed_up_dict
+
+    def plot_diffusion_speed_up(self, speed_up_dict):
         fig, axs = plt.subplots(1, len(plot_seperately))
         for solver, ax in zip(plot_seperately, axs):
+            ax.set_title(solver)
+            for size, series in speed_up_dict[solver].items():
+                ax.plot(label_description(size), series, marker='x')
+                ax.set_ylim([0, 3])
 
-            for size, network in self.networks[solver].items():
-                diff_speed_up = network.diffusion_speed_up()
-                if diff_speed_up > 0:
-                    speed_up_dict[solver][size] = diff_speed_up
-                else:
-                    speed_up_dict[solver][size] = np.NaN
-
-            ax.plot(self.networks[solver].keys(), speed_up_dict[solver].values())
-
-        directory = graph_dir() + os.path.sep + 'diffusion_speedup_' + '.pdf'
-        print('Saving transition matrix in ', directory)
+        axs[0].set_ylabel('diffusion speed up [s]')
+        directory = graph_dir() + os.path.sep + 'diffusion_speed_up.pdf'
+        print('Saving diffusion times in ', directory)
+        plt.show()
         fig.savefig(directory)
+
+        # fig, axs = plt.subplots(1, len(plot_seperately))
+        #
+        # ax.plot(self.networks[solver].keys(), speed_up_dict[solver].values())
+        #
+        # directory = graph_dir() + os.path.sep + 'diffusion_speedup_' + '.pdf'
+        # print('Saving transition matrix in ', directory)
+        # fig.savefig(directory)
 
     @staticmethod
     def key_to_size(size, solver):
@@ -170,16 +202,20 @@ sizes = exp_types[shape]
 sizes['human'] = ['Large', 'Medium', 'Small']
 
 if __name__ == '__main__':
-    my_networks = Network_comparison.load_networks(only_states=False, Path_class=PathsTimeStamped,
+    # my_networks = Network_comparison.load_networks(only_states=True, Path_class=PathsTimeStamped,
+    #                                                symmetric_states=True)
+    # my_network_comparison = Network_comparison(my_networks)
+    # normalized = False
+    # my_network_comparison.plot_transition_matrices(scale='log')
+    # diffusion_time = my_network_comparison.calc_diffusion_times(normalized=normalized)
+    # my_network_comparison.plot_diffusion_times(diffusion_time, normalized=normalized)
+
+    my_networks = Network_comparison.load_networks(only_states=False, Path_class=PathWithoutSelfLoops,
                                                    symmetric_states=True)
     my_network_comparison = Network_comparison(my_networks)
-    normalized = False
-    diffusion_time = my_network_comparison.calc_diffusion_times(normalized=normalized)
-    my_network_comparison.plot_diffusion_times(diffusion_time, normalized=normalized)
-    # my_network_comparison.plot_transition_matrices(scale='log')
+    diff_speed_up = my_network_comparison.calc_diffusion_speed_up()
+    my_network_comparison.plot_diffusion_speed_up(diff_speed_up)
     DEBUG = 1
-
-    # my_network_comparison.plot_diffusion_speed_up()
 
     # TODO: Check whether the right solver number is involved (especially for human Medium).
     # TODO: Plot with equal state order
