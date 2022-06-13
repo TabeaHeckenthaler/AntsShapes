@@ -268,6 +268,10 @@ class Trajectory_ant(Trajectory):
         display = Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter, position=x.position)
         return x.run_trj(my_maze, display=display)
 
+    def solving_time(self) -> float:
+        DEBUG = 1
+        return 1.0
+
 
 if __name__ == '__main__':
     # TODO: fix that ant traj are saved as simulations

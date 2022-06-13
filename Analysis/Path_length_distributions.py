@@ -37,6 +37,11 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df = pd.concat([self.df, Path_length_cut_off_df2.df])
         return self
 
+    def add_solving_time(self, seperate_data_frames):
+        for key, df in seperate_data_frames.items():
+            seperate_data_frames[key]['solving time [s]'] = seperate_data_frames[key]['time [s]']
+        return seperate_data_frames
+
     def split_seperate_groups(self, df=None):
         if df is None:
             df = self.df
@@ -282,6 +287,18 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         self.color = {'winner': 'green', 'looser': 'red'}
         self.geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
+    def add_solving_time(self, seperate_data_frames):
+        for size in seperate_data_frames.keys():
+            if size not in ['S (> 1)', 'Single (1)']:
+                for success in seperate_data_frames[size].keys():
+                    seperate_data_frames[size][success]['solving time [s]'] = \
+                        seperate_data_frames[size][success]['time [s]']
+            else:
+                for success in seperate_data_frames[size].keys():
+                    seperate_data_frames[size][success]['solving time [s]'] = \
+                        seperate_data_frames[size][success].apply(lambda x: get(x['filename']).solving_time(), axis=1)
+        return seperate_data_frames
+
     def plot_time_distributions(self, seperate_data_frames, axs):
         colors = ['green', 'red']
         bins = np.arange(0, 1250, 100)
@@ -406,8 +423,7 @@ def plot_means():
     save_fig(fig, 'back_path_length_all')
 
 
-def cut_time():
-    # Plot_classes = [Path_length_cut_off_df_human, Path_length_cut_off_df_ant, Path_length_cut_off_df_humanhand]
+def time_distribution():
     Plot_classes = [Path_length_cut_off_df_humanhand, Path_length_cut_off_df_ant, Path_length_cut_off_df_human]
 
     for Plot_class in Plot_classes:
@@ -415,16 +431,26 @@ def cut_time():
         fig, axs = my_plot_class.open_figure()
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                       my_plot_class.plot_seperately)
-        # my_plot_class.cut_off_after_time()
-        # my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=25)
+        my_plot_class.add_solving_time(separate_data_frames)
         my_plot_class.plot_time_distributions(separate_data_frames, axs)
         save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
 
 
-def cut_path_length_distribution(max_path=15, ax=None):
-    Plot_classes = [Path_length_cut_off_df_ant,
-                    # Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand
-                    ]
+def path_length_distribution_after_max_time():
+    Plot_classes = [Path_length_cut_off_df_humanhand, Path_length_cut_off_df_ant, Path_length_cut_off_df_human]
+
+    for Plot_class in Plot_classes:
+        my_plot_class = Plot_class()
+        fig, axs = my_plot_class.open_figure()
+        separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
+                                                                      my_plot_class.plot_seperately)
+        my_plot_class.cut_off_after_time()
+        my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=25)
+        save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
+
+
+def path_length_distribution_after_max_path_length(max_path=15, ax=None):
+    Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand]
 
     for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
@@ -436,23 +462,8 @@ def cut_path_length_distribution(max_path=15, ax=None):
         save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
 
 
-def percent_of_solving_ants(max_path=15, ax=None):
-    my_plot_class = Path_length_cut_off_df_ant()
-    my_plot_class.cut_off_after_path_length(max_path=max_path)
-    percent_of_winning, error = my_plot_class.percent_of_solving()
-
-    if ax is not None:
-        ax = plt.figure()
-        ax.bar(*zip(*percent_of_winning.items()), yerr=error.values())
-        ax.set_title('min_path ' + str(max_path))
-        ax.set_ylim([-0.5, 1.2])
-        plt.ylabel('percent of success')
-
-    return percent_of_winning, error
-
-
 if __name__ == '__main__':
-    cut_time()
+    time_distribution()
 
     # max_paths = list(range(10, 26, 2))
     # fig, axs = plt.subplots(nrows=len(max_paths)//2, ncols=2, sharey=True, sharex=True)
