@@ -37,24 +37,30 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df = pd.concat([self.df, Path_length_cut_off_df2.df])
         return self
 
-    def add_solving_time(self, seperate_data_frames) -> dict:
-        for key, df in seperate_data_frames.items():
-            seperate_data_frames[key]['solving time [s]'] = seperate_data_frames[key]['time [s]']
-        return seperate_data_frames
+    def add_solving_time(self, separate_data_frames) -> dict:
+        for key, df in separate_data_frames.items():
+            separate_data_frames[key]['solving time [s]'] = separate_data_frames[key]['time [s]']
+        return separate_data_frames
 
-    def split_seperate_groups(self, df=None):
+    def add_normalized_measure(self, separate_data_frames: dict, measure: str) -> dict:
+        for key, df in separate_data_frames.items():
+            separate_data_frames[key][measure] = separate_data_frames[key][measure.split('norm ')[-1]] / \
+                                                 separate_data_frames[key]['size'].map(ResizeFactors[self.solver])
+        return separate_data_frames
+
+    def split_separate_groups(self, df=None):
         if df is None:
             df = self.df
-        seperate_group_df = pd.DataFrame()
+        separate_group_df = pd.DataFrame()
         not_seperate_group_df = pd.DataFrame()
 
         for index, s in df.iterrows():
             if s['size'] in self.plot_seperately.keys() and \
                     s['average Carrier Number'] in self.plot_seperately[s['size']]:
-                seperate_group_df = seperate_group_df.append(s)
+                separate_group_df = separate_group_df.append(s)
             else:
                 not_seperate_group_df = not_seperate_group_df.append(s)
-        return seperate_group_df, not_seperate_group_df
+        return separate_group_df, not_seperate_group_df
 
     def open_figure(self):
         fig, axs = plt.subplots(nrows=self.n_group_sizes, sharex=True)
@@ -103,7 +109,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
 
         for size, dfs in d.items():
             for key, df in dfs.items():
-                for part in self.split_seperate_groups(df):
+                for part in self.split_separate_groups(df):
                     if not part.empty:
                         part.loc[part['size'].isin(['Small Far', 'Small Near']), 'size'] = 'Small'
                         groups = part.groupby(by=['size'])
@@ -131,7 +137,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
     def plot_path_length_distributions(self, seperate_data_frames, axs, **kwargs):
         pass
 
-    def plot_time_distributions(self, seperate_data_frames, axs):
+    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
         pass
 
 
@@ -159,6 +165,14 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
                 seperate_data_frames[size][comm]['solving time [s]'] = seperate_data_frames[size][comm]['time [s]']
         return seperate_data_frames
 
+    def add_normalized_measure(self, separate_data_frames: dict, measure: str) -> dict:
+        for size, df in separate_data_frames.items():
+            for comm in separate_data_frames[size].keys():
+                separate_data_frames[size][comm][measure] = \
+                    separate_data_frames[size][comm][measure.split('norm ')[-1]] / \
+                    separate_data_frames[size][comm]['size'].map(ResizeFactors[self.solver])
+        return separate_data_frames
+
     def plot_path_length_distributions(self, seperate_data_frames, axs, max_path=18):
         colors = ['blue', 'orange']
         bins = np.arange(0, 9, 0.5)
@@ -176,18 +190,18 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         for j in range(len(axs)):
             axs[j].yaxis.set_label_coords(labelx, 0.5)
 
-    def plot_time_distributions(self, seperate_data_frames, axs):
-        colors = ['green', 'red']
+    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
+        colors = ['blue', 'orange']
         bins = np.arange(0, 1250, 100)
         max_num_experiments = 1
 
         for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
-            results = axs[i].hist([d['solving time [s]'] for keys, d in df_sizes.items()], color=colors, bins=bins)
+            results = axs[i].hist([d[measure] for keys, d in df_sizes.items()], color=colors, bins=bins)
             axs[i].set_ylabel(size)
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
 
         axs[-1].legend(seperate_data_frames[list(seperate_data_frames.keys())[0]].keys())
-        axs[-1].set_xlabel('solving time [s]')
+        axs[-1].set_xlabel(measure)
 
         labelx = -0.05  # axes coords
         # for j in range(len(axs)):
@@ -205,7 +219,7 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
         self.geometry = ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')
         self.color = {'with_eyesight': 'red', 'without_eyesight': 'blue'}
 
-    def plot_time_distributions(self, seperate_data_frames, axs):
+    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
         bins = np.arange(0, 150, 10)
         max_num_experiments = 1
         plt.show(block=False)
@@ -293,33 +307,41 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         self.color = {'winner': 'green', 'looser': 'red'}
         self.geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    def add_solving_time(self, seperate_data_frames) -> dict:
-        for size in seperate_data_frames.keys():
+    def add_solving_time(self, separate_data_frames) -> dict:
+        for size in separate_data_frames.keys():
             if size not in ['S (> 1)', 'Single (1)']:
-                for success in seperate_data_frames[size].keys():
-                    seperate_data_frames[size][success]['solving time [s]'] = \
-                        seperate_data_frames[size][success]['time [s]']
+                for success in separate_data_frames[size].keys():
+                    separate_data_frames[size][success]['solving time [s]'] = \
+                        separate_data_frames[size][success]['time [s]']
             else:
-                for success in seperate_data_frames[size].keys():
-                    seperate_data_frames[size][success]['solving time [s]'] = \
-                        seperate_data_frames[size][success].progress_apply(lambda x: get(x['filename']).solving_time(),
+                for success in separate_data_frames[size].keys():
+                    separate_data_frames[size][success]['solving time [s]'] = \
+                        separate_data_frames[size][success].progress_apply(lambda x: get(x['filename']).solving_time(),
                                                                            axis=1)
-        return seperate_data_frames
+        return separate_data_frames
 
-    def plot_time_distributions(self, seperate_data_frames, axs):
+    def add_normalized_measure(self, separate_data_frames: dict, measure: str) -> dict:
+        for size, df in separate_data_frames.items():
+            for success in separate_data_frames[size].keys():
+                separate_data_frames[size][success][measure] = \
+                    separate_data_frames[size][success][measure.split('norm ')[-1]] / \
+                    separate_data_frames[size][success]['size'].map(ResizeFactors[self.solver])
+        return separate_data_frames
+
+    def plot_time_distributions(self, separate_data_frames, axs, measure='solving time [s]'):
         colors = ['green', 'red']
         bins = np.arange(0, 1250, 100)
         max_num_experiments = 1
 
-        for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
+        for i, (size, df_sizes) in enumerate(separate_data_frames.items()):
             # df_sizes['winner'].hist(column=['path length/minimal path length[]'], ax=axs[2], bins=bins)
             # df_sizes['looser']['path length/minimal path length[]'].hist(ax=axs[2], bins=bins)
-            results = axs[i].hist([d['time [s]'] for keys, d in df_sizes.items()], color=colors, bins=bins)
+            results = axs[i].hist([d[measure] for keys, d in df_sizes.items()], color=colors, bins=bins)
             axs[i].set_ylabel(size)
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
 
-        axs[-1].legend(seperate_data_frames[list(seperate_data_frames.keys())[-1]].keys())
-        axs[-1].set_xlabel('time [s]')
+        axs[-1].legend(separate_data_frames[list(separate_data_frames.keys())[-1]].keys())
+        axs[-1].set_xlabel(measure)
 
         labelx = -0.05  # axes coords
         # for j in range(len(axs)):
@@ -430,20 +452,27 @@ def plot_means():
     save_fig(fig, 'back_path_length_all')
 
 
-def time_distribution():
+def time_distribution(measure='solving time [s]'):
     Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand, ]
+    # Plot_classes = [Path_length_cut_off_df_ant]
 
     for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
         fig, axs = my_plot_class.open_figure()
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                       my_plot_class.plot_seperately)
-        separate_data_frames = my_plot_class.add_solving_time(separate_data_frames)
-        my_plot_class.plot_time_distributions(separate_data_frames, axs)
-        save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
+        if 'solving time [s]' in measure:
+            separate_data_frames = my_plot_class.add_solving_time(separate_data_frames)
+
+        if 'norm' in measure:
+            separate_data_frames = my_plot_class.add_normalized_measure(separate_data_frames, measure)
+
+        my_plot_class.plot_time_distributions(separate_data_frames, axs, measure=measure)
+        save_fig(fig, measure + my_plot_class.solver)
 
 
 def path_length_distribution_after_max_time():
+    # Plot_classes = [Path_length_cut_off_df_ant]
     Plot_classes = [Path_length_cut_off_df_humanhand, Path_length_cut_off_df_ant, Path_length_cut_off_df_human]
 
     for Plot_class in Plot_classes:
@@ -470,7 +499,8 @@ def path_length_distribution_after_max_path_length(max_path=15, ax=None):
 
 
 if __name__ == '__main__':
-    time_distribution()
+    time_distribution(measure='norm time [s]')
+    # time_distribution(measure='norm solving time [s]')
 
     # max_paths = list(range(10, 26, 2))
     # fig, axs = plt.subplots(nrows=len(max_paths)//2, ncols=2, sharey=True, sharex=True)
