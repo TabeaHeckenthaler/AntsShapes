@@ -37,7 +37,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df = pd.concat([self.df, Path_length_cut_off_df2.df])
         return self
 
-    def add_solving_time(self, seperate_data_frames):
+    def add_solving_time(self, seperate_data_frames) -> dict:
         for key, df in seperate_data_frames.items():
             seperate_data_frames[key]['solving time [s]'] = seperate_data_frames[key]['time [s]']
         return seperate_data_frames
@@ -153,6 +153,12 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         [print(sizes, d['average Carrier Number'].mean()) for sizes in
          [['Large'], ['Medium'], ['Small Far', 'Small Near']]]
 
+    def add_solving_time(self, seperate_data_frames) -> dict:
+        for size in seperate_data_frames.keys():
+            for comm in seperate_data_frames[size].keys():
+                seperate_data_frames[size][comm]['solving time [s]'] = seperate_data_frames[size][comm]['time [s]']
+        return seperate_data_frames
+
     def plot_path_length_distributions(self, seperate_data_frames, axs, max_path=18):
         colors = ['blue', 'orange']
         bins = np.arange(0, 9, 0.5)
@@ -176,12 +182,12 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         max_num_experiments = 1
 
         for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
-            results = axs[i].hist([d['time [s]'] for keys, d in df_sizes.items()], color=colors, bins=bins)
+            results = axs[i].hist([d['solving time [s]'] for keys, d in df_sizes.items()], color=colors, bins=bins)
             axs[i].set_ylabel(size)
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
 
         axs[-1].legend(seperate_data_frames[list(seperate_data_frames.keys())[0]].keys())
-        axs[-1].set_xlabel('time [s]')
+        axs[-1].set_xlabel('solving time [s]')
 
         labelx = -0.05  # axes coords
         # for j in range(len(axs)):
@@ -287,7 +293,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         self.color = {'winner': 'green', 'looser': 'red'}
         self.geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
-    def add_solving_time(self, seperate_data_frames):
+    def add_solving_time(self, seperate_data_frames) -> dict:
         for size in seperate_data_frames.keys():
             if size not in ['S (> 1)', 'Single (1)']:
                 for success in seperate_data_frames[size].keys():
@@ -296,7 +302,8 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             else:
                 for success in seperate_data_frames[size].keys():
                     seperate_data_frames[size][success]['solving time [s]'] = \
-                        seperate_data_frames[size][success].apply(lambda x: get(x['filename']).solving_time(), axis=1)
+                        seperate_data_frames[size][success].progress_apply(lambda x: get(x['filename']).solving_time(),
+                                                                           axis=1)
         return seperate_data_frames
 
     def plot_time_distributions(self, seperate_data_frames, axs):
@@ -424,14 +431,14 @@ def plot_means():
 
 
 def time_distribution():
-    Plot_classes = [Path_length_cut_off_df_humanhand, Path_length_cut_off_df_ant, Path_length_cut_off_df_human]
+    Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand, ]
 
     for Plot_class in Plot_classes:
         my_plot_class = Plot_class()
         fig, axs = my_plot_class.open_figure()
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                       my_plot_class.plot_seperately)
-        my_plot_class.add_solving_time(separate_data_frames)
+        separate_data_frames = my_plot_class.add_solving_time(separate_data_frames)
         my_plot_class.plot_time_distributions(separate_data_frames, axs)
         save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
 
