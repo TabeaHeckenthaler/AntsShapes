@@ -44,7 +44,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
 
     def add_normalized_measure(self, separate_data_frames: dict, measure: str) -> dict:
         for key, df in separate_data_frames.items():
-            separate_data_frames[key][measure] = separate_data_frames[key][measure.split('norm ')[-1]] / \
+            separate_data_frames[key][measure] = separate_data_frames[key][measure.split('norm ')[-1]] * \
                                                  separate_data_frames[key]['size'].map(ResizeFactors[self.solver])
         return separate_data_frames
 
@@ -169,7 +169,7 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         for size, df in separate_data_frames.items():
             for comm in separate_data_frames[size].keys():
                 separate_data_frames[size][comm][measure] = \
-                    separate_data_frames[size][comm][measure.split('norm ')[-1]] / \
+                    separate_data_frames[size][comm][measure.split('norm ')[-1]] * \
                     separate_data_frames[size][comm]['size'].map(ResizeFactors[self.solver])
         return separate_data_frames
 
@@ -324,7 +324,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         for size, df in separate_data_frames.items():
             for success in separate_data_frames[size].keys():
                 separate_data_frames[size][success][measure] = \
-                    separate_data_frames[size][success][measure.split('norm ')[-1]] / \
+                    separate_data_frames[size][success][measure.split('norm ')[-1]] * \
                     separate_data_frames[size][success]['size'].map(ResizeFactors[self.solver])
         return separate_data_frames
 
