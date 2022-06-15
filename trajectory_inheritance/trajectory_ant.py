@@ -269,13 +269,19 @@ class Trajectory_ant(Trajectory):
         return x.run_trj(my_maze, display=display)
 
     def solving_time(self) -> float:
-        self.load_participants()
-        cC = self.participants.carriers_attached(self.fps)
-        return np.sum(cC != 0) / self.fps
+        if self.size == 'S':
+            self.load_participants()
+            cC = self.participants.carriers_attached(self.fps)
+            return np.sum(cC != 0) / self.fps
+        else:
+            return self.timer()
 
 
 if __name__ == '__main__':
-    x = get('S_SPT_4380002_SSpecialT_1_ants')
+    filename = 'S_H_4140009_smallH_1_ants (part 1)'
+    x = get(filename)
+    # x.angle_error = 0
+    # x.save()
     print(x.solving_time())
     # TODO: fix that ant traj are saved as simulations
 

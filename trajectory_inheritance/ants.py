@@ -100,6 +100,7 @@ class Ants(Participants):
     #     return (1/np.mean(detachment_events)) / self.averageCarrierNumber()
 
     def matlab_loading(self, x):
+        print(x.filename)
         if not (x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
             if not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + x.old_filenames(0)):
                 breakpoint()
@@ -144,6 +145,10 @@ class Ants(Participants):
                 if data.size != 0:
                     real_ants = [self.is_ant(mal) for mal in data[:, 6]]
                     position = data[real_ants, 2:4]
+
+                    if type(x.angle_error) == list and len(x.angle_error) > 1:
+                        x.angle_error = x.angle_error[0]
+
                     angle = data[real_ants, 5] * np.pi / 180 + x.angle_error
 
                     is_attached = [self.is_attached(p_ant, p_shape, max_distance)

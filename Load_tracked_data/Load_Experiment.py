@@ -170,19 +170,23 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
+    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat']
+
     solver, shape, free = 'human', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
         unpickled = find_unpickled(solver, size, shape)
         if len(unpickled) > 0:
-            for results_filename in tqdm(unpickled):
+            for results_filename in tqdm([u for u in unpickled if u not in still_to_do]):
                 print(results_filename)
                 x = load(results_filename, solver, size, shape, fps[solver], [])
+                x.play(wait=1)
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
                 x = x.add_missing_frames(chain, free)
-                x.play(wait=5)
+                x.play(wait=1)
+                # x.angle = (x.angle + np.pi) % (2 * np.pi)
                 x.save()
 
                 # TODO: Check that the winner is correctly saved!!

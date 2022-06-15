@@ -6,6 +6,7 @@ from Analysis.PathPy.Paths import plot_seperately
 import json
 from trajectory_inheritance.trajectory import solver_geometry
 from Setup.Maze import Maze
+import os
 from matplotlib import pyplot as plt
 
 
@@ -15,6 +16,24 @@ def flatten_dict(dict1):
         for key2, value in dict2.items():
             new[str(key1) + '_' + str(key2)] = value
     return new
+
+
+class WallDistance:
+    def __init__(self, filename):
+        self.filename = filename
+        self.wall_distance = self.get_wall_distance
+
+    def plot_average_distance_from_wall(self):
+        pass
+
+    def get_wall_distance(self) -> dict:
+        if not os.path.exists('average_distance_to_boundary_scaled.json'):
+            aver_distance = calc_aver_distance()
+            with open('average_distance_to_boundary_scaled.json', 'w') as fp:
+                json.dump(aver_distance, fp)
+
+        else:
+            pass
 
 
 def av_distance_from_wall(distance: np.array, traj, config_space, exit_size):

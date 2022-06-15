@@ -191,10 +191,12 @@ class Trajectory:
 
     def timer(self):
         """
-
         :return: time in seconds
         """
         return (len(self.frames) - 1) / self.fps
+
+    def solving_time(self):
+        return self.timer()
 
     def iterate_coords(self, step=1) -> iter:
         """
@@ -351,8 +353,12 @@ class Trajectory:
         in the class and then am incapable of unpickling my files.
         """
         self.check()
+        dir = SaverDirectories[self.solver]
+        if self.solver == 'ant':
+            dir = dir[self.free]
+
         if address is None:
-            address = SaverDirectories[self.solver] + path.sep + self.filename
+            address = dir + path.sep + self.filename
 
         with open(address, 'wb') as f:
             try:

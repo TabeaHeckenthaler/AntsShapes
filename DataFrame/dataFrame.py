@@ -38,7 +38,7 @@ columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
                     'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment', 'counted carrier number', 'time [s]'],
+                    'comment', 'counted carrier number', 'time [s]', 'solving time [s]'],
                    dtype='object')
 
 
@@ -71,6 +71,7 @@ class SingleExperiment(pd.DataFrame):
         self['maze dimensions'], self['load dimensions'] = x.geometry()
         self['counted carrier number'] = None
         self['time [s]'] = x.timer()
+        self['solving time [s]'] = x.solving_time()
 
         # self = self[list_of_columns]
 
@@ -137,8 +138,8 @@ class DataFrame(pd.DataFrame):
         # for i, exp in self.iterrows():
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
-
-        self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
+        self['solving time [s]'] = self.progress_apply(lambda x: get(x['filename']).solving_time(), axis=1)
+        # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
     def fill_column(self):
@@ -168,6 +169,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
+    # myDataFrame.add_column()
     for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
