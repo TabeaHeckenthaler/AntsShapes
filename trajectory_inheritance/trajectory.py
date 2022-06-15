@@ -20,6 +20,7 @@ from Analysis.Velocity import velocity
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
+from matplotlib import pyplot as plt
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -205,6 +206,13 @@ class Trajectory:
         """
         for pos, angle in zip(self.position[::step, :], self.angle[::step]):
             yield pos[0], pos[1], angle
+
+    def stuck(self) -> list:
+        v_min = 0.1
+        vel_norm = np.linalg.norm(self.velocity(0.5), axis=0)
+        stuck_array = [v < v_min for v in vel_norm]
+        # plt.plot(stuck_array, marker='.', linestyle='')
+        return stuck_array
 
     def find_contact(self):
         from PhysicsEngine.Contact import contact_loop_experiment
@@ -461,4 +469,3 @@ class Trajectory_part(Trajectory):
 
     def geometry(self):
         return self.parent_traj.geometry()
-

@@ -51,7 +51,7 @@ class Altered_DataFrame:
     def choose_columns(self, columns):
         self.df = self.df[columns]
 
-    def get_separate_data_frames(self, solver, plot_seperately, shape=None, geometry=None, initial_cond='back'):
+    def get_separate_data_frames(self, solver, plot_separately, shape=None, geometry=None, initial_cond='back'):
         if 'solver' in self.df.columns:
             df = self.df[self.df['solver'] == solver]
         else:
@@ -73,9 +73,9 @@ class Altered_DataFrame:
                       'L': split_winners_loosers('L', df),
                       'M': split_winners_loosers('M', df),
                       'S (> 1)': split_winners_loosers('S',
-                                                       df[~df['average Carrier Number'].isin(plot_seperately['S'])]),
+                                                       df[~df['average Carrier Number'].isin(plot_separately['S'])]),
                       'Single (1)': split_winners_loosers('S',
-                                                          df[df['average Carrier Number'].isin(plot_seperately['S'])])}
+                                                          df[df['average Carrier Number'].isin(plot_separately['S'])])}
             df_to_plot.update(df_add)
 
         if 'human' in solver.split('_'):
@@ -86,11 +86,11 @@ class Altered_DataFrame:
 
             df_add = {'Large': split_NC_C(['Large'], df),
                       'M (>7)': split_NC_C(['Medium'],
-                                           df[~df['average Carrier Number'].isin(plot_seperately['Medium'])]),
+                                           df[~df['average Carrier Number'].isin(plot_separately['Medium'])]),
                       'M (2)': split_NC_C(['Medium'],
-                                          df[df['average Carrier Number'].isin([plot_seperately['Medium'][0]])]),
+                                          df[df['average Carrier Number'].isin([plot_separately['Medium'][0]])]),
                       'M (1)': split_NC_C(['Medium'],
-                                          df[df['average Carrier Number'].isin([plot_seperately['Medium'][1]])]),
+                                          df[df['average Carrier Number'].isin([plot_separately['Medium'][1]])]),
                       'Small': split_NC_C(['Small Far', 'Small Near'], df)
                       }
             df_to_plot.update(df_add)

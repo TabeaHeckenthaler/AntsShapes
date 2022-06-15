@@ -278,11 +278,16 @@ class Trajectory_ant(Trajectory):
 
 
 if __name__ == '__main__':
-    filename = 'S_H_4140009_smallH_1_ants (part 1)'
+    from matplotlib import pyplot as plt
+    filename = 'S_SPT_4800009_SSpecialT_1_ants (part 1)'
     x = get(filename)
+    v = x.velocity(0)
+    vel_norm = np.linalg.norm(v, axis=0)
+    plt.plot(vel_norm)
+
     # x.angle_error = 0
     # x.save()
-    print(x.solving_time())
+    print(x.stuck())
     # TODO: fix that ant traj are saved as simulations
 
     # k_on, k_off = {}, {}
