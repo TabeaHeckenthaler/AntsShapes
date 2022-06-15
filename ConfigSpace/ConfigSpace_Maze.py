@@ -693,7 +693,7 @@ class ConfigSpace_Maze(ConfigSpace):
         # interesting_indices = (207, 175, 407), (207, 176, 408)  # human large
         if self.eroded_space is None:
 
-            if self.solver == 'humanhand': # somehow otherwise the states will not properly be seperated.
+            if self.solver == 'humanhand': # somehow otherwise the states will not properly be separated.
                 directory = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \
                             '_SPT_MazeDimensions_humanhand_pre_erosion.pkl'
                 if os.path.exists(directory):

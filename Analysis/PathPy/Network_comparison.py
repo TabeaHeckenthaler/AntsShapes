@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 from trajectory_inheritance.exp_types import solver_geometry, exp_types, ResizeFactors
-from Analysis.PathPy.Paths import PathWithoutSelfLoops, PathsTimeStamped, plot_seperately
+from Analysis.PathPy.Paths import PathWithoutSelfLoops, PathsTimeStamped, plot_separately
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
 from Analysis.PathPy.SPT_states import states, forbidden_transition_attempts, allowed_transition_attempts
@@ -40,7 +40,7 @@ class Network_comparison:
         networks = {solver: {} for solver in solvers}
         for solver in solvers:
             df = Altered_DataFrame()
-            dfs = df.get_separate_data_frames(solver, plot_seperately[solver], shape=shape)
+            dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape=shape)
             networks[solver] = {}
             if type(list(dfs.values())[0]) is dict:
                 dfs = flatten_dict(dfs)
@@ -91,8 +91,8 @@ class Network_comparison:
             fig.savefig(directory)
 
     def calc_diffusion_speed_up(self):
-        speed_up_dict = {solver: {} for solver in plot_seperately}
-        for solver in plot_seperately:
+        speed_up_dict = {solver: {} for solver in plot_separately}
+        for solver in plot_separately:
             for size, n in self.networks[solver].items():
                 print(size)
                 if 'looser' in size:
@@ -112,8 +112,8 @@ class Network_comparison:
         return speed_up_dict
 
     def plot_diffusion_speed_up(self, speed_up_dict):
-        fig, axs = plt.subplots(1, len(plot_seperately))
-        for solver, ax in zip(plot_seperately, axs):
+        fig, axs = plt.subplots(1, len(plot_separately))
+        for solver, ax in zip(plot_separately, axs):
             ax.set_title(solver)
             for size, series in speed_up_dict[solver].items():
                 ax.plot(label_description(size), series, marker='x')
@@ -125,7 +125,7 @@ class Network_comparison:
         plt.show()
         fig.savefig(directory)
 
-        # fig, axs = plt.subplots(1, len(plot_seperately))
+        # fig, axs = plt.subplots(1, len(plot_separately))
         #
         # ax.plot(self.networks[solver].keys(), speed_up_dict[solver].values())
         #
@@ -145,8 +145,8 @@ class Network_comparison:
         return s
 
     def calc_diffusion_times(self, normalized=False):
-        diffusion_time = {solver: {} for solver in plot_seperately}
-        for solver in plot_seperately:
+        diffusion_time = {solver: {} for solver in plot_separately}
+        for solver in plot_separately:
             for size, n in self.networks[solver].items():
                 print(size)
                 if 'looser' in size:
@@ -168,10 +168,10 @@ class Network_comparison:
         return diffusion_time
 
     def plot_diffusion_times(self, diffusion_time, normalized=False):
-        fig, axs = plt.subplots(1, len(plot_seperately))
+        fig, axs = plt.subplots(1, len(plot_separately))
         state_order = self.get_state_order()
 
-        for solver, ax in zip(plot_seperately, axs):
+        for solver, ax in zip(plot_separately, axs):
             ax.set_title(solver)
             color = dict(zip(self.networks[solver].keys(),
                              cm.rainbow(np.linspace(0, 1, len(self.networks[solver].keys())))))

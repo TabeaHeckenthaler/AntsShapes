@@ -2,7 +2,7 @@ from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 import numpy as np
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from trajectory_inheritance.get import get
-from Analysis.PathPy.Paths import plot_seperately
+from Analysis.PathPy.Paths import plot_separately
 import json
 from trajectory_inheritance.trajectory import solver_geometry
 from Setup.Maze import Maze
@@ -132,7 +132,7 @@ class WallDistance(Altered_DataFrame):
         for solver in solvers:
             geometry = solver_geometry[solver]
             ad = Altered_DataFrame()
-            dfs = ad.get_separate_data_frames(solver, plot_seperately[solver], shape=shape)
+            dfs = ad.get_separate_data_frames(solver, plot_separately[solver], shape=shape)
             results[solver] = {}
             d, cs, exit_size = None, None, None
 

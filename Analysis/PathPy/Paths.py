@@ -14,7 +14,7 @@ from trajectory_inheritance.get import get
 import pandas as pd
 from matplotlib import pyplot as plt
 
-plot_seperately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}}
+plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}}
 
 
 def flatten(t):
@@ -211,7 +211,7 @@ def humans_split_up():
         all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
 
     df = Altered_DataFrame()
-    dfs = df.get_separate_data_frames(solver, plot_seperately[solver], shape='SPT', geometry=solver_geometry[solver],
+    dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
                                       initial_cond='back')
 
     for key_group_size, ds in dfs.items():
@@ -296,7 +296,7 @@ def split_up(solver):
         all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
 
     df = Altered_DataFrame()
-    dfs = df.get_separate_data_frames(solver, plot_seperately[solver], shape='SPT', geometry=solver_geometry[solver],
+    dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
                                       initial_cond='back')
 
     for key_group_size, ds in dfs.items():
@@ -340,7 +340,7 @@ def av_time_in_states():
         average_time_in_states[solver] = {}
 
         df = Altered_DataFrame()
-        dfs = df.get_separate_data_frames(solver, plot_seperately[solver], shape='SPT', geometry=solver_geometry[solver],
+        dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
                                           initial_cond='back')
 
         for key, ds in dfs.items():
@@ -379,7 +379,7 @@ def av_path_in_states():
         average_path_in_states[solver] = {}
 
         df = Altered_DataFrame()
-        dfs = df.get_separate_data_frames(solver, plot_seperately[solver], shape='SPT', geometry=solver_geometry[solver],
+        dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
                                           initial_cond='back')
 
         for size_split, list_of_dataframes in dfs.items():

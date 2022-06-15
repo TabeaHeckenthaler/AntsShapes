@@ -21,30 +21,25 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.choose_experiments(solver, 'SPT', geometry=solver_geometry[solver], init_cond='back')
 
         columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]', 'average Carrier Number', 'time [s]', 'fps', ]
+                   'minimal path length [length unit]', 'average Carrier Number', 'fps', 'time [s]', 'solving time [s]']
         self.choose_columns(columns)
 
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
 
-        if 'solving time [s]' in measure:
-            self.add_solving_time()
         if 'norm' in measure:
             self.add_normalized_measure(measure)
 
-        self.plot_seperately = None
+        self.plot_separately = None
         self.color = None
         self.geometry = None
 
     def __add__(self, Path_length_cut_off_df2):
         self.n_group_sizes = self.n_group_sizes + Path_length_cut_off_df2.n_group_sizes
-        self.plot_seperately.update(Path_length_cut_off_df2.plot_seperately)
+        self.plot_separately.update(Path_length_cut_off_df2.plot_separately)
         self.solver = self.solver + '_' + Path_length_cut_off_df2.solver
         self.df = pd.concat([self.df, Path_length_cut_off_df2.df])
         return self
-
-    def add_solving_time(self):
-        self.df['solving time [s]'] = self.df.progress_apply(lambda x: get(x['filename']).solving_time(), axis=1)
 
     def add_normalized_measure(self, measure):
         self.df[measure] = self.df[measure.split('norm ')[-1]] / self.df['size'].map(ResizeFactors[self.solver])
@@ -69,15 +64,15 @@ class Path_length_cut_off_df(Altered_DataFrame):
         if df is None:
             df = self.df
         separate_group_df = pd.DataFrame()
-        not_seperate_group_df = pd.DataFrame()
+        not_separate_group_df = pd.DataFrame()
 
         for index, s in df.iterrows():
-            if s['size'] in self.plot_seperately.keys() and \
-                    s['average Carrier Number'] in self.plot_seperately[s['size']]:
+            if s['size'] in self.plot_separately.keys() and \
+                    s['average Carrier Number'] in self.plot_separately[s['size']]:
                 separate_group_df = separate_group_df.append(s)
             else:
-                not_seperate_group_df = not_seperate_group_df.append(s)
-        return separate_group_df, not_seperate_group_df
+                not_separate_group_df = not_separate_group_df.append(s)
+        return separate_group_df, not_separate_group_df
 
     def open_figure(self):
         fig, axs = plt.subplots(nrows=self.n_group_sizes, sharex=True)
@@ -122,7 +117,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                                        / self.df['minimal path length [length unit]']
 
     def plot_means(self, ax, marker='.'):
-        d = self.get_separate_data_frames(self.solver, self.plot_seperately, 'SPT', self.geometry)
+        d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
 
         for size, dfs in d.items():
             for key, df in dfs.items():
@@ -151,11 +146,18 @@ class Path_length_cut_off_df(Altered_DataFrame):
         ax.legend(dfs.keys())
         ax.set_title(self.solver)
 
-    def plot_path_length_distributions(self, seperate_data_frames, axs, **kwargs):
+    def plot_path_length_distributions(self, separate_data_frames, axs, **kwargs):
         pass
 
-    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
+    def plot_time_distributions(self, separate_data_frames, axs, measure='solving time [s]'):
         pass
+
+    def add_mean_sem(self, df_sizes, measure, ax, colors, max_num_experiments):
+        means = [d[measure].mean() for keys, d in df_sizes.items()]
+        sems = [d[measure].sem() for keys, d in df_sizes.items()]
+        for mean, sem, color, delta in zip(means, sems, colors, range(len(means))):
+            ax.errorbar(x=mean, y=max_num_experiments + 1 + delta, xerr=sem, color=color, fmt='o', linewidth=2,
+                        capsize=6)
 
 
 class Path_length_cut_off_df_human(Path_length_cut_off_df):
@@ -163,24 +165,24 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         self.solver = 'human'
         super().__init__(self.solver, measure=measure)
         self.n_group_sizes = 5
-        self.plot_seperately = {'Medium': [2, 1]}
+        self.plot_separately = {'Medium': [2, 1]}
         self.color = {'communication': 'blue', 'non_communication': 'orange'}
         self.geometry = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
 
     def average_participants(self, sizes, df):
         d = df[df['size'].isin(sizes)]
 
-        if sizes[0] in self.plot_seperately.keys():
-            d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+        if sizes[0] in self.plot_separately.keys():
+            d = d[~df['average Carrier Number'].isin(self.plot_separately[sizes[0]])]
 
         [print(sizes, d['average Carrier Number'].mean()) for sizes in
          [['Large'], ['Medium'], ['Small Far', 'Small Near']]]
 
-    # def add_solving_time(self, seperate_data_frames) -> dict:
-    #     for size in seperate_data_frames.keys():
-    #         for comm in seperate_data_frames[size].keys():
-    #             seperate_data_frames[size][comm]['solving time [s]'] = seperate_data_frames[size][comm]['time [s]']
-    #     return seperate_data_frames
+    # def add_solving_time(self, separate_data_frames) -> dict:
+    #     for size in separate_data_frames.keys():
+    #         for comm in separate_data_frames[size].keys():
+    #             separate_data_frames[size][comm]['solving time [s]'] = separate_data_frames[size][comm]['time [s]']
+    #     return separate_data_frames
     #
     # def add_normalized_measure(self, separate_data_frames: dict, measure: str) -> dict:
     #     for size, df in separate_data_frames.items():
@@ -190,12 +192,12 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
     #                 separate_data_frames[size][comm]['size'].map(ResizeFactors[self.solver])
     #     return separate_data_frames
 
-    def plot_path_length_distributions(self, seperate_data_frames, axs, max_path=18):
+    def plot_path_length_distributions(self, separate_data_frames, axs, max_path=18):
         colors = ['blue', 'orange']
         bins = np.arange(0, 9, 0.5)
         kwargs = {'bins': bins, 'histtype': 'bar'}
 
-        for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
+        for i, (size, df_sizes) in enumerate(separate_data_frames.items()):
             axs[i].hist([d['path length/minimal path length[]'] for d in df_sizes.values()], color=colors, **kwargs)
             axs[i].set_ylabel(size)
             axs[i].legend(df_sizes.keys())
@@ -207,24 +209,25 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
         for j in range(len(axs)):
             axs[j].yaxis.set_label_coords(labelx, 0.5)
 
-    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
+    def plot_time_distributions(self, separate_data_frames, axs, measure='solving time [s]'):
         colors = ['blue', 'orange']
         bins = np.arange(0, 1250, 100)
         max_num_experiments = 1
 
-        for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
+        for i, (size, df_sizes) in enumerate(separate_data_frames.items()):
             results = axs[i].hist([d[measure] for keys, d in df_sizes.items()], color=colors, bins=bins)
             axs[i].set_ylabel(size)
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
+            self.add_mean_sem(df_sizes, measure, axs[i], colors, max_num_experiments)
 
         for ax in axs:
             ax.set_ylim([0, max_num_experiments])
-        axs[-1].legend(seperate_data_frames[list(seperate_data_frames.keys())[0]].keys())
+        axs[-1].legend(separate_data_frames[list(separate_data_frames.keys())[0]].keys())
         axs[-1].set_xlabel(measure)
 
         labelx = -0.05  # axes coords
-        # for j in range(len(axs)):
-        # axs.set_ylim([0, max_num_experiments + 1.5])
+        for ax in axs:
+            ax.set_ylim([0, max_num_experiments+3])
         axs[-1].yaxis.set_label_coords(labelx, 0.5)
 
 
@@ -234,32 +237,36 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
         super().__init__(self.solver, measure=measure)
 
         self.n_group_sizes = 1
-        self.plot_seperately = {'': []}
+        self.plot_separately = {'': []}
         self.geometry = ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')
         self.color = {'with_eyesight': 'red', 'without_eyesight': 'blue'}
 
-    def plot_time_distributions(self, seperate_data_frames, axs, measure='solving time [s]'):
+    def plot_time_distributions(self, separate_data_frames, axs, measure='solving time [s]'):
+        colors = ['blue', 'orange']
         bins = np.arange(0, 150, 10)
         max_num_experiments = 1
         plt.show(block=False)
 
-        results = axs.hist([d['time [s]'] for key, d in seperate_data_frames.items()], bins=bins)
+        results = axs.hist([d['time [s]'] for key, d in separate_data_frames.items()], bins=bins, color=colors)
         axs.set_ylabel('number of experiments')
         max_num_experiments = max(np.max(results[0]), max_num_experiments)
+        self.add_mean_sem(separate_data_frames, measure, axs, colors, max_num_experiments)
 
-        axs.legend(seperate_data_frames.keys())
+        axs.legend(separate_data_frames.keys())
         axs.set_xlabel('time [s]')
 
         # for j in range(len(axs)):
         axs.set_ylim([0, np.ceil(max_num_experiments)+0.5])
         # labelx = -0.05  # axes coords
+
+        axs.set_ylim([0, max_num_experiments+3])
         # axs.yaxis.set_label_coords(labelx, 0.5)
 
     def average_participants(self, sizes, df):
         d = df[df['size'] == sizes]
 
-        if sizes[0] in self.plot_seperately.keys():
-            d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+        if sizes[0] in self.plot_separately.keys():
+            d = d[~df['average Carrier Number'].isin(self.plot_separately[sizes[0]])]
 
         [print(sizes, d['average Carrier Number'].mean()) for sizes in ['']]
 
@@ -283,7 +290,7 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
         axs.yaxis.set_label_coords(labelx, 0.5)
 
     def percent_of_solving(self):
-        data_frames = self.get_separate_data_frames(self.solver, self.plot_seperately)
+        data_frames = self.get_separate_data_frames(self.solver, self.plot_separately)
         percent_of_winning = {}
         for size, dfs in data_frames.items():
             percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
@@ -295,7 +302,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         super().__init__(self.solver, measure=measure)
 
         self.n_group_sizes = 5
-        self.plot_seperately = {'S': [1]}
+        self.plot_separately = {'S': [1]}
         self.color = {'winner': 'green', 'looser': 'red'}
         self.geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
@@ -331,8 +338,9 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             # df_sizes['winner'].hist(column=['path length/minimal path length[]'], ax=axs[2], bins=bins)
             # df_sizes['looser']['path length/minimal path length[]'].hist(ax=axs[2], bins=bins)
             results = axs[i].hist([d[measure] for keys, d in df_sizes.items()], color=colors, bins=bins)
-            axs[i].set_ylabel(size)
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
+            self.add_mean_sem(df_sizes, measure, axs[i], colors, max_num_experiments)
+            axs[i].set_ylabel(size)
 
         axs[-1].legend(separate_data_frames[list(separate_data_frames.keys())[-1]].keys())
         axs[-1].set_xlabel(measure)
@@ -341,7 +349,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         # for j in range(len(axs)):
 
         for ax in axs:
-            ax.set_ylim([0, max_num_experiments+1])
+            ax.set_ylim([0, max_num_experiments+3])
 
         # axs[-1].set_ylim([0, max_num_experiments + 1.5])
         axs[-1].yaxis.set_label_coords(labelx, 0.5)
@@ -356,12 +364,12 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
     def average_participants(self, sizes, df):
         d = df[df['size'] == sizes]
 
-        if sizes[0] in self.plot_seperately.keys():
-            d = d[~df['average Carrier Number'].isin(self.plot_seperately[sizes[0]])]
+        if sizes[0] in self.plot_separately.keys():
+            d = d[~df['average Carrier Number'].isin(self.plot_separately[sizes[0]])]
 
         [print(sizes, d['average Carrier Number'].mean()) for sizes in ['XL', 'L', 'M', 'S']]
 
-    def plot_path_length_distributions(self, seperate_data_frames, axs, max_path=70):
+    def plot_path_length_distributions(self, separate_data_frames, axs, max_path=70):
         colors = ['green', 'red']
         bins = range(0, max_path, max_path // 6)
 
@@ -389,7 +397,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
                 axs[i].text(rect.get_x() + rect.get_width() / 2, height + 0.01, label,
                             ha='center', va='bottom')
 
-        for i, (size, df_sizes) in enumerate(seperate_data_frames.items()):
+        for i, (size, df_sizes) in enumerate(separate_data_frames.items()):
             # df_sizes['winner'].hist(column=['path length/minimal path length[]'], ax=axs[2], bins=bins)
             # df_sizes['looser']['path length/minimal path length[]'].hist(ax=axs[2], bins=bins)
             results = axs[i].hist([d['path length/minimal path length[]'] for keys, d in df_sizes.items()],
@@ -415,7 +423,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         save_fig(fig, 'percent_solving_ants_cut_time')
 
     def percent_of_solving(self):
-        data_frames = self.get_separate_data_frames(self.solver, self.plot_seperately)
+        data_frames = self.get_separate_data_frames(self.solver, self.plot_separately)
         percent_of_winning, error = {}, {}
 
         for size, dfs in data_frames.items():
@@ -455,9 +463,10 @@ def time_distribution(measure='solving time [s]'):
     # Plot_classes = [Path_length_cut_off_df_ant]
 
     for Plot_class in Plot_classes:
+        print(Plot_class)
         my_plot_class = Plot_class(measure)
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_seperately)
+                                                                      my_plot_class.plot_separately)
 
         fig, axs = my_plot_class.open_figure()
         my_plot_class.plot_time_distributions(separate_data_frames, axs, measure=measure)
@@ -472,7 +481,7 @@ def path_length_distribution_after_max_time(measure='norm solving time [s]'):
         my_plot_class = Plot_class(measure)
         my_plot_class.cut_off_after_time(measure)
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_seperately)
+                                                                      my_plot_class.plot_separately)
 
         fig, axs = my_plot_class.open_figure()
         my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=25)
@@ -488,14 +497,15 @@ def path_length_distribution_after_max_path_length(max_path=15, ax=None):
         fig, axs = my_plot_class.open_figure()
         my_plot_class.cut_off_after_path_length(max_path=max_path)
         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_seperately)
+                                                                      my_plot_class.plot_separately)
         my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=max_path)
         save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
 
 
 if __name__ == '__main__':
-    path_length_distribution_after_max_time(measure='norm solving time [s]')
-    # time_distribution(measure='norm solving time [s]')
+    # path_length_distribution_after_max_time(measure='norm solving time [s]')
+    time_distribution(measure='norm solving time [s]')
+    DEBUG = 1
 
     # max_paths = list(range(10, 26, 2))
     # fig, axs = plt.subplots(nrows=len(max_paths)//2, ncols=2, sharey=True, sharex=True)
@@ -515,6 +525,6 @@ if __name__ == '__main__':
     # my_plot_class = Path_length_cut_off_df_human() + Path_length_cut_off_df_humanhand()
     # fig, axs = my_plot_class.open_figure()
     # separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-    #                                                               my_plot_class.plot_seperately)
+    #                                                               my_plot_class.plot_separately)
     # my_plot_class.plot_path_length_distributions(separate_data_frames, axs, max_path=12 + 4)
     # save_fig(fig, 'back_path_length_' + my_plot_class.solver + 'cut_of_path')

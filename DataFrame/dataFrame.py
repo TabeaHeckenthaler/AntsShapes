@@ -165,6 +165,7 @@ class DataFrame(pd.DataFrame):
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+DEBUG = 1
 
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
