@@ -183,8 +183,9 @@ class Trajectory:
         if len(self.VideoChain) == 0:
             self.VideoChain = [self.filename]
 
-        if len(frame_dividers) - 1 != len(self.VideoChain):
-            raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
+    # TODO
+        # if len(frame_dividers) - 1 != len(self.VideoChain):
+        #     raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
 
         parts = [Trajectory_part(self, [chain_element], [fr1 + 1, fr2 + 1])
                  for chain_element, fr1, fr2 in zip(self.VideoChain, frame_dividers, frame_dividers[1:])]
@@ -207,12 +208,12 @@ class Trajectory:
         for pos, angle in zip(self.position[::step, :], self.angle[::step]):
             yield pos[0], pos[1], angle
 
-    def stuck(self) -> list:
-        v_min = 0.1
+    def stuck(self, v_min=0.005) -> list:
         vel_norm = np.linalg.norm(self.velocity(0.5), axis=0)
         stuck_array = [v < v_min for v in vel_norm]
         # plt.plot(stuck_array, marker='.', linestyle='')
         return stuck_array
+
 
     def find_contact(self):
         from PhysicsEngine.Contact import contact_loop_experiment
@@ -332,14 +333,14 @@ class Trajectory:
 
     def add_missing_frames(self, chain: list, free):
         from PS_Search_Algorithms.Path_planning_full_knowledge import connector
-        total_time_seconds = np.sum([traj.timer() for traj in chain])
-        if not free and self.solver == 'ant':
-            continue_time_dict(self.filename)
-            with open('time_dictionary.txt', 'r') as json_file:
-                time_dict = json.load(json_file)
-            frames_missing = (time_dict[self.filename] - total_time_seconds) * self.fps
-        else:
-            frames_missing = 0
+        # total_time_seconds = np.sum([traj.timer() for traj in chain])
+        # if not free and self.solver == 'ant':
+        #     continue_time_dict(self.filename)
+        #     with open('time_dictionary.txt', 'r') as json_file:
+        #         time_dict = json.load(json_file)
+        #     frames_missing = (time_dict[self.filename] - total_time_seconds) * self.fps
+        # else:
+        frames_missing = 0
 
         x = deepcopy(self)
 

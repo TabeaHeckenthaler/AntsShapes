@@ -276,19 +276,38 @@ class Trajectory_ant(Trajectory):
         else:
             return self.timer()
 
+    def penalized_path_length(self) -> float:
+        self.stuck()
+
+    def frame_count_after_solving_time(self, t):
+        frames = t * self.fps
+        if self.size == 'S':
+            self.load_participants()
+            cC = self.participants.carriers_attached(self.fps)
+            where = np.where(cC)
+            if len(where) < frames:
+                return np.NaN
+            else:
+                return where[frames]
+        else:
+            return frames
+
 
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
-    filename = 'S_SPT_4800009_SSpecialT_1_ants (part 1)'
+    # filename = 'S_SPT_4800009_SSpecialT_1_ants (part 1)'
+    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # filename = 'M_SPT_4710005_MSpecialT_1_ants'
     x = get(filename)
-    v = x.velocity(0)
+    v = x.velocity(4)
     vel_norm = np.linalg.norm(v, axis=0)
     plt.plot(vel_norm)
-
+    plt.plot(np.array(x.stuck(v_min=0.005)).astype(bool) * 0.2, marker='.', linestyle='')
     # x.angle_error = 0
     # x.save()
-    print(x.stuck())
+    # print(x.stuck(v_min=0.005))
     # TODO: fix that ant traj are saved as simulations
+    DEBUG = 1
 
     # k_on, k_off = {}, {}
     # experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',

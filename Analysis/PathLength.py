@@ -8,6 +8,7 @@ from trajectory_inheritance.get import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 from PS_Search_Algorithms.Path_planning_full_knowledge import Path_planning_full_knowledge
+from scipy.ndimage import gaussian_filter
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
@@ -54,6 +55,19 @@ class PathLength:
         # I have to split movies, because for 'connector movies', we have to treat them separately.
         parts = self.x.divide_into_parts()
         path_lengths = [PathLength(part).calculate_path_length() for part in parts]
+        interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
+        return np.sum(interpolated_path_lengths)
+
+    def per_exp_penalized(self) -> float:
+        """
+        Path length is calculated from beginning to end_screen.
+        End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
+        """
+        # I have to split movies, because for 'connector movies', we have to treat them separately.
+        if self.x.solver != 'ant' or self.x.shape != 'SPT':
+            return np.NaN
+        parts = self.x.divide_into_parts()
+        path_lengths = [PathLength(part).calculate_penalized_path_length() for part in parts]
         interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
         return np.sum(interpolated_path_lengths)
 
@@ -121,6 +135,45 @@ class PathLength:
                 pos, ang = position[i], unwrapped_angle[i]
         return path_length
 
+    def calculate_penalized_path_length(self, rot: bool = True, frames: list = None, max_path_length=np.inf):
+        """
+        Reduce path to a list of points that each have distance of at least resolution = 0.1cm
+        to the next point.
+        Distance between to points is calculated by |x1-x2| + (angle1-angle2) * aver_radius.
+        Path length the sum of the distances of the points in the list.
+        When the shape is standing still, the path length increases. Penalizing for being stuck.
+        """
+        print(self.x.filename)
+        if frames is None:
+            frames = [0, -1]
+
+        position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
+        position[:, 0] = gaussian_filter(position[:, 0], sigma=self.x.fps)
+        position[:, 1] = gaussian_filter(position[:, 1], sigma=self.x.fps)
+        aver_radius = self.average_radius()
+
+        unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
+        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=self.x.fps)
+
+        stuck_frames = self.x.stuck()
+        vel_norm = np.linalg.norm(self.x.velocity(0.5), axis=0)
+        av_non_stuck_vel = np.mean(vel_norm[~np.array(stuck_frames).astype(bool)])
+
+        if unwrapped_angle.size == 0 or position.size == 0:
+            return 0
+
+        real_path_length, stuck_path_length = 0, 0
+
+        for pos1, pos2, ang1, ang2, stuck in \
+            zip(position[:-1], position[1:], unwrapped_angle[:-1], unwrapped_angle[1:], stuck_frames):
+            if not stuck:
+                d = self.measureDistance(pos1, pos2, ang1, ang2, aver_radius, rot=rot)
+                real_path_length += d
+            if stuck:
+                d = av_non_stuck_vel / self.x.fps
+                stuck_path_length += d
+        return real_path_length + stuck_path_length
+
     def plot(self, rot=True):
         plt.plot(self.x.position[:, 0], self.x.position[:, 1], color='blue')
         pos_list, ang_list = [], []
@@ -157,7 +210,11 @@ class PathLength:
 
 
 if __name__ == '__main__':
-    x = get('S_SPT_4800006_SSpecialT_1_ants (part 1)')
-    print(PathLength(x).comparable())
+    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # filename = 'M_SPT_4710005_MSpecialT_1_ants'
+    filename = 'L_I_4250003_3_ants'
+    x = get(filename)
+    print(PathLength(x).calculate_penalized_path_length())
+    print(PathLength(x).calculate_path_length())
     DEBUG = 1
     # p = [resolution(size, 'ant') for size in sizes['ant']]

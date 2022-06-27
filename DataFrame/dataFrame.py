@@ -38,7 +38,8 @@ columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
                     'communication', 'length unit', 'average Carrier Number', 'Attempts',
                     'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
                     'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment', 'counted carrier number', 'time [s]', 'solving time [s]'],
+                    'comment', 'counted carrier number', 'time [s]', 'solving time [s]',
+                    'penalized path length [length unit]'],
                    dtype='object')
 
 
@@ -59,6 +60,7 @@ class SingleExperiment(pd.DataFrame):
         self['communication'] = bool(x.communication)
         self['length unit'] = str(length_unit_func(x.solver))
         self['path length [length unit]'] = float(PathLength(x).per_experiment())
+        self['penalized path length [length unit]'] = float(PathLength(x).per_exp_penalized())
 
         if x.shape != 'SPT':
             self['path length during attempts [length unit]'] = PathLength(x).during_attempts()
@@ -138,7 +140,7 @@ class DataFrame(pd.DataFrame):
         # for i, exp in self.iterrows():
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
-        self['solving time [s]'] = self.progress_apply(lambda x: get(x['filename']).solving_time(), axis=1)
+        self['penalized path length [length unit]'] = self.progress_apply(lambda x: PathLength(get(x['filename'])).per_exp_penalized(), axis=1)
         # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
@@ -151,8 +153,14 @@ class DataFrame(pd.DataFrame):
 
     def recalculate_experiment(self, filename):
         x = get(filename)
-        index = myDataFrame[myDataFrame['filename'] == filename].index[0]
-        new_data_frame = DataFrame(self.drop([index]).reset_index(drop=True))
+        df = myDataFrame[myDataFrame['filename'] == filename]
+        if len(df) == 0:
+            new_data_frame = self.copy()
+        elif len(df) == 1:
+            index = df.index[0]
+            new_data_frame = DataFrame(self.drop([index]).reset_index(drop=True))
+        else:
+            raise ValueError('experiment double in df.')
 
         single = SingleExperiment(filename, x.solver)
         new_data_frame = new_data_frame + single
@@ -170,15 +178,27 @@ DEBUG = 1
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
+
+    filenames = ['XL_SPT_4630015_XLSpecialT_1_ants (part 1)',
+                 'XL_SPT_4630018_XLSpecialT_1_ants',
+                 'XL_SPT_4630019_XLSpecialT_1_ants (part 1)',
+                 'XL_SPT_4640012_XLSpecialT_1_ants',
+                 'XL_SPT_4640015_XLSpecialT_1_ants',
+                 'XL_SPT_4640023_XLSpecialT_1_ants'
+                 ]
+    for filename in filenames:
+        myDataFrame.recalculate_experiment(filename)
+
     # myDataFrame.add_column()
-    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
-        print(new_experiment['filename'].values[0])
-        myDataFrame = myDataFrame + new_experiment
+    # for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+    #     print(new_experiment['filename'].values[0])
+    #     myDataFrame = myDataFrame + new_experiment
+    #
+    #     ratio = new_experiment['path length [length unit]'].values[0]/
+    #     new_experiment['minimal path length [length unit]'].values[0]
+    #     print(ratio)
+    #
+    #     if ratio < 1.2 or ratio > 15:
+    #         raise ValueError('weirdness in ' + new_experiment['filename'])
 
-        ratio = new_experiment['path length [length unit]'].values[0]/new_experiment['minimal path length [length unit]'].values[0]
-        print(ratio)
-
-        if ratio < 1.2 or ratio > 15:
-            raise ValueError('weirdness in ' + new_experiment['filename'])
-
-        myDataFrame.save()
+    myDataFrame.save()

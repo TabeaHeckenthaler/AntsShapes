@@ -128,7 +128,10 @@ def extension_exists(filename, solver, size, shape, free=False) -> list:
     :return: list with candidates for being an extension.
     """
     movie_number = str(int(filename.split('_')[1]) + 1)
-    iteration_number = str(int(filename.split('_')[-1][0]) + 1)
+    if solver == 'ant':
+        iteration_number = str(int(filename.split('_')[-2][0]) + 1)
+    else:
+        iteration_number = str(int(filename.split('_')[-1][0]) + 1)
     part_number = str(int(filename.split('part ')[1][0]) + 1)
 
     same_movie = '_'.join(filename.split('_')[:2])
@@ -172,20 +175,21 @@ if __name__ == '__main__':
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat']
 
-    solver, shape, free = 'human', 'SPT', False
+    solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
         unpickled = find_unpickled(solver, size, shape)
+
         if len(unpickled) > 0:
             for results_filename in tqdm([u for u in unpickled if u not in still_to_do]):
                 print(results_filename)
                 x = load(results_filename, solver, size, shape, fps[solver], [])
-                x.play(wait=1)
+                # x.play(wait=1)
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
                                for filename in parts(results_filename, solver, size, shape)[1:]]
                 x = x.add_missing_frames(chain, free)
-                x.play(wait=1)
+                x.play(step=5)
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)
                 x.save()
 

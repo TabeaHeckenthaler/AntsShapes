@@ -668,8 +668,8 @@ class Maze(Maze_parent):
     def create_Maze(self):
         my_maze = self.CreateBody(b2BodyDef(position=(0, 0), angle=0, type=b2_staticBody, userData='maze'))
         my_maze.CreateLoopFixture(
-            vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
-                      (self.arena_length, 0)])
+            vertices=[(0, 0), (0, float(self.arena_height)), (float(self.arena_length), float(self.arena_height)),
+                      (float(self.arena_length), 0)])
         return my_maze
 
 

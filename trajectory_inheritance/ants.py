@@ -7,6 +7,7 @@ from trajectory_inheritance.participants import Participants
 from trajectory_inheritance.get import get
 from scipy.signal import medfilt
 from Setup.Maze import Maze
+from tqdm import tqdm
 
 
 class Ants_Frame:
@@ -140,7 +141,7 @@ class Ants(Participants):
             self.pix2cm = file['pix2cm']
             matlab_cell = file['ants']
 
-            for Frame in matlab_cell:
+            for Frame in tqdm(matlab_cell):
                 data = Frame[0]
                 if data.size != 0:
                     real_ants = [self.is_ant(mal) for mal in data[:, 6]]
