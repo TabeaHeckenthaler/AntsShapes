@@ -302,7 +302,8 @@ if __name__ == '__main__':
     v = x.velocity(4)
     vel_norm = np.linalg.norm(v, axis=0)
     plt.plot(vel_norm)
-    plt.plot(np.array(x.stuck(v_min=0.005)).astype(bool) * 0.2, marker='.', linestyle='')
+    stuck = x.stuck(vel_norm=vel_norm, v_min=0.005)
+    plt.plot(np.array(stuck).astype(bool) * 0.2, marker='.', linestyle='', markersize=0.2)
     # x.angle_error = 0
     # x.save()
     # print(x.stuck(v_min=0.005))

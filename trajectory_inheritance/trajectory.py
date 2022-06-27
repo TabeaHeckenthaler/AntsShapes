@@ -208,12 +208,12 @@ class Trajectory:
         for pos, angle in zip(self.position[::step, :], self.angle[::step]):
             yield pos[0], pos[1], angle
 
-    def stuck(self, v_min=0.005) -> list:
-        vel_norm = np.linalg.norm(self.velocity(0.5), axis=0)
+    def stuck(self, vel_norm=None, v_min=0.005) -> list:
+        if vel_norm is None:
+            vel_norm = np.linalg.norm(self.velocity(4), axis=0)
         stuck_array = [v < v_min for v in vel_norm]
         # plt.plot(stuck_array, marker='.', linestyle='')
         return stuck_array
-
 
     def find_contact(self):
         from PhysicsEngine.Contact import contact_loop_experiment

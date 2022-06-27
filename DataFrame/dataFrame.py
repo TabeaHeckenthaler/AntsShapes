@@ -67,6 +67,7 @@ class SingleExperiment(pd.DataFrame):
 
         self['minimal path length [length unit]'] = PathLength(x).minimal()
         self['average Carrier Number'] = float(x.averageCarrierNumber())
+        # self['average Carrier Number'] = 0
         self['Attempts'] = Attempts(x, 'extend')
         self['initial condition'] = str(x.initial_cond())
         self['force meter'] = bool(x.has_forcemeter())
@@ -153,17 +154,17 @@ class DataFrame(pd.DataFrame):
 
     def recalculate_experiment(self, filename):
         x = get(filename)
-        df = myDataFrame[myDataFrame['filename'] == filename]
+        df = self[self['filename'] == filename]
         if len(df) == 0:
             new_data_frame = self.copy()
         elif len(df) == 1:
             index = df.index[0]
-            new_data_frame = DataFrame(self.drop([index]).reset_index(drop=True))
+            new_data_frame = self.drop([index]).reset_index(drop=True)
         else:
             raise ValueError('experiment double in df.')
 
         single = SingleExperiment(filename, x.solver)
-        new_data_frame = new_data_frame + single
+        new_data_frame = DataFrame(new_data_frame) + DataFrame(pd.DataFrame(single))
         return new_data_frame
 
     def drop_experiment(self, filename):
@@ -187,7 +188,7 @@ if __name__ == '__main__':
                  'XL_SPT_4640023_XLSpecialT_1_ants'
                  ]
     for filename in filenames:
-        myDataFrame.recalculate_experiment(filename)
+        myDataFrame = myDataFrame.recalculate_experiment(filename)
 
     # myDataFrame.add_column()
     # for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):

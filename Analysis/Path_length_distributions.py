@@ -120,22 +120,22 @@ class Path_length_cut_off_df(Altered_DataFrame):
             self.df[path_length_measure.split('/')[0] + ' [length unit]'] \
             / self.df['minimal path length [length unit]']
 
-    def cut_off_after_path_length(self, max_path=15):
+    def cut_off_after_path_length(self, path_length_measure='path length [length unit]', max_path=15):
         self.df['maximal path length [length unit]'] = max_path * self.df['minimal path length [length unit]']
-        not_successful = ~ self.df['winner']
-        measured_overpath = self.df['path length [length unit]'] > self.df['maximal path length [length unit]']
-        exclude = (~ measured_overpath & not_successful)
-        self.df.drop(self.df[exclude].index, inplace=True)
-        self.df['winner'] = ~ (measured_overpath | not_successful)
 
         def path_length(exp) -> float:
             # x = get(exp['filename'])
             # return min(PathLength(x).calculate_path_length(), exp['maximal path length [length unit]'])
-            return min(exp['path length [length unit]'], exp['maximal path length [length unit]'])
+            return min(exp[path_length_measure], exp['maximal path length [length unit]'])
 
-        self.df['path length [length unit]'] = self.df.progress_apply(path_length, axis=1)
-        self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
-                                                       / self.df['minimal path length [length unit]']
+        not_successful = ~ self.df['winner']
+        measured_overpath = self.df[path_length_measure] > self.df['maximal path length [length unit]']
+        exclude = (~ measured_overpath & not_successful)
+        self.df.drop(self.df[exclude].index, inplace=True)
+        self.df['winner'] = ~ (measured_overpath | not_successful)
+        self.df[path_length_measure] = self.df.progress_apply(path_length, axis=1)
+        self.df[path_length_measure.split(' [')[0] + '/minimal path length[]'] = self.df[path_length_measure] \
+                                                                                 / self.df['minimal path length [length unit]']
 
     def plot_means(self, ax, marker='.'):
         d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
@@ -395,7 +395,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 
         [print(sizes, d['average Carrier Number'].mean()) for sizes in ['XL', 'L', 'M', 'S']]
 
-    def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs, max_path=70):
+    def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs, **kwargs):
         colors = ['green', 'red']
         max_path = self.get_maximum_value(separate_data_frames, path_length_measure)
         bins = range(0, int(max_path), int(max_path) // 6)
@@ -440,8 +440,9 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             axs[i].set_ylim([0, max_num_experiments + 3])
             axs[i].yaxis.set_label_coords(labelx, 0.5)
 
+    def plot_percent_of_solving(self, separate_data_frames):
         fig = plt.figure()
-        percent_of_winning, error = self.percent_of_solving(separate_data_frames)
+        percent_of_winning, error = self.calc_percent_of_solving(separate_data_frames)
         # TODO: Add error bars.
         plt.bar(*zip(*percent_of_winning.items()))
         plt.errorbar(list(zip(*percent_of_winning.items()))[0],
@@ -450,7 +451,8 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         plt.ylabel('percent of success')
         save_fig(fig, 'percent_solving_ants_cut_time')
 
-    def percent_of_solving(self, separate_data_frames):
+    @staticmethod
+    def calc_percent_of_solving(separate_data_frames):
         percent_of_winning, error = {}, {}
 
         for size, dfs in separate_data_frames.items():
@@ -461,93 +463,93 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         return percent_of_winning, error
 
 
-def plot_means():
-    shape = 'SPT'
-    PLs = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human,
-           # Path_length_cut_off_df_humanhand
-           ]
-    fig, axs = plt.subplots(len(PLs), 1)
-
-    for PL, ax in zip(PLs, axs):
-        my_PL = PL()
-        my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
-        my_PL.cut_off_after_path_length(max_path=15)
-        my_PL.plot_means(ax)
-
-        # adjust_figure(ax)
-
-    [ax.set_xlabel('') for ax in axs[:-1]]
-    [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
-    axs[0].set_ylabel('path length/minimal path length[]')
-
-    axs[0].set_ylim(0, 20)
-    axs[1].set_ylim(2.5, 4)
-
-    save_fig(fig, 'back_path_length_all')
-
-
-def time_distribution(measure='solving time [s]'):
-    Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand, ]
-    # Plot_classes = [Path_length_cut_off_df_ant]
-
-    for Plot_class in Plot_classes:
-        print(Plot_class)
-        my_plot_class = Plot_class(measure)
-        separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_separately)
-
-        fig, axs = my_plot_class.open_figure()
-        my_plot_class.plot_time_distributions(separate_data_frames, axs, measure=measure)
-        save_fig(fig, measure + my_plot_class.solver)
+# def plot_means():
+#     shape = 'SPT'
+#     PLs = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human,
+#            # Path_length_cut_off_df_humanhand
+#            ]
+#     fig, axs = plt.subplots(len(PLs), 1)
+#
+#     for PL, ax in zip(PLs, axs):
+#         my_PL = PL()
+#         my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
+#         my_PL.cut_off_after_path_length(max_path=15)
+#         my_PL.plot_means(ax)
+#
+#         # adjust_figure(ax)
+#
+#     [ax.set_xlabel('') for ax in axs[:-1]]
+#     [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
+#     axs[0].set_ylabel('path length/minimal path length[]')
+#
+#     axs[0].set_ylim(0, 20)
+#     axs[1].set_ylim(2.5, 4)
+#
+#     save_fig(fig, 'back_path_length_all')
 
 
-def path_length_distribution_after_max_time(time_measure='norm solving time [s]',
-                                            path_length_measure='penalized path length [length unit]'):
-    Plot_classes = [Path_length_cut_off_df_ant]
-    # Plot_classes = [Path_length_cut_off_df_humanhand,
-    #                 Path_length_cut_off_df_ant,
-    #                 Path_length_cut_off_df_human]
-
-    with open('ps.pkl', 'rb') as file:
-        separate_data_frames = pickle.load(file)
-    my_plot_class = Path_length_cut_off_df_ant()
-    fig, axs = my_plot_class.open_figure()
-    my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs, max_path=25)
-    save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
-
-    for Plot_class in Plot_classes:
-        my_plot_class = Plot_class(time_measure=time_measure, path_length_measure=path_length_measure)
-        my_plot_class.cut_off_after_time(time_measure, path_length_measure, seconds_max=30*60)
-        separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_separately)
-
-        with open('ps.pkl', 'wb') as file:
-            pickle.dump(separate_data_frames, file)
-
-        fig, axs = my_plot_class.open_figure()
-        my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs, max_path=25)
-        save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
-
-
-def path_length_distribution_after_max_path_length(path_length_measure='penalized path length', max_path=15, ax=None):
-    Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand]
-
-    measure = ''
-
-    for Plot_class in Plot_classes:
-        my_plot_class = Plot_class(measure)
-        fig, axs = my_plot_class.open_figure()
-        my_plot_class.cut_off_after_path_length(max_path=max_path)
-        separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
-                                                                      my_plot_class.plot_separately)
-        my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs, max_path=max_path)
-        save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
+# def time_distribution(measure='solving time [s]'):
+#     Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand, ]
+#     # Plot_classes = [Path_length_cut_off_df_ant]
+#
+#     for Plot_class in Plot_classes:
+#         print(Plot_class)
+#         my_plot_class = Plot_class(measure)
+#         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
+#                                                                       my_plot_class.plot_separately)
+#
+#         fig, axs = my_plot_class.open_figure()
+#         my_plot_class.plot_time_distributions(separate_data_frames, axs, measure=measure)
+#         save_fig(fig, measure + my_plot_class.solver)
+#
+#
+# def path_length_distribution_after_max_time(time_measure='norm solving time [s]',
+#                                             path_length_measure='penalized path length [length unit]'):
+#     Plot_classes = [Path_length_cut_off_df_ant]
+#     # Plot_classes = [Path_length_cut_off_df_humanhand,
+#     #                 Path_length_cut_off_df_ant,
+#     #                 Path_length_cut_off_df_human]
+#
+#     with open('ps.pkl', 'rb') as file:
+#         separate_data_frames = pickle.load(file)
+#     my_plot_class = Path_length_cut_off_df_ant()
+#     fig, axs = my_plot_class.open_figure()
+#     my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs)
+#     save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
+#
+#     for Plot_class in Plot_classes:
+#         my_plot_class = Plot_class(time_measure=time_measure, path_length_measure=path_length_measure)
+#         my_plot_class.cut_off_after_time(time_measure, path_length_measure, seconds_max=30*60)
+#         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
+#                                                                       my_plot_class.plot_separately)
+#
+#         with open('ps.pkl', 'wb') as file:
+#             pickle.dump(separate_data_frames, file)
+#
+#         fig, axs = my_plot_class.open_figure()
+#         my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs)
+#         save_fig(fig, 'back_time_' + my_plot_class.solver + 'cut_of_time')
+#
+#
+# def path_length_distribution_after_max_path_length(path_length_measure='penalized path length', max_path=15, ax=None):
+#     Plot_classes = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human, Path_length_cut_off_df_humanhand]
+#
+#     measure = ''
+#
+#     for Plot_class in Plot_classes:
+#         my_plot_class = Plot_class(measure)
+#         fig, axs = my_plot_class.open_figure()
+#         my_plot_class.cut_off_after_path_length(max_path=max_path)
+#         separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
+#                                                                       my_plot_class.plot_separately)
+#         my_plot_class.plot_path_length_distributions(separate_data_frames, path_length_measure, axs)
+#         save_fig(fig, 'back_path_length_' + str(max_path) + my_plot_class.solver + 'cut_of_path')
 
 
 if __name__ == '__main__':
-    plot_means()
-    path_length_distribution_after_max_time(time_measure='norm time [s]',
-                                            path_length_measure='penalized path length [length unit]')
+    # plot_means()
+    # path_length_distribution_after_max_time(time_measure='norm time [s]',
+    #                                         path_length_measure='penalized path length [length unit]')
 
     # time_distribution(measure='norm solving time [s]')
     DEBUG = 1
