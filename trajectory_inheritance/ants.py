@@ -58,7 +58,7 @@ class Ants(Participants):
 
     def averageCarrierNumber(self):
         if len(self.frames):
-            return np.ceil(np.mean(self.carriers_in_frame(0)))
+            return np.ceil(np.mean(self.carriers_attached(0)))
         else:
             return None
 

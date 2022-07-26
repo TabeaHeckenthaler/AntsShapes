@@ -2,10 +2,11 @@ import pandas as pd
 from os import listdir
 from Directories import SaverDirectories, df_dir
 from trajectory_inheritance.get import get
-from Analysis.PathLength import PathLength
+from Analysis.PathLength.PathLength import PathLength
 from Setup.Attempts import Attempts
 from tqdm import tqdm
 from copy import copy
+import json
 
 pd.options.mode.chained_assignment = None
 
@@ -141,7 +142,8 @@ class DataFrame(pd.DataFrame):
         # for i, exp in self.iterrows():
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
-        self['penalized path length [length unit]'] = self.progress_apply(lambda x: PathLength(get(x['filename'])).per_exp_penalized(), axis=1)
+        self['penalized path length [length unit]'] = self.progress_apply(
+            lambda x: PathLength(get(x['filename'])).per_exp_penalized(), axis=1)
         # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
@@ -176,30 +178,49 @@ tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 DEBUG = 1
 
+
+def recalculating_cut_off_experiments():
+    """
+    These are the experiments which were cut off, because I used the wrong movie player.
+    I retracked
+
+    """
+    done_filenames = ['XL_SPT_4630015_XLSpecialT_1_ants (part 1)',
+                      'XL_SPT_4630018_XLSpecialT_1_ants',
+                      'XL_SPT_4630019_XLSpecialT_1_ants (part 1)',
+                      'XL_SPT_4640012_XLSpecialT_1_ants',
+                      'XL_SPT_4640015_XLSpecialT_1_ants',
+                      'XL_SPT_4640023_XLSpecialT_1_ants'
+                      ]
+
+    new_filenames = []
+
+    for filename in new_filenames:
+        myDataFrame = myDataFrame.recalculate_experiment(filename)
+
+    with open('retracked.txt', 'w') as file:
+        json.dump(done_filenames + new_filenames, file)
+
+
 if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 
-    filenames = ['XL_SPT_4630015_XLSpecialT_1_ants (part 1)',
-                 'XL_SPT_4630018_XLSpecialT_1_ants',
-                 'XL_SPT_4630019_XLSpecialT_1_ants (part 1)',
-                 'XL_SPT_4640012_XLSpecialT_1_ants',
-                 'XL_SPT_4640015_XLSpecialT_1_ants',
-                 'XL_SPT_4640023_XLSpecialT_1_ants'
-                 ]
-    for filename in filenames:
-        myDataFrame = myDataFrame.recalculate_experiment(filename)
+    # drops = ['XL_SPT_4630015_XLSpecialT_1_ants', 'XL_SPT_4630019_XLSpecialT_1_ants']
+    #
+    # for drop in drops:
+    #     myDataFrame.drop_experiment(drop)
 
     # myDataFrame.add_column()
-    # for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
-    #     print(new_experiment['filename'].values[0])
-    #     myDataFrame = myDataFrame + new_experiment
-    #
-    #     ratio = new_experiment['path length [length unit]'].values[0]/
-    #     new_experiment['minimal path length [length unit]'].values[0]
-    #     print(ratio)
-    #
-    #     if ratio < 1.2 or ratio > 15:
-    #         raise ValueError('weirdness in ' + new_experiment['filename'])
+    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+        print(new_experiment['filename'].values[0])
+        myDataFrame = myDataFrame + new_experiment
+
+        ratio = new_experiment['path length [length unit]'].values[0] / \
+                new_experiment['minimal path length [length unit]'].values[0]
+        print(ratio)
+
+        if ratio < 1.2 or ratio > 15:
+            raise ValueError('weirdness in ' + new_experiment['filename'])
 
     myDataFrame.save()

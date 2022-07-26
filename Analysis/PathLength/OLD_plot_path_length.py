@@ -4,9 +4,7 @@ from trajectory_inheritance.trajectory import sizes
 from DataFrame.plot_dataframe import save_fig
 from Analysis.GeneralFunctions import colors
 from trajectory_inheritance.trajectory import solvers
-from DataFrame.plot_dataframe import Carrier_Number_Binning, reduce_legend
-from Analysis.Path_length_distributions import Path_length_cut_off_df_ant, Path_length_cut_off_df_human,\
-    Path_length_cut_off_df_humanhand
+from DataFrame.plot_dataframe import Carrier_Number_Binning
 
 
 def SPT_figure(df, ax):

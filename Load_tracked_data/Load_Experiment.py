@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat']
 
-    solver, shape, free = 'ant', 'SPT', False
+    solver, shape, free = 'human', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:

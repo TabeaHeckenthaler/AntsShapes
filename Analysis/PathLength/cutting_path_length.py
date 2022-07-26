@@ -8,12 +8,10 @@ from DataFrame.plot_dataframe import save_fig
 from trajectory_inheritance.exp_types import solver_geometry, ResizeFactors
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
-from Analysis.PathLength import PathLength
+from Analysis.PathLength.PathLength import PathLength
 from trajectory_inheritance.get import get
 import pandas as pd
-from DataFrame.plot_dataframe import reduce_legend
 from Analysis.GeneralFunctions import flatten
-import pickle
 
 
 class Path_length_cut_off_df(Altered_DataFrame):
@@ -98,7 +96,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
         not_successful = ~ self.df['winner']
         measured_overtime = self.df[time_measure] > self.df['norm maximal time [s]']
         exclude = (~ measured_overtime & not_successful)
-        print(exclude[exclude].index)
+        print(self.df[exclude])
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overtime | not_successful)
 
@@ -138,6 +136,38 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                                                                  / self.df['minimal path length [length unit]']
 
     def plot_means(self, ax, marker='.'):
+        d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
+        plt.show(block=False)
+        for size, dfs in d.items():
+            if size not in ['M (2)', 'M (1)']:
+                for key, df in dfs.items():
+                    for part in self.split_separate_groups(df):
+                        if not part.empty:
+                            part.loc[part['size'].isin(['Small Far', 'Small Near']), 'size'] = 'Small'
+                            groups = part.groupby(by=['size'])
+                            means = groups.mean()
+                            sem = groups.sem()
+                            # std = groups.std()
+
+                            means.plot.scatter(x='average Carrier Number',
+                                               y='path length/minimal path length[]',
+                                               xerr=sem['average Carrier Number'],
+                                               yerr=sem['path length/minimal path length[]'],
+                                               c=self.color[key],
+                                               ax=ax,
+                                               marker=marker,
+                                               s=150)
+
+                            if len(means) > 0:
+                                xs = list(means['average Carrier Number'])
+                                ys = list(means['path length/minimal path length[]'])
+                                for txt, x, y in zip(list(means.index), xs, ys):
+                                    ax.annotate(txt, (x, y), fontsize=15)
+                            DEBUG = 1
+            ax.legend(dfs.keys())
+            ax.set_title(self.solver)
+
+    def plot_means_violin(self, ax, marker='.'):
         d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
         plt.show(block=False)
         for size, dfs in d.items():
@@ -463,29 +493,29 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         return percent_of_winning, error
 
 
-# def plot_means():
-#     shape = 'SPT'
-#     PLs = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human,
-#            # Path_length_cut_off_df_humanhand
-#            ]
-#     fig, axs = plt.subplots(len(PLs), 1)
-#
-#     for PL, ax in zip(PLs, axs):
-#         my_PL = PL()
-#         my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
-#         my_PL.cut_off_after_path_length(max_path=15)
-#         my_PL.plot_means(ax)
-#
-#         # adjust_figure(ax)
-#
-#     [ax.set_xlabel('') for ax in axs[:-1]]
-#     [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
-#     axs[0].set_ylabel('path length/minimal path length[]')
-#
-#     axs[0].set_ylim(0, 20)
-#     axs[1].set_ylim(2.5, 4)
-#
-#     save_fig(fig, 'back_path_length_all')
+def plot_means():
+    shape = 'SPT'
+    PLs = [Path_length_cut_off_df_ant, Path_length_cut_off_df_human,
+           # Path_length_cut_off_df_humanhand
+           ]
+    fig, axs = plt.subplots(len(PLs), 1)
+
+    for PL, ax in zip(PLs, axs):
+        my_PL = PL()
+        my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
+        my_PL.cut_off_after_path_length(max_path=15)
+        my_PL.plot_means_violin(ax)
+
+        # adjust_figure(ax)
+
+    [ax.set_xlabel('') for ax in axs[:-1]]
+    [ax.set_ylabel('') for ax in [axs[0], axs[-1]]]
+    axs[0].set_ylabel('path length/minimal path length[]')
+
+    axs[0].set_ylim(0, 20)
+    axs[1].set_ylim(2.5, 4)
+
+    save_fig(fig, 'back_path_length_all')
 
 
 # def time_distribution(measure='solving time [s]'):

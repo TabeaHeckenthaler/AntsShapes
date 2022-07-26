@@ -3,7 +3,7 @@ import numpy as np
 from trajectory_inheritance.get import get
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts, pre_final_state
-from Analysis.PathLength import PathLength
+from Analysis.PathLength.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 
