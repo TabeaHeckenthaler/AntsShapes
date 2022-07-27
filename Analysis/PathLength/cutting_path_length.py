@@ -29,7 +29,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
 
-        if 'norm' in time_measure:
+        if time_measure is not None and 'norm' in time_measure:
             self.add_normalized_measure(time_measure)
         if 'norm' in path_length_measure:
             self.add_normalized_measure(path_length_measure)
@@ -87,14 +87,40 @@ class Path_length_cut_off_df(Altered_DataFrame):
         plt.show(block=False)
         return fig, axs
 
-    def cut_off_after_time(self, time_measure: str, path_length_measure: str, max_t=30 * 60):
+    def cut_off_after_time(self, name: str, time_measure: str, path_length_measure: str, max_t=30 * 60):
         """
         :param time_measure:
         :param path_length_measure:
         :param max_t:
 
         """
-        self.df['norm maximal time [s]'] = max_t * self.df['size'].map(ResizeFactors[self.solver])
+        if name + '.pkl' in os.listdir():
+            with open(name + '.pkl', 'rb') as file:
+                self.df = pickle.load(file)
+
+        else:
+            def calc_path_length(exp) -> float:
+                x = get(exp['filename'])
+                if time_measure == 'norm solving time [s]':
+                    frames = [0, x.frame_count_after_solving_time(int(exp['norm maximal time [s]']))]
+                else:
+                    frames = [0, int(exp['norm maximal time [s]'] * exp['fps'])]
+                if 'penalized path length' in path_length_measure:
+                    return PathLength(x).calculate_penalized_path_length(frames=frames)
+                if 'path length' in path_length_measure:
+                    if np.isnan(frames[1]):
+                        return np.NaN
+                    return PathLength(x).calculate_path_length(frames=frames)
+
+            self.df['norm maximal time [s]'] = max_t * self.df['size'].map(ResizeFactors[self.solver])
+            self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(calc_path_length, axis=1)
+            self.df[path_length_measure.split('/')[0].split(' [length unit]')[0] + '/minimal path length[]'] = \
+                self.df[path_length_measure.split('/')[0] + ' [length unit]'] \
+                / self.df['minimal path length [length unit]']
+
+            with open(name + '.pkl', 'wb') as file:
+                pickle.dump(self.df, file)
+
         not_successful = ~ self.df['winner']
         measured_overtime = self.df[time_measure] > self.df['norm maximal time [s]']
         exclude = (~ measured_overtime & not_successful)
@@ -102,41 +128,33 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overtime | not_successful)
 
-        def path_length(exp) -> float:
-            x = get(exp['filename'])
-            if time_measure == 'norm solving time [s]':
-                frames = [0, x.frame_count_after_solving_time(int(exp['norm maximal time [s]']))]
-            else:
-                frames = [0, int(exp['norm maximal time [s]'] * exp['fps'])]
-            if 'penalized path length' in path_length_measure:
-                return PathLength(x).calculate_penalized_path_length(frames=frames)
-            if 'path length' in path_length_measure:
-                if np.isnan(frames[1]):
-                    return np.NaN
-                return PathLength(x).calculate_path_length(frames=frames)
+    def cut_off_after_path_length(self, name, path_length_measure='path length [length unit]', max_path=15):
+        if name + '.pkl' in os.listdir():
+            with open(name + '.pkl', 'rb') as file:
+                self.df = pickle.load(file)
 
-        self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(path_length, axis=1)
-        self.df[path_length_measure.split('/')[0].split(' [length unit]')[0] + '/minimal path length[]'] = \
-            self.df[path_length_measure.split('/')[0] + ' [length unit]'] \
-            / self.df['minimal path length [length unit]']
+        else:
+            self.df['maximal path length [length unit]'] = max_path * self.df['minimal path length [length unit]']
 
-    def cut_off_after_path_length(self, path_length_measure='path length [length unit]', max_path=15):
-        self.df['maximal path length [length unit]'] = max_path * self.df['minimal path length [length unit]']
+            def calc_path_length(exp) -> float:
+                if 'penalized path length' in path_length_measure:
+                    x = get(exp['filename'])
+                    return PathLength(x).calculate_penalized_path_length()
+                if 'path length' in path_length_measure:
+                    return exp[path_length_measure.split('/')[0] + ' [length unit]']
 
-        def path_length(exp) -> float:
-            # x = get(exp['filename'])
-            # return min(PathLength(x).calculate_path_length(), exp['maximal path length [length unit]'])
-            return min(exp[path_length_measure], exp['maximal path length [length unit]'])
+            self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(calc_path_length, axis=1)
+            self.df[path_length_measure.split('/')[0] + '/minimal path length[]'] = \
+                self.df[path_length_measure.split('/')[0] + ' [length unit]'] / self.df['minimal path length [length unit]']
+
+            with open(name + '.pkl', 'wb') as file:
+                pickle.dump(self.df, file)
 
         not_successful = ~ self.df['winner']
         measured_overpath = self.df[path_length_measure] > max_path
         exclude = (~ measured_overpath & not_successful)
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overpath | not_successful)
-        self.df[path_length_measure] = self.df.progress_apply(path_length, axis=1)
-        self.df[path_length_measure.split(' [')[0] + '/minimal path length[]'] = self.df[path_length_measure] \
-                                                                                 / self.df[
-                                                                                     'minimal path length [length unit]']
 
     def plot_means(self, separate_data_frames, ax, marker='.'):
         for size, dfs in separate_data_frames.items():
@@ -164,6 +182,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                 ys = list(means['path length/minimal path length[]'])
                                 for txt, x, y in zip(list(means.index), xs, ys):
                                     ax.annotate(txt, (x, y), fontsize=15)
+                            ax.set_ylim(0, max(ax.get_ylim()[1], means['path length/minimal path length[]'][0]+5))
             ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
 
     def plot_means_violin(self, ax, marker='.'):
@@ -194,6 +213,8 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                 ys = list(means['path length/minimal path length[]'])
                                 for txt, x, y in zip(list(means.index), xs, ys):
                                     ax.annotate(txt, (x, y), fontsize=15)
+
+                            ax.set_ylim(0, max(ax.get_ylim()[1], means['path length/minimal path length[]'][0] + 5))
             ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
             ax.set_title(self.solver)
 
@@ -433,7 +454,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         gs = fig.add_gridspec(num_sizes, 3)
 
         axs = [fig.add_subplot(gs[i, 2]) for i in range(0, num_sizes)]
-        [axs[i].set_xticklabels([]) for i in range(num_sizes-1)]
+        # [axs[i].set_xticklabels([]) for i in range(num_sizes-1)]
         fig.delaxes(axs_old)
 
         max_num_experiments = 1
@@ -485,7 +506,6 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
                     yerr=list(zip(*error.items()))[1], fmt="o", color="r")
         ax.set_ylabel('percent of success')
         ax.set_xlabel('size')
-        DEBUG = 1
 
     @staticmethod
     def calc_percent_of_solving(separate_data_frames):
@@ -508,6 +528,7 @@ def plot_means():
     for PL, ax in zip(PLs, axs):
         my_PL = PL()
         my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
+        raise Error
         my_PL.cut_off_after_path_length(max_path=15)
         my_PL.plot_means_violin(ax)
 

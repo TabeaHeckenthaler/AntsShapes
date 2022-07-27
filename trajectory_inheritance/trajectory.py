@@ -212,7 +212,11 @@ class Trajectory:
         if vel_norm is None:
             vel_norm = np.linalg.norm(self.velocity(4), axis=0)
         stuck_array = [v < v_min for v in vel_norm]
-        # plt.plot(stuck_array, marker='.', linestyle='')
+        # plt.plot(np.array(stuck_array).astype(int) * 0.02, marker='.', linestyle='')
+        # plt.plot(vel_norm)
+        # plt.title(self.filename)
+        # plt.savefig('stuck\\' + self.filename + '.png')
+        # plt.close()
         return stuck_array
 
     def find_contact(self):
