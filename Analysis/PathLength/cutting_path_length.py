@@ -11,6 +11,8 @@ import numpy as np
 from Analysis.PathLength.PathLength import PathLength
 from trajectory_inheritance.get import get
 import pandas as pd
+import pickle
+import os
 from Analysis.GeneralFunctions import flatten
 
 
@@ -127,18 +129,17 @@ class Path_length_cut_off_df(Altered_DataFrame):
             return min(exp[path_length_measure], exp['maximal path length [length unit]'])
 
         not_successful = ~ self.df['winner']
-        measured_overpath = self.df[path_length_measure] > self.df['maximal path length [length unit]']
+        measured_overpath = self.df[path_length_measure] > max_path
         exclude = (~ measured_overpath & not_successful)
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overpath | not_successful)
         self.df[path_length_measure] = self.df.progress_apply(path_length, axis=1)
         self.df[path_length_measure.split(' [')[0] + '/minimal path length[]'] = self.df[path_length_measure] \
-                                                                                 / self.df['minimal path length [length unit]']
+                                                                                 / self.df[
+                                                                                     'minimal path length [length unit]']
 
-    def plot_means(self, ax, marker='.'):
-        d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
-        plt.show(block=False)
-        for size, dfs in d.items():
+    def plot_means(self, separate_data_frames, ax, marker='.'):
+        for size, dfs in separate_data_frames.items():
             if size not in ['M (2)', 'M (1)']:
                 for key, df in dfs.items():
                     for part in self.split_separate_groups(df):
@@ -163,9 +164,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                 ys = list(means['path length/minimal path length[]'])
                                 for txt, x, y in zip(list(means.index), xs, ys):
                                     ax.annotate(txt, (x, y), fontsize=15)
-                            DEBUG = 1
-            ax.legend(dfs.keys())
-            ax.set_title(self.solver)
+            ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
 
     def plot_means_violin(self, ax, marker='.'):
         d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
@@ -195,8 +194,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
                                 ys = list(means['path length/minimal path length[]'])
                                 for txt, x, y in zip(list(means.index), xs, ys):
                                     ax.annotate(txt, (x, y), fontsize=15)
-                            DEBUG = 1
-            ax.legend(dfs.keys())
+            ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
             ax.set_title(self.solver)
 
     def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs, **kwargs):
@@ -282,7 +280,7 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
 
         labelx = -0.05  # axes coords
         for ax in axs:
-            ax.set_ylim([0, max_num_experiments+3])
+            ax.set_ylim([0, max_num_experiments + 3])
         axs[-1].yaxis.set_label_coords(labelx, 0.5)
 
 
@@ -311,10 +309,10 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
         axs.set_xlabel('time [s]')
 
         # for j in range(len(axs)):
-        axs.set_ylim([0, np.ceil(max_num_experiments)+0.5])
+        axs.set_ylim([0, np.ceil(max_num_experiments) + 0.5])
         # labelx = -0.05  # axes coords
 
-        axs.set_ylim([0, max_num_experiments+3])
+        axs.set_ylim([0, max_num_experiments + 3])
         # axs.yaxis.set_label_coords(labelx, 0.5)
 
     def average_participants(self, sizes, df):
@@ -405,7 +403,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         # for j in range(len(axs)):
 
         for ax in axs:
-            ax.set_ylim([0, max_num_experiments+3])
+            ax.set_ylim([0, max_num_experiments + 3])
 
         # axs[-1].set_ylim([0, max_num_experiments + 1.5])
         axs[-1].yaxis.set_label_coords(labelx, 0.5)
@@ -425,10 +423,18 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 
         [print(sizes, d['average Carrier Number'].mean()) for sizes in ['XL', 'L', 'M', 'S']]
 
-    def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs, **kwargs):
+    def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs_old, **kwargs):
+        fig = plt.gcf()
         colors = ['green', 'red']
         max_path = self.get_maximum_value(separate_data_frames, path_length_measure)
         bins = range(0, int(max_path), int(max_path) // 6)
+
+        num_sizes = len(separate_data_frames.keys())
+        gs = fig.add_gridspec(num_sizes, 3)
+
+        axs = [fig.add_subplot(gs[i, 2]) for i in range(0, num_sizes)]
+        [axs[i].set_xticklabels([]) for i in range(num_sizes-1)]
+        fig.delaxes(axs_old)
 
         max_num_experiments = 1
 
@@ -459,6 +465,7 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             # av_Carrier_Number()
             axs[i].set_xlim(0, max_path)
             axs[i].set_ylabel(size)
+
             max_num_experiments = max(np.max(results[0]), max_num_experiments)
             self.add_mean_sem(df_sizes, path_length_measure, axs[i], colors, max_num_experiments)
 
@@ -470,16 +477,15 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
             axs[i].set_ylim([0, max_num_experiments + 3])
             axs[i].yaxis.set_label_coords(labelx, 0.5)
 
-    def plot_percent_of_solving(self, separate_data_frames):
-        fig = plt.figure()
+    def plot_percent_of_solving(self, separate_data_frames, ax):
         percent_of_winning, error = self.calc_percent_of_solving(separate_data_frames)
-        # TODO: Add error bars.
-        plt.bar(*zip(*percent_of_winning.items()))
-        plt.errorbar(list(zip(*percent_of_winning.items()))[0],
-                     list(zip(*percent_of_winning.items()))[1],
-                     yerr=list(zip(*error.items()))[1], fmt="o", color="r")
-        plt.ylabel('percent of success')
-        save_fig(fig, 'percent_solving_ants_cut_time')
+        ax.bar(*zip(*percent_of_winning.items()))
+        ax.errorbar(list(zip(*percent_of_winning.items()))[0],
+                    list(zip(*percent_of_winning.items()))[1],
+                    yerr=list(zip(*error.items()))[1], fmt="o", color="r")
+        ax.set_ylabel('percent of success')
+        ax.set_xlabel('size')
+        DEBUG = 1
 
     @staticmethod
     def calc_percent_of_solving(separate_data_frames):
@@ -487,11 +493,10 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
 
         for size, dfs in separate_data_frames.items():
             percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
-            error[size] = np.sqrt(percent_of_winning[size] * (1-percent_of_winning[size])/
+            error[size] = np.sqrt(percent_of_winning[size] * (1 - percent_of_winning[size]) /
                                   np.sum([len(df) for df in dfs.values()]))
 
         return percent_of_winning, error
-
 
 def plot_means():
     shape = 'SPT'
