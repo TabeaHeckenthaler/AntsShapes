@@ -17,26 +17,23 @@ from Analysis.GeneralFunctions import flatten
 
 
 class Path_length_cut_off_df(Altered_DataFrame):
-    def __init__(self, solver, time_measure='norm solving time [s]',
-                 path_length_measure='penalized path length [length unit]'):
+    def __init__(self, solver):
         super().__init__()
         self.choose_experiments(solver, 'SPT', geometry=solver_geometry[solver], init_cond='back')
-
-        columns = ['filename', 'winner', 'size', 'communication', 'path length [length unit]',
-                   'minimal path length [length unit]', 'average Carrier Number', 'fps', 'time [s]', 'solving time [s]']
+        columns = ['filename', 'winner', 'size', 'communication', 'fps', 'time [s]']
         self.choose_columns(columns)
+        self.plot_separately = None
+        self.color = None
+        self.geometry = None
 
+    def add_dictionary(self, d, time_measure='norm solving time [s]',
+                       path_length_measure='penalized path length [length unit]'):
         self.df['path length/minimal path length[]'] = self.df['path length [length unit]'] \
                                                        / self.df['minimal path length [length unit]']
-
         if time_measure is not None and 'norm' in time_measure:
             self.add_normalized_measure(time_measure)
         if 'norm' in path_length_measure:
             self.add_normalized_measure(path_length_measure)
-
-        self.plot_separately = None
-        self.color = None
-        self.geometry = None
 
     def __add__(self, Path_length_cut_off_df2):
         self.n_group_sizes = self.n_group_sizes + Path_length_cut_off_df2.n_group_sizes
@@ -128,7 +125,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overtime | not_successful)
 
-    def cut_off_after_path_length(self, name, path_length_measure='path length [length unit]', max_path=15):
+    def cut_off_after_path_length(self, df, name, path_length_measure='path length [length unit]', max_path=15):
         if name + '.pkl' in os.listdir():
             with open(name + '.pkl', 'rb') as file:
                 self.df = pickle.load(file)
@@ -153,7 +150,6 @@ class Path_length_cut_off_df(Altered_DataFrame):
                 pickle.dump(self.df, file)
 
         not_successful = ~ self.df['winner']
-        self.df.loc[2254]
         measured_overpath = self.df[path_length_measure] > max_path
         exclude = (~ measured_overpath & not_successful)
         self.df.drop(self.df[exclude].index, inplace=True)
@@ -374,11 +370,9 @@ class Path_length_cut_off_df_humanhand(Path_length_cut_off_df):
 
 
 class Path_length_cut_off_df_ant(Path_length_cut_off_df):
-    def __init__(self, time_measure='norm solving time [s]',
-                 path_length_measure='penalized path length [length unit]'):
+    def __init__(self):
         self.solver = 'ant'
-        super().__init__(self.solver, time_measure=time_measure, path_length_measure=path_length_measure)
-
+        super().__init__(self.solver)
         self.n_group_sizes = 5
         self.plot_separately = {'S': [1]}
         self.color = {'winner': 'green', 'looser': 'red'}

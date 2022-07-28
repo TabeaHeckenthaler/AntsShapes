@@ -1,22 +1,15 @@
 from Analysis.PathLength.cutting_path_length import *
-import os
-import pickle
 
 
 def plot_path_length_dist_cut_time(time_measure, path_length_measure, name='ps'):
-    my_plot_class = Path_length_cut_off_df_ant(time_measure=time_measure, path_length_measure=path_length_measure)
+    my_plot_class = Path_length_cut_off_df_ant()
     max_t_min = 27
-    # if name + '.pkl' in os.listdir():
-    #     with open(name + '.pkl', 'rb') as file:
-    #         separate_data_frames = pickle.load(file)
-    # else:
+
     my_plot_class.cut_off_after_time(name, time_measure, path_length_measure, max_t=max_t_min*60)
     separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                   my_plot_class.plot_separately,
                                                                   'SPT',
                                                                   geometry=solver_geometry[my_plot_class.solver])
-    # with open(name + '.pkl', 'wb') as file:
-    #     pickle.dump(separate_data_frames, file)
 
     fig, ax = plt.subplots(ncols=3, figsize=(15, 7))
     plt.show(block=False)
@@ -29,22 +22,13 @@ def plot_path_length_dist_cut_time(time_measure, path_length_measure, name='ps')
     save_fig(fig, name)
 
 
-def plot_path_length_dist_cut_path(time_measure, path_length_measure, name='ps'):
-    my_plot_class = Path_length_cut_off_df_ant(time_measure=time_measure, path_length_measure=path_length_measure)
+def plot_path_length_dist_cut_path(my_plot_class, path_length_measure, name='ps'):
     max_path = 12
-
-    # if name + '.pkl' in os.listdir():
-    #     with open(name + '.pkl', 'rb') as file:
-    #         separate_data_frames = pickle.load(file)
-    # else:
-    my_plot_class.cut_off_after_path_length(name, path_length_measure, max_path=max_path)
+    my_plot_class.cut_off_after_path_length(my_plot_class.df, name, path_length_measure, max_path=max_path)
     separate_data_frames = my_plot_class.get_separate_data_frames(my_plot_class.solver,
                                                                   my_plot_class.plot_separately,
                                                                   'SPT',
                                                                   geometry=solver_geometry[my_plot_class.solver])
-
-    # with open(name + '.pkl', 'wb') as file:
-    #     pickle.dump(separate_data_frames, file)
 
     fig, ax = plt.subplots(ncols=3, figsize=(15, 7))
     plt.show(block=False)
@@ -86,18 +70,18 @@ if __name__ == '__main__':
     # time_measure = 'norm time [s]'
     # plot_path_length_dist_cut_time(time_measure, path_length_measure, name=name)
 
-    # name = 'np_nt_cut_path'
-    # # Problem:
-    # # Solution:
-    # #
-    # path_length_measure = 'path length/minimal path length[]'
-    # time_measure = None
-    # plot_path_length_dist_cut_path(time_measure, path_length_measure, name=name)
-
-    name = 'npp_nt_cut_path'
+    name = 'np_nt_cut_path'
     # Problem:
     # Solution:
     #
-    path_length_measure = 'penalized path length/minimal path length[]'
+    path_length_measure = 'path length/minimal path length[]'
     time_measure = None
     plot_path_length_dist_cut_path(time_measure, path_length_measure, name=name)
+
+    # name = 'npp_nt_cut_path'
+    # # Problem:
+    # # Solution:
+    # #
+    # my_plot_class = Path_length_cut_off_df_ant()
+    # path_length_measure = 'penalized path length/minimal path length[]'
+    # plot_path_length_dist_cut_path(my_plot_class, path_length_measure, name=name)

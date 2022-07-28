@@ -2,7 +2,6 @@ import pandas as pd
 from os import listdir
 from Directories import SaverDirectories, df_dir
 from trajectory_inheritance.get import get
-from Analysis.PathLength.PathLength import PathLength
 from tqdm import tqdm
 from copy import copy
 import json
@@ -106,14 +105,7 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        # with open('participant_count_dict.txt', 'r') as json_file:
-        #     participant_count_dict = json.load(json_file)
-        #
-        # for i, exp in self.iterrows():
-        #     if exp['filename'] in participant_count_dict.keys():
-        #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
-        self['penalized path length [length unit]'] = self.progress_apply(
-            lambda x: PathLength(get(x['filename'])).per_experiment(penalize=True), axis=1)
+        pass
         # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 

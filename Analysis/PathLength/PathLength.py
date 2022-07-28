@@ -1,7 +1,7 @@
+from Setup.Attempts import Attempts
 from trajectory_inheritance.trajectory import Trajectory_part
 import numpy as np
 from Setup.MazeFunctions import ConnectAngle
-from Setup.Attempts import Attempts
 from Analysis.resolution import resolution
 from copy import copy
 from trajectory_inheritance.get import get
@@ -9,17 +9,21 @@ from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 from PS_Search_Algorithms.Path_planning_full_knowledge import Path_planning_full_knowledge
 from scipy.ndimage import gaussian_filter
+from DataFrame.dataFrame import myDataFrame
+from tqdm import tqdm
+import os
+import json
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
-noise_xy_ants_ImageAnaylsis = [0.01, 0.05, 0.02]  # cm
-noise_angle_ants_ImageAnaylsis = [0.01, 0.01, 0.02]  # rad
-
-noise_xy_human_ImageAnaylsis = [0.01, 0.01, 0.01]  # m
-noise_angle_human_ImageAnaylsis = [0.01, 0.01, 0.01]  # rad
-
-resolution_xy_of_ps = [0.08, 0.045]  # cm
-resolution_angle_of_ps = [0.05, 0.05]  # cm
+# noise_xy_ants_ImageAnaylsis = [0.01, 0.05, 0.02]  # cm
+# noise_angle_ants_ImageAnaylsis = [0.01, 0.01, 0.02]  # rad
+#
+# noise_xy_human_ImageAnaylsis = [0.01, 0.01, 0.01]  # m
+# noise_angle_human_ImageAnaylsis = [0.01, 0.01, 0.01]  # rad
+#
+# resolution_xy_of_ps = [0.08, 0.045]  # cm
+# resolution_angle_of_ps = [0.05, 0.05]  # cm
 
 
 class PathLength:
@@ -59,19 +63,6 @@ class PathLength:
         path_lengths = [PathLength(part).calculate_path_length(penalize=penalize) for part in parts]
         interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
         return np.sum(interpolated_path_lengths)
-
-    # def per_exp_penalized(self) -> float:
-    #     """
-    #     Path length is calculated from beginning to end_screen.
-    #     End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
-    #     """
-    #     # I have to split movies, because for 'connector movies', we have to treat them separately.
-    #     if self.x.solver != 'ant' or self.x.shape != 'SPT':
-    #         return np.NaN
-    #     parts = self.x.divide_into_parts()
-    #     path_lengths = [PathLength(part).calculate_path_length(penalize=True) for part in parts]
-    #     interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
-    #     return np.sum(interpolated_path_lengths)
 
     def interpolate_connectors(self, parts, path_lengths) -> list:
         """
@@ -214,13 +205,28 @@ class PathLength:
         winner = (path_length < max_path_length) and self.x.winner
         return path_length, winner
 
+    @classmethod
+    def create_dict(cls):
+        dictio_p = {}
+        dictio_pp = {}
+        for filename in tqdm(myDataFrame['filename']):
+            print(filename)
+            x = get(filename)
+            dictio_p[filename] = PathLength(x).calculate_path_length(penalize=False)
+            dictio_pp[filename] = PathLength(x).calculate_path_length(penalize=True)
+
+        with open(os.getcwd() + 'path_length.json', 'w') as json_file:
+            json.dump(dictio_p, json_file)
+            json_file.close()
+
+        with open(os.getcwd() + 'penalized_path_length.json', 'w') as json_file:
+            json.dump(dictio_pp, json_file)
+            json_file.close()
+
 
 if __name__ == '__main__':
-    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
-    # filename = 'M_SPT_4710005_MSpecialT_1_ants'
-    filename = 'L_I_4250003_3_ants'
-    x = get(filename)
-    print(PathLength(x).calculate_path_length(penalize=True))
-    print(PathLength(x).calculate_path_length(penalize=False))
     DEBUG = 1
-    # p = [resolution(size, 'ant') for size in sizes['ant']]
+
+    # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # x = get(filename)
+    # print(PathLength(x).calculate_path_length(penalize=True))
