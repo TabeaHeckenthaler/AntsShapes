@@ -75,10 +75,11 @@ def run_full_knowledge(shape: str, size: str, solver: str, geometry: tuple, star
 
 
 if __name__ == '__main__':
-    for size in ['']:
+    for size in ['S']:
         x = run_full_knowledge(size=size, shape='SPT', solver='ps_simulation',
-                               geometry=('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx'),
+                               geometry=('MazeDimensions_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                                initial_cond='back')
+        x.play()
         x.save()
 
     # for size in ['XL', 'L', 'M', 'S']:

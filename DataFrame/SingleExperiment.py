@@ -30,6 +30,9 @@ class SingleExperiment(pd.DataFrame):
         self['counted carrier number'] = None
         self['time [s]'] = x.timer()
 
+        """
+        This is all Analysis that I want to save separately. 
+        """
         # from Analysis.PathLength.PathLength import PathLength
         # from Setup.Attempts import Attempts
         # self['average Carrier Number'] = averageCarrierNumber[x.filename]
