@@ -72,17 +72,17 @@ if __name__ == '__main__':
     # time_measure = 'norm time [s]'
     # plot_path_length_dist_cut_time(time_measure, path_length_measure, name=name)
 
-    # name = 'np_nt_cut_path'
-    # path_length_measure = 'path length/minimal path length[]'
-    # for max_path in range(10, 30, 3):
-    #     my_plot_class = Path_length_cut_off_df_ant()
-    #
-    #     my_plot_class.df['average Carrier Number'] = my_plot_class.df['filename'].map(averageCarrierNumber_dict)
-    #     my_plot_class.df['minimal path length [length unit]'] = my_plot_class.df['filename'].map(minimal_path_length_dict)
-    #     my_plot_class.df['path length [length unit]'] = my_plot_class.df['filename'].map(path_length_dict)
-    #     my_plot_class.df['path length/minimal path length[]'] = my_plot_class.df['path length [length unit]']/ \
-    #                                                             my_plot_class.df['minimal path length [length unit]']
-    #     plot_path_length_dist_cut_path(my_plot_class, path_length_measure, max_path, name)
+    name = 'np_nt_cut_path'
+    path_length_measure = 'path length/minimal path length[]'
+    for max_path in range(10, 30, 3):
+        my_plot_class = Path_length_cut_off_df_ant()
+
+        my_plot_class.df['average Carrier Number'] = my_plot_class.df['filename'].map(averageCarrierNumber_dict)
+        my_plot_class.df['minimal path length [length unit]'] = my_plot_class.df['filename'].map(minimal_path_length_dict)
+        my_plot_class.df['path length [length unit]'] = my_plot_class.df['filename'].map(path_length_dict)
+        my_plot_class.df['path length/minimal path length[]'] = my_plot_class.df['path length [length unit]']/ \
+                                                                my_plot_class.df['minimal path length [length unit]']
+        plot_path_length_dist_cut_path(my_plot_class, path_length_measure, max_path, name)
 
     name = 'npp_nt_cut_path'
     path_length_measure = 'penalized path length/minimal path length[]'
