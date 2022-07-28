@@ -215,16 +215,17 @@ class PathLength:
             dictio_p[filename] = PathLength(x).calculate_path_length(penalize=False)
             dictio_pp[filename] = PathLength(x).calculate_path_length(penalize=True)
 
-        with open(os.getcwd() + 'path_length.json', 'w') as json_file:
+        with open(os.path.join(os.getcwd(), 'path_length.json'), 'w') as json_file:
             json.dump(dictio_p, json_file)
             json_file.close()
 
-        with open(os.getcwd() + 'penalized_path_length.json', 'w') as json_file:
+        with open(os.path.join(os.getcwd(), 'penalized_path_length.json'), 'w') as json_file:
             json.dump(dictio_pp, json_file)
             json_file.close()
 
 
 if __name__ == '__main__':
+    PathLength.create_dict()
     DEBUG = 1
 
     # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
