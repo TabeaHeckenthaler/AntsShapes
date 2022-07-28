@@ -27,6 +27,7 @@ PhaseSpaceDirectory = path.join(data_home, 'Configuration_Spaces')
 excel_sheet_directory = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'Human Experiments')
 contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
+df_minimal_dir = path.join(data_home, 'DataFrame', 'data_frame_minimal.json')
 network_dir = path.join(home, 'Analysis', 'PathPy')
 maze_dimension_directory = path.join(home, 'Setup')
 
@@ -38,6 +39,7 @@ trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'
                                                                                         path.sep, path.sep)
 trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
+averageCarrierNumber_dir = path.join(home, 'Analysis', 'average_carrier_number', 'averageCarrierNumber.json')
 
 
 def SetupDirectories():

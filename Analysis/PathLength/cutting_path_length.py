@@ -106,11 +106,11 @@ class Path_length_cut_off_df(Altered_DataFrame):
                 else:
                     frames = [0, int(exp['norm maximal time [s]'] * exp['fps'])]
                 if 'penalized path length' in path_length_measure:
-                    return PathLength(x).calculate_penalized_path_length(frames=frames)
+                    return PathLength(x).calculate_path_length(frames=frames, penalize=True)
                 if 'path length' in path_length_measure:
                     if np.isnan(frames[1]):
                         return np.NaN
-                    return PathLength(x).calculate_path_length(frames=frames)
+                    return PathLength(x).calculate_path_length(frames=frames, penalize=False)
 
             self.df['norm maximal time [s]'] = max_t * self.df['size'].map(ResizeFactors[self.solver])
             self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(calc_path_length, axis=1)
@@ -139,9 +139,11 @@ class Path_length_cut_off_df(Altered_DataFrame):
             def calc_path_length(exp) -> float:
                 if 'penalized path length' in path_length_measure:
                     x = get(exp['filename'])
-                    return PathLength(x).calculate_penalized_path_length()
+                    return PathLength(x).calculate_path_length(penalize=True)
                 if 'path length' in path_length_measure:
-                    return exp[path_length_measure.split('/')[0] + ' [length unit]']
+                    x = get(exp['filename'])
+                    return PathLength(x).calculate_path_length(penalize=False)
+                    # return exp[path_length_measure.split('/')[0] + ' [length unit]']
 
             self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(calc_path_length, axis=1)
             self.df[path_length_measure.split('/')[0] + '/minimal path length[]'] = \
@@ -151,6 +153,7 @@ class Path_length_cut_off_df(Altered_DataFrame):
                 pickle.dump(self.df, file)
 
         not_successful = ~ self.df['winner']
+        self.df.loc[2254]
         measured_overpath = self.df[path_length_measure] > max_path
         exclude = (~ measured_overpath & not_successful)
         self.df.drop(self.df[exclude].index, inplace=True)

@@ -47,29 +47,31 @@ class PathLength:
     #     #     print(x.filename + ' was smaller than the minimal path length... ')
     #     return total
 
-    def per_experiment(self) -> float:
+    def per_experiment(self, penalize=False) -> float:
         """
         Path length is calculated from beginning to end_screen.
         End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
         """
         # I have to split movies, because for 'connector movies', we have to treat them separately.
+        if penalize and (self.x.solver != 'ant' or self.x.shape != 'SPT'):
+            return np.NaN
         parts = self.x.divide_into_parts()
-        path_lengths = [PathLength(part).calculate_path_length() for part in parts]
+        path_lengths = [PathLength(part).calculate_path_length(penalize=penalize) for part in parts]
         interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
         return np.sum(interpolated_path_lengths)
 
-    def per_exp_penalized(self) -> float:
-        """
-        Path length is calculated from beginning to end_screen.
-        End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
-        """
-        # I have to split movies, because for 'connector movies', we have to treat them separately.
-        if self.x.solver != 'ant' or self.x.shape != 'SPT':
-            return np.NaN
-        parts = self.x.divide_into_parts()
-        path_lengths = [PathLength(part).calculate_penalized_path_length() for part in parts]
-        interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
-        return np.sum(interpolated_path_lengths)
+    # def per_exp_penalized(self) -> float:
+    #     """
+    #     Path length is calculated from beginning to end_screen.
+    #     End is either given through the kwarg 'minutes', or is defined as the end_screen of the experiment.
+    #     """
+    #     # I have to split movies, because for 'connector movies', we have to treat them separately.
+    #     if self.x.solver != 'ant' or self.x.shape != 'SPT':
+    #         return np.NaN
+    #     parts = self.x.divide_into_parts()
+    #     path_lengths = [PathLength(part).calculate_path_length(penalize=True) for part in parts]
+    #     interpolated_path_lengths = self.interpolate_connectors(parts, path_lengths)
+    #     return np.sum(interpolated_path_lengths)
 
     def interpolate_connectors(self, parts, path_lengths) -> list:
         """
@@ -102,40 +104,40 @@ class PathLength:
     def average_radius(self):
         return Maze(self.x).average_radius()
 
-    def calculate_path_length(self, rot: bool = True, frames: list = None, max_path_length=np.inf):
-        """
-        Reduce path to a list of points that each have distance of at least resolution = 0.1cm
-        to the next point.
-        Distance between to points is calculated by |x1-x2| + (angle1-angle2) * aver_radius.
-        Path length the sum of the distances of the points in the list.
-        """
-        if frames is None:
-            frames = [0, -1]
+    # def calculate_path_length_old(self, rot: bool = True, frames: list = None, max_path_length=np.inf):
+    #     """
+    #     Reduce path to a list of points that each have distance of at least resolution = 0.1cm
+    #     to the next point.
+    #     Distance between to points is calculated by |x1-x2| + (angle1-angle2) * aver_radius.
+    #     Path length the sum of the distances of the points in the list.
+    #     """
+    #     if frames is None:
+    #         frames = [0, -1]
+    #
+    #     # the connector parts dont have long enough path length.
+    #     if isinstance(self.x, Trajectory_part) and self.x.is_connector():
+    #         raise ValueError('Check here')
+    #
+    #     position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
+    #     aver_radius = self.average_radius()
+    #
+    #     unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
+    #     if unwrapped_angle.size == 0 or position.size == 0:
+    #         return 0
+    #     pos, ang = position[0], unwrapped_angle[0]
+    #     path_length = 0
+    #     cs_resolution = resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape)
+    #
+    #     for i in range(1, len(unwrapped_angle)):
+    #         d = self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
+    #         if d > cs_resolution:
+    #             path_length += self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
+    #             if path_length > max_path_length:
+    #                 return path_length
+    #             pos, ang = position[i], unwrapped_angle[i]
+    #     return path_length
 
-        # the connector parts dont have long enough path length.
-        if isinstance(self.x, Trajectory_part) and self.x.is_connector():
-            raise ValueError('Check here')
-
-        position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
-        aver_radius = self.average_radius()
-
-        unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
-        if unwrapped_angle.size == 0 or position.size == 0:
-            return 0
-        pos, ang = position[0], unwrapped_angle[0]
-        path_length = 0
-        cs_resolution = resolution(self.x.geometry(), self.x.size, self.x.solver, self.x.shape)
-
-        for i in range(1, len(unwrapped_angle)):
-            d = self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
-            if d > cs_resolution:
-                path_length += self.measureDistance(pos, position[i], ang, unwrapped_angle[i], aver_radius, rot=rot)
-                if path_length > max_path_length:
-                    return path_length
-                pos, ang = position[i], unwrapped_angle[i]
-        return path_length
-
-    def calculate_penalized_path_length(self, rot: bool = True, frames: list = None, max_path_length=np.inf):
+    def calculate_path_length(self, rot: bool = True, frames: list = None, penalize=False, max_path_length=np.inf):
         """
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
@@ -155,9 +157,11 @@ class PathLength:
         unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
         unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=self.x.fps)
 
-        stuck_frames = self.x.stuck()
-        vel_norm = np.linalg.norm(self.x.velocity(0.5), axis=0)
-        av_non_stuck_vel = np.mean(vel_norm[~np.array(stuck_frames).astype(bool)])
+        stuck_frames = (np.zeros(angle.size)).astype(bool)
+        if penalize:
+            stuck_frames = self.x.stuck()
+            vel_norm = np.linalg.norm(self.x.velocity(0.5), axis=0)
+            av_non_stuck_vel = np.mean(vel_norm[~np.array(stuck_frames).astype(bool)])
 
         if unwrapped_angle.size == 0 or position.size == 0:
             return 0
@@ -172,6 +176,8 @@ class PathLength:
             if stuck:
                 d = av_non_stuck_vel / self.x.fps
                 stuck_path_length += d
+            if real_path_length + stuck_path_length > max_path_length:
+                return real_path_length + stuck_path_length
         return real_path_length + stuck_path_length
 
     def plot(self, rot=True):
@@ -204,7 +210,7 @@ class PathLength:
         Adjust winner boolean.
         """
         max_path_length = self.minimal() * maximal
-        path_length = self.calculate_path_length(max_path_length=max_path_length)
+        path_length = self.calculate_path_length(max_path_length=max_path_length, penalize=False)
         winner = (path_length < max_path_length) and self.x.winner
         return path_length, winner
 
@@ -214,7 +220,7 @@ if __name__ == '__main__':
     # filename = 'M_SPT_4710005_MSpecialT_1_ants'
     filename = 'L_I_4250003_3_ants'
     x = get(filename)
-    print(PathLength(x).calculate_penalized_path_length())
-    print(PathLength(x).calculate_path_length())
+    print(PathLength(x).calculate_path_length(penalize=True))
+    print(PathLength(x).calculate_path_length(penalize=False))
     DEBUG = 1
     # p = [resolution(size, 'ant') for size in sizes['ant']]

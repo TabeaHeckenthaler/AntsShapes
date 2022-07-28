@@ -3,18 +3,13 @@ from os import listdir
 from Directories import SaverDirectories, df_dir
 from trajectory_inheritance.get import get
 from Analysis.PathLength.PathLength import PathLength
-from Setup.Attempts import Attempts
 from tqdm import tqdm
 from copy import copy
 import json
+from DataFrame.SingleExperiment import SingleExperiment
 
 pd.options.mode.chained_assignment = None
-
-length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
-
-
-def length_unit_func(solver):
-    return length_unit[solver]
+exp_solvers = ['ant', 'human', 'humanhand']
 
 
 def get_filenames(solver, size='', shape='', free=False):
@@ -35,49 +30,11 @@ def get_filenames(solver, size='', shape='', free=False):
         raise Exception('unknown solver: ' + solver)
 
 
-columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner',
-                    'communication', 'length unit', 'average Carrier Number', 'Attempts',
-                    'path length during attempts [length unit]', 'path length [length unit]', 'initial condition',
-                    'minimal path length [length unit]', 'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment', 'counted carrier number', 'time [s]', 'solving time [s]',
-                    'penalized path length [length unit]'],
+columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner', 'communication', 'length unit',
+                    'path length [length unit]', 'initial condition', 'minimal path length [length unit]',
+                    'force meter', 'fps', 'maze dimensions', 'load dimensions',
+                    'comment', 'counted carrier number', 'time [s]'],
                    dtype='object')
-
-
-class SingleExperiment(pd.DataFrame):
-    def __init__(self, filename, solver, df: pd.DataFrame = None):
-        if df is None:
-            super().__init__([[filename, solver]], columns=['filename', 'solver'])
-            self.add_information()
-        else:
-            super().__init__(df)
-
-    def add_information(self):
-        x = get(self['filename'][0])
-        self['size'] = str(x.size)
-        self['shape'] = str(x.shape)
-        self['winner'] = bool(x.winner)
-        self['fps'] = int(x.fps)
-        self['communication'] = bool(x.communication)
-        self['length unit'] = str(length_unit_func(x.solver))
-        self['path length [length unit]'] = float(PathLength(x).per_experiment())
-        self['penalized path length [length unit]'] = float(PathLength(x).per_exp_penalized())
-
-        if x.shape != 'SPT':
-            self['path length during attempts [length unit]'] = PathLength(x).during_attempts()
-
-        self['minimal path length [length unit]'] = PathLength(x).minimal()
-        self['average Carrier Number'] = float(x.averageCarrierNumber())
-        # self['average Carrier Number'] = 0
-        self['Attempts'] = Attempts(x, 'extend')
-        self['initial condition'] = str(x.initial_cond())
-        self['force meter'] = bool(x.has_forcemeter())
-        self['maze dimensions'], self['load dimensions'] = x.geometry()
-        self['counted carrier number'] = None
-        self['time [s]'] = x.timer()
-        self['solving time [s]'] = x.solving_time()
-
-        # self = self[list_of_columns]
 
 
 class DataFrame(pd.DataFrame):
@@ -90,6 +47,19 @@ class DataFrame(pd.DataFrame):
 
     def __add__(self, df_2):
         return DataFrame(pd.concat([self, df_2], ignore_index=True))
+
+    @staticmethod
+    def create():
+        singleExperiments = []
+        solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
+
+        for solver, filenames in solver_filenames.items():
+            for filename in filenames:
+                singleExperiments.append(SingleExperiment(filename, solver))
+        df = pd.concat(singleExperiments).reset_index(drop=True)
+
+        DEBUG = 1
+        # df.to_json(df_dir)
 
     def clone(self):
         return copy(self)
@@ -143,7 +113,7 @@ class DataFrame(pd.DataFrame):
         #     if exp['filename'] in participant_count_dict.keys():
         #         self.at[i, 'average Carrier Number'] = participant_count_dict[exp['filename']]
         self['penalized path length [length unit]'] = self.progress_apply(
-            lambda x: PathLength(get(x['filename'])).per_exp_penalized(), axis=1)
+            lambda x: PathLength(get(x['filename'])).per_experiment(penalize=True), axis=1)
         # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
 
@@ -203,6 +173,7 @@ def recalculating_cut_off_experiments():
 
 
 if __name__ == '__main__':
+    DataFrame.create()
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 
