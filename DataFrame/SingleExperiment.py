@@ -19,6 +19,7 @@ class SingleExperiment(pd.DataFrame):
     def add_information(self):
         x = get(self['filename'][0])
         self['size'] = str(x.size)
+        self['solver'] = x.solver
         self['shape'] = str(x.shape)
         self['winner'] = bool(x.winner)
         self['fps'] = int(x.fps)
@@ -29,6 +30,7 @@ class SingleExperiment(pd.DataFrame):
         self['maze dimensions'], self['load dimensions'] = x.geometry()
         self['counted carrier number'] = None
         self['time [s]'] = x.timer()
+        self['comment'] = ''
 
         """
         This is all Analysis that I want to save separately. 

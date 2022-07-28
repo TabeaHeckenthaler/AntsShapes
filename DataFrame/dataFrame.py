@@ -30,11 +30,11 @@ def get_filenames(solver, size='', shape='', free=False):
         raise Exception('unknown solver: ' + solver)
 
 
-columns = pd.Index(['filename', 'solver', 'size', 'shape', 'winner', 'communication', 'length unit',
-                    'path length [length unit]', 'initial condition', 'minimal path length [length unit]',
-                    'force meter', 'fps', 'maze dimensions', 'load dimensions',
-                    'comment', 'counted carrier number', 'time [s]'],
-                   dtype='object')
+columns = pd.Index(
+    ['filename', 'solver', 'size', 'shape', 'winner', 'communication', 'length unit', 'initial condition',
+     'force meter', 'fps', 'maze dimensions', 'load dimensions', 'comment', 'counted carrier number',
+     'time [s]'],
+    dtype='object')
 
 
 class DataFrame(pd.DataFrame):
@@ -54,7 +54,7 @@ class DataFrame(pd.DataFrame):
         solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
 
         for solver, filenames in solver_filenames.items():
-            for filename in filenames:
+            for filename in tqdm(filenames):
                 singleExperiments.append(SingleExperiment(filename, solver))
         df = pd.concat(singleExperiments).reset_index(drop=True)
 
