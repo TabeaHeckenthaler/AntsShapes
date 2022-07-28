@@ -21,7 +21,7 @@ class MinimalDataFrame(pd.DataFrame):
         for filename in filenames:
             s = SingleExperiment(filename, filename.split('_')[-1])
             x = get(s['filename'][0])
-            s['path length [length unit]'] = float(PathLength(x).per_experiment(penalize=False))
+            s['path length [length unit]'] = float(PathLength(x).calculate_path_length(sigma=0, penalize=False))
             singleExperiments.append(s)
         df = pd.concat(singleExperiments).reset_index(drop=True)
         df.to_json(df_minimal_dir)
@@ -40,7 +40,7 @@ class MinimalDataFrame(pd.DataFrame):
                        & (self['initial condition'] == series['initial condition'])
                        & (self['maze dimensions'] == series['maze dimensions'])].index
         if len(ind) > 1:
-            if self.loc[ind[0]]['solver'] == 'human' and self.loc[ind[0]]['size'].split(' ')[0] == 'Small':
+            if series['solver'] == 'human' and self.loc[ind[0]]['size'].split(' ')[0] == 'Small':
                 return self.loc[ind[0]]['path length [length unit]']
             print(series['filename'])
             raise ValueError('too many minimal trajectories')
@@ -48,8 +48,8 @@ class MinimalDataFrame(pd.DataFrame):
             result = self.loc[ind]['path length [length unit]'].iloc[0]
             return result
 
-        print(series['filename'] + ' not in minimal')
-        missing.add(series['size'] + series['initial condition'] + series['maze dimensions'])
+        print(series['size'] + series['initial condition'] + series['maze dimensions'] + ' not in minimal')
+        # missing.add(series['size'] + series['initial condition'] + series['maze dimensions'])
         return None
 
     def create_dict(self):
@@ -61,16 +61,20 @@ class MinimalDataFrame(pd.DataFrame):
             json.dump(minimal_path_length_dict, json_file)
             json_file.close()
 
+#
+# x = get('minimal_Large_SPT_back_MazeDimensions_human_LoadDimensions_human')
+# PathLength(x).calculate_path_length(sigma=0)
+
 
 with open(minimal_path_length_dir, 'r') as json_file:
     minimal_path_length_dict = json.load(json_file)
 
-myDataFrame['minimal path length [length unit]'] = myDataFrame['filename'].map(minimal_path_length_dict)
-DEBUG = 1
+
 
 
 if __name__ == '__main__':
+    DEBUG = 1
     # MinimalDataFrame.create_source()
     # myMinimalDataFrame = MinimalDataFrame()
     # myMinimalDataFrame.create_dict()
-    DEBUG = 1
+    # DEBUG = 1

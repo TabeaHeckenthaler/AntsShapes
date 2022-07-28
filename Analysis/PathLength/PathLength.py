@@ -129,7 +129,8 @@ class PathLength:
     #             pos, ang = position[i], unwrapped_angle[i]
     #     return path_length
 
-    def calculate_path_length(self, rot: bool = True, frames: list = None, penalize=False, max_path_length=np.inf):
+    def calculate_path_length(self, rot: bool = True, frames: list = None, penalize=False, max_path_length=np.inf,
+                              sigma=None):
         """
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
@@ -141,13 +142,17 @@ class PathLength:
         if frames is None:
             frames = [0, -1]
 
+        if sigma is None:
+            sigma = self.x.fps
+
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
-        position[:, 0] = gaussian_filter(position[:, 0], sigma=self.x.fps)
-        position[:, 1] = gaussian_filter(position[:, 1], sigma=self.x.fps)
+        # plt.plot(position)
+        position[:, 0] = gaussian_filter(position[:, 0], sigma=sigma)
+        position[:, 1] = gaussian_filter(position[:, 1], sigma=sigma)
         aver_radius = self.average_radius()
 
         unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
-        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=self.x.fps)
+        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=sigma)
 
         stuck_frames = (np.zeros(angle.size)).astype(bool)
         if penalize:
