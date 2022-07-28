@@ -12,6 +12,7 @@ from scipy.ndimage import gaussian_filter
 from DataFrame.dataFrame import myDataFrame
 from tqdm import tqdm
 import os
+from Directories import path_length_dir, penalized_path_length_dir
 import json
 
 # --- from experimental data--- #
@@ -215,11 +216,11 @@ class PathLength:
             dictio_p[filename] = PathLength(x).calculate_path_length(penalize=False)
             dictio_pp[filename] = PathLength(x).calculate_path_length(penalize=True)
 
-        with open(os.path.join(os.getcwd(), 'path_length.json'), 'w') as json_file:
+        with open(path_length_dir, 'w') as json_file:
             json.dump(dictio_p, json_file)
             json_file.close()
 
-        with open(os.path.join(os.getcwd(), 'penalized_path_length.json'), 'w') as json_file:
+        with open(penalized_path_length_dir, 'w') as json_file:
             json.dump(dictio_pp, json_file)
             json_file.close()
 
@@ -231,3 +232,11 @@ if __name__ == '__main__':
     # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
+
+with open(path_length_dir, 'r') as json_file:
+    path_length_dict = json.load(json_file)
+    json_file.close()
+
+with open(penalized_path_length_dir, 'r') as json_file:
+    penalized_path_length_dict = json.load(json_file)
+    json_file.close()

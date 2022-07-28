@@ -125,37 +125,14 @@ class Path_length_cut_off_df(Altered_DataFrame):
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overtime | not_successful)
 
-    def cut_off_after_path_length(self, df, name, path_length_measure='path length [length unit]', max_path=15):
-        if name + '.pkl' in os.listdir():
-            with open(name + '.pkl', 'rb') as file:
-                self.df = pickle.load(file)
-
-        else:
-            self.df['maximal path length [length unit]'] = max_path * self.df['minimal path length [length unit]']
-
-            def calc_path_length(exp) -> float:
-                if 'penalized path length' in path_length_measure:
-                    x = get(exp['filename'])
-                    return PathLength(x).calculate_path_length(penalize=True)
-                if 'path length' in path_length_measure:
-                    x = get(exp['filename'])
-                    return PathLength(x).calculate_path_length(penalize=False)
-                    # return exp[path_length_measure.split('/')[0] + ' [length unit]']
-
-            self.df[path_length_measure.split('/')[0] + ' [length unit]'] = self.df.progress_apply(calc_path_length, axis=1)
-            self.df[path_length_measure.split('/')[0] + '/minimal path length[]'] = \
-                self.df[path_length_measure.split('/')[0] + ' [length unit]'] / self.df['minimal path length [length unit]']
-
-            with open(name + '.pkl', 'wb') as file:
-                pickle.dump(self.df, file)
-
+    def cut_off_after_path_length(self, path_length_measure, max_path=20):
         not_successful = ~ self.df['winner']
         measured_overpath = self.df[path_length_measure] > max_path
         exclude = (~ measured_overpath & not_successful)
         self.df.drop(self.df[exclude].index, inplace=True)
         self.df['winner'] = ~ (measured_overpath | not_successful)
 
-    def plot_means(self, separate_data_frames, ax, marker='.'):
+    def plot_means(self, separate_data_frames, on_xaxis, on_yaxis, ax, marker='.'):
         for size, dfs in separate_data_frames.items():
             if size not in ['M (2)', 'M (1)']:
                 for key, df in dfs.items():
@@ -167,55 +144,19 @@ class Path_length_cut_off_df(Altered_DataFrame):
                             sem = groups.sem()
                             # std = groups.std()
 
-                            means.plot.scatter(x='average Carrier Number',
-                                               y='path length/minimal path length[]',
-                                               xerr=sem['average Carrier Number'],
-                                               yerr=sem['path length/minimal path length[]'],
+                            means.plot.scatter(x=on_xaxis, y=on_yaxis, xerr=sem[on_xaxis], yerr=sem[on_yaxis],
                                                c=self.color[key],
                                                ax=ax,
                                                marker=marker,
                                                s=150)
 
                             if len(means) > 0:
-                                xs = list(means['average Carrier Number'])
-                                ys = list(means['path length/minimal path length[]'])
+                                xs = list(means[on_xaxis])
+                                ys = list(means[on_yaxis])
                                 for txt, x, y in zip(list(means.index), xs, ys):
                                     ax.annotate(txt, (x, y), fontsize=15)
-                            ax.set_ylim(0, max(ax.get_ylim()[1], means['path length/minimal path length[]'][0]+5))
+                            ax.set_ylim(0, max(ax.get_ylim()[1], means[on_yaxis][0]+5))
             ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
-
-    def plot_means_violin(self, ax, marker='.'):
-        d = self.get_separate_data_frames(self.solver, self.plot_separately, 'SPT', self.geometry)
-        plt.show(block=False)
-        for size, dfs in d.items():
-            if size not in ['M (2)', 'M (1)']:
-                for key, df in dfs.items():
-                    for part in self.split_separate_groups(df):
-                        if not part.empty:
-                            part.loc[part['size'].isin(['Small Far', 'Small Near']), 'size'] = 'Small'
-                            groups = part.groupby(by=['size'])
-                            means = groups.mean()
-                            sem = groups.sem()
-                            # std = groups.std()
-
-                            means.plot.scatter(x='average Carrier Number',
-                                               y='path length/minimal path length[]',
-                                               xerr=sem['average Carrier Number'],
-                                               yerr=sem['path length/minimal path length[]'],
-                                               c=self.color[key],
-                                               ax=ax,
-                                               marker=marker,
-                                               s=150)
-
-                            if len(means) > 0:
-                                xs = list(means['average Carrier Number'])
-                                ys = list(means['path length/minimal path length[]'])
-                                for txt, x, y in zip(list(means.index), xs, ys):
-                                    ax.annotate(txt, (x, y), fontsize=15)
-
-                            ax.set_ylim(0, max(ax.get_ylim()[1], means['path length/minimal path length[]'][0] + 5))
-            ax.legend([{'winner': 'successful', 'looser': 'unsuccessful'}[k] for k in dfs.keys()])
-            ax.set_title(self.solver)
 
     def plot_path_length_distributions(self, separate_data_frames, path_length_measure, axs, **kwargs):
         pass
@@ -235,8 +176,7 @@ class Path_length_cut_off_df_human(Path_length_cut_off_df):
     def __init__(self, time_measure='norm solving time [s]',
                  path_length_measure='penalized path length [length unit]'):
         self.solver = 'human'
-        super().__init__(self.solver, time_measure='norm solving time [s]',
-                         path_length_measure='penalized path length [length unit]')
+        super().__init__(self.solver)
         self.n_group_sizes = 5
         self.plot_separately = {'Medium': [2, 1]}
         self.color = {'communication': 'blue', 'non_communication': 'orange'}
@@ -509,11 +449,13 @@ class Path_length_cut_off_df_ant(Path_length_cut_off_df):
         percent_of_winning, error = {}, {}
 
         for size, dfs in separate_data_frames.items():
-            percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
-            error[size] = np.sqrt(percent_of_winning[size] * (1 - percent_of_winning[size]) /
-                                  np.sum([len(df) for df in dfs.values()]))
+            if (len(dfs['looser']) + len(dfs['winner'])) > 0:
+                percent_of_winning[size] = len(dfs['winner']) / (len(dfs['looser']) + len(dfs['winner']))
+                error[size] = np.sqrt(percent_of_winning[size] * (1 - percent_of_winning[size]) /
+                                      np.sum([len(df) for df in dfs.values()]))
 
         return percent_of_winning, error
+
 
 def plot_means():
     shape = 'SPT'

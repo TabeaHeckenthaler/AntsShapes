@@ -39,8 +39,12 @@ trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'
                                                                                         path.sep, path.sep)
 trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
+
+''' ANALYSIS '''
 averageCarrierNumber_dir = path.join(home, 'Analysis', 'average_carrier_number', 'averageCarrierNumber.json')
-minimal_path_length_dir = path.join(home, 'Analysis', 'minimal_trajectories', 'minimal_traj.json')
+minimal_path_length_dir = path.join(home, 'Analysis', 'minimal_path_length', 'minimal_path_length.json')
+path_length_dir = path.join(home, 'Analysis', 'PathLength', 'path_length.json')
+penalized_path_length_dir = path.join(home, 'Analysis', 'PathLength', 'penalized_path_length.json')
 
 
 def SetupDirectories():
