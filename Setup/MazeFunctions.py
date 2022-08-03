@@ -210,7 +210,6 @@ def ConnectAngle(angle, shape):
 
 
 def extend(x, start_or_end, x_distance, *args):
-    from Analysis.Velocity import velocity_x
     # print('I am extending ' + x.filename + ' at the ' + start_or_end)
 
     vel = np.sqrt(

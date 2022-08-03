@@ -6,9 +6,10 @@ Created on Wed May  6 11:24:09 2020
 """
 import numpy as np
 from os import path
-import os
+from Setup.MazeFunctions import ConnectAngle
 import pickle
-from trajectory_inheritance.exp_types import exp_types
+from scipy.signal import medfilt
+from scipy.ndimage import gaussian_filter
 import json
 from Directories import SaverDirectories, work_dir, mini_SaverDirectories, home
 from copy import deepcopy
@@ -16,7 +17,6 @@ from Setup.Maze import Maze
 from Setup.Load import periodicity
 from PhysicsEngine.Display import Display
 from scipy.signal import savgol_filter
-from Analysis.Velocity import velocity
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
@@ -208,10 +208,31 @@ class Trajectory:
         for pos, angle in zip(self.position[::step, :], self.angle[::step]):
             yield pos[0], pos[1], angle
 
-    def stuck(self, vel_norm=None, v_min=0.005) -> list:
-        if vel_norm is None:
-            vel_norm = np.linalg.norm(self.velocity(4), axis=0)
-        stuck_array = [v < v_min for v in vel_norm]
+    def smoothed_pos_angle(self, position, angle, kernel_size):
+        position[:, 0] = medfilt(position[:, 0], kernel_size=kernel_size)
+        position[:, 1] = medfilt(position[:, 1], kernel_size=kernel_size)
+
+        position[:, 0] = gaussian_filter(position[:, 0], sigma=kernel_size//10)
+        position[:, 1] = gaussian_filter(position[:, 1], sigma=kernel_size//10)
+
+        unwrapped_angle = ConnectAngle(angle, self.shape)
+        unwrapped_angle = medfilt(unwrapped_angle, kernel_size=kernel_size)
+        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=kernel_size//10)
+        return position, unwrapped_angle
+
+    def stuck(self, vel_norm=None, v_min=0.1) -> list:
+        """
+        :param v_min: minimal velocity in cm/s that will count as still moving.
+        """
+        slow_array = [v < v_min for v in np.abs(vel_norm)]
+        # if self.solver == 'ant' and self.size not in ['S', 'XS']:
+        #     self.load_participants()
+        #     attached_array = (self.participants.carriers_attached(self.fps)).astype(bool)
+        #     # self.play()
+        # else:
+        attached_array = np.ones(len(slow_array)).astype(bool)
+        stuck_array = np.logical_and(slow_array, attached_array)
+
         # plt.plot(np.array(stuck_array).astype(int) * 0.02, marker='.', linestyle='')
         # plt.plot(vel_norm)
         # plt.title(self.filename)
@@ -240,8 +261,24 @@ class Trajectory:
             raise Exception('only one old filename available')
         return self.filename
 
-    def velocity(self, second_smooth, *args):
-        return velocity(self.position, self.angle, self.fps, self.size, self.shape, second_smooth, self.solver, *args)
+    def velocity(self, *args, fps=None):
+        av_rad = Maze(self).average_radius()
+        if len(args) == 0:
+            kernel_size = 2 * (self.fps // 2) + 1
+            position_filtered, unwrapped_angle_filtered = self.smoothed_pos_angle(self.position, self.angle,
+                                                                                  kernel_size)
+            args = (position_filtered[:, 0], position_filtered[:, 1], unwrapped_angle_filtered * av_rad)
+        if fps is None:
+            fps = self.fps
+        return np.column_stack([np.diff(a) for a in args]) * fps
+
+    def number_of_frames_in_part(self, i) -> int:
+        """
+        To find the length of a part of
+        """
+        lengths = [f1 for f1, f2 in zip(self.frames[:-1], self.frames[1:]) if f2 < f1]
+        lengths.append(len(self.frames) - np.sum(lengths))
+        return lengths[i]
 
     def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, path=None):
         """
@@ -474,3 +511,4 @@ class Trajectory_part(Trajectory):
 
     def geometry(self):
         return self.parent_traj.geometry()
+

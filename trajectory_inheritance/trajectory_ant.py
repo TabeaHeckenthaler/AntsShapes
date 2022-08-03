@@ -8,11 +8,11 @@ from Setup.Load import periodicity
 from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
 from trajectory_inheritance.get import get
+from Analysis.GeneralFunctions import ranges
 
 length_unit = 'cm'
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
-
 
 class Trajectory_ant(Trajectory):
     def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
@@ -197,7 +197,23 @@ class Trajectory_ant(Trajectory):
             self.position = np.array(load_center)  # array to store the position and angle of the load
             self.angle = np.array(shape_orientation)
 
-        from Analysis.Velocity import check_for_false_tracking
+        def check_for_false_tracking(x):
+            print('I would like to renew this check_for_false_tracking function')
+            max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
+                                           {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
+            vel = x.velocity(0)
+            lister = [x_vel or y_vel or ang_vel or isNaN for x_vel, y_vel, ang_vel, isNaN in
+                      zip(vel[0, :] > max_Vel_trans[x.size],
+                          vel[1, :] > max_Vel_trans[x.size],
+                          vel[2, :] > max_Vel_angle[x.size],
+                          np.isnan(sum(vel[:]))
+                          )]
+
+            m = ranges(lister, 'boolean', scale=x.frames, smallestGap=20, buffer=8)
+            # m = ranges(lister, 'boolean', smallestGap = 20, buffer = 4)
+            print('False Tracking Regions: ' + str(m))
+            return m
+
         self.falseTracking = [check_for_false_tracking(self)]
         self.falseTracker()
         self.interpolate_over_NaN()
@@ -275,9 +291,6 @@ class Trajectory_ant(Trajectory):
             return np.sum(cC != 0) / self.fps
         else:
             return self.timer()
-
-    def penalized_path_length(self) -> float:
-        self.stuck()
 
     def frame_count_after_solving_time(self, t):
         frames = t * self.fps

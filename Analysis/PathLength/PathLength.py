@@ -1,19 +1,17 @@
 from Setup.Attempts import Attempts
 from trajectory_inheritance.trajectory import Trajectory_part
 import numpy as np
-from Setup.MazeFunctions import ConnectAngle
 from Analysis.resolution import resolution
 from copy import copy
 from trajectory_inheritance.get import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 from PS_Search_Algorithms.Path_planning_full_knowledge import Path_planning_full_knowledge
-from scipy.ndimage import gaussian_filter
 from DataFrame.dataFrame import myDataFrame
 from tqdm import tqdm
-import os
 from Directories import path_length_dir, penalized_path_length_dir
 import json
+from Setup.MazeFunctions import ConnectAngle
 
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
@@ -129,8 +127,8 @@ class PathLength:
     #             pos, ang = position[i], unwrapped_angle[i]
     #     return path_length
 
-    def calculate_path_length(self, rot: bool = True, frames: list = None, penalize=False, max_path_length=np.inf,
-                              sigma=None):
+    def calculate_path_length(self, rot: bool = True, frames: list = None, penalize=False, kernel_size=None,
+                              max_path_length=np.inf):
         """
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
@@ -141,40 +139,57 @@ class PathLength:
         print(self.x.filename)
         if frames is None:
             frames = [0, -1]
-
-        if sigma is None:
-            sigma = self.x.fps
-
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
-        # plt.plot(position)
-        position[:, 0] = gaussian_filter(position[:, 0], sigma=sigma)
-        position[:, 1] = gaussian_filter(position[:, 1], sigma=sigma)
-        aver_radius = self.average_radius()
 
-        unwrapped_angle = ConnectAngle(angle[1:], self.x.shape)
-        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=sigma)
+        if kernel_size is None:
+            kernel_size = 2 * (self.x.fps // 2) + 1
+        position_filtered, unwrapped_angle_filtered = self.x.smoothed_pos_angle(position, angle, kernel_size)
 
         stuck_frames = (np.zeros(angle.size)).astype(bool)
-        if penalize:
-            stuck_frames = self.x.stuck()
-            vel_norm = np.linalg.norm(self.x.velocity(0.5), axis=0)
-            av_non_stuck_vel = np.mean(vel_norm[~np.array(stuck_frames).astype(bool)])
 
-        if unwrapped_angle.size == 0 or position.size == 0:
+        if penalize and self.x.size not in ['S', 'XS']:
+
+            # Calculate velocity in units of cm/s
+            vel_norm = np.linalg.norm(self.x.velocity(position_filtered[:, 0], position_filtered[:, 1],
+                                                      unwrapped_angle_filtered * self.average_radius()), axis=1)
+
+            stuck_frames = self.x.stuck(vel_norm=vel_norm)
+
+            # plt.figure()
+            # x_pos = position_filtered[:, 0]
+            # plt.plot(x_pos)
+
+            av_non_stuck_vel = np.mean(vel_norm[~np.array(stuck_frames).astype(bool)])
+            d_stuck_per_frame = av_non_stuck_vel / self.x.fps
+            stuck_path_length = np.sum(stuck_frames) * d_stuck_per_frame
+
+            # plt.figure()
+            # plt.plot(vel_norm)
+            # plt.plot(stuck_frames*av_non_stuck_vel)
+            # plt.show(block=False)
+            DEBUG = 1
+
+        else:
+            stuck_path_length = 0
+
+        if unwrapped_angle_filtered.size == 0 or position_filtered.size == 0:
             return 0
 
-        real_path_length, stuck_path_length = 0, 0
+        aver_radius = self.average_radius()
+        real_path_length = 0
 
         for pos1, pos2, ang1, ang2, stuck in \
-            zip(position[:-1], position[1:], unwrapped_angle[:-1], unwrapped_angle[1:], stuck_frames):
+                zip(position_filtered[:-1], position_filtered[1:],
+                    unwrapped_angle_filtered[:-1], unwrapped_angle_filtered[1:],
+                    stuck_frames):
+
             if not stuck:
                 d = self.measureDistance(pos1, pos2, ang1, ang2, aver_radius, rot=rot)
                 real_path_length += d
-            if stuck:
-                d = av_non_stuck_vel / self.x.fps
-                stuck_path_length += d
+
             if real_path_length + stuck_path_length > max_path_length:
                 return real_path_length + stuck_path_length
+
         return real_path_length + stuck_path_length
 
     def plot(self, rot=True):
@@ -231,10 +246,15 @@ class PathLength:
 
 
 if __name__ == '__main__':
+    # filename = 'L_LASH_4160019_LargeLH_1_ants (part 1)'
+    # x = get(filename)
+    # print(PathLength(x).calculate_path_length(penalize=True))
+
     PathLength.create_dict()
-    DEBUG = 1
+    # DEBUG = 1
 
     # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # filename = 'M_SPT_4700022_MSpecialT_1_ants'
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
 

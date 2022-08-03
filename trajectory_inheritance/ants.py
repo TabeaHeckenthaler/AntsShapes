@@ -49,7 +49,6 @@ class Ants(Participants):
 
     def carriers_attached(self, fps):
         # many short lived attachment and detachment events. We get rid of them with a median filter.
-
         medfilt_cc = medfilt([np.sum(frame.carrying) for frame in self.frames], 2 * fps + 1)
         return medfilt_cc
 
@@ -102,71 +101,77 @@ class Ants(Participants):
 
     def matlab_loading(self, x):
         print(x.filename)
-        if not (x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
-            if not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + x.old_filenames(0)):
-                breakpoint()
-            file = sio.loadmat(MatlabFolder('ant', x.size, x.shape) + path.sep + x.old_filenames(0))
+        for i in range(len(x.VideoChain)):
+            filename = x.old_filenames(i)
 
-            if 'Direction' not in file.keys() and x.shape.endswith('ASH'):
-                # file['Direction'] = input('L2R or R2L  ')
-                file['Direction'] = None
+            if 'CONNECTOR' in filename:
+                self.frames = self.frames + [self.frames[-1] for _ in range(x.number_of_frames_in_part(i))]
 
-            if x.shape.endswith('ASH'):
-                if 'R2L' == file['Direction']:
-                    if x.shape == 'LASH':
-                        x.shape = 'RASH'
-                        x.filename.replace('LASH', 'RASH')
-                        x.VideoChain = [name.replace('LASH', 'RASH') for name in self.VideoChain]
+            elif not path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + filename):
+                raise ValueError('Could not find file ' + filename)
 
-                    else:
-                        x.shape = 'LASH'
-                        x.filename.replace('RASH', 'LASH')
-                        x.VideoChain = [name.replace('RASH', 'LASH') for name in self.VideoChain]
+            else:
+                file = sio.loadmat(MatlabFolder('ant', x.size, x.shape) + path.sep + filename)
 
-                    if x.angle_error[0] == 0:
+                if 'Direction' not in file.keys() and x.shape.endswith('ASH'):
+                    # file['Direction'] = input('L2R or R2L  ')
+                    file['Direction'] = None
+
+                if x.shape.endswith('ASH'):
+                    if 'R2L' == file['Direction']:
                         if x.shape == 'LASH':
-                            x.angle_error = 2 * np.pi * 0.11 + x.angle_error
-                        if x.shape == 'RASH':
-                            x.angle_error = -2 * np.pi * 0.11 + x.angle_error
-                            # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
-                            # error in the end_screen... )
+                            x.shape = 'RASH'
+                            x.filename.replace('LASH', 'RASH')
+                            x.VideoChain = [name.replace('LASH', 'RASH') for name in self.VideoChain]
 
-                        if x.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
-                            # crooked, which messes up the contact tracking
-                            x.angle_error = 2 * np.pi * 0.115 + x.angle_error
-                        if x.shape == 'RASH' and self.size == 'XL':
-                            x.angle_error = -2 * np.pi * 0.115 + x.angle_error
-            maze = Maze(x)
-            max_distance = np.linalg.norm(maze.getLoadDim()) + 0.4
-            self.pix2cm = file['pix2cm']
-            matlab_cell = file['ants']
+                        else:
+                            x.shape = 'LASH'
+                            x.filename.replace('RASH', 'LASH')
+                            x.VideoChain = [name.replace('RASH', 'LASH') for name in self.VideoChain]
 
-            for Frame in tqdm(matlab_cell):
-                data = Frame[0]
-                if data.size != 0:
-                    real_ants = [self.is_ant(mal) for mal in data[:, 6]]
-                    position = data[real_ants, 2:4]
+                        if x.angle_error[0] == 0:
+                            if x.shape == 'LASH':
+                                x.angle_error = 2 * np.pi * 0.11 + x.angle_error
+                            if x.shape == 'RASH':
+                                x.angle_error = -2 * np.pi * 0.11 + x.angle_error
+                                # # For all the Large Asymmetric Hs I had 0.1!!! (I think, this is why I needed the
+                                # error in the end_screen... )
 
-                    if type(x.angle_error) == list and len(x.angle_error) > 1:
-                        x.angle_error = x.angle_error[0]
+                            if x.shape == 'LASH' and self.size == 'XL':  # # It seems like the exit walls are a bit
+                                # crooked, which messes up the contact tracking
+                                x.angle_error = 2 * np.pi * 0.115 + x.angle_error
+                            if x.shape == 'RASH' and self.size == 'XL':
+                                x.angle_error = -2 * np.pi * 0.115 + x.angle_error
+                maze = Maze(x)
+                max_distance = np.linalg.norm(maze.getLoadDim()) + 0.4
+                self.pix2cm = file['pix2cm']
+                matlab_cell = file['ants']
 
-                    angle = data[real_ants, 5] * np.pi / 180 + x.angle_error
+                for Frame in tqdm(matlab_cell):
+                    data = Frame[0]
+                    if data.size != 0:
+                        real_ants = [self.is_ant(mal) for mal in data[:, 6]]
+                        position = data[real_ants, 2:4]
+                        if type(x.angle_error) == list and len(x.angle_error) > 1:
+                            x.angle_error = x.angle_error[0]
+                        angle = data[real_ants, 5] * np.pi / 180 + x.angle_error
+                        is_attached = [self.is_attached(p_ant, p_shape, max_distance)
+                                       for p_ant, p_shape in zip(position, x.position)]
+                        carrying = data[real_ants, 4][is_attached]
+                        ants_frame = Ants_Frame(position, angle, carrying)
+                    else:
+                        ants_frame = Ants_Frame(np.array([]), np.array([]), [])
 
-                    is_attached = [self.is_attached(p_ant, p_shape, max_distance)
-                                   for p_ant, p_shape in zip(position, x.position)]
-                    carrying = data[real_ants, 4][is_attached]
+                    self.frames.append(ants_frame)
 
-                    ants_frame = Ants_Frame(position, angle, carrying)
-                else:
-                    ants_frame = Ants_Frame(np.array([]), np.array([]), [])
-
-                self.frames.append(ants_frame)
-        else:
-            import h5py
-            with h5py.File(
-                    MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.old_filename,
-                    'r') as f:
-                load_center = np.matrix.transpose(f['load_center'][:, :])
+            if not (x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
+                pass
+            else:
+                import h5py
+                with h5py.File(
+                        MatlabFolder(x.solver, x.size, x.shape) + path.sep + x.old_filename,
+                        'r') as f:
+                    load_center = np.matrix.transpose(f['load_center'][:, :])
 
         return self
 
