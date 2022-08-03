@@ -140,11 +140,12 @@ class PathLength:
         if frames is None:
             frames = [0, -1]
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
+        angle2 = ConnectAngle(angle, self.x.shape)
+        DEBUG = 1
 
         if kernel_size is None:
-            kernel_size = 2 * (self.x.fps // 2) + 1
+            kernel_size = 2 * (self.x.fps // 4) + 1
         position_filtered, unwrapped_angle_filtered = self.x.smoothed_pos_angle(position, angle, kernel_size)
-
         stuck_frames = (np.zeros(angle.size)).astype(bool)
 
         if penalize and self.x.size not in ['S', 'XS']:
@@ -249,14 +250,14 @@ if __name__ == '__main__':
     # filename = 'L_LASH_4160019_LargeLH_1_ants (part 1)'
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
+    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # filename = 'M_SPT_4700022_MSpecialT_1_ants'
+    x = get(filename)
+    print(PathLength(x).calculate_path_length(penalize=True))
 
     PathLength.create_dict()
     # DEBUG = 1
 
-    # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
-    # filename = 'M_SPT_4700022_MSpecialT_1_ants'
-    # x = get(filename)
-    # print(PathLength(x).calculate_path_length(penalize=True))
 
 with open(path_length_dir, 'r') as json_file:
     path_length_dict = json.load(json_file)

@@ -209,16 +209,25 @@ class Trajectory:
             yield pos[0], pos[1], angle
 
     def smoothed_pos_angle(self, position, angle, kernel_size):
-        position[:, 0] = medfilt(position[:, 0], kernel_size=kernel_size)
-        position[:, 1] = medfilt(position[:, 1], kernel_size=kernel_size)
-
-        position[:, 0] = gaussian_filter(position[:, 0], sigma=kernel_size//10)
-        position[:, 1] = gaussian_filter(position[:, 1], sigma=kernel_size//10)
+        new_position = deepcopy(position)
+        new_position[:, 0] = medfilt(position[:, 0], kernel_size=kernel_size)
+        new_position[:, 1] = medfilt(position[:, 1], kernel_size=kernel_size)
+        new_position[:, 0] = gaussian_filter(new_position[:, 0], sigma=kernel_size//5)
+        new_position[:, 1] = gaussian_filter(new_position[:, 1], sigma=kernel_size//5)
 
         unwrapped_angle = ConnectAngle(angle, self.shape)
-        unwrapped_angle = medfilt(unwrapped_angle, kernel_size=kernel_size)
-        unwrapped_angle = gaussian_filter(unwrapped_angle, sigma=kernel_size//10)
-        return position, unwrapped_angle
+        new_unwrapped_angle = medfilt(unwrapped_angle, kernel_size=kernel_size)
+        new_unwrapped_angle = gaussian_filter(new_unwrapped_angle, sigma=kernel_size//5)
+
+        plt.plot(position[:, 0], position[:, 1])
+        plt.plot(new_position[:, 0], new_position[:, 1])
+        plt.show()
+
+        plt.plot(unwrapped_angle)
+        plt.plot(new_unwrapped_angle)
+        plt.show()
+
+        return new_position, new_unwrapped_angle
 
     def stuck(self, vel_norm=None, v_min=0.1) -> list:
         """
@@ -233,7 +242,7 @@ class Trajectory:
         attached_array = np.ones(len(slow_array)).astype(bool)
         stuck_array = np.logical_and(slow_array, attached_array)
 
-        # plt.plot(np.array(stuck_array).astype(int) * 0.02, marker='.', linestyle='')
+        # plt.plot(np.array(stuck_array).astype(int) * v_min, marker='.', linestyle='')
         # plt.plot(vel_norm)
         # plt.title(self.filename)
         # plt.savefig('stuck\\' + self.filename + '.png')

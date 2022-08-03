@@ -7,7 +7,7 @@ class Altered_DataFrame:
     def __init__(self):
         self.df = myDataFrame.clone()
 
-    def choose_experiments(self, solver, shape, geometry=None, size=None, communication=None, init_cond: str = 'back',
+    def choose_experiments(self, solver=None, shape=None, geometry=None, size=None, communication=None, init_cond: str = 'back',
                            winner: bool = None):
         """
         Get trajectories based on the trajectories saved in myDataFrame.
@@ -19,14 +19,14 @@ class Altered_DataFrame:
         :return: list of objects, that are of the class or subclass Trajectory
         """
         df = self.df
-        if 'shape' in df.columns:
+        if 'shape' in df.columns and shape is not None:
             df = df[(df['shape'] == shape)]
 
-        if 'solver' in df.columns:
+        if 'solver' in df.columns and solver is not None:
             df = df[(df['solver'] == solver)]
 
         if 'initial condition' in df.columns:
-            df = df[(df['initial condition'] == init_cond)]
+            df = df[(df['initial condition'] == init_cond) | (df['shape'] != 'SPT')]
 
         if 'maze dimensions' in df.columns and geometry is not None:
             df = df[(df['maze dimensions'] == geometry[0])]
@@ -121,7 +121,7 @@ def choose_trajectories(solver='human', size='Large', shape='SPT',
                         communication=None, number: int = None, init_cond: str = 'back') \
         -> list:
     df = Altered_DataFrame()
-    df.choose_experiments(solver, shape, geometry=geometry, size=size, communication=communication,
+    df.choose_experiments(solver=solver, shape=shape, geometry=geometry, size=size, communication=communication,
                           init_cond=init_cond)
     filenames = df.df.filename[:number]
 

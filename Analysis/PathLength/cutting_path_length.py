@@ -19,7 +19,7 @@ from Analysis.GeneralFunctions import flatten
 class Path_length_cut_off_df(Altered_DataFrame):
     def __init__(self, solver):
         super().__init__()
-        self.choose_experiments(solver, 'SPT', geometry=solver_geometry[solver], init_cond='back')
+        self.choose_experiments(solver=solver, shape='SPT', geometry=solver_geometry[solver], init_cond='back')
         columns = ['filename', 'winner', 'size', 'communication', 'fps', 'time [s]']
         self.choose_columns(columns)
         self.plot_separately = None
@@ -466,7 +466,7 @@ def plot_means():
 
     for PL, ax in zip(PLs, axs):
         my_PL = PL()
-        my_PL.choose_experiments(my_PL.solver, shape, geometry=my_PL.geometry, init_cond='back')
+        my_PL.choose_experiments(solver=my_PL.solver, shape=shape, geometry=my_PL.geometry, init_cond='back')
         raise Error
         my_PL.cut_off_after_path_length(max_path=15)
         my_PL.plot_means_violin(ax)
