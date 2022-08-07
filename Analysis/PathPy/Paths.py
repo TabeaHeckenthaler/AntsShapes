@@ -1,16 +1,17 @@
 from Analysis.PathPy.Path import Path
 from Analysis.PathPy.SPT_states import states, allowed_transition_attempts, forbidden_transition_attempts
-import os
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 import pathpy as pp
 from Directories import network_dir
 from DataFrame.plot_dataframe import save_fig
-import json
-from trajectory_inheritance.exp_types import exp_types, solver_geometry
-import csv
 from DataFrame.Altered_DataFrame import choose_trajectories, Altered_DataFrame
-import numpy as np
+from trajectory_inheritance.exp_types import exp_types, solver_geometry
 from trajectory_inheritance.get import get
+from trajectory_inheritance.trajectory_human import perfect_filenames
+import os
+import json
+import csv
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -198,45 +199,11 @@ def humans():
         paths.save_csv()
 
 
-def humans_split_up():
-    solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
-
-    all_paths = PathsTimeStamped(solver, shape, geometry, '')
-    for size in exp_types[shape][solver]:
-        paths_of_size = PathsTimeStamped(solver, shape, geometry, size)
-        paths_of_size.load_paths()
-        paths_of_size.load_time_stamped_paths()
-
-        all_paths.time_series.update(paths_of_size.time_series)
-        all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
-
-    df = Altered_DataFrame()
-    dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
-                                      initial_cond='back')
-
-    for key_group_size, ds in dfs.items():
-        for key_communication, experiments_df in ds.items():
-            filenames = list(experiments_df['filename'])
-            paths = PathsTimeStamped(solver, shape, geometry)
-
-            paths.time_series = {filename: all_paths.time_series[filename] for filename in filenames}
-            paths.time_stamped_series = {filename: all_paths.time_stamped_series[filename] for filename in filenames}
-
-            name = 'paths_humans_' + key_group_size.replace('>', 'more_than') + '_' + key_communication
-            paths.save_paths(paths.save_dir(name=name))
-            paths.save_timestamped_paths(paths.save_dir_timestamped(name=name))
-            paths.save_csv(paths.save_dir_timestamped(name=name))
-
-
 def perfect_human():
     solver, shape, geometry = 'human', 'SPT', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')
     # communication = [True, False]
 
-    filenames = ['large_20210805171741_20210805172610_perfect',
-                 'medium_20210507225832_20210507230303_perfect',
-                 'small2_20220308120548_20220308120613_perfect']
-
-    trajectories = [get(filename) for filename in filenames]
+    trajectories = [get(filename) for filename in perfect_filenames]
 
     paths = PathsTimeStamped(solver, shape, geometry)
     paths.time_series = paths.calculate_time_series(trajectories)
@@ -253,9 +220,7 @@ def ants():
         'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
 
     for size in exp_types[shape][solver]:
-    # for size in ['XL']:
         paths = PathsTimeStamped(solver, shape, geometry, size)
-
         paths.load_paths()
         paths.load_time_stamped_paths()
         paths.save_paths()
@@ -269,11 +234,10 @@ def ants():
 
 
 def humanhand():
-    solver, shape, geometry = 'humanhand', 'SPT', (
-        'MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')
+    solver, shape, geometry = 'humanhand', 'SPT', \
+                              ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')
 
     for size in exp_types[shape][solver]:
-    # for size in ['XL']:
         paths = PathsTimeStamped(solver, shape, geometry, size)
 
         paths.load_paths()
@@ -281,36 +245,6 @@ def humanhand():
         paths.save_paths()
         paths.save_timestamped_paths()
         paths.save_csv()
-
-
-def split_up(solver):
-    shape = 'SPT'
-
-    all_paths = PathsTimeStamped(solver, shape, solver_geometry[solver], '')
-    for size in exp_types[shape][solver]:
-        paths_of_size = PathsTimeStamped(solver, shape, solver_geometry[solver], size)
-        paths_of_size.load_paths()
-        paths_of_size.load_time_stamped_paths()
-
-        all_paths.time_series.update(paths_of_size.time_series)
-        all_paths.time_stamped_series.update(paths_of_size.time_stamped_series)
-
-    df = Altered_DataFrame()
-    dfs = df.get_separate_data_frames(solver, plot_separately[solver], shape='SPT', geometry=solver_geometry[solver],
-                                      initial_cond='back')
-
-    for key_group_size, ds in dfs.items():
-        for key_communication, experiments_df in ds.items():
-            filenames = list(experiments_df['filename'])
-            paths = PathsTimeStamped(solver, shape, solver_geometry[solver])
-
-            paths.time_series = {filename: all_paths.time_series[filename] for filename in filenames}
-            paths.time_stamped_series = {filename: all_paths.time_stamped_series[filename] for filename in filenames}
-
-            name = 'paths_ants_' + key_group_size.replace('>', 'more_than') + '_' + key_communication
-            paths.save_paths(paths.save_dir(name=name))
-            paths.save_timestamped_paths(paths.save_dir_timestamped(name=name))
-            paths.save_csv(paths.save_dir_timestamped(name=name))
 
 
 def get_size(df):
@@ -430,5 +364,5 @@ if __name__ == '__main__':
     # av_path_in_states()
     # ants()
     # humans()
-    split_up('ant')
     # perfect_human()
+    D = 1

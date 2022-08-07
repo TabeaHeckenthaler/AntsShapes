@@ -229,10 +229,14 @@ class Trajectory:
 
         return new_position, new_unwrapped_angle
 
-    def stuck(self, vel_norm=None, v_min=0.1) -> list:
+    def stuck(self, vel_norm=None, v_min=None) -> list:
         """
         :param v_min: minimal velocity in cm/s that will count as still moving.
         """
+
+        if v_min is None:
+            v_min = {'ant': 0.1, 'human': 0.1, 'humanhand': 0.5}[self.solver]
+
         slow_array = [v < v_min for v in np.abs(vel_norm)]
         # if self.solver == 'ant' and self.size not in ['S', 'XS']:
         #     self.load_participants()
@@ -241,7 +245,7 @@ class Trajectory:
         # else:
         attached_array = np.ones(len(slow_array)).astype(bool)
         stuck_array = np.logical_and(slow_array, attached_array)
-
+        #
         # plt.plot(np.array(stuck_array).astype(int) * v_min, marker='.', linestyle='')
         # plt.plot(vel_norm)
         # plt.title(self.filename)

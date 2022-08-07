@@ -10,6 +10,10 @@ trackedHumanMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experime
                                                                                                      path.sep, path.sep)
 length_unit = 'm'
 
+perfect_filenames = ['large_20210805171741_20210805172610_perfect',
+                     'medium_20210507225832_20210507230303_perfect',
+                     'small2_20220308120548_20220308120613_perfect']
+
 
 class Trajectory_human(Trajectory):
     def __init__(self, size=None, shape=None, filename=None, fps=30, winner=bool, x_error: float = 0,

@@ -7,7 +7,7 @@ from trajectory_inheritance.get import get
 from matplotlib import pyplot as plt
 from Setup.Maze import Maze
 from PS_Search_Algorithms.Path_planning_full_knowledge import Path_planning_full_knowledge
-from DataFrame.dataFrame import myDataFrame
+from Analysis.average_carrier_number.averageCarrierNumber import myDataFrame
 from tqdm import tqdm
 from Directories import path_length_dir, penalized_path_length_dir
 import json
@@ -140,15 +140,16 @@ class PathLength:
         if frames is None:
             frames = [0, -1]
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
-        angle2 = ConnectAngle(angle, self.x.shape)
-        DEBUG = 1
 
         if kernel_size is None:
             kernel_size = 2 * (self.x.fps // 4) + 1
         position_filtered, unwrapped_angle_filtered = self.x.smoothed_pos_angle(position, angle, kernel_size)
         stuck_frames = (np.zeros(angle.size)).astype(bool)
 
-        if penalize and self.x.size not in ['S', 'XS']:
+        DEBUG = 1
+        if penalize and \
+                self.x.size not in ['S', 'XS'] and \
+                myDataFrame[myDataFrame['filename'] == self.x.filename].iloc[0]['average Carrier Number'] > 1:
 
             # Calculate velocity in units of cm/s
             vel_norm = np.linalg.norm(self.x.velocity(position_filtered[:, 0], position_filtered[:, 1],
@@ -228,22 +229,17 @@ class PathLength:
         return path_length, winner
 
     @classmethod
-    def create_dicts(cls):
+    def create_dicts(cls, myDataFrame):
         dictio_p = {}
         dictio_pp = {}
+        # myDataFrame = myDataFrame[myDataFrame['solver'] == 'ant']
+        # myDataFrame = myDataFrame[myDataFrame['size'] == 'S']
         for filename in tqdm(myDataFrame['filename']):
             print(filename)
             x = get(filename)
             dictio_p[filename] = PathLength(x).calculate_path_length(penalize=False)
             dictio_pp[filename] = PathLength(x).calculate_path_length(penalize=True)
-
-        with open(path_length_dir, 'w') as json_file:
-            json.dump(dictio_p, json_file)
-            json_file.close()
-
-        with open(penalized_path_length_dir, 'w') as json_file:
-            json.dump(dictio_pp, json_file)
-            json_file.close()
+        return dictio_p, dictio_pp
 
 
 if __name__ == '__main__':
@@ -252,11 +248,22 @@ if __name__ == '__main__':
     # print(PathLength(x).calculate_path_length(penalize=True))
     # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
     # filename = 'M_SPT_4700022_MSpecialT_1_ants'
+    # filename = 'large_20201220135801_20201220140247'
+    # filename = 'small_20220606175207_20220606175429'
+    # filename = 'YI029806_5610'
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
 
-    PathLength.create_dicts()
-    # DEBUG = 1
+    dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
+    DEBUG = 1
+    with open(path_length_dir, 'w') as json_file:
+        json.dump(dictio_p, json_file)
+        json_file.close()
+
+    with open(penalized_path_length_dir, 'w') as json_file:
+        json.dump(dictio_pp, json_file)
+        json_file.close()
+    DEBUG = 1
 
 
 with open(path_length_dir, 'r') as json_file:
