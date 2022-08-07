@@ -198,10 +198,10 @@ class Trajectory_ant(Trajectory):
             self.angle = np.array(shape_orientation)
 
         def check_for_false_tracking(x):
-            print('I would like to renew this check_for_false_tracking function')
+            # print('I would like to renew this check_for_false_tracking function')
             max_Vel_trans, max_Vel_angle = {'XS': 4, 'S': 4, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}, \
                                            {'XS': 10, 'S': 10, 'M': 2, 'L': 2, 'SL': 2, 'XL': 2}
-            vel = x.velocity(0)
+            vel = x.velocity()
             lister = [x_vel or y_vel or ang_vel or isNaN for x_vel, y_vel, ang_vel, isNaN in
                       zip(vel[0, :] > max_Vel_trans[x.size],
                           vel[1, :] > max_Vel_trans[x.size],

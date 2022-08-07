@@ -219,13 +219,13 @@ class Trajectory:
         new_unwrapped_angle = medfilt(unwrapped_angle, kernel_size=kernel_size)
         new_unwrapped_angle = gaussian_filter(new_unwrapped_angle, sigma=kernel_size//5)
 
-        plt.plot(position[:, 0], position[:, 1])
-        plt.plot(new_position[:, 0], new_position[:, 1])
-        plt.show()
-
-        plt.plot(unwrapped_angle)
-        plt.plot(new_unwrapped_angle)
-        plt.show()
+        # plt.plot(position[:, 0], position[:, 1])
+        # plt.plot(new_position[:, 0], new_position[:, 1])
+        # plt.show()
+        #
+        # plt.plot(unwrapped_angle)
+        # plt.plot(new_unwrapped_angle)
+        # plt.show()
 
         return new_position, new_unwrapped_angle
 

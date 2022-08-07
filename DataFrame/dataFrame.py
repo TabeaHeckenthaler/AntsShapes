@@ -165,14 +165,15 @@ def recalculating_cut_off_experiments():
 
 
 if __name__ == '__main__':
-    DataFrame.create()
+    # DataFrame.create()
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 
     # drops = ['XL_SPT_4630015_XLSpecialT_1_ants', 'XL_SPT_4630019_XLSpecialT_1_ants']
+    drops = ['S_H_4130039_smallH_1_ants']
     #
-    # for drop in drops:
-    #     myDataFrame.drop_experiment(drop)
+    for drop in drops:
+        myDataFrame.drop_experiment(drop)
 
     # myDataFrame.add_column()
     for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):

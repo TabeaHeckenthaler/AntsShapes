@@ -228,7 +228,7 @@ class PathLength:
         return path_length, winner
 
     @classmethod
-    def create_dict(cls):
+    def create_dicts(cls):
         dictio_p = {}
         dictio_pp = {}
         for filename in tqdm(myDataFrame['filename']):
@@ -250,12 +250,12 @@ if __name__ == '__main__':
     # filename = 'L_LASH_4160019_LargeLH_1_ants (part 1)'
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
-    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+    # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
     # filename = 'M_SPT_4700022_MSpecialT_1_ants'
-    x = get(filename)
-    print(PathLength(x).calculate_path_length(penalize=True))
+    # x = get(filename)
+    # print(PathLength(x).calculate_path_length(penalize=True))
 
-    PathLength.create_dict()
+    PathLength.create_dicts()
     # DEBUG = 1
 
 

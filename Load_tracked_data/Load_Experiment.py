@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat']
 
-    solver, shape, free = 'human', 'SPT', False
+    solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
@@ -186,8 +186,9 @@ if __name__ == '__main__':
                 print(results_filename)
                 x = load(results_filename, solver, size, shape, fps[solver], [])
                 # x.play(wait=1)
+                parts_ = parts(results_filename, solver, size, shape)
                 chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
-                               for filename in parts(results_filename, solver, size, shape)[1:]]
+                               for filename in parts_]
                 x = x.add_missing_frames(chain, free)
                 x.play(step=5)
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)

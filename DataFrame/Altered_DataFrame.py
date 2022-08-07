@@ -62,6 +62,7 @@ class Altered_DataFrame:
             df = df[(df['maze dimensions'] == geometry[0])]
         if 'initial condition' in self.df.columns:
             df = df[df['initial condition'] == initial_cond]
+
         df_to_plot = {}
         if solver == 'ant':
             def split_winners_loosers(size, df):
@@ -110,8 +111,9 @@ class Altered_DataFrame:
                 without_eyesight_df = df[df['filename'].isin(without_eyesight)]
                 return {'with_eyesight': with_eyesight_df, 'without_eyesight': without_eyesight_df, }
 
-            # df_add = {'': split_NC_C(None, df)}
-            df_to_plot.update(split_NC_C(None, df))
+            df_add = {'': split_NC_C(None, df)}
+            df_to_plot.update(df_add)
+            # df_to_plot.update(split_NC_C(None, df))
 
         return df_to_plot
 
