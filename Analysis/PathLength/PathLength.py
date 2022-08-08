@@ -13,6 +13,7 @@ from Directories import path_length_dir, penalized_path_length_dir
 import json
 from Setup.MazeFunctions import ConnectAngle
 
+
 # --- from experimental data--- #
 # StartedScripts: check the noises (humans!!!)
 # noise_xy_ants_ImageAnaylsis = [0.01, 0.05, 0.02]  # cm

@@ -6,6 +6,7 @@ from tqdm import tqdm
 from copy import copy
 import json
 from DataFrame.SingleExperiment import SingleExperiment
+from trajectory_inheritance.trajectory_human import perfect_filenames
 
 pd.options.mode.chained_assignment = None
 exp_solvers = ['ant', 'human', 'humanhand']
@@ -135,9 +136,14 @@ class DataFrame(pd.DataFrame):
         myDataFrame.drop(index=myDataFrame[myDataFrame['filename'] == filename].index, inplace=True)
         myDataFrame.reset_index(drop=True, inplace=True)
 
+    def exclude_perfect(self):
+        for filename in perfect_filenames:
+            self.drop_experiment(filename)
+        
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+print('You still have perfect human trajectories')
 DEBUG = 1
 
 

@@ -1,11 +1,18 @@
 from itertools import groupby
 import numpy as np
 from trajectory_inheritance.get import get
+from trajectory_inheritance.exp_types import solver_geometry
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 from Analysis.PathPy.SPT_states import final_state, allowed_transition_attempts, pre_final_state
 from Analysis.PathLength.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
+from tqdm import tqdm
+from DataFrame.dataFrame import myDataFrame
+from Directories import network_dir
+import os
+import json
+
 
 time_step = 0.25  # seconds
 
@@ -44,6 +51,32 @@ class Path:
                 self.time_series = [l[0] for l in self.time_series]
         self.state_series = self.calculate_state_series()
 
+    @classmethod
+    def create_dicts(cls, myDataFrame):
+        dictio_ts = {}
+        dictio_ss = {}
+        shape = 'SPT'
+        myDataFrame = myDataFrame[myDataFrame['shape'] == shape]
+
+        for solver in myDataFrame['solver'].unique():
+            print(solver)
+            df = myDataFrame[myDataFrame['solver'] == solver].sort_values('size')
+            groups = df.groupby(by=['size'])
+            for size, cs_group in groups:
+                cs_labeled = ConfigSpace_Labeled(solver, size, shape, solver_geometry[solver])
+                cs_labeled.load_labeled_space()
+                for _, exp in tqdm(cs_group.iterrows()):
+                    print(exp['filename'])
+                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                        dictio_ts[exp['filename']] = None
+                        dictio_ss[exp['filename']] = None
+                    else:
+                        x = get(exp['filename'])
+                        path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
+                        dictio_ts[exp['filename']] = path_x.time_series
+                        dictio_ss[exp['filename']] = path_x.state_series
+        return dictio_ts, dictio_ss
+
     @staticmethod
     def show_configuration(x, coords, save_dir='', text_in_snapshot='', frame=0):
         maze = Maze(x)
@@ -66,7 +99,6 @@ class Path:
                                         text_in_snapshot=label1, frame=int(i * self.time_step * x.fps))
 
     def get_time_series(self, conf_space_labeled, x):
-        print(x)
         coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
@@ -98,7 +130,7 @@ class Path:
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
         for i, (label, length) in enumerate(grouped[1:-1], 1):
             if length <= min and self.valid_transition(new_labels[-1], grouped[i + 1][0]):
-                print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
+                # print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
             else:
                 new_labels = new_labels + [label for _ in range(length)]
@@ -135,7 +167,7 @@ class Path:
         new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
             if not Path.valid_state_transition(new_labels[-1], next_state):
-                print(new_labels[-1], next_state)
+                # print(new_labels[-1], next_state)
                 new_labels.append(new_labels[-1])
             else:
                 new_labels.append(next_state)
@@ -315,23 +347,33 @@ class Path:
 
 
 if __name__ == '__main__':
+    dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
+
+    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+        json.dump(dictio_p, json_file)
+        json_file.close()
+
+    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+        json.dump(dictio_pp, json_file)
+        json_file.close()
+
     # filenames = ['large_20210805171741_20210805172610_perfect',
     #             'medium_20210507225832_20210507230303_perfect',
     #             'small2_20220308120548_20220308120613_perfect']
     # filenames = ['small_20220308115942_20220308120334']
 
-    filenames = ['medium_20210422115548_20210422120405']
-    for filename in filenames:
-        x = get(filename)
-        cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-        cs_labeled.load_labeled_space()
-
-        # cs_labeled.visualize_space()
-        # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'cd')
-        # cs_labeled.visualize_transitions()
-        # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
-
-        path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-        x.play(path=path)
-        print(path.time_series)
-        DEBUG = 1
+    # filenames = ['medium_20210422115548_20210422120405']
+    # for filename in filenames:
+    #     x = get(filename)
+    #     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    #     cs_labeled.load_labeled_space()
+    #
+    #     # cs_labeled.visualize_space()
+    #     # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'cd')
+    #     # cs_labeled.visualize_transitions()
+    #     # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
+    #
+    #     path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    #     x.play(path=path)
+    #     print(path.time_series)
+    #     DEBUG = 1
