@@ -30,14 +30,8 @@ class Path:
         :return: list of strings with labels
         """
         self.time_step = time_step
-
-        if x is not None:
-            self.frame_step = int(self.time_step * x.fps)  # in seconds
-        else:
-            self.frame_step = None
-
         self.time_series = time_series
-        if self.frame_step is not None and self.time_series is None and x is not None:
+        if self.time_series is None and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x)
 
             # # for 'small_20220308115942_20220308120334'
@@ -45,11 +39,11 @@ class Path:
             #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
             # # x.play(path=self, wait=15)
 
-            self.correct_time_series()
+            self.time_series = self.correct_time_series(self.time_series)
             # self.save_transition_images(x)
             if only_states:
                 self.time_series = [l[0] for l in self.time_series]
-        self.state_series = self.calculate_state_series()
+        self.state_series = self.calculate_state_series(self.time_series)
 
     @classmethod
     def create_dicts(cls, myDataFrame):
@@ -88,7 +82,7 @@ class Path:
             display.snapshot(save_dir)
 
     def save_transition_images(self, x):
-        coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
+        coords = [coords for coords in x.iterate_coords(step=self.time_step)]
         Path.show_configuration(x, coords[0],
                                 'State_transition_images\\' + str(int(0 * self.time_step)) + '.png',
                                 text_in_snapshot=self.time_series[0], frame=0)
@@ -99,7 +93,7 @@ class Path:
                                         text_in_snapshot=label1, frame=int(i * self.time_step * x.fps))
 
     def get_time_series(self, conf_space_labeled, x):
-        coords = [coords for coords in x.iterate_coords(step=self.frame_step)]
+        coords = [coords for coords in x.iterate_coords(time_step=self.time_step)]
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
         for i, index in enumerate(indices):
@@ -111,11 +105,13 @@ class Path:
 
         return labels
 
-    def correct_time_series(self):
-        self.time_series = self.add_final_state(self.time_series)
-        self.time_series = self.delete_false_transitions(self.time_series)
-        self.time_series = self.get_rid_of_short_lived_states(self.time_series)
-        self.time_series = self.add_missing_transitions(self.time_series)
+    @staticmethod
+    def correct_time_series(time_series):
+        time_series = Path.add_final_state(time_series)
+        time_series = Path.delete_false_transitions(time_series)
+        time_series = Path.get_rid_of_short_lived_states(time_series)
+        time_series = Path.add_missing_transitions(time_series)
+        return time_series
 
     def label_configuration(self, index, conf_space_labeled, last_label=None) -> str:
         label = conf_space_labeled.space_labeled[index]
@@ -125,11 +121,12 @@ class Path:
         #     conf_space_labeled.draw_ind(index)
         return label
 
-    def get_rid_of_short_lived_states(self, labels, min=5):
+    @staticmethod
+    def get_rid_of_short_lived_states(labels, min=5):
         grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
         for i, (label, length) in enumerate(grouped[1:-1], 1):
-            if length <= min and self.valid_transition(new_labels[-1], grouped[i + 1][0]):
+            if length <= min and Path.valid_transition(new_labels[-1], grouped[i + 1][0]):
                 # print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
             else:
@@ -164,10 +161,12 @@ class Path:
 
     @staticmethod
     def delete_false_transitions(labels):
+        print('Warning')
+        # labels = labels[11980:]
         new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
             if not Path.valid_state_transition(new_labels[-1], next_state):
-                # print(new_labels[-1], next_state)
+                print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
                 new_labels.append(new_labels[-1])
             else:
                 new_labels.append(next_state)
@@ -205,7 +204,7 @@ class Path:
                (state1 == pre_final_state and state2 == final_state)
 
     @staticmethod
-    def necessary_transitions(state1, state2, ii: int = '', frame_step=1) -> list:
+    def necessary_transitions(state1, state2, ii: int = '') -> list:
         if state1 == 'c' and state2 == 'fh':
             return ['ce', 'e', 'ef', 'f']
         if state1 == 'c' and state2 == 'f':
@@ -242,7 +241,8 @@ class Path:
             print('What happened: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
             return []
 
-    def add_missing_transitions(self, labels) -> list:
+    @staticmethod
+    def add_missing_transitions(labels) -> list:
         """
         I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
         """
@@ -252,7 +252,7 @@ class Path:
             # if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
             #     DEBUG = 1
             state1 = new_labels[-1]
-            if not self.valid_transition(state1, state2):
+            if not Path.valid_transition(state1, state2):
                 if state1 in ['f', 'e'] and state2 == 'i':
                     new_labels.append(state1)  # only for small SPT ants
                 elif state1 in ['eg', 'dg', 'cg'] and state2 == 'g':
@@ -262,7 +262,7 @@ class Path:
                 elif len(state2) == 2 and state1 == state2[1]:
                     new_labels.append(state2[1] + state2[0])
                 else:
-                    for t in self.necessary_transitions(state1, state2, ii=ii, frame_step=self.frame_step):
+                    for t in Path.necessary_transitions(state1, state2, ii=ii):
                         new_labels.append(t)
                     new_labels.append(state2)
             else:
@@ -314,14 +314,15 @@ class Path:
     #
     #     return labels
 
-    def calculate_state_series(self):
+    @staticmethod
+    def calculate_state_series(time_series):
         """
         Reduces time series to series of states. No self loops anymore.
         :return:
         """
-        labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in self.time_series])]
-        labels = self.combine_transitions(labels)
-        labels = self.add_final_state(labels)
+        labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in time_series])]
+        labels = Path.combine_transitions(labels)
+        labels = Path.add_final_state(labels)
         return labels
 
     @staticmethod
@@ -347,33 +348,29 @@ class Path:
 
 
 if __name__ == '__main__':
-    dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
-
-    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-        json.dump(dictio_p, json_file)
-        json_file.close()
-
-    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-        json.dump(dictio_pp, json_file)
-        json_file.close()
-
-    # filenames = ['large_20210805171741_20210805172610_perfect',
-    #             'medium_20210507225832_20210507230303_perfect',
-    #             'small2_20220308120548_20220308120613_perfect']
-    # filenames = ['small_20220308115942_20220308120334']
-
-    # filenames = ['medium_20210422115548_20210422120405']
-    # for filename in filenames:
-    #     x = get(filename)
-    #     cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    #     cs_labeled.load_labeled_space()
+    DEBUG = 1
+    # dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
     #
-    #     # cs_labeled.visualize_space()
-    #     # cs_labeled.visualize_space(space=cs_labeled.space_labeled == 'cd')
-    #     # cs_labeled.visualize_transitions()
-    #     # x.play(cs=cs_labeled, frames=[24468 - 1000, 24468 + 100], step=1)
+    # with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+    #     json.dump(dictio_p, json_file)
+    #     json_file.close()
     #
-    #     path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    #     x.play(path=path)
-    #     print(path.time_series)
-    #     DEBUG = 1
+    # with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+    #     json.dump(dictio_pp, json_file)
+    #     json_file.close()
+
+    filename = 'L_SPT_4670008_LSpecialT_1_ants (part 1)'
+    x = get(filename)
+    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    cs_labeled.load_labeled_space()
+    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    x.play(path=path)
+
+
+with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
+    time_series_dict = json.load(json_file)
+    json_file.close()
+
+with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
+    state_series_dict = json.load(json_file)
+    json_file.close()

@@ -200,12 +200,17 @@ class Trajectory:
     def solving_time(self):
         return self.timer()
 
-    def iterate_coords(self, step=1) -> iter:
+    def iterate_coords(self, time_step: float = 1) -> iter:
         """
-        Iterator over (x, y, theta) of the trajectory
+        Iterator over (x, y, theta) of the trajectory, time_step is given in seconds
         :return: tuple (x, y, theta) of the trajectory
         """
-        for pos, angle in zip(self.position[::step, :], self.angle[::step]):
+        number_of_frames = self.angle.shape[0]
+        length_of_movie_in_seconds = number_of_frames/self.fps
+        len_of_slicer = np.floor(length_of_movie_in_seconds/time_step).astype(int)
+
+        slicer = np.cumsum([time_step*self.fps for _ in range(len_of_slicer)]).astype(int)
+        for pos, angle in zip(self.position[slicer], self.angle[slicer]):
             yield pos[0], pos[1], angle
 
     def smoothed_pos_angle(self, position, angle, kernel_size):
