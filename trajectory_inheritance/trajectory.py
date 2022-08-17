@@ -179,16 +179,12 @@ class Trajectory:
         frame_dividers = [-1] + \
                          [i for i, (f1, f2) in enumerate(zip(self.frames, self.frames[1:])) if not f1 < f2] + \
                          [len(self.frames)]
-
+        tracked_frames = [self.tracked_frames[i:i + 2] for i in range(0, len(self.tracked_frames), 2)]
         if len(self.VideoChain) == 0:
             self.VideoChain = [self.filename]
-
-    # TODO
-        # if len(frame_dividers) - 1 != len(self.VideoChain):
-        #     raise Exception('Why are your frames not matching your VideoChain in ' + self.filename + ' ?')
-
-        parts = [Trajectory_part(self, [chain_element], [fr1 + 1, fr2 + 1])
-                 for chain_element, fr1, fr2 in zip(self.VideoChain, frame_dividers, frame_dividers[1:])]
+        parts = [Trajectory_part(self, [chain_element], [fr1 + 1, fr2 + 1], tracked_frame)
+                 for chain_element, fr1, fr2, tracked_frame
+                 in zip(self.VideoChain, frame_dividers, frame_dividers[1:], tracked_frames)]
         return parts
 
     def timer(self):
@@ -506,7 +502,7 @@ class Trajectory:
 
 
 class Trajectory_part(Trajectory):
-    def __init__(self, parent_traj, VideoChain: list, frames: list):
+    def __init__(self, parent_traj, VideoChain: list, frames: list, tracked_frames: list):
         """
 
         :param parent_traj: trajectory that the part is taken from
@@ -521,6 +517,8 @@ class Trajectory_part(Trajectory):
         self.frames = parent_traj.frames[frames[0]:frames[-1]]
         self.position = parent_traj.position[frames[0]:frames[-1]]
         self.angle = parent_traj.angle[frames[0]:frames[-1]]
+        self.tracked_frames = tracked_frames
+        self.falseTracking = []
 
     def is_connector(self):
         if self.VideoChain[-1] is None:

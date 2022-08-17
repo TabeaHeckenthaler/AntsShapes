@@ -94,11 +94,11 @@ class DataFrame(pd.DataFrame):
             print('Loading ' + filename + ' to df')
             yield SingleExperiment(filename, solver)
 
-    def single_experiment(self, filename):
+    def single_experiment(self, filename: str):
         df = self[(self['filename'] == filename)]
         return SingleExperiment(filename, df['solver'].values[0], df=df)
 
-    def sanity_check(self):
+    def sanity_check(self) -> None:
         problematic = self[(self['path length/minimal path length[]'] < 1)
                            & (self['solver'] != 'ps_simulation')  # TODO: Still have to fix this
                            & (self['winner'] is True)]
@@ -117,7 +117,7 @@ class DataFrame(pd.DataFrame):
                 self.at[i, 'maze dimensions'] = geometry[0]
                 self.at[i, 'load dimensions'] = geometry[1]
 
-    def recalculate_experiment(self, filename):
+    def recalculate_experiment(self, filename: str):
         x = get(filename)
         df = self[self['filename'] == filename]
         if len(df) == 0:
@@ -143,23 +143,20 @@ class DataFrame(pd.DataFrame):
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+
+# myDataFrame['filename'] = myDataFrame['filename'].replace(['M_SPT_4690009_MSpecialT_1_ants'],'M_SPT_4690009_MSpecialT_1_ants (part 1)')
+# myDataFrame.at[555, 'winner'] = True
 print('You still have perfect human trajectories')
 DEBUG = 1
 
 
-def recalculating_cut_off_experiments():
+def recalculating_cut_off_experiments() -> None:
     """
     These are the experiments which were cut off, because I used the wrong movie player.
     I retracked
 
     """
-    done_filenames = ['XL_SPT_4630015_XLSpecialT_1_ants (part 1)',
-                      'XL_SPT_4630018_XLSpecialT_1_ants',
-                      'XL_SPT_4630019_XLSpecialT_1_ants (part 1)',
-                      'XL_SPT_4640012_XLSpecialT_1_ants',
-                      'XL_SPT_4640015_XLSpecialT_1_ants',
-                      'XL_SPT_4640023_XLSpecialT_1_ants'
-                      ]
+    done_filenames = []
 
     new_filenames = []
 

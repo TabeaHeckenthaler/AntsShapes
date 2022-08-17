@@ -9,10 +9,10 @@ import pandas as pd
 
 myDataFrame['minimal path length [length unit]'] = myDataFrame['filename'].map(minimal_path_length_dict)
 myDataFrame['path length [length unit]'] = myDataFrame['filename'].map(path_length_dict)
-myDataFrame['time series'] = myDataFrame['filename'].map(time_series_dict)
-myDataFrame['state series'] = myDataFrame['filename'].map(state_series_dict)
 myDataFrame['path length/minimal path length[]'] = myDataFrame['path length [length unit]'] / \
                                                    myDataFrame['minimal path length [length unit]']
+myDataFrame['time series'] = myDataFrame['filename'].map(time_series_dict)
+myDataFrame['state series'] = myDataFrame['filename'].map(state_series_dict)
 
 
 df = myDataFrame[(myDataFrame['size'] == 'L') &
@@ -36,6 +36,7 @@ def time_spent_in_states(time_series):
 
 dict_b = {}
 for i, exp in df.iterrows():
+    print(exp['filename'])
     dict_b[exp['filename']] = time_spent_in_states(exp['time series'])
 
 df['state dict'] = df['filename'].map(dict_b)
