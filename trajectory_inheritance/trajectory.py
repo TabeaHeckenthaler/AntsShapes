@@ -205,7 +205,7 @@ class Trajectory:
         length_of_movie_in_seconds = number_of_frames/self.fps
         len_of_slicer = np.floor(length_of_movie_in_seconds/time_step).astype(int)
 
-        slicer = np.cumsum([time_step*self.fps for _ in range(len_of_slicer)]).astype(int)
+        slicer = np.cumsum([time_step*self.fps for _ in range(len_of_slicer)][:-1]).astype(int)
         for pos, angle in zip(self.position[slicer], self.angle[slicer]):
             yield pos[0], pos[1], angle
 

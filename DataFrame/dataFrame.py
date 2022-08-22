@@ -144,8 +144,9 @@ class DataFrame(pd.DataFrame):
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
-# myDataFrame['filename'] = myDataFrame['filename'].replace(['M_SPT_4690009_MSpecialT_1_ants'],'M_SPT_4690009_MSpecialT_1_ants (part 1)')
-# myDataFrame.at[555, 'winner'] = True
+# myDataFrame['filename'] = myDataFrame['filename'].replace(['S_SPT_4800004_SSpecialT_1_ants'],
+# 'S_SPT_4800004_SSpecialT_1_ants (part 1)')
+# myDataFrame.at[852, 'winner'] = True
 print('You still have perfect human trajectories')
 DEBUG = 1
 

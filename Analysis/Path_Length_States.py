@@ -33,6 +33,7 @@ def time_spent_in_states(time_series):
         d[state] = time_spent_in_state(time_series, state=state)
     return d
 
+# time_spent_in_states(df.loc[153]['time series'])
 
 dict_b = {}
 for i, exp in df.iterrows():
@@ -47,6 +48,7 @@ states_df = pd.DataFrame(df['state dict'].tolist(), index=df.index)
 states_df.plot(kind='bar', stacked=True, title='states')
 
 fig, ax = plt.subplots()
+df['time in c [s]'] = None
 df.plot(x='time in c [s]', y='path length/minimal path length[]', marker='.', linewidth=0, ax=ax)
 
 for index, v in df.iterrows():

@@ -39,7 +39,7 @@ class Path:
             #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
             # # x.play(path=self, wait=15)
 
-            self.time_series = self.correct_time_series(self.time_series)
+            self.time_series = Path.correct_time_series(self.time_series)
             # self.save_transition_images(x)
             if only_states:
                 self.time_series = [l[0] for l in self.time_series]
@@ -166,7 +166,7 @@ class Path:
         new_labels = [labels[0]]
         for ii, next_state in enumerate(labels[1:], start=1):
             if not Path.valid_state_transition(new_labels[-1], next_state):
-                print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
+                # print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
                 new_labels.append(new_labels[-1])
             else:
                 new_labels.append(next_state)
@@ -348,23 +348,24 @@ class Path:
 
 
 if __name__ == '__main__':
-    DEBUG = 1
-    # dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
-    #
-    # with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-    #     json.dump(dictio_p, json_file)
-    #     json_file.close()
-    #
-    # with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-    #     json.dump(dictio_pp, json_file)
-    #     json_file.close()
+    # filename = 'M_SPT_4700014_MSpecialT_1_ants (part 1)'
+    # x = get(filename)
+    # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    # cs_labeled.load_labeled_space()
+    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    # x.play(path=path)
 
-    filename = 'L_SPT_4670008_LSpecialT_1_ants (part 1)'
-    x = get(filename)
-    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    cs_labeled.load_labeled_space()
-    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    x.play(path=path)
+    DEBUG = 1
+    dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
+
+    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+        json.dump(dictio_p, json_file)
+        json_file.close()
+
+    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+        json.dump(dictio_pp, json_file)
+        json_file.close()
+    #
 
 
 with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
