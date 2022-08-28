@@ -230,7 +230,7 @@ class PathLength:
         return path_length, winner
 
     @classmethod
-    def create_dicts(cls, myDataFrame):
+    def create_dicts(cls, myDataFrame) -> tuple:
         dictio_p = {}
         dictio_pp = {}
         # myDataFrame = myDataFrame[myDataFrame['solver'] == 'ant']
@@ -241,6 +241,29 @@ class PathLength:
             dictio_p[filename] = PathLength(x).calculate_path_length(penalize=False)
             dictio_pp[filename] = PathLength(x).calculate_path_length(penalize=True)
         return dictio_p, dictio_pp
+
+    @classmethod
+    def add_to_dict(cls, myDataFrame) -> tuple:
+        """
+
+        """
+        to_add = set(myDataFrame['filename']) - set(path_length_dict.keys())
+
+        for filename in to_add:
+            x = get(filename)
+            path_length_dict.update({filename: PathLength(x).calculate_path_length(penalize=False)})
+            penalized_path_length_dict.update({filename: PathLength(x).calculate_path_length(penalize=True)})
+
+        return path_length_dict, penalized_path_length_dict
+
+
+with open(path_length_dir, 'r') as json_file:
+    path_length_dict = json.load(json_file)
+    json_file.close()
+
+with open(penalized_path_length_dir, 'r') as json_file:
+    penalized_path_length_dict = json.load(json_file)
+    json_file.close()
 
 
 if __name__ == '__main__':
@@ -255,8 +278,9 @@ if __name__ == '__main__':
     # x = get(filename)
     # print(PathLength(x).calculate_path_length(penalize=True))
 
-    dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
-    DEBUG = 1
+    # dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
+
+    dictio_p, dictio_pp = PathLength.add_to_dict(myDataFrame)
     with open(path_length_dir, 'w') as json_file:
         json.dump(dictio_p, json_file)
         json_file.close()
@@ -264,13 +288,3 @@ if __name__ == '__main__':
     with open(penalized_path_length_dir, 'w') as json_file:
         json.dump(dictio_pp, json_file)
         json_file.close()
-    DEBUG = 1
-
-
-with open(path_length_dir, 'r') as json_file:
-    path_length_dict = json.load(json_file)
-    json_file.close()
-
-with open(penalized_path_length_dir, 'r') as json_file:
-    penalized_path_length_dict = json.load(json_file)
-    json_file.close()

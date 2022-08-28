@@ -13,12 +13,14 @@ from trajectory_inheritance.exp_types import exp_types
 from trajectory_inheritance.trajectory_human import Trajectory_human
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from trajectory_inheritance.trajectory_humanhand import Trajectory_humanhand
+import numpy as np
+from matplotlib import pyplot as plt
 
 
 def is_extension(name) -> bool:
     if 'part' not in name:
         return False
-    if int(name.split('part ')[1][0]) > 1:
+    if int(name.split('part ')[1][0]) > 1 or 'r' in name.split('part ')[1]:
         return True
 
 
@@ -173,30 +175,34 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat']
+    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
+                   'SSPT_4750002_SSpecialT_1_ants (part 1).mat']
 
     solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
 
     for size in exp_types[shape][solver]:
         unpickled = find_unpickled(solver, size, shape)
-
+        winner_dict = continue_winner_dict(solver, shape)
         if len(unpickled) > 0:
             for results_filename in tqdm([u for u in unpickled if u not in still_to_do]):
                 print(results_filename)
-                x = load(results_filename, solver, size, shape, fps[solver], [])
-                # x.play(wait=1)
                 parts_ = parts(results_filename, solver, size, shape)
-                chain = [x] + [load(filename, solver, size, shape, fps[solver], [], winner=x.winner)
-                               for filename in parts_]
-                x = x.add_missing_frames(chain, free)
-                x.play(step=5)
+                winner = winner_dict[results_filename]
+                chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner)
+                         for filename in parts_]
+                x = chain[0]
+                for part in chain[1:]:
+                    x = x + part
+
+                plt.plot(x.frames)
+                plt.show(block=False)
+                # x = x.add_missing_frames(chain, free)
+                x.play()
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)
                 x.save()
 
-                # TODO: Check that the winner is correctly saved!!
-                # TODO: add new file to contacts json file
-                # TODO: add new file to pandas DataFrame
+                # TODO: 'L_SPT_5000004_LSpecialT_1_ants (part 1)' ... correct false positions
 
     # free trajectories
     # solver, shape = 'ant', 'SPT'

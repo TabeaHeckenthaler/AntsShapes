@@ -45,7 +45,11 @@ class Trajectory_ant(Trajectory):
         if self.shape != 'SPT':
             return 'MazeDimensions_ant.xlsx', 'LoadDimensions_ant.xlsx'
 
-        new_starting_conditions = [str(x) for x in range(46300, 48100, 100)]
+        new_starting_conditions = [str(x) for x in
+                                   list(range(46300, 48100, 100))  # 2021, Tabea
+                                   + [44200] +  # Udi's camera 2022
+                                   list(range(5000, 6000, 10))  # Lena's camera 2022
+                                   ]
         if np.any([new_starting_condition in self.filename
                    for new_starting_condition in new_starting_conditions]):
             return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'

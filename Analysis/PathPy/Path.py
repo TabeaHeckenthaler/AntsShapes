@@ -45,32 +45,6 @@ class Path:
                 self.time_series = [l[0] for l in self.time_series]
         self.state_series = self.calculate_state_series(self.time_series)
 
-    @classmethod
-    def create_dicts(cls, myDataFrame):
-        dictio_ts = {}
-        dictio_ss = {}
-        shape = 'SPT'
-        myDataFrame = myDataFrame[myDataFrame['shape'] == shape]
-
-        for solver in myDataFrame['solver'].unique():
-            print(solver)
-            df = myDataFrame[myDataFrame['solver'] == solver].sort_values('size')
-            groups = df.groupby(by=['size'])
-            for size, cs_group in groups:
-                cs_labeled = ConfigSpace_Labeled(solver, size, shape, solver_geometry[solver])
-                cs_labeled.load_labeled_space()
-                for _, exp in tqdm(cs_group.iterrows()):
-                    print(exp['filename'])
-                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
-                        dictio_ts[exp['filename']] = None
-                        dictio_ss[exp['filename']] = None
-                    else:
-                        x = get(exp['filename'])
-                        path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
-                        dictio_ts[exp['filename']] = path_x.time_series
-                        dictio_ss[exp['filename']] = path_x.state_series
-        return dictio_ts, dictio_ss
-
     @staticmethod
     def show_configuration(x, coords, save_dir='', text_in_snapshot='', frame=0):
         maze = Maze(x)
@@ -346,26 +320,61 @@ class Path:
         # x.play()
         return hey_path_length
 
+    @classmethod
+    def create_dicts(cls, myDataFrame):
+        dictio_ts = {}
+        dictio_ss = {}
+        shape = 'SPT'
+        myDataFrame = myDataFrame[myDataFrame['shape'] == shape]
 
-if __name__ == '__main__':
-    # filename = 'M_SPT_4700014_MSpecialT_1_ants (part 1)'
-    # x = get(filename)
-    # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    # cs_labeled.load_labeled_space()
-    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    # x.play(path=path)
+        for solver in myDataFrame['solver'].unique():
+            print(solver)
+            df = myDataFrame[myDataFrame['solver'] == solver].sort_values('size')
+            groups = df.groupby(by=['size'])
+            for size, cs_group in groups:
+                cs_labeled = ConfigSpace_Labeled(solver, size, shape, solver_geometry[solver])
+                cs_labeled.load_labeled_space()
+                for _, exp in tqdm(cs_group.iterrows()):
+                    print(exp['filename'])
+                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                        dictio_ts[exp['filename']] = None
+                        dictio_ss[exp['filename']] = None
+                    else:
+                        x = get(exp['filename'])
+                        path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
+                        dictio_ts[exp['filename']] = path_x.time_series
+                        dictio_ss[exp['filename']] = path_x.state_series
+        return dictio_ts, dictio_ss
 
-    DEBUG = 1
-    dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
+    @classmethod
+    def add_to_dict(cls, myDataFrame, solver='ant') -> tuple:
+        """
 
-    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-        json.dump(dictio_p, json_file)
-        json_file.close()
+        """
+        dictio_ts = {}
+        dictio_ss = {}
+        print('only ants')
+        myDataFrame = myDataFrame[myDataFrame['shape'] == 'SPT'][myDataFrame['solver'] == solver]
+        to_add = myDataFrame[~myDataFrame['filename'].isin(time_series_dict.keys())]
+        size_groups = to_add.groupby('size')
 
-    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-        json.dump(dictio_pp, json_file)
-        json_file.close()
-    #
+        for size, cs_group in size_groups:
+            print(size)
+            cs_labeled = ConfigSpace_Labeled(solver, size, 'SPT', solver_geometry[solver])
+            cs_labeled.load_labeled_space()
+            for _, exp in tqdm(cs_group.iterrows()):
+                print(exp['filename'])
+                if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                    dictio_ts[exp['filename']] = None
+                    dictio_ss[exp['filename']] = None
+                else:
+                    x = get(exp['filename'])
+                    path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
+                    dictio_ts[exp['filename']] = path_x.time_series
+                    dictio_ss[exp['filename']] = path_x.state_series
+        time_series_dict.update(dictio_ts)
+        state_series_dict.update(dictio_ss)
+        return time_series_dict, state_series_dict
 
 
 with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
@@ -375,3 +384,24 @@ with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
 with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
     state_series_dict = json.load(json_file)
     json_file.close()
+
+
+if __name__ == '__main__':
+    # filename = 'M_SPT_4700014_MSpecialT_1_ants (part 1)'
+    # x = get(filename)
+    # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    # cs_labeled.load_labeled_space()
+    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    # x.play(path=path)
+
+    # dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
+    dictio_ts, dictio_ss = Path.add_to_dict(myDataFrame)
+
+    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+        json.dump(dictio_ts, json_file)
+        json_file.close()
+
+    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+        json.dump(dictio_ss, json_file)
+        json_file.close()
+

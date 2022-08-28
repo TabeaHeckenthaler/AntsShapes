@@ -144,9 +144,10 @@ class DataFrame(pd.DataFrame):
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
 
-# myDataFrame['filename'] = myDataFrame['filename'].replace(['S_SPT_4800004_SSpecialT_1_ants'],
-# 'S_SPT_4800004_SSpecialT_1_ants (part 1)')
-# myDataFrame.at[852, 'winner'] = True
+# myDataFrame['filename'] = myDataFrame['filename'].replace(['S_SPT_4750016_SSpecialT_1_ants'],
+# 'S_SPT_4750016_SSpecialT_1_ants (part 1)')
+
+# myDataFrame.at[557, 'winner'] = True
 print('You still have perfect human trajectories')
 DEBUG = 1
 
@@ -173,22 +174,14 @@ if __name__ == '__main__':
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 
-    # drops = ['XL_SPT_4630015_XLSpecialT_1_ants', 'XL_SPT_4630019_XLSpecialT_1_ants']
-    drops = ['S_H_4130039_smallH_1_ants']
-    #
-    for drop in drops:
-        myDataFrame.drop_experiment(drop)
+    # drops = ['M_SPT_4690011_MSpecialT_1_ants', 'M_SPT_4690011_MSpecialT_1_ants (part 1)']
+    # drops = ['S_H_4130039_smallH_1_ants']
+    # #
+    # for drop in drops:
+    #     myDataFrame.drop_experiment(drop)
 
     # myDataFrame.add_column()
-    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+    for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
-
-        ratio = new_experiment['path length [length unit]'].values[0] / \
-                new_experiment['minimal path length [length unit]'].values[0]
-        print(ratio)
-
-        if ratio < 1.2 or ratio > 15:
-            raise ValueError('weirdness in ' + new_experiment['filename'])
-
     myDataFrame.save()

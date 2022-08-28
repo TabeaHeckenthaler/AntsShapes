@@ -13,7 +13,7 @@ def split_trajectory(filename):
         if 'CONNECTOR' in chain_name:
             new_filenames = x.size + '_'.join((chain_name.split(')')[0] + 'r).mat').split('_')[1:])
             xs_loaded = load(new_filenames, x.solver, x.size, x.shape, x.fps, [], winner=x.winner)
-            # new_filenames = ["SSPT_4770001_SSpecialT_1_ants (part 1)",
+            # new_filenames = ["SSPT_4790009_SSpecialT_1_ants (part 1)",
             #                  'SSPT_4770001_SSpecialT_2_ants (part 2)',
             #                  'SSPT_4770001_SSpecialT_1_ants (part 2r)',
             #                  'SSPT_4770002_SSpecialT_1_ants (part 3)',
@@ -37,9 +37,11 @@ def split_trajectory(filename):
 
 if __name__ == '__main__':
     filenames = [
-        "S_SPT_4800004_SSpecialT_1_ants (part 1)",
-        "S_SPT_4800006_SSpecialT_1_ants (part 1)",
-        "S_SPT_4800009_SSpecialT_1_ants (part 1)"
+        "S_SPT_4790009_SSpecialT_1_ants (part 1)",
+        "S_SPT_4750016_SSpecialT_1_ants (part 1)",
+        "S_SPT_4750014_SSpecialT_1_ants (part 1)",
+        "S_SPT_4750005_SSpecialT_1_ants (part 1)",
+        "M_SPT_4690011_MSpecialT_1_ants (part 1)",
     ]
 
     for filename in filenames:
