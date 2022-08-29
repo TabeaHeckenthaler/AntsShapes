@@ -64,10 +64,10 @@ class Paths(pp.Paths):
                     if filenames is not None:
                         time_series = dictfilt(time_series, filenames)
                     if only_states:
-                        time_series = {name: [state[0] for state in series] for name, series in time_series.items()}
+                        time_series = {name: Path.only_states(series) for name, series in time_series.items()}
                     if symmetric_states:
-                        time_series = {name: [state.replace('d', 'e') for state in series]
-                                       for name, series in time_series.items()}
+                        time_series = {name: Path.symmetrize(series) for name, series in time_series.items()}
+
                     self.time_series.update(time_series)
                     self.single_paths = {name: Path(self.time_step, time_s) for name, time_s in self.time_series.items()}
 
@@ -79,9 +79,9 @@ class Paths(pp.Paths):
                 if filenames is not None:
                     time_series = dictfilt(time_series, filenames)
                 if only_states:
-                    time_series = {name: [state[0] for state in series] for name, series in time_series.items()}
+                    time_series = {name: Path.only_states(series) for name, series in time_series.items()}
                 if symmetric_states:
-                    time_series = {name: [state.replace('d', 'e') for state in series] for name, series in time_series.items()}
+                    time_series = {name: Path.symmetrize(series) for name, series in time_series.items()}
                 self.time_series.update(time_series)
 
             self.add_paths(time_series)

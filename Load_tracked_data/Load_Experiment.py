@@ -116,7 +116,7 @@ def continue_winner_dict(solver, shape) -> dict:
     for size in exp_types[shape][solver]:
         print(size)
         unpickled = find_unpickled(solver, size, shape)
-        new = {name: bool(input(name + '   winner? ')) for name in unpickled if name not in winner_dict.keys()}
+        new = {name: bool(int(input(name + '   winner? '))) for name in unpickled if name not in winner_dict.keys()}
 
         if len(new) > 0:
             winner_dict.update(new)
@@ -176,7 +176,6 @@ with open('winner_dictionary.txt', 'r') as json_file:
 if __name__ == '__main__':
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
-                   # 'SSPT_4750002_SSpecialT_1_ants (part 1).mat'
                    ]
 
     solver, shape, free = 'ant', 'SPT', False

@@ -12,6 +12,7 @@ from DataFrame.dataFrame import myDataFrame
 from Directories import network_dir
 import os
 import json
+from matplotlib import pyplot as plt
 
 
 time_step = 0.25  # seconds
@@ -250,6 +251,14 @@ class Path:
                 new_labels.append(state2)
         return new_labels
 
+    @staticmethod
+    def symmetrize(state_series):
+        return [state.replace('d', 'e') for state in state_series]
+
+    @staticmethod
+    def only_states(state_series):
+        return [state[0] for state in state_series]
+
     def state_at_time(self, time: float) -> str:
         return self.time_series[int(time / self.time_step)]
 
@@ -383,6 +392,52 @@ class Path:
         state_series_dict.update(dictio_ss)
         return time_series_dict, state_series_dict
 
+    @staticmethod
+    def state_duration(time_series):
+        """
+        :return: [('a', 11), ('b', 5), ...]
+        """
+        duration_list = []
+        counter = 1
+        last_state = time_series[0]
+        for s in time_series[1:]:
+            if s == last_state:
+                counter += 1
+            else:
+                duration_list.append((last_state, counter))
+                last_state = s
+                counter = 1
+        if time_series[-1] != duration_list[-1][0]:
+            duration_list.append((time_series[-1], counter))
+        return duration_list
+
+    def bar_chart(self, ax, axis_label=''):
+        ts = Path.only_states(self.time_series)
+        ts = Path.symmetrize(ts)
+        dur = Path.state_duration(ts)
+
+        # prop_cycle = plt.rcParams['axes.prop_cycle']
+        # colors = prop_cycle.by_key()['color']
+        # color_dict = {state: color for state, color in zip(['a', 'b', 'c', 'd', 'h', 'f', 'i'], colors)}
+
+        color_dict = {'a': '#1f77b4', 'b': '#ff7f0e', 'c': '#2ca02c', 'e': '#d62728', 'f': '#8c564b', 'h': '#9467bd',
+                      'i': '#e377c2'}
+        left = 0
+
+        given_names = {}
+
+        for name, duration in dur:
+            b = ax.barh(axis_label, duration, color=color_dict[name], left=left, label=name)
+            if name not in given_names:
+                given_names.update({name: b})
+            left += duration
+
+        labels = list(color_dict.keys())
+        handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[label]) for label in labels]
+        plt.legend(handles, labels)
+
+        # plt.legend(given_names, title="States", loc="upper right")
+
 
 with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
     time_series_dict = json.load(json_file)
@@ -394,21 +449,21 @@ with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
 
 
 if __name__ == '__main__':
-    # filename = 'L_SPT_4660011_LSpecialT_1_ants'
-    # x = get(filename)
-    # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    # cs_labeled.load_labeled_space()
-    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    # x.play(path=path)
+    filename = 'L_SPT_4650013_LSpecialT_1_ants'
+    x = get(filename)
+    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    cs_labeled.load_labeled_space()
+    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    x.play(path=path)
 
-    dictio_ts, dictio_ss = Path.create_dicts(myDataFrame)
+    # dictio_ts, dictio_ss = Path.create_dicts(myDataFrame)
     # dictio_ts, dictio_ss = Path.add_to_dict(myDataFrame)
 
-    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-        json.dump(dictio_ts, json_file)
-        json_file.close()
-
-    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-        json.dump(dictio_ss, json_file)
-        json_file.close()
+    # with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+    #     json.dump(dictio_ts, json_file)
+    #     json_file.close()
+    #
+    # with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+    #     json.dump(dictio_ss, json_file)
+    #     json_file.close()
 
