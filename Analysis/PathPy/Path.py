@@ -39,7 +39,7 @@ class Path:
             #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
             # # x.play(path=self, wait=15)
 
-            self.time_series = Path.correct_time_series(self.time_series)
+            self.time_series = Path.correct_time_series(self.time_series, filename=x.filename)
             # self.save_transition_images(x)
             if only_states:
                 self.time_series = [l[0] for l in self.time_series]
@@ -71,6 +71,8 @@ class Path:
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
         for i, index in enumerate(indices):
+            if i == 447:
+                DEBUG = 1
             labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
         labels = labels[1:]
 
@@ -80,9 +82,9 @@ class Path:
         return labels
 
     @staticmethod
-    def correct_time_series(time_series):
+    def correct_time_series(time_series, filename=''):
         time_series = Path.add_final_state(time_series)
-        time_series = Path.delete_false_transitions(time_series)
+        time_series = Path.delete_false_transitions(time_series, filename=filename)
         time_series = Path.get_rid_of_short_lived_states(time_series)
         time_series = Path.add_missing_transitions(time_series)
         return time_series
@@ -134,14 +136,19 @@ class Path:
         return False
 
     @staticmethod
-    def delete_false_transitions(labels):
-        print('Warning')
+    def delete_false_transitions(labels, filename=''):
         # labels = labels[11980:]
         new_labels = [labels[0]]
+        error_count = 0
         for ii, next_state in enumerate(labels[1:], start=1):
             if not Path.valid_state_transition(new_labels[-1], next_state):
                 # print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
+                error_count += 1
                 new_labels.append(new_labels[-1])
+                if error_count == 100:
+                    file_object = open('Warning_error.txt', 'a')
+                    file_object.write(filename + '\n')
+                    file_object.close()
             else:
                 new_labels.append(next_state)
         return new_labels
@@ -387,15 +394,15 @@ with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
 
 
 if __name__ == '__main__':
-    # filename = 'M_SPT_4700014_MSpecialT_1_ants (part 1)'
+    # filename = 'L_SPT_4660011_LSpecialT_1_ants'
     # x = get(filename)
     # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
     # cs_labeled.load_labeled_space()
     # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
     # x.play(path=path)
 
-    # dictio_p, dictio_pp = Path.create_dicts(myDataFrame)
-    dictio_ts, dictio_ss = Path.add_to_dict(myDataFrame)
+    dictio_ts, dictio_ss = Path.create_dicts(myDataFrame)
+    # dictio_ts, dictio_ss = Path.add_to_dict(myDataFrame)
 
     with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
         json.dump(dictio_ts, json_file)

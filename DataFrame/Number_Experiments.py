@@ -1,7 +1,8 @@
 from DataFrame.plot_dataframe import save_fig
 from matplotlib import pyplot as plt
 from trajectory_inheritance.trajectory import sizes
-from DataFrame.dataFrame import myDataFrame as df
+# from DataFrame.dataFrame import myDataFrame as df
+from Analysis.average_carrier_number.averageCarrierNumber import myDataFrame as df
 
 
 def how_many_experiments_SPT(df, initial_cond='back'):
@@ -28,7 +29,7 @@ def how_many_experiments_SPT(df, initial_cond='back'):
     axs[0].set_title('ants')
     axs[0].set_ylabel('number of experiments')
     axs[0].set_xlabel('maze size')
-    axs[0].set_ylim(0, 60)
+    axs[0].set_ylim(0, 100)
 
     human_df_all = df.loc[df.groupby('solver').groups['human']]
 
@@ -85,3 +86,4 @@ def how_many_experiments(df, initial_cond='back', shapes=['I', 'T', 'H']):
 if __name__ == '__main__':
     # untracked = {'humans': {'S': 14, 'L': 1}}
     how_many_experiments_SPT(df)
+    DEBUG = 1

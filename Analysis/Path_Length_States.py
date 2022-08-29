@@ -4,6 +4,7 @@ from Analysis.PathLength.PathLength import path_length_dict
 from Analysis.PathPy.Path import time_series_dict, state_series_dict
 from trajectory_inheritance.exp_types import solver_geometry
 from matplotlib import pyplot as plt
+from trajectory_inheritance.get import get
 import pandas as pd
 
 
@@ -18,6 +19,10 @@ myDataFrame['state series'] = myDataFrame['filename'].map(state_series_dict)
 df = myDataFrame[(myDataFrame['size'] == 'L') &
                  (myDataFrame['shape'] == 'SPT') &
                  (myDataFrame['maze dimensions'] == solver_geometry['ant'][0])]
+
+
+def exp_day(filename):
+    return filename.split('_')[2]
 
 
 def time_spent_in_state(time_series, state='c'):
@@ -35,17 +40,23 @@ def time_spent_in_states(time_series):
 
 # time_spent_in_states(df.loc[153]['time series'])
 
+
 dict_b = {}
 for i, exp in df.iterrows():
     print(exp['filename'])
     dict_b[exp['filename']] = time_spent_in_states(exp['time series'])
 
 df['state dict'] = df['filename'].map(dict_b)
+df['exp_day'] = df['filename'].map(exp_day)
 df.sort_values(by='path length/minimal path length[]', inplace=True)
 df.sort_values(by='filename', inplace=True)
 
 states_df = pd.DataFrame(df['state dict'].tolist(), index=df.index)
-states_df.plot(kind='bar', stacked=True, title='states')
+ax = states_df.plot(kind='bar', stacked=True, title='states')
+ax.set_xticklabels(df['exp_day'])
+plt.show()
+DEBUG = 1
+
 
 fig, ax = plt.subplots()
 df['time in c [s]'] = None

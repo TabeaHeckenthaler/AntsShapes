@@ -176,7 +176,8 @@ with open('winner_dictionary.txt', 'r') as json_file:
 if __name__ == '__main__':
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
-                   'SSPT_4750002_SSpecialT_1_ants (part 1).mat']
+                   # 'SSPT_4750002_SSpecialT_1_ants (part 1).mat'
+                   ]
 
     solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}

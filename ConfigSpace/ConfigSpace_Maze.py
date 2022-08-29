@@ -1287,9 +1287,11 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             if border > 100:
                 raise ValueError('Cant find closest state: ' + str(index))
             if index_theta - border < 0 or index_theta + border > self.space_labeled.shape[2]:
-                cut_out = np.concatenate([self.space_labeled[max(0, index[0] - border):index[0] + border,
+                cut_out = np.concatenate([self.space_labeled[
+                                          max(0, index[0] - border):index[0] + border,
                                           max(0, index[1] - border):index[1] + border,
                                           (index_theta - border) % self.space_labeled.shape[2]:],
+
                                           self.space_labeled[max(0, index[0] - border):index[0] + border,
                                           max(0, index[1] - border):index[1] + border,
                                           0:(index_theta + border) % self.space_labeled.shape[2]]
@@ -1312,6 +1314,11 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if len(states) == 1:
             return states[0]
         for state in states:
+            values, counts = np.unique(cut_out, return_counts=True)
+            d = {key: value for key, value in zip(values, counts)}
+            d.pop('0')
+            if np.sum(np.array(list(d.values())) > 20) == 1:
+                return list(d.keys())[np.where(np.array(list(d.values())) > 20)[0][0]]
             distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[border, border, border]
         return min(distances, key=distances.get)
 
