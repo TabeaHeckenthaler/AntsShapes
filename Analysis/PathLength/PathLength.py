@@ -280,11 +280,15 @@ if __name__ == '__main__':
 
     # dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
 
-    dictio_p, dictio_pp = PathLength.add_to_dict(myDataFrame)
+    filename = 'M_SPT_4680008_MSpecialT_1_ants (part 1)'
+    path_length_dict.pop(filename)
+    penalized_path_length_dict.pop(filename)
+
+    path_length_dict, penalized_path_length_dict = PathLength.add_to_dict(myDataFrame)
     with open(path_length_dir, 'w') as json_file:
-        json.dump(dictio_p, json_file)
+        json.dump(path_length_dict, json_file)
         json_file.close()
 
     with open(penalized_path_length_dir, 'w') as json_file:
-        json.dump(dictio_pp, json_file)
+        json.dump(penalized_path_length_dict, json_file)
         json_file.close()

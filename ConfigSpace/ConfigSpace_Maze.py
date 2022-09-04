@@ -1300,8 +1300,6 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                 cut_out = self.space_labeled[max(0, index[0] - border):index[0] + border,
                           max(0, index[1] - border):index[1] + border,
                           index[2] - border:index[2] + border]
-
-            distances = {}
             states = np.unique(cut_out).tolist()
 
             if '0' in states:
@@ -1313,12 +1311,18 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                 border += 10
         if len(states) == 1:
             return states[0]
-        for state in states:
-            values, counts = np.unique(cut_out, return_counts=True)
-            d = {key: value for key, value in zip(values, counts)}
-            d.pop('0')
-            if np.sum(np.array(list(d.values())) > 20) == 1:
-                return list(d.keys())[np.where(np.array(list(d.values())) > 20)[0][0]]
+
+        distances = {}
+        values, counts = np.unique(cut_out, return_counts=True)
+        d = {key: value for key, value in zip(values, counts)}
+        d.pop('0')
+        spotty = np.array(list(d.values()) / sum(list(d.values()))) < 0.1
+        to_pop = [key for s, key in zip(spotty, d.keys()) if s]
+        d = {key: d[key] for key in d.copy().keys() if key not in to_pop}
+
+        for state in d.keys():
+            # if np.sum(np.array(list(d.values())) > 20) == 1:
+            #     return list(d.keys())[np.where(np.array(list(d.values())) > 20)[0][0]]
             distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[border, border, border]
         return min(distances, key=distances.get)
 

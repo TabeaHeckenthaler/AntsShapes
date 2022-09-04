@@ -189,8 +189,7 @@ if __name__ == '__main__':
                 print(results_filename)
                 parts_ = parts(results_filename, solver, size, shape)
                 winner = winner_dict[results_filename]
-                chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner)
-                         for filename in parts_]
+                chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]
                 for part in chain[1:]:
                     x = x + part

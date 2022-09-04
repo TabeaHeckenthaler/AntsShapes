@@ -37,6 +37,7 @@ def split_trajectory(filename):
 
 if __name__ == '__main__':
     filenames = [
+
         "S_SPT_4790009_SSpecialT_1_ants (part 1)",
         "S_SPT_4750016_SSpecialT_1_ants (part 1)",
         "S_SPT_4750014_SSpecialT_1_ants (part 1)",

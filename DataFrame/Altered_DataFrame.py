@@ -4,8 +4,11 @@ from trajectory_inheritance.trajectory_humanhand import ExcelSheet
 
 
 class Altered_DataFrame:
-    def __init__(self):
-        self.df = myDataFrame.clone()
+    def __init__(self, df=None):
+        if df is None:
+            self.df = myDataFrame.clone()
+        else:
+            self.df = df
 
     def choose_experiments(self, solver=None, shape=None, geometry=None, size=None, communication=None, init_cond: str = 'back',
                            winner: bool = None):

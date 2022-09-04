@@ -1,9 +1,5 @@
 L_SPT_4650013_LSpecialT_1_ants
-L_SPT_4650015_LSpecialT_1_ants (part 1)
-L_SPT_4650017_LSpecialT_1_ants (part 1)
-L_SPT_4660018_LSpecialT_1_ants (part 1)
 L_SPT_4660021_LSpecialT_1_ants (part 1)
-L_SPT_4670008_LSpecialT_1_ants (part 1)
 L_SPT_4650010_LSpecialT_1_ants (part 1)
 M_SPT_4690011_MSpecialT_1_ants (part 1)
 M_SPT_4700014_MSpecialT_1_ants (part 1)
@@ -12,10 +8,11 @@ S_SPT_4750014_SSpecialT_1_ants (part 1)
 S_SPT_4750007_SSpecialT_1_ants (part 1)
 S_SPT_4740008_SSpecialT_1_ants (part 1)
 S_SPT_4760017_SSpecialT_1_ants (part 1)
-S_SPT_4760019_SSpecialT_1_ants (part 1)
-S_SPT_4780009_SSpecialT_1_ants (part 1)
-S_SPT_4790007_SSpecialT_1_ants (part 1)
 S_SPT_4720016_SSpecialT_1_ants
+S_SPT_4760019_SSpecialT_1_ants (part 1)
+S_SPT_4790007_SSpecialT_1_ants (part 1)
+S_SPT_4780009_SSpecialT_1_ants (part 1)
+S_SPT_4750002_SSpecialT_1_ants (part 1)
 large_20210726231259_20210726232557
 large_20210805173411_20210805174236
 large_20211125132835_20211125134209

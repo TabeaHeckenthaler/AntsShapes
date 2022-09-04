@@ -72,7 +72,7 @@ class Path:
         indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
         labels = [None]
         for i, index in enumerate(indices):
-            if i == 447:
+            if i == 11360:
                 DEBUG = 1
             labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
         labels = labels[1:]
@@ -400,18 +400,18 @@ class Path:
         duration_list = []
         counter = 1
         last_state = time_series[0]
-        for s in time_series[1:]:
+
+        for s in time_series:
             if s == last_state:
                 counter += 1
             else:
                 duration_list.append((last_state, counter))
                 last_state = s
                 counter = 1
-        if time_series[-1] != duration_list[-1][0]:
-            duration_list.append((time_series[-1], counter))
+        duration_list.append((last_state, counter))
         return duration_list
 
-    def bar_chart(self, ax, axis_label=''):
+    def bar_chart(self, ax, axis_label='', winner=False):
         ts = Path.only_states(self.time_series)
         ts = Path.symmetrize(ts)
         dur = Path.state_duration(ts)
@@ -427,16 +427,20 @@ class Path:
         given_names = {}
 
         for name, duration in dur:
-            b = ax.barh(axis_label, duration, color=color_dict[name], left=left, label=name)
+            dur_in_min = duration * self.time_step * 1/60
+            b = ax.barh(axis_label, dur_in_min, color=color_dict[name], left=left, label=name)
             if name not in given_names:
                 given_names.update({name: b})
-            left += duration
+            left += dur_in_min
+
+        if winner:
+            plt.text(left + 1, b.patches[0].xy[-1], 'v', color='green')
+        else:
+            plt.text(left + 1, b.patches[0].xy[-1], 'x', color='red')
 
         labels = list(color_dict.keys())
         handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[label]) for label in labels]
         plt.legend(handles, labels)
-
-        # plt.legend(given_names, title="States", loc="upper right")
 
 
 with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
@@ -447,23 +451,25 @@ with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
     state_series_dict = json.load(json_file)
     json_file.close()
 
-
+DEBUG = 1
 if __name__ == '__main__':
-    filename = 'L_SPT_4650013_LSpecialT_1_ants'
-    x = get(filename)
-    cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
-    cs_labeled.load_labeled_space()
-    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    x.play(path=path)
+    # filename = 'L_SPT_4670008_LSpecialT_1_ants (part 1)'
+    # x = get(filename)
+    # # x.play()
+    # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
+    # cs_labeled.load_labeled_space()
+    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    # x.play(path=path)
 
-    # dictio_ts, dictio_ss = Path.create_dicts(myDataFrame)
-    # dictio_ts, dictio_ss = Path.add_to_dict(myDataFrame)
+    time_series_dict, state_series_dict = Path.create_dicts(myDataFrame)
 
-    # with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-    #     json.dump(dictio_ts, json_file)
-    #     json_file.close()
-    #
-    # with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-    #     json.dump(dictio_ss, json_file)
-    #     json_file.close()
+    # time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame)
+
+    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+        json.dump(time_series_dict, json_file)
+        json_file.close()
+
+    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+        json.dump(state_series_dict, json_file)
+        json_file.close()
 
