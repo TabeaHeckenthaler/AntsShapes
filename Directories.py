@@ -72,7 +72,6 @@ def SetupDirectories():
     return
 
 
-
 def MatlabFolder(solver, size, shape, free=False):
 
     if solver == 'ant':

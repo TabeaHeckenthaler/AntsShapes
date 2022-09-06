@@ -392,29 +392,11 @@ class Path:
         state_series_dict.update(dictio_ss)
         return time_series_dict, state_series_dict
 
-    @staticmethod
-    def state_duration(time_series):
-        """
-        :return: [('a', 11), ('b', 5), ...]
-        """
-        duration_list = []
-        counter = 1
-        last_state = time_series[0]
-
-        for s in time_series:
-            if s == last_state:
-                counter += 1
-            else:
-                duration_list.append((last_state, counter))
-                last_state = s
-                counter = 1
-        duration_list.append((last_state, counter))
-        return duration_list
-
-    def bar_chart(self, ax, axis_label='', winner=False):
+    def bar_chart(self, ax, axis_label='', winner=False, food=False):
         ts = Path.only_states(self.time_series)
         ts = Path.symmetrize(ts)
-        dur = Path.state_duration(ts)
+        # dur = Path.state_duration(ts)
+        dur = Path.time_stamped_series(ts, self.time_step)
 
         # prop_cycle = plt.rcParams['axes.prop_cycle']
         # colors = prop_cycle.by_key()['color']
@@ -427,7 +409,7 @@ class Path:
         given_names = {}
 
         for name, duration in dur:
-            dur_in_min = duration * self.time_step * 1/60
+            dur_in_min = duration / 60
             b = ax.barh(axis_label, dur_in_min, color=color_dict[name], left=left, label=name)
             if name not in given_names:
                 given_names.update({name: b})
@@ -437,6 +419,9 @@ class Path:
             plt.text(left + 1, b.patches[0].xy[-1], 'v', color='green')
         else:
             plt.text(left + 1, b.patches[0].xy[-1], 'x', color='red')
+
+        if food:
+            plt.text(left + 2, b.patches[0].xy[-1], 'f', color='black')
 
         labels = list(color_dict.keys())
         handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[label]) for label in labels]
@@ -461,9 +446,8 @@ if __name__ == '__main__':
     # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
     # x.play(path=path)
 
-    time_series_dict, state_series_dict = Path.create_dicts(myDataFrame)
-
-    # time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame)
+    # time_series_dict, state_series_dict = Path.create_dicts(myDataFrame)
+    time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame)
 
     with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
         json.dump(time_series_dict, json_file)

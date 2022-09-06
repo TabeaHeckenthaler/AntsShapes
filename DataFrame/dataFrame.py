@@ -143,12 +143,13 @@ class DataFrame(pd.DataFrame):
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+# myDataFrame = DataFrame(pd.read_excel(df_excel_dir))
 
 # myDataFrame['filename'] = myDataFrame['filename'].replace(['S_SPT_4750016_SSpecialT_1_ants'],
 # 'S_SPT_4750016_SSpecialT_1_ants (part 1)')
 
 # myDataFrame.at[1189, 'winner'] = False
-myDataFrame[myDataFrame['filename'].str.contains('4640009')]
+# myDataFrame[myDataFrame['filename'].str.contains('4640009')]
 print('You still have perfect human trajectories')
 DEBUG = 1
 

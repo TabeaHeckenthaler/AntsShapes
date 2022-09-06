@@ -189,6 +189,13 @@ if __name__ == '__main__':
                 print(results_filename)
                 parts_ = parts(results_filename, solver, size, shape)
                 winner = winner_dict[results_filename]
+
+                # parts_ = ['LSPT_5030009_LSpecialT_1_ants (part 1).mat',
+                #           'LSPT_5030009_LSpecialT_2_ants (part 2).mat',
+                #           'LSPT_5030010_LSpecialT_1_ants (part 3).mat',
+                #           'LSPT_5030011_LSpecialT_1_ants (part 4).mat',
+                #           ]
+
                 chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]
                 for part in chain[1:]:
@@ -197,7 +204,7 @@ if __name__ == '__main__':
                 plt.plot(x.frames)
                 plt.show(block=False)
                 # x = x.add_missing_frames(chain, free)
-                x.play()
+                x.play(step=5)
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)
                 x.save()
 

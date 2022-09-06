@@ -1,5 +1,5 @@
 from Analysis.PathPy.Path import Path
-from Analysis.PathPy.SPT_states import states, allowed_transition_attempts, forbidden_transition_attempts
+from Analysis.PathPy.SPT_states import all_states
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
 import pathpy as pp
 from Directories import network_dir
@@ -125,7 +125,7 @@ class PathsTimeStamped(Paths):
     @staticmethod
     def measure_in_state(time_stamped_series: list):
         so = flatten(time_stamped_series)
-        average_time = {state: [] for state in states + allowed_transition_attempts + forbidden_transition_attempts}
+        average_time = {state: [] for state in all_states}
         average_time.pop('0')
         for state, time in so:
             average_time[state].append(time)

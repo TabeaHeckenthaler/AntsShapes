@@ -63,7 +63,7 @@ class MinimalDataFrame(pd.DataFrame):
 
 #
 # x = get('minimal_Large_SPT_back_MazeDimensions_human_LoadDimensions_human')
-# PathLength(x).calculate_path_length(sigma=0)
+# PathLength(x).calculate_first_frame(sigma=0)
 
 
 with open(minimal_path_length_dir, 'r') as json_file:

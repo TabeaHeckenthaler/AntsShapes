@@ -1,13 +1,14 @@
 from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
 from Analysis.PathLength.PathLength import path_length_dict
 from Analysis.PathPy.Path import time_series_dict, state_series_dict, Path
-from trajectory_inheritance.exp_types import solver_geometry
+from trajectory_inheritance.exp_types import solver_geometry, exp_types
 from matplotlib import pyplot as plt
 from trajectory_inheritance.get import get
 import pandas as pd
 from DataFrame.plot_dataframe import save_fig
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from Analysis.average_carrier_number.averageCarrierNumber import myDataFrame
+from DataFrame.food_in_the_back import myDataFrame as df_food
 
 
 def exp_day(filename):
@@ -24,13 +25,12 @@ def time_spent_in_states(state_series, time_step=0.25):
     return d
 
 
-def create_bar_chart():
-    fig, ax = plt.subplots()
-    for filename, winner in zip(df['filename'], df['winner']):
+def create_bar_chart(ax):
+    for filename, winner, food in zip(df['filename'], df['winner'], df['food in back']):
         p = Path(time_step=0.25, time_series=time_series_dict[filename])
-        p.bar_chart(ax=ax, axis_label=exp_day(filename), winner=winner)
+        p.bar_chart(ax=ax, axis_label=exp_day(filename), winner=winner, food=food)
         ax.set_xlabel('time [min]')
-    return fig
+        ax.set_xlim([0, 20])
 
 
 def in_state_chart():
@@ -45,7 +45,7 @@ def in_state_chart():
     states_df = pd.DataFrame(df['state dict'].tolist(), index=df.index)
     ax = states_df.plot(kind='bar', stacked=True, title='states')
     ax.set_xticklabels(df['exp_day'])
-    ax.scatter(df['exp_day'], df['winner'].astype(int)*3500, color='green')
+    ax.scatter(df['exp_day'], df['winner'].astype(int) * 3500, color='green')
     plt.show()
 
     fig, ax = plt.subplots()
@@ -62,6 +62,9 @@ if __name__ == '__main__':
     # p = Path(time_step=0.25, time_series=time_series_dict[filename])
     # p.bar_chart()
     myDataFrame = Altered_DataFrame(myDataFrame)
+    DEBUG = 1
+    myDataFrame.df['food in back'] = df_food.df['food in back']
+
     myDataFrame.df['minimal path length [length unit]'] = myDataFrame.df['filename'].map(minimal_path_length_dict)
     myDataFrame.df['path length [length unit]'] = myDataFrame.df['filename'].map(path_length_dict)
     myDataFrame.df['path length/minimal path length[]'] = myDataFrame.df['path length [length unit]'] / \
@@ -69,23 +72,25 @@ if __name__ == '__main__':
     myDataFrame.df['time series'] = myDataFrame.df['filename'].map(time_series_dict)
     myDataFrame.df['state series'] = myDataFrame.df['filename'].map(state_series_dict)
 
-    sizes = ['XL', 'L', 'M', 'S']
-    # sizes = ['S']
-    solver = 'ant'
+    solver = 'human'
 
-    for size in sizes:
-        print(size)
-        df = myDataFrame[(myDataFrame['size'] == size) &
-                         (myDataFrame['shape'] == 'SPT') &
-                         (myDataFrame['maze dimensions'] == solver_geometry[solver][0]) &
-                         (myDataFrame['initial condition'] == 'back')
-                         ]
+    shape = 'SPT'
+    sizes = exp_types[shape][solver]
 
-        df['exp_day'] = df['filename'].map(exp_day)
-        df.sort_values(by='path length/minimal path length[]', inplace=True)
-        df.sort_values(by='filename', inplace=True)
+    plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}}
+    dfss = myDataFrame.get_separate_data_frames(solver=solver, plot_separately=plot_separately[solver], shape=shape,
+                                                geometry=solver_geometry[solver], initial_cond='back')
 
-        fig = create_bar_chart()
-        save_fig(fig, size + '_states')
+    for size, dfs in dfss.items():
+        for sep, df in dfs.items():
+            print(size, sep)
+
+            df['exp_day'] = df['filename'].map(exp_day)
+            df.sort_values(by='path length/minimal path length[]', inplace=True)
+            df.sort_values(by='filename', inplace=True)
+
+            fig, ax = plt.subplots()
+            create_bar_chart(ax)
+            save_fig(fig, size + sep + '_states')
     # in_state_chart()
     DEBUG = 1

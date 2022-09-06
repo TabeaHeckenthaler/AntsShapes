@@ -44,7 +44,7 @@ class PathLength:
     #         attempts = Attempts(self.x, 'extend', *args, **kwargs)
     #
     #     for attempt in attempts:
-    #         total += self.calculate_path_length(start=attempt[0], end=attempt[1])
+    #         total += self.calculate_first_frame(start=attempt[0], end=attempt[1])
     #     # if total < Maze(size=x.size, shape=x.shape, solver=x.solver).minimal_path_length:
     #     #     print(x)
     #     #     print(total)
@@ -269,20 +269,21 @@ with open(penalized_path_length_dir, 'r') as json_file:
 if __name__ == '__main__':
     # filename = 'L_LASH_4160019_LargeLH_1_ants (part 1)'
     # x = get(filename)
-    # print(PathLength(x).calculate_path_length(penalize=True))
+    # print(PathLength(x).calculate_first_frame(penalize=True))
     # filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
     # filename = 'M_SPT_4700022_MSpecialT_1_ants'
     # filename = 'large_20201220135801_20201220140247'
     # filename = 'small_20220606175207_20220606175429'
     # filename = 'YI029806_5610'
     # x = get(filename)
-    # print(PathLength(x).calculate_path_length(penalize=True))
+    # print(PathLength(x).calculate_first_frame(penalize=True))
 
     # dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
+    dictio_p, dictio_pp = PathLength.add_to_dict(myDataFrame)
 
-    filename = 'M_SPT_4680008_MSpecialT_1_ants (part 1)'
-    path_length_dict.pop(filename)
-    penalized_path_length_dict.pop(filename)
+    # filename = 'M_SPT_4680008_MSpecialT_1_ants (part 1)'
+    # path_length_dict.pop(filename)
+    # penalized_path_length_dict.pop(filename)
 
     path_length_dict, penalized_path_length_dict = PathLength.add_to_dict(myDataFrame)
     with open(path_length_dir, 'w') as json_file:

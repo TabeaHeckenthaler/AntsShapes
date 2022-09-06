@@ -1005,8 +1005,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         I want to check, whether there are labels, that I don't want to have.
         :return: list of all the labels that are not labels I wanted to have
         """
-        return [label for label in np.unique(self.space_labeled) if label not in
-                states + forbidden_transition_attempts + allowed_transition_attempts]
+        return [label for label in np.unique(self.space_labeled) if label not in all_states]
 
     # def label_space_slow(self) -> None:
     #     """
