@@ -137,7 +137,6 @@ class PathLength:
         Path length the sum of the distances of the points in the list.
         When the shape is standing still, the path length increases. Penalizing for being stuck.
         """
-        print(self.x.filename)
         if frames is None:
             frames = [0, -1]
         position, angle = self.x.position[frames[0]: frames[1]], self.x.angle[frames[0]: frames[1]]
@@ -147,7 +146,6 @@ class PathLength:
         position_filtered, unwrapped_angle_filtered = self.x.smoothed_pos_angle(position, angle, kernel_size)
         stuck_frames = (np.zeros(angle.size)).astype(bool)
 
-        DEBUG = 1
         if penalize and \
                 self.x.size not in ['S', 'XS'] and \
                 myDataFrame[myDataFrame['filename'] == self.x.filename].iloc[0]['average Carrier Number'] > 1:
@@ -192,6 +190,8 @@ class PathLength:
 
             if real_path_length + stuck_path_length > max_path_length:
                 return real_path_length + stuck_path_length
+
+        print(self.x.filename, real_path_length + stuck_path_length)
 
         return real_path_length + stuck_path_length
 
@@ -243,7 +243,7 @@ class PathLength:
         return dictio_p, dictio_pp
 
     @classmethod
-    def add_to_dict(cls, myDataFrame) -> tuple:
+    def add_to_dict(cls, myDataFrame, path_length_dict, penalized_path_length_dict) -> tuple:
         """
 
         """
@@ -256,15 +256,29 @@ class PathLength:
 
         return path_length_dict, penalized_path_length_dict
 
+    @staticmethod
+    def save_dicts(path_length_dict, penalized_path_length_dict):
+        with open(path_length_dir, 'w') as json_file:
+            json.dump(path_length_dict, json_file)
+            json_file.close()
 
-with open(path_length_dir, 'r') as json_file:
-    path_length_dict = json.load(json_file)
-    json_file.close()
+        with open(penalized_path_length_dir, 'w') as json_file:
+            json.dump(penalized_path_length_dict, json_file)
+            json_file.close()
 
-with open(penalized_path_length_dir, 'r') as json_file:
-    penalized_path_length_dict = json.load(json_file)
-    json_file.close()
+    @staticmethod
+    def get_dicts():
+        with open(path_length_dir, 'r') as json_file:
+            path_length_dict = json.load(json_file)
+            json_file.close()
 
+        with open(penalized_path_length_dir, 'r') as json_file:
+            penalized_path_length_dict = json.load(json_file)
+            json_file.close()
+        return path_length_dict, penalized_path_length_dict
+
+
+path_length_dict, penalized_path_length_dict = PathLength.get_dicts()
 
 if __name__ == '__main__':
     # filename = 'L_LASH_4160019_LargeLH_1_ants (part 1)'
@@ -278,18 +292,13 @@ if __name__ == '__main__':
     # x = get(filename)
     # print(PathLength(x).calculate_first_frame(penalize=True))
 
-    # dictio_p, dictio_pp = PathLength.create_dicts(myDataFrame)
-    dictio_p, dictio_pp = PathLength.add_to_dict(myDataFrame)
+    # path_length_dict, penalized_path_length_dict = PathLength.create_dicts(myDataFrame)
 
     # filename = 'M_SPT_4680008_MSpecialT_1_ants (part 1)'
     # path_length_dict.pop(filename)
     # penalized_path_length_dict.pop(filename)
 
-    path_length_dict, penalized_path_length_dict = PathLength.add_to_dict(myDataFrame)
-    with open(path_length_dir, 'w') as json_file:
-        json.dump(path_length_dict, json_file)
-        json_file.close()
-
-    with open(penalized_path_length_dir, 'w') as json_file:
-        json.dump(penalized_path_length_dict, json_file)
-        json_file.close()
+    path_length_dict, penalized_path_length_dict = PathLength.get_dicts()
+    path_length_dict, penalized_path_length_dict = PathLength.add_to_dict(myDataFrame, path_length_dict,
+                                                                          penalized_path_length_dict)
+    PathLength.save_dicts(path_length_dict, penalized_path_length_dict)

@@ -173,13 +173,32 @@ with open('time_dictionary.txt', 'r') as json_file:
 with open('winner_dictionary.txt', 'r') as json_file:
     winner_dict = json.load(json_file)
 
+
 if __name__ == '__main__':
 
-    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
-                   ]
+    parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
+              'LSPT_4650007_LSpecialT_1_ants (part 1r).mat',
+              'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
+              ]
 
     solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
+
+    chain = [load(filename, 'ant', 'L', shape, fps[solver], [], winner=True) for filename in parts_]
+    x = chain[0]
+    for part in chain[1:]:
+        x = x + part
+
+    plt.plot(x.frames)
+    plt.show(block=False)
+    # x = x.add_missing_frames(chain, free)
+    x.play(step=5)
+    x.play(frames=[-250, -200], wait=10)
+    # x.angle = (x.angle + np.pi) % (2 * np.pi)
+    x.save()
+
+    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
+                   ]
 
     for size in exp_types[shape][solver]:
         unpickled = find_unpickled(solver, size, shape)
@@ -190,11 +209,10 @@ if __name__ == '__main__':
                 parts_ = parts(results_filename, solver, size, shape)
                 winner = winner_dict[results_filename]
 
-                # parts_ = ['LSPT_5030009_LSpecialT_1_ants (part 1).mat',
-                #           'LSPT_5030009_LSpecialT_2_ants (part 2).mat',
-                #           'LSPT_5030010_LSpecialT_1_ants (part 3).mat',
-                #           'LSPT_5030011_LSpecialT_1_ants (part 4).mat',
-                #           ]
+                parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
+                          'LSPT_4650007_LSpecialT_2_ants (part 1r).mat',
+                          'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
+                          ]
 
                 chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]

@@ -43,6 +43,7 @@ trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalys
 ''' ANALYSIS '''
 averageCarrierNumber_dir = path.join(home, 'Analysis', 'average_carrier_number', 'averageCarrierNumber.json')
 minimal_path_length_dir = path.join(home, 'Analysis', 'minimal_path_length', 'minimal_path_length.json')
+first_frame_dir = path.join(home, 'Analysis', 'first_frame.json')
 path_length_dir = path.join(home, 'Analysis', 'PathLength', 'path_length.json')
 penalized_path_length_dir = path.join(home, 'Analysis', 'PathLength', 'penalized_path_length.json')
 

@@ -137,9 +137,10 @@ class DataFrame(pd.DataFrame):
         myDataFrame.reset_index(drop=True, inplace=True)
 
     def exclude_perfect(self):
+        # index = myDataFrame[myDataFrame['filename'].str.contains('perfect')].index
+        # myDataFrame = myDataFrame.drop(index)
         for filename in perfect_filenames:
             self.drop_experiment(filename)
-        
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
@@ -150,7 +151,7 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 
 # myDataFrame.at[1189, 'winner'] = False
 # myDataFrame[myDataFrame['filename'].str.contains('4640009')]
-print('You still have perfect human trajectories')
+
 DEBUG = 1
 
 
@@ -186,4 +187,4 @@ if __name__ == '__main__':
     for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
-    myDataFrame.save()
+    # myDataFrame.save()

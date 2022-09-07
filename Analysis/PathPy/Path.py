@@ -159,7 +159,7 @@ class Path:
         # I have to open a new final state called i, which is in PS equivalent to h, but is an absorbing state, meaning,
         # it is never left.
         times_in_final_state = np.where(np.array(labels) == pre_final_state)[0]
-        if len(times_in_final_state) > 1:
+        if len(times_in_final_state) > 0:
             # print(labels[:first_time_in_final_state[0] + 1][-10:])
             return labels + [final_state]
         else:
@@ -363,7 +363,7 @@ class Path:
         return dictio_ts, dictio_ss
 
     @classmethod
-    def add_to_dict(cls, myDataFrame, solver='ant') -> tuple:
+    def add_to_dict(cls, myDataFrame, time_series_dict, state_series_dict, solver='ant') -> tuple:
         """
 
         """
@@ -407,13 +407,17 @@ class Path:
         left = 0
 
         given_names = {}
+        if axis_label == 'large_20210805171741_20210805172610':
+            DEBUG = 1
 
         for name, duration in dur:
             dur_in_min = duration / 60
-            b = ax.barh(axis_label, dur_in_min, color=color_dict[name], left=left, label=name)
+            # b = ax.barh(axis_label, dur_in_min, color=color_dict[name], left=left, label=name)
+            b = ax.barh(axis_label, 1, color=color_dict[name], left=left, label=name)
             if name not in given_names:
                 given_names.update({name: b})
-            left += dur_in_min
+            # left += dur_in_min
+            left += 1
 
         if winner:
             plt.text(left + 1, b.patches[0].xy[-1], 'v', color='green')
@@ -427,33 +431,42 @@ class Path:
         handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[label]) for label in labels]
         plt.legend(handles, labels)
 
+    @staticmethod
+    def get_dicts():
+        with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
+            time_series_dict = json.load(json_file)
+            json_file.close()
 
-with open(os.path.join(network_dir, 'time_series.json'), 'r') as json_file:
-    time_series_dict = json.load(json_file)
-    json_file.close()
+        with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
+            state_series_dict = json.load(json_file)
+            json_file.close()
+        return time_series_dict, state_series_dict
 
-with open(os.path.join(network_dir, 'state_series.json'), 'r') as json_file:
-    state_series_dict = json.load(json_file)
-    json_file.close()
+    @staticmethod
+    def save_dicts(time_series_dict, state_series_dict):
+        with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
+            json.dump(time_series_dict, json_file)
+            json_file.close()
+
+        with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
+            json.dump(state_series_dict, json_file)
+            json_file.close()
+
+
+time_series_dict, state_series_dict = Path.get_dicts()
 
 DEBUG = 1
 if __name__ == '__main__':
-    # filename = 'L_SPT_4670008_LSpecialT_1_ants (part 1)'
+    # filename = 'S_SPT_4750016_SSpecialT_1_ants (part 1)'
     # x = get(filename)
     # # x.play()
     # cs_labeled = ConfigSpace_Labeled(x.solver, x.size, x.shape, x.geometry())
     # cs_labeled.load_labeled_space()
     # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    # print(path.state_series)
     # x.play(path=path)
 
-    # time_series_dict, state_series_dict = Path.create_dicts(myDataFrame)
-    time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame)
+    time_series_dict, state_series_dict = Path.create_dicts(myDataFrame)
+    # time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame, time_series_dict, state_series_dict)
 
-    with open(os.path.join(network_dir, 'time_series.json'), 'w') as json_file:
-        json.dump(time_series_dict, json_file)
-        json_file.close()
-
-    with open(os.path.join(network_dir, 'state_series.json'), 'w') as json_file:
-        json.dump(state_series_dict, json_file)
-        json_file.close()
-
+    Path.save_dicts(time_series_dict, state_series_dict)

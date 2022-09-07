@@ -30,7 +30,7 @@ def create_bar_chart(ax):
         p = Path(time_step=0.25, time_series=time_series_dict[filename])
         p.bar_chart(ax=ax, axis_label=exp_day(filename), winner=winner, food=food)
         ax.set_xlabel('time [min]')
-        ax.set_xlim([0, 20])
+        # ax.set_xlim([0, 20])
 
 
 def in_state_chart():
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     myDataFrame.df['time series'] = myDataFrame.df['filename'].map(time_series_dict)
     myDataFrame.df['state series'] = myDataFrame.df['filename'].map(state_series_dict)
 
-    solver = 'human'
+    solver = 'ant'
 
     shape = 'SPT'
     sizes = exp_types[shape][solver]

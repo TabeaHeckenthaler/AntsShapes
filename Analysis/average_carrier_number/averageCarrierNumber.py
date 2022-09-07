@@ -5,7 +5,7 @@ from Directories import averageCarrierNumber_dir
 
 def create_dict():
     """
-    This only worked for th old dataFrame
+    This only worked for the old dataFrame
     """
     averageCarrierNumber = {f: N for f, N in zip(myDataFrame['filename'], myDataFrame['average Carrier Number'])}
 
