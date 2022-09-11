@@ -13,6 +13,8 @@ dir = os.getcwd() + '\\longest_jump.json'
 def find_longest_jump(x) -> tuple:
     r = x.position
     distances = np.linalg.norm(np.diff(r, axis=0), axis=1)
+    plt.close('all')
+    plt.figure()
     plt.plot(distances)
     maxi_ind = int(np.argmax(distances))
     maxi = float(np.max(distances))
@@ -48,17 +50,17 @@ def correct_traj(s):
     # x.frames[maxi_ind]
     # maxi_ind = 37529
     buffer = 10
-    start = maxi_ind - buffer
+    start = max(0, maxi_ind - buffer)
     end = maxi_ind + buffer
-    # start = 51500
-    # end = 51800
+    # start = 4500
+    # end = 2000
 
     new_pos = x.position.copy()
     new_angle = x.angle.copy()
 
-    plot_buffer = 700
+    plot_buffer = 100
     plt.figure()
-    s, e = start - plot_buffer, end + plot_buffer
+    s, e = max(start - plot_buffer, 1), end + plot_buffer
     plt.plot(list(range(s, e)), new_pos[s: e, 0])
     plt.plot(list(range(s, e)), new_pos[s: e, 1])
     plt.plot(start, new_pos[start, 0], '*', markersize=10)
@@ -78,8 +80,8 @@ def correct_traj(s):
     x.position = new_pos
     x.angle = new_angle
     x.save()
-    x.play(frames=[s, e])
-    x.play()
+    x.play(frames=[s, e], wait=5)
+    x.play(step=1)
     # mid = 24430
     # pos_24430 = [2.8, 3.1]
     # ang_24430 = 2.42920
@@ -101,7 +103,7 @@ def correct_traj(s):
 
 if __name__ == '__main__':
     # create_dict()
-    filename = 'L_SPT_5030009_LSpecialT_1_ants (part 1)'
+    filename = 'M_SPT_5050016_MSpecialT_1'
     x = get(filename)
     # x.play()
     max_r, maxi_ind = find_longest_jump(x)
@@ -117,9 +119,10 @@ if __name__ == '__main__':
     # TO SMOOTH
     from scipy.signal import medfilt
     x.position[:, 0] = medfilt(x.position[:, 0], 109)
-    x.position[:, 1] = medfilt(x.position[:, 1], 109)
+    x.position[:, 0] = medfilt(x.position[:, 0], 109)
+    x.angle = medfilt(x.angle, 109)
 
-    filename = 'S_SPT_4750016_SSpecialT_1_ants'
+    filename = 'M_SPT_5050016_MSpecialT_1'
     x = get(filename)
     x.play(frames=[46016-300, 46016+300], wait=10)
     DEBUG = 1

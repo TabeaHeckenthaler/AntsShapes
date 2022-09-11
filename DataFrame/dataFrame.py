@@ -144,6 +144,7 @@ class DataFrame(pd.DataFrame):
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+# myDataFrame[((myDataFrame['solver'] == 'human') & (myDataFrame['size'].isin(['Large', 'Medium'])))]
 # myDataFrame = DataFrame(pd.read_excel(df_excel_dir))
 
 # myDataFrame['filename'] = myDataFrame['filename'].replace(['S_SPT_4750016_SSpecialT_1_ants'],
@@ -187,4 +188,4 @@ if __name__ == '__main__':
     for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
-    # myDataFrame.save()
+    myDataFrame.save()

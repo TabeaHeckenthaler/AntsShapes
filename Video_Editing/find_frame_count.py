@@ -94,7 +94,7 @@ class ExperimentAdder:
 testable_dir = '\\\\phys-guru-cs\\ants\\Tabea\\Human Experiments\\Testable.xlsx'
 matlab_dir = '\\\\phys-guru-cs\\ants\\Aviram\\Shapes Tracking Software\\Homo sapiens sapiens\\' \
              'Input Files\\human_shapes_video_data.mat'
-date = '2022-06-06'
+date = '2022-09-07'
 sizes = [size + ' maze' for size in ['Large', 'Medium', 'Small far', 'Small near']]
 
 if __name__ == '__main__':

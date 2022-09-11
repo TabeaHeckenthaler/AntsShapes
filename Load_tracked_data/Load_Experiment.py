@@ -131,7 +131,10 @@ def extension_exists(filename, solver, size, shape, free=False) -> list:
     """
     movie_number = str(int(filename.split('_')[1]) + 1)
     if solver == 'ant':
-        iteration_number = str(int(filename.split('_')[-2][0]) + 1)
+        if 'ant' not in filename:
+            iteration_number = str(int(filename.split('_')[-1][0]) + 1)
+        else:
+            iteration_number = str(int(filename.split('_')[-2][0]) + 1)
     else:
         iteration_number = str(int(filename.split('_')[-1][0]) + 1)
     part_number = str(int(filename.split('part ')[1][0]) + 1)
@@ -176,26 +179,26 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
-              'LSPT_4650007_LSpecialT_1_ants (part 1r).mat',
-              'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
-              ]
-
     solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'humanhand': 30}
-
-    chain = [load(filename, 'ant', 'L', shape, fps[solver], [], winner=True) for filename in parts_]
-    x = chain[0]
-    for part in chain[1:]:
-        x = x + part
-
-    plt.plot(x.frames)
-    plt.show(block=False)
-    # x = x.add_missing_frames(chain, free)
-    x.play(step=5)
-    x.play(frames=[-250, -200], wait=10)
-    # x.angle = (x.angle + np.pi) % (2 * np.pi)
-    x.save()
+    #
+    # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
+    #           'LSPT_4650007_LSpecialT_1_ants (part 1r).mat',
+    #           'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
+    #           ]
+    #
+    # chain = [load(filename, 'ant', 'L', shape, fps[solver], [], winner=True) for filename in parts_]
+    # x = chain[0]
+    # for part in chain[1:]:
+    #     x = x + part
+    #
+    # plt.plot(x.frames)
+    # plt.show(block=False)
+    # # x = x.add_missing_frames(chain, free)
+    # x.play(step=5)
+    # x.play(frames=[-250, -200], wait=10)
+    # # x.angle = (x.angle + np.pi) % (2 * np.pi)
+    # x.save()
 
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
                    ]
@@ -209,21 +212,27 @@ if __name__ == '__main__':
                 parts_ = parts(results_filename, solver, size, shape)
                 winner = winner_dict[results_filename]
 
-                parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
-                          'LSPT_4650007_LSpecialT_2_ants (part 1r).mat',
-                          'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
-                          ]
+                # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
+                #           'LSPT_4650007_LSpecialT_2_ants (part 1r).mat',
+                #           'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
+                #           ]
 
                 chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]
                 for part in chain[1:]:
                     x = x + part
 
-                plt.plot(x.frames)
+                plt.plot(x.frames, marker='.')
                 plt.show(block=False)
+
+                # sometimes tracked only every 5th frame
+                counts = np.bincount(np.abs(np.diff(x.frames)))
+                x.fps = int(x.fps / np.argmax(counts))
+
                 # x = x.add_missing_frames(chain, free)
-                x.play(step=5)
+                x.play(step=2)
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)
+                # plt.plot(x.frames)
                 x.save()
 
                 # TODO: 'L_SPT_5000004_LSpecialT_1_ants (part 1)' ... correct false positions
