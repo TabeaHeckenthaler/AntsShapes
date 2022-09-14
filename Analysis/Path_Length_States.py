@@ -1,6 +1,7 @@
 from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
 from Analysis.PathLength.PathLength import path_length_dict
-from Analysis.PathPy.Path import time_series_dict, state_series_dict, Path
+from Analysis.PathPy.Path import time_series_dict, state_series_dict, time_series_dict_selected_states, \
+    state_series_dict_selected_states, Path
 from trajectory_inheritance.exp_types import solver_geometry, exp_types
 from matplotlib import pyplot as plt
 from trajectory_inheritance.get import get
@@ -25,12 +26,15 @@ def time_spent_in_states(state_series, time_step=0.25):
     return d
 
 
-def create_bar_chart(ax):
-    for filename, winner, food in zip(df['filename'], df['winner'], df['food in back']):
-        p = Path(time_step=0.25, time_series=time_series_dict[filename])
-        p.bar_chart(ax=ax, axis_label=exp_day(filename), winner=winner, food=food)
+def create_bar_chart(df, ax, block=False, sorted=True):
+    if sorted:
+        df = df.sort_values('time [s]')
+    for filename, ts, winner, food in zip(df['filename'], df['time series'], df['winner'], df['food in back']):
+        p = Path(time_step=0.25, time_series=ts)
+        p.bar_chart(ax=ax, axis_label=exp_day(filename), winner=winner, food=food, block=block)
         ax.set_xlabel('time [min]')
         # ax.set_xlim([0, 20])
+    DEBUG = 1
 
 
 def in_state_chart():
@@ -73,7 +77,6 @@ if __name__ == '__main__':
     myDataFrame.df['state series'] = myDataFrame.df['filename'].map(state_series_dict)
 
     solver = 'ant'
-
     shape = 'SPT'
     sizes = exp_types[shape][solver]
 
@@ -90,7 +93,7 @@ if __name__ == '__main__':
             df.sort_values(by='filename', inplace=True)
 
             fig, ax = plt.subplots()
-            create_bar_chart(ax)
+            create_bar_chart(df, ax)
             save_fig(fig, size + sep + '_states')
     # in_state_chart()
     DEBUG = 1

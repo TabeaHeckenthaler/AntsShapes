@@ -9,7 +9,7 @@ from copy import copy
 import json
 from Analysis.GeneralFunctions import graph_dir
 from Analysis.PathPy.Paths import PathWithoutSelfLoops
-from Analysis.PathPy.SPT_states import final_state
+from ConfigSpace.ConfigSpace_Maze import final_state
 import pandas as pd
 import numpy as np
 

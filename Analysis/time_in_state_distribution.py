@@ -3,7 +3,7 @@ from trajectory_inheritance.exp_types import solver_geometry, exp_types
 from matplotlib import pyplot as plt
 from trajectory_inheritance.get import get
 import pandas as pd
-from Analysis.PathPy.SPT_states import all_states
+from ConfigSpace.ConfigSpace_Maze import all_states
 import numpy as np
 from DataFrame.plot_dataframe import save_fig
 from DataFrame.Altered_DataFrame import Altered_DataFrame

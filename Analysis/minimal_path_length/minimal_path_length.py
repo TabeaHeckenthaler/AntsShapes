@@ -56,25 +56,38 @@ class MinimalDataFrame(pd.DataFrame):
         myDataFrame['minimal path length [length unit]'] = myDataFrame.apply(self.find_minimal, axis=1)
         minimal_path_length_dict = {f: N for f, N in zip(myDataFrame['filename'],
                                                          myDataFrame['minimal path length [length unit]'])}
+        return minimal_path_length_dict
 
+    def save_dict(self, minimal_path_length_dict):
         with open(minimal_path_length_dir, 'w') as json_file:
             json.dump(minimal_path_length_dict, json_file)
             json_file.close()
 
-#
+    @classmethod
+    def get_dict(cls):
+        with open(minimal_path_length_dir, 'r') as json_file:
+            minimal_path_length_dict = json.load(json_file)
+        return minimal_path_length_dict
+
+    def update_dict(self, myDataFrame, m):
+        to_add = set(myDataFrame['filename']) - set(m.keys())
+
+        for series in myDataFrame[myDataFrame['filename'].isin(to_add)].iterrows():
+            m.update({series[1]['filename']: self.find_minimal(series[1])})
+
+        return m
+
+
 # x = get('minimal_Large_SPT_back_MazeDimensions_human_LoadDimensions_human')
 # PathLength(x).calculate_first_frame(sigma=0)
-
-
-with open(minimal_path_length_dir, 'r') as json_file:
-    minimal_path_length_dict = json.load(json_file)
-
-
-
+minimal_path_length_dict = MinimalDataFrame.get_dict()
 
 if __name__ == '__main__':
     DEBUG = 1
     # MinimalDataFrame.create_source()
-    # myMinimalDataFrame = MinimalDataFrame()
+    myMinimalDataFrame = MinimalDataFrame()
     # myMinimalDataFrame.create_dict()
-    # DEBUG = 1
+    minimal_path_length_dict = MinimalDataFrame.get_dict()
+    minimal_path_length_dict_new = myMinimalDataFrame.update_dict(myDataFrame, minimal_path_length_dict)
+    myMinimalDataFrame.save_dict(minimal_path_length_dict_new)
+    DEBUG = 1

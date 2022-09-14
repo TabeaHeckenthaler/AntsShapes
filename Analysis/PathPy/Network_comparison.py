@@ -3,7 +3,6 @@ from trajectory_inheritance.exp_types import solver_geometry, exp_types, ResizeF
 from Analysis.PathPy.Paths import PathWithoutSelfLoops, PathsTimeStamped, plot_separately
 from Analysis.PathPy.Network import Network
 from Analysis.GeneralFunctions import graph_dir
-from Analysis.PathPy.SPT_states import states, forbidden_transition_attempts, allowed_transition_attempts
 import os
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from Analysis.GeneralFunctions import flatten

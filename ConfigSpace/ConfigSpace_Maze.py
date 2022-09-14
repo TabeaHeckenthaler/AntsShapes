@@ -11,14 +11,41 @@ from datetime import datetime
 import string
 from skfmm import distance
 from tqdm import tqdm
-from Analysis.PathPy.SPT_states import forbidden_transition_attempts, allowed_transition_attempts, states, short_forbidden
 import networkx as nx
 from matplotlib import pyplot as plt
 from copy import copy
-from Analysis.PathPy.SPT_states import cc_to_keep
 from Analysis.GeneralFunctions import flatten
 from Setup.Load import loops
 from PIL import Image, ImageDraw
+import string
+
+cc_to_keep = 8
+final_state = string.ascii_lowercase[cc_to_keep]
+pre_final_state = string.ascii_lowercase[cc_to_keep - 1]
+
+states = ['0'] + list(string.ascii_lowercase[:cc_to_keep]) + ['i']
+
+short_forbidden = ['bd', 'be', 'bf', 'cg', 'dg', 'eg']
+forbidden_transition_attempts = short_forbidden + [s[::-1] for s in short_forbidden]
+
+# forbidden_transition_attempts = ['be', 'bd', 'bf',
+#                                  'cg',
+#                                  'eb', 'eg',
+#                                  'db', 'dg',
+#                                  'gc', 'ge', 'gd'
+#                                  'fb']
+
+allowed_transition_attempts = ['ab', 'ac',
+                               'ba',
+                               'ce', 'cd', 'ca',
+                               'ec', 'ef',
+                               'dc', 'df',
+                               'fd', 'fe', 'fh',
+                               'gh',
+                               'hf', 'hg']
+
+all_states = states + forbidden_transition_attempts + allowed_transition_attempts
+
 
 try:
     from mayavi import mlab
@@ -624,14 +651,173 @@ class ConfigSpace_Maze(ConfigSpace):
                      ]
 
     @staticmethod
+    def add_final_state(labels):
+        # I have to open a new final state called i, which is in PS equivalent to h, but is an absorbing state, meaning,
+        # it is never left.
+        times_in_final_state = np.where(np.array(labels) == pre_final_state)[0]
+        if len(times_in_final_state) > 0:
+            # print(labels[:first_time_in_final_state[0] + 1][-10:])
+            return labels + [final_state]
+        else:
+            return labels
+
+    @classmethod
+    def delete_false_transitions(cls, labels, filename=''):
+        # labels = labels[11980:]
+        old_labels = labels.copy()
+        end_state = old_labels[-1]
+        new_labels = [labels[0]]
+        error_count = 0
+        for ii, next_state in enumerate(labels[1:], start=1):
+            if not cls.valid_state_transition(new_labels[-1], next_state):
+                # print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
+                error_count += 1
+                new_labels.append(new_labels[-1])
+                if error_count == 100:
+                    print('Warning_delete_false_transitions')
+                    file_object = open('Warning_error.txt', 'a')
+                    file_object.write(filename + '\n')
+                    file_object.close()
+            else:
+                new_labels.append(next_state)
+        if end_state != labels[-1]:
+            print('Warning: end is not the same')
+        return new_labels
+
+    @staticmethod
+    def valid_state_transition(state1, state2):
+        # transition like ab -> ba or b -> b
+        if len(state1) == len(state2) and set(state1) == set(state2):
+            if len(state1) == 2 and state1 not in allowed_transition_attempts and state1 == state2[::-1]:
+                return False
+            return True
+
+        # transition like b -> ba
+        if len(state2 + state1) == 3 and len(set(state1 + state2)) == 2:
+            if state1[0] == state2[0]:
+                return True
+            if ''.join(list(set(state1+state2))) in allowed_transition_attempts:
+                return True
+
+        # transition like bf -> ba
+        if len(state2 + state1) == 4 and len(set(state1 + state2)) == 3:
+            if state1[0] == state2[0]:
+                return True
+
+        if state1 == pre_final_state and state2 == final_state:
+            return True
+
+        return False
+
+    @classmethod
+    def get_rid_of_short_lived_states(cls, labels, min=5):
+        grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
+        new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
+        for i, (label, length) in enumerate(grouped[1:-1], 1):
+            if length <= min and cls.valid_transition(new_labels[-1], grouped[i + 1][0]):
+                # print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
+                new_labels = new_labels + [new_labels[-1] for _ in range(length)]
+            else:
+                new_labels = new_labels + [label for _ in range(length)]
+        new_labels = new_labels + [grouped[-1][0] for _ in range(grouped[-1][1])]
+        return new_labels
+
+    @classmethod
+    def correct_time_series(cls, time_series, filename=''):
+        time_series = cls.add_final_state(time_series)
+        time_series = cls.delete_false_transitions(time_series, filename=filename)
+        time_series = cls.get_rid_of_short_lived_states(time_series)
+        time_series = cls.add_missing_transitions(time_series)
+        return time_series
+
+    @classmethod
+    def add_missing_transitions(cls, labels) -> list:
+        """
+        I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
+        """
+        new_labels = [labels[0]]
+
+        for ii, state2 in enumerate(labels[1:]):
+            # if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
+            #     DEBUG = 1
+            state1 = new_labels[-1]
+            if not cls.valid_transition(state1, state2):
+                if state1 in ['f', 'e'] and state2 == 'i':
+                    new_labels.append(state1)  # only for small SPT ants
+                elif state1 in ['eg', 'dg', 'cg'] and state2 == 'g':
+                    new_labels.append(state1)  # only for small SPT ants
+                elif state1 == 'ba' and state2 in ['d', 'e']:
+                    new_labels.append(state1)
+                elif len(state2) == 2 and state1 == state2[1]:
+                    new_labels.append(state2[1] + state2[0])
+                else:
+                    for t in self.necessary_transitions(state1, state2, ii=ii):
+                        new_labels.append(t)
+                    new_labels.append(state2)
+            else:
+                new_labels.append(state2)
+        return new_labels
+
+    @classmethod
+    def valid_transition(cls, state1, state2):
+        if not cls.valid_state_transition(state1, state2):
+            return False
+        if set(state1) == set(state2):
+            return True
+        elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
+            return False
+        return state1[0] == state2[0] or len(set(state1) & set(state2)) == 2 or \
+               (state1 == pre_final_state and state2 == final_state)
+
+    @staticmethod
+    def necessary_transitions(state1, state2, ii: int = '') -> list:
+        if state1 == 'c' and state2 == 'fh':
+            return ['ce', 'e', 'ef', 'f']
+        if state1 == 'c' and state2 == 'f':
+            return ['ce', 'e', 'ef']
+        if state1 == 'ba' and state2 == 'cg':
+            return ['a', 'ac', 'c']
+
+        # otherwise, our Markov chain is not absorbing for L ants
+        if set(state1) in [set('ef'), set('ec')] and set(state1) in [set('ef'), set('ec')]:
+            return ['e']
+
+        if len(state1) == len(state2) == 1:
+            transition = ''.join(sorted(state1 + state2))
+            if transition in allowed_transition_attempts:
+                return [transition]
+            else:
+                print('Skipped 3 states: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
+                return []
+
+        elif len(state1) == len(state2) == 2:
+            print('Moved from transition to transition: ' + state1 + '_' + state2 + ' in ii ' + str(ii))
+            return []
+
+        elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
+            return [''.join(sorted(state1 + state2[0])), state2[0]]
+        elif ''.join(sorted(state1[0] + state2)) in allowed_transition_attempts:
+            return [state1[0], ''.join(sorted(state1[0] + state2))]
+
+        elif len(state2) > 1 and ''.join(sorted(state1 + state2[1])) in allowed_transition_attempts:
+            return [''.join(sorted(state1 + state2[1])), state2[1]]
+        elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
+            return [state1[1], ''.join(sorted(state1[1] + state2))]
+        else:
+            print('What happened: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
+            return []
+
+    @staticmethod
     def dilate(space: np.array, radius: int) -> np.array:
         """
         dilate phase space
         :param radius: radius of dilation
         """
-        print('Dilating space...')
         struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
-        return np.array(ndimage.binary_dilation(space, structure=struct), dtype=bool)
+        # return np.array(ndimage.binary_dilation(space, structure=struct), dtype=bool)
+        return np.array(ndimage.morphology.grey_dilation(space, size=tuple(radius for _ in range(space.ndim))),
+                        dtype=bool)
+
 
     @staticmethod
     def erode(space, radius: int) -> np.array:

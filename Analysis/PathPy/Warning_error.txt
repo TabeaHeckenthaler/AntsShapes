@@ -43,3 +43,192 @@ medium_20211125132354_20211125133125_20211125133125_20211125133138_2021112513313
 small2_20220606164317_20220606164531
 small_20220606163459_20220606163924
 small_20201222131614_20201222132000_20201222132000_20201222132039_20201222132039_20201222132301_20201222132301_20201222132302_20201222132302_20201222132455
+L_SPT_4660021_LSpecialT_1_ants (part 1)
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+S_SPT_4750016_SSpecialT_1_ants (part 1)
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+L_SPT_4650017_LSpecialT_1_ants (part 1)
+L_SPT_4660001_LSpecialT_1_ants (part 1)
+L_SPT_4660003_LSpecialT_1_ants
+L_SPT_4660004_LSpecialT_1_ants (part 1)
+L_SPT_4660006_LSpecialT_1_ants (part 1)
+L_SPT_4660008_LSpecialT_1_ants
+L_SPT_4660009_LSpecialT_1_ants
+L_SPT_4660010_LSpecialT_1_ants
+L_SPT_4660011_LSpecialT_1_ants
+L_SPT_4660012_LSpecialT_1_ants
+L_SPT_4660014_LSpecialT_1_ants
+L_SPT_4660016_LSpecialT_1_ants (part 1)
+L_SPT_4660021_LSpecialT_1_ants (part 1)
+L_SPT_4670001_LSpecialT_1_ants (part 1)
+L_SPT_4670004_LSpecialT_1_ants (part 1)
+L_SPT_4670006_LSpecialT_1_ants (part 1)
+L_SPT_4670008_LSpecialT_1_ants (part 1)
+L_SPT_4670011_LSpecialT_1_ants
+L_SPT_4670013_LSpecialT_1_ants (part 1)
+L_SPT_4420007_LSpecialT_1_ants (part 1)
+L_SPT_5000004_LSpecialT_1_ants (part 1)
+L_SPT_4420004_LSpecialT_1_ants
+L_SPT_4420005_LSpecialT_1_ants (part 1)
+L_SPT_5010001_LSpecialT_1_ants (part 1)
+L_SPT_4420010_LSpecialT_1_ants (part 1)
+L_SPT_5030001_LSpecialT_1_ants (part 1)
+L_SPT_5030009_LSpecialT_1_ants (part 1)
+L_SPT_5030006_LSpecialT_1_ants (part 1)
+L_SPT_4650014_LSpecialT_1_ants
+L_SPT_4650013_LSpecialT_1_ants
+L_SPT_4660018_LSpecialT_1_ants (part 1)
+L_SPT_4650010_LSpecialT_1_ants (part 1)
+L_SPT_4650012_LSpecialT_1_ants (part 1)
+L_SPT_4650007_LSpecialT_1_ants (part 1)
+L_SPT_4650005_LSpecialT_1_ants (part 1)
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+L_SPT_4650017_LSpecialT_1_ants (part 1)
+L_SPT_4660001_LSpecialT_1_ants (part 1)
+L_SPT_4660003_LSpecialT_1_ants
+L_SPT_4660004_LSpecialT_1_ants (part 1)
+L_SPT_4660006_LSpecialT_1_ants (part 1)
+L_SPT_4660008_LSpecialT_1_ants
+L_SPT_4660009_LSpecialT_1_ants
+L_SPT_4660010_LSpecialT_1_ants
+L_SPT_4660011_LSpecialT_1_ants
+L_SPT_4660012_LSpecialT_1_ants
+L_SPT_4660014_LSpecialT_1_ants
+L_SPT_4660016_LSpecialT_1_ants (part 1)
+L_SPT_4660021_LSpecialT_1_ants (part 1)
+L_SPT_4670001_LSpecialT_1_ants (part 1)
+L_SPT_4670004_LSpecialT_1_ants (part 1)
+L_SPT_4670006_LSpecialT_1_ants (part 1)
+L_SPT_4670008_LSpecialT_1_ants (part 1)
+L_SPT_4670011_LSpecialT_1_ants
+L_SPT_4670013_LSpecialT_1_ants (part 1)
+L_SPT_4420007_LSpecialT_1_ants (part 1)
+L_SPT_5000004_LSpecialT_1_ants (part 1)
+L_SPT_4420004_LSpecialT_1_ants
+L_SPT_4420005_LSpecialT_1_ants (part 1)
+L_SPT_5010001_LSpecialT_1_ants (part 1)
+L_SPT_4420010_LSpecialT_1_ants (part 1)
+L_SPT_5030001_LSpecialT_1_ants (part 1)
+L_SPT_5030009_LSpecialT_1_ants (part 1)
+L_SPT_5030006_LSpecialT_1_ants (part 1)
+L_SPT_4650014_LSpecialT_1_ants
+L_SPT_4650013_LSpecialT_1_ants
+L_SPT_4660018_LSpecialT_1_ants (part 1)
+L_SPT_4650010_LSpecialT_1_ants (part 1)
+L_SPT_4650012_LSpecialT_1_ants (part 1)
+L_SPT_4650007_LSpecialT_1_ants (part 1)
+L_SPT_4650005_LSpecialT_1_ants (part 1)
+M_SPT_4700012_MSpecialT_1_ants
+M_SPT_4700010_MSpecialT_1_ants (part 1)
+M_SPT_4700009_MSpecialT_1_ants
+M_SPT_4700008_MSpecialT_1_ants
+M_SPT_4700007_MSpecialT_1_ants
+M_SPT_4700006_MSpecialT_1_ants
+M_SPT_4690009_MSpecialT_1_ants (part 1)
+M_SPT_4700003_MSpecialT_1_ants (part 1)
+M_SPT_5050008_MSpecialT_1_ants (part 1)
+M_SPT_4690013_MSpecialT_1_ants (part 1)
+M_SPT_4690012_MSpecialT_1_ants
+M_SPT_4690011_MSpecialT_1_ants (part 1)
+M_SPT_4700013_MSpecialT_1_ants
+M_SPT_4690010_MSpecialT_1_ants
+M_SPT_4700005_MSpecialT_1_ants
+M_SPT_4700014_MSpecialT_1_ants (part 1)
+M_SPT_4710003_MSpecialT_1_ants
+M_SPT_4700016_MSpecialT_1_ants (part 1)
+M_SPT_4700018_MSpecialT_1_ants
+M_SPT_4700021_MSpecialT_1_ants
+M_SPT_4700022_MSpecialT_1_ants
+M_SPT_4700022_MSpecialT_2_ants (part 1)
+M_SPT_4710001_MSpecialT_1_ants
+M_SPT_4710004_MSpecialT_1_ants
+M_SPT_4710005_MSpecialT_1_ants
+M_SPT_5050017_MSpecialT_1 (part 1)
+M_SPT_5050014_MSpecialT_1 (part 1)
+M_SPT_5050010_MSpecialT_1_ants (part 1)
+M_SPT_5050005_MSpecialT_1_ants (part 1)
+M_SPT_5050016_MSpecialT_1
+M_SPT_4700001_MSpecialT_1_ants
+M_SPT_4700015_MSpecialT_1_ants
+M_SPT_4690006_MSpecialT_1_ants
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+L_SPT_4650017_LSpecialT_1_ants (part 1)
+L_SPT_4660001_LSpecialT_1_ants (part 1)
+L_SPT_4660003_LSpecialT_1_ants
+L_SPT_4660004_LSpecialT_1_ants (part 1)
+L_SPT_4660006_LSpecialT_1_ants (part 1)
+L_SPT_4660008_LSpecialT_1_ants
+L_SPT_4660009_LSpecialT_1_ants
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+L_SPT_4650017_LSpecialT_1_ants (part 1)
+L_SPT_4660001_LSpecialT_1_ants (part 1)
+L_SPT_4660003_LSpecialT_1_ants
+L_SPT_4660004_LSpecialT_1_ants (part 1)
+L_SPT_4660006_LSpecialT_1_ants (part 1)
+L_SPT_4660008_LSpecialT_1_ants
+L_SPT_4660009_LSpecialT_1_ants
+L_SPT_4660010_LSpecialT_1_ants
+L_SPT_4660011_LSpecialT_1_ants
+L_SPT_4660012_LSpecialT_1_ants
+L_SPT_4660014_LSpecialT_1_ants
+L_SPT_4660016_LSpecialT_1_ants (part 1)
+L_SPT_4660021_LSpecialT_1_ants (part 1)
+L_SPT_4670001_LSpecialT_1_ants (part 1)
+L_SPT_4670004_LSpecialT_1_ants (part 1)
+L_SPT_4670006_LSpecialT_1_ants (part 1)
+L_SPT_4670008_LSpecialT_1_ants (part 1)
+L_SPT_4670011_LSpecialT_1_ants
+L_SPT_4670013_LSpecialT_1_ants (part 1)
+L_SPT_4420007_LSpecialT_1_ants (part 1)
+L_SPT_5000004_LSpecialT_1_ants (part 1)
+L_SPT_4420004_LSpecialT_1_ants
+L_SPT_4420005_LSpecialT_1_ants (part 1)
+L_SPT_5010001_LSpecialT_1_ants (part 1)
+L_SPT_4420010_LSpecialT_1_ants (part 1)
+L_SPT_5030001_LSpecialT_1_ants (part 1)
+L_SPT_5030009_LSpecialT_1_ants (part 1)
+L_SPT_5030006_LSpecialT_1_ants (part 1)
+L_SPT_4650014_LSpecialT_1_ants
+L_SPT_4650013_LSpecialT_1_ants
+L_SPT_4660018_LSpecialT_1_ants (part 1)
+L_SPT_4650010_LSpecialT_1_ants (part 1)
+L_SPT_4650012_LSpecialT_1_ants (part 1)
+L_SPT_4650007_LSpecialT_1_ants (part 1)
+L_SPT_4650005_LSpecialT_1_ants (part 1)
+L_SPT_4650015_LSpecialT_1_ants (part 1)
+L_SPT_4650017_LSpecialT_1_ants (part 1)
+L_SPT_4660001_LSpecialT_1_ants (part 1)
+L_SPT_4660003_LSpecialT_1_ants
+L_SPT_4660004_LSpecialT_1_ants (part 1)
+L_SPT_4660006_LSpecialT_1_ants (part 1)
+L_SPT_4660008_LSpecialT_1_ants
+L_SPT_4660009_LSpecialT_1_ants
+L_SPT_4660010_LSpecialT_1_ants
+L_SPT_4660011_LSpecialT_1_ants
+L_SPT_4660012_LSpecialT_1_ants
+L_SPT_4660014_LSpecialT_1_ants
+L_SPT_4660016_LSpecialT_1_ants (part 1)
+L_SPT_4660021_LSpecialT_1_ants (part 1)
+L_SPT_4670001_LSpecialT_1_ants (part 1)
+L_SPT_4670004_LSpecialT_1_ants (part 1)
+L_SPT_4670006_LSpecialT_1_ants (part 1)
+L_SPT_4670008_LSpecialT_1_ants (part 1)
+L_SPT_4670011_LSpecialT_1_ants
+L_SPT_4670013_LSpecialT_1_ants (part 1)
+L_SPT_4420007_LSpecialT_1_ants (part 1)
+L_SPT_5000004_LSpecialT_1_ants (part 1)
+L_SPT_4420004_LSpecialT_1_ants
+L_SPT_4420005_LSpecialT_1_ants (part 1)
+L_SPT_5010001_LSpecialT_1_ants (part 1)
+L_SPT_4420010_LSpecialT_1_ants (part 1)
+L_SPT_5030001_LSpecialT_1_ants (part 1)
+L_SPT_5030009_LSpecialT_1_ants (part 1)
+L_SPT_5030006_LSpecialT_1_ants (part 1)
+L_SPT_4650014_LSpecialT_1_ants
+L_SPT_4650013_LSpecialT_1_ants
+L_SPT_4660018_LSpecialT_1_ants (part 1)
+L_SPT_4650010_LSpecialT_1_ants (part 1)
+L_SPT_4650012_LSpecialT_1_ants (part 1)
+L_SPT_4650007_LSpecialT_1_ants (part 1)
+L_SPT_4650005_LSpecialT_1_ants (part 1)
+L_SPT_4650015_LSpecialT_1_ants (part 1)

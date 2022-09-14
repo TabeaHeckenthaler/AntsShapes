@@ -1,6 +1,5 @@
 from Analysis.PathPy.Path import Path
-from Analysis.PathPy.SPT_states import all_states
-from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled
+from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled, all_states
 import pathpy as pp
 from Directories import network_dir
 from DataFrame.Altered_DataFrame import choose_trajectories
