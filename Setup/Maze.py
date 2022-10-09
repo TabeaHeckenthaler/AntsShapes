@@ -39,6 +39,7 @@ ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, '
                  'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
                  'humanhand': {'': 1}}
 ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
+ResizeFactors['gillespie'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
 
 
 def start(x, initial_cond: str):
@@ -79,7 +80,10 @@ class Maze_parent(b2World):
         if not hasattr(self, 'arena_length'):
             self.arena_length = 'XL'
         if not hasattr(self, 'excel_file_load'):
-            self.excel_file_load = 'LoadDimensions_new2021_SPT_ant.xlsx'
+            if self.shape == 'SPT':
+                self.excel_file_load = 'LoadDimensions_new2021_SPT_ant.xlsx'
+            else:
+                self.excel_file_load = 'LoadDimensions_ant.xlsx'
 
         self.maze = self.create_Maze()
         self.free = free
@@ -480,7 +484,7 @@ class Maze(Maze_parent):
         self.slitTree = list()
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
+                                                        'Trajectory_ant', 'TrajectoryGillespie', 'Trajectory',
                                                         'Trajectory_part', 'Trajectory_humanhand']:
             x = args[0]
             self.excel_file_maze, self.excel_file_load = x.geometry()
@@ -677,7 +681,7 @@ class Maze_free_space(Maze_parent):
     def __init__(self, *args, size='XL', shape='SPT', solver='ant', position=None, angle=0, point_particle=False,
                  geometry: tuple = None, i=0, bb: bool = False):
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
+                                                        'Trajectory_ant', 'TrajectoryGillespie', 'Trajectory',
                                                         'Trajectory_part']:
             x = args[0]
             self.arena_height = np.max(x.position[:, 1])

@@ -1,7 +1,9 @@
-from DataFrame.dataFrame import myDataFrame
+from DataFrame.dataFrame import myDataFrame, myDataFrame_sim
 from trajectory_inheritance.get import get
 from trajectory_inheritance.trajectory_humanhand import ExcelSheet
+from trajectory_inheritance.exp_types import solver_geometry
 
+plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}}
 
 class Altered_DataFrame:
     def __init__(self, df=None):
@@ -10,8 +12,8 @@ class Altered_DataFrame:
         else:
             self.df = df
 
-    def choose_experiments(self, solver=None, shape=None, geometry=None, size=None, communication=None, init_cond: str = 'back',
-                           winner: bool = None):
+    def choose_experiments(self, solver=None, shape=None, geometry=None, size=None, communication=None,
+                           init_cond: str = 'back', winner: bool = None, free: bool = None):
         """
         Get trajectories based on the trajectories saved in myDataFrame.
         :param geometry: geometry of the maze, given by the names of the excel files with the dimensions
@@ -31,11 +33,19 @@ class Altered_DataFrame:
         if 'initial condition' in df.columns:
             df = df[(df['initial condition'] == init_cond) | (df['shape'] != 'SPT')]
 
-        if 'maze dimensions' in df.columns and geometry is not None:
-            df = df[(df['maze dimensions'] == geometry[0])]
+        if geometry == 'new':
+            df = df[(df['maze dimensions'].isin(['MazeDimensions_human.xlsx',
+                                                 'MazeDimensions_new2021_SPT_ant.xlsx',
+                                                 'MazeDimensions_humanhand.xlsx']))]
+            df = df[(df['load dimensions'].isin(['LoadDimensions_new2021_SPT_ant.xlsx',
+                                                 'LoadDimensions_human.xlsx',
+                                                 'LoadDimensions_humanhand.xlsx']))]
+        else:
+            if 'maze dimensions' in df.columns and geometry is not None:
+                df = df[(df['maze dimensions'] == geometry[0])]
 
-        if 'load dimensions' in df.columns and geometry is not None:
-            df = df[(df['load dimensions'] == geometry[1])]
+            if 'load dimensions' in df.columns and geometry is not None:
+                df = df[(df['load dimensions'] == geometry[1])]
 
         if size is not None:
             if 'Small' in size:
@@ -49,10 +59,25 @@ class Altered_DataFrame:
 
         if communication is not None:
             df = df[(df['communication'] == communication)]
+
+        if free is not None:
+            df = df[~(df['filename'].str.contains('free'))]
+
         self.df = df
 
     def choose_columns(self, columns):
         self.df = self.df[columns]
+
+    def get_seperate_filenames(self):
+        filenames = {}
+        for solver in ['ant', 'human']:
+            dfss = self.get_separate_data_frames(solver=solver, plot_separately=plot_separately[solver],
+                                                 shape='SPT', geometry=solver_geometry[solver], initial_cond='back')
+            for size, dfs in dfss.items():
+                for sep, df in dfs.items():
+                    print(size, sep)
+                    filenames[solver + ' ' + size + ' ' + sep] = list(df['filename'])
+        return filenames
 
     def get_separate_data_frames(self, solver, plot_separately, shape=None, geometry=None, initial_cond='back'):
         if 'solver' in self.df.columns:

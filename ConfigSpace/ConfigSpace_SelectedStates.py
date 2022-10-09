@@ -3,23 +3,25 @@ from ConfigSpace.ConfigSpace_Maze import *
 # same_names = [['e', 'd'], ['eb', 'db'], ['ec', 'dc'], ['ef', 'df'], ['eg', 'dg'], ['ce', 'cd'], ['fe', 'fd'],
 #               ['ge', 'gd'], ['be', 'bd']]
 
-new_names = ['a1', 'a2', 'eg', 'be']
+new_names = ['ab', 'ac', 'eg', 'be', 'cg', 'b1', 'b2']
+
+perfect_states = ['ab', 'ac', 'c', 'e', 'f', 'h', 'i']
 
 same_names = [
     # ['0', '0'],
     # ['a', 'a'],
     ['ab', 'a'],
     ['ac', 'a'],
-    ['b', 'b'],
+    # ['b', 'b'],
     ['ba', 'b'],
     ['bd', 'be'],
     # ['be', 'be'],
-    ['bf', 'bf'],
+    # ['bf', 'bf'],
     # ['c', 'c'],
     ['ca', 'c'],
     ['cd', 'c'],
     ['ce', 'c'],
-    ['cg', 'c'],
+    # ['cg', 'c'],
     ['d', 'e'],
     ['db', 'eb'],
     ['dc', 'e'],
@@ -30,7 +32,7 @@ same_names = [
     ['ec', 'e'],
     ['ef', 'e'],
     # ['eg', 'eg'],
-    ['f', 'f'],
+    # ['f', 'f'],
     ['fb', 'f'],
     ['fd', 'f'],
     ['fe', 'f'],
@@ -44,10 +46,10 @@ same_names = [
     ['hf', 'h'],
     ['hg', 'h']]
 
-states = {'a', 'b', 'be', 'bf', 'c', 'e', 'eb', 'eg', 'f', 'g', 'h'}
+states = {'ab', 'ac', 'b', 'be', 'b1', 'b2', 'c', 'cg', 'e', 'eb', 'eg', 'f', 'g', 'h'}
 
-connected = [['a1', 'a2', 'b', 'be'], ['b', 'bf', 'be'], ['a1', 'a2', 'c'], ['c', 'e'], ['eb', 'e'], ['e', 'f'],
-             ['f', 'h'], ['h', 'g']]
+connected = [['ab', 'ac'], ['ab', 'b', 'be', 'b1', 'b2'], ['ac', 'c'], ['c', 'e', 'cg'], ['eb', 'e'], ['e', 'f'],
+             ['e', 'eg'], ['f', 'h'], ['h', 'g', 'i']]
 
 
 class ConfigSpace_AdditionalStates(ConfigSpace_Labeled):
@@ -58,17 +60,27 @@ class ConfigSpace_AdditionalStates(ConfigSpace_Labeled):
         for name_initial, name_final in same_names:
             self.space_labeled[name_initial == self.space_labeled] = name_final
 
+    def split_states(self):
         # split 'a'
-        boundary = self.space_labeled.shape[2] // 2
+        boundary = self.space_labeled.shape[2] / 4
         b_mask = np.zeros(self.space_labeled.shape, dtype=bool)
-        b_mask[..., boundary:] = True
+        b_mask[..., int(boundary):int(boundary*3)] = True
         a_mask = np.isin(self.space_labeled, ['a', 'ab', 'ac'])
 
-        self.space_labeled[np.logical_and(a_mask, b_mask)] = 'a1'
-        self.space_labeled[np.logical_and(a_mask, np.logical_not(b_mask))] = 'a2'
+        self.space_labeled[np.logical_and(a_mask, b_mask)] = 'ac'
+        self.space_labeled[np.logical_and(a_mask, np.logical_not(b_mask))] = 'ab'
+
+        # split 'bf'
+        a_mask = self.space_labeled == 'bf'
+        boundary = self.space_labeled.shape[1] // 2 + 1
+        b_mask = np.zeros(self.space_labeled.shape, dtype=bool)
+        b_mask[:, :int(boundary)] = True
+
+        self.space_labeled[np.logical_and(a_mask, b_mask)] = 'b1'
+        self.space_labeled[np.logical_and(a_mask, np.logical_not(b_mask))] = 'b2'
 
     def enlarge_transitions(self):
-        to_enlarge = {'be': 30, 'bf': 30, 'eb': 45, 'eg': 45}
+        to_enlarge = {'be': 30, 'bf': 30, 'eb': 45, 'eg': 45, 'cg': 15}
         for state, radius in to_enlarge.items():
             mask = self.dilate(self.space_labeled == state, radius)
             mask = np.logical_and(mask, self.space_labeled == state[0])
@@ -116,17 +128,38 @@ class ConfigSpace_AdditionalStates(ConfigSpace_Labeled):
             self.space_labeled = pickle.load(open(directory, 'rb'))
             self.reduce_states()
             self.enlarge_transitions()
+            self.split_states()
 
         else:
             raise ValueError('Cannot find ' + directory)
 
     @staticmethod
-    def valid_state_transition(s1, s2):
+    def valid_state_transition(s1, s2) -> bool:
         for c in connected:
             if s1 in c and s2 in c:
-                print('yes')
-        k = 1
-        return True
+                return True
+        return False
+
+    @classmethod
+    def add_missing_transitions(cls, labels) -> list:
+        """
+        I want to correct states series, that are [.... 'g' 'b'...] to [... 'g' 'gb' 'b'...]
+        """
+        new_labels = [labels[0]]
+
+        for ii, state2 in enumerate(labels[1:]):
+            # if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
+            #     DEBUG = 1
+            state1 = new_labels[-1]
+            if not cls.valid_state_transition(state1, state2):
+                if state1 in ['ac'] and 'e' in state2:
+                    new_labels.append('c')  # only for small SPT ants
+                elif state1 != 'be':
+                    DEBUG = 1
+            else:
+                new_labels.append(state2)
+        return new_labels
+
 
 if __name__ == '__main__':
     DEBUG = 1

@@ -31,13 +31,13 @@ def open_video_writer():
 
 
 if __name__ == '__main__':
-    video_directory = path.join('C:\\', 'Users', 'tabea', 'Desktop')
+    # video_directory = path.join('C:\\', 'Users', 'tabea', 'Desktop')
     # video_directory = '{0}{1}phys-guru-cs{2}ants{3}honeypot{4}honeypot{5}Udi{6}Ants_videos{7}' \
     #                   'Paratrechina longicornis{8}2016{9}2016-09-19 (ILAN (fixed release point test (large)))'. \
     #     format(*[path.sep for _ in range(10)])
 
-    # video_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Videos{5}01_08_2021_(Mexico Building){6}'\
-    #     .format(*[path.sep for _ in range(7)])
+    video_directory = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Videos{5}01_08_2021_(Mexico Building){6}'\
+        .format(*[path.sep for _ in range(7)])
 
     if not path.exists(video_directory):
         raise ValueError('Your video directory does not exist')
@@ -52,11 +52,12 @@ if __name__ == '__main__':
     #                'S4700011_MSpecialT.MP4': [1, 27472]}
 
     # movie_names = {'S4630011_XLSpecialT.MP4': [1, 40273]}
-    movie_names = {'CrazyAnts_Rotating Planet.mp4': [2444, 2648]}
+    movie_names = {'S4630011_XLSpecialT.MP4': [200, 2000]}
+    # movie_names = {'CrazyAnts_Rotating Planet.mp4': [2444, 2648]}
 
     video_writer = None
     height = 800
-    speed_up = 1
+    speed_up = 10
 
     for movie_name, frames in movie_names.items():
         address = path.join(video_directory, movie_name)

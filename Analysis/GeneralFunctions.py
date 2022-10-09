@@ -10,8 +10,11 @@ def rot(angle: float):
                      [np.sin(angle), np.cos(angle)]])
 
 
-def flatten(t):
-    return [item for sublist in t for item in sublist]
+def flatten(t: list):
+    if isinstance(t[0], list):
+        return [item for sublist in t for item in sublist]
+    else:
+        return t
 
 
 def gauss(x, a, x0, sigma):

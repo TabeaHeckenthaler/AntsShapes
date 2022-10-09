@@ -1,6 +1,6 @@
 import pandas as pd
 from os import listdir
-from Directories import SaverDirectories, df_dir
+from Directories import SaverDirectories, df_dir, df_sim_dir
 from trajectory_inheritance.get import get
 from tqdm import tqdm
 from copy import copy
@@ -49,16 +49,14 @@ class DataFrame(pd.DataFrame):
         return DataFrame(pd.concat([self, df_2], ignore_index=True))
 
     @staticmethod
-    def create():
+    def create(solver_filenames):
         singleExperiments = []
-        solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
-
         for solver, filenames in solver_filenames.items():
             for filename in tqdm(filenames):
                 singleExperiments.append(SingleExperiment(filename, solver))
         df = pd.concat(singleExperiments).reset_index(drop=True)
-
         DEBUG = 1
+        return df
         # df.to_json(df_dir)
 
     def clone(self):
@@ -142,8 +140,10 @@ class DataFrame(pd.DataFrame):
         for filename in perfect_filenames:
             self.drop_experiment(filename)
 
+
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+myDataFrame_sim = DataFrame(pd.read_json(df_sim_dir))
 # myDataFrame[((myDataFrame['solver'] == 'human') & (myDataFrame['size'].isin(['Large', 'Medium'])))]
 # myDataFrame = DataFrame(pd.read_excel(df_excel_dir))
 
@@ -174,7 +174,8 @@ def recalculating_cut_off_experiments() -> None:
 
 
 if __name__ == '__main__':
-    # DataFrame.create()
+    solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
+    # DataFrame.create(solver_filenames)
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 

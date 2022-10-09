@@ -3,6 +3,11 @@ from Analysis.minimal_path_length.minimal_path_length import minimal_path_length
 from Analysis.PathLength.PathLength import penalized_path_length_dict, path_length_dict
 from Analysis.average_carrier_number.averageCarrierNumber import averageCarrierNumber_dict
 
+font = {'family': 'Times New Roman',
+        # 'weight' : 'bold',
+        'size': 22}
+
+plt.rc('font', **font)
 
 name = 'ant_np_nt_cut_path'
 my_plot_class = Path_length_cut_off_df_ant()

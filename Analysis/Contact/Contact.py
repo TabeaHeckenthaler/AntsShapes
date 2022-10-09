@@ -118,11 +118,11 @@ class Contact(pd.Series):
     def __str__(self):
         return self.filename + '_' + str(self.impact_frame)
 
-    def play(self, end_frame: int = None):
-        if end_frame is None:
-            end_frame = self.end_frame
-        x = get(self.filename)
-        x.play(indices=[self.start_frame, min(end_frame + 200, len(x.frames))])
+    # def play(self, end_frame: int = None):
+    #     if end_frame is None:
+    #         end_frame = self.end_frame
+    #     x = get(self.filename)
+    #     x.play(indices=[self.start_frame, min(end_frame + 200, len(x.frames))])
 
     def redecided(self, walking_speed=0.05) -> float:
         """

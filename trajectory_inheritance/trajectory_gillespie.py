@@ -13,17 +13,22 @@ time_step = 0.01
 #     return filename
 
 
-class Trajectory_gillespie(Trajectory):
-    def __init__(self, size=None, shape=None, filename='gillespie_test', fps=time_step, winner=bool, free=False):
-
-        solver = 'gillespie'
-        super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
+class TrajectoryGillespie(Trajectory):
+    def __init__(self, size=None, shape=None, filename='gillespie_test', fps=time_step, winner=bool, free=False,
+                 number_of_attached_ants=None):
+        super().__init__(size=size, shape=shape, solver='gillespie', filename=filename, fps=fps, winner=winner, )
         self.free = free
+        self.gillespie = None
+        self.number_of_attached_ants = number_of_attached_ants
 
-        my_maze = Maze(size=size, shape=shape, solver=solver, free=free)
+    def setup_simulation(self):
+        my_maze = Maze(size=self.size, shape=self.shape, solver=self.solver)
         self.gillespie = Gillespie(my_maze)
 
-    def step(self, my_maze, i, display=None):
+    # def step(self, my_maze, i, display=None):
+    #     my_maze.set_configuration(self.position[i], self.angle[i])
+
+    def step_simulation(self, my_maze, i, display=None):
 
         my_maze.set_configuration(self.position[i], self.angle[i])
 
@@ -66,11 +71,41 @@ class Trajectory_gillespie(Trajectory):
         self.position = np.array([[my_maze.arena_length / 4, my_maze.arena_height / 2]])
         self.angle = np.array([0], dtype=float)  # array to store the position and angle of the load
         from PhysicsEngine.Display import Display
-        self.run_trj(my_maze, display=Display(self.filename, self.fps, my_maze, wait=10))
+        i = 0
+        display = Display(self.filename, self.fps, my_maze, wait=10)
+        while i < len(self.frames) - 1:
+            self.step_simulation(my_maze, i, display=display)
+            i += 1
+            if display is not None:
+                end = display.update_screen(self, i)
+                if end:
+                    display.end_screen()
+                    self.frames = self.frames[:i]
+                    break
+                display.renew_screen(movie_name=self.filename)
+        if display is not None:
+            display.end_screen()
+
+    # def run_trj(self, my_maze, display=None):
+    #     i = 0
+    #     while i < len(self.frames) - 1:
+    #         self.step(my_maze, i, display=display)
+    #         i += 1
+    #         if display is not None:
+    #             end = display.update_screen(self, i)
+    #             if end:
+    #                 display.end_screen()
+    #                 self.frames = self.frames[:i]
+    #                 break
+    #             display.renew_screen(movie_name=self.filename)
+    #     if display is not None:
+    #         display.end_screen()
 
     def load_participants(self):
         self.participants = self.gillespie
 
     def averageCarrierNumber(self):
-        return N_max  # TODO: this is maximum, not average...
+        return np.mean(self.number_of_attached_ants)
 
+    def geometry(self):
+        return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'

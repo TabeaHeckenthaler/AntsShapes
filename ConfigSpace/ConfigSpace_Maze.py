@@ -18,6 +18,8 @@ from Analysis.GeneralFunctions import flatten
 from Setup.Load import loops
 from PIL import Image, ImageDraw
 import string
+from itertools import groupby
+
 
 cc_to_keep = 8
 final_state = string.ascii_lowercase[cc_to_keep]
@@ -605,10 +607,10 @@ class ConfigSpace_Maze(ConfigSpace):
         if self.space is None:
             self.calculate_space(mask=mask)
         self.space_boundary = self.empty_space()
-        print("PhaseSpace: Calculating boundaries " + self.name)
-        for ix, iy, itheta in self.iterate_space_index(mask=mask):
-            if self._is_boundary_cell(ix, iy, itheta):
-                self.space_boundary[ix, iy, itheta] = 1
+        # print("PhaseSpace: Calculating boundaries " + self.name)
+        # for ix, iy, itheta in self.iterate_space_index(mask=mask):
+        #     if self._is_boundary_cell(ix, iy, itheta):
+        #         self.space_boundary[ix, iy, itheta] = 1
 
     def draw(self, positions, angles, scale_factor: float = 0.5, color=(1, 0, 0)) -> None:
         """
@@ -661,28 +663,36 @@ class ConfigSpace_Maze(ConfigSpace):
         else:
             return labels
 
+    @staticmethod
+    def add_initial_state(labels):
+        # if the tracking only started, once the shape was already in b
+        if labels[0] == 'b':
+            return ['ab'] + labels
+        else:
+            return labels
+
     @classmethod
     def delete_false_transitions(cls, labels, filename=''):
         # labels = labels[11980:]
         old_labels = labels.copy()
         end_state = old_labels[-1]
         new_labels = [labels[0]]
-        error_count = 0
+        error_count = []
         for ii, next_state in enumerate(labels[1:], start=1):
             if not cls.valid_state_transition(new_labels[-1], next_state):
-                # print(new_labels[-1], ' falsely went to ', next_state, ' in frame', ii * x.fps/4)
-                error_count += 1
+                error_count.append([new_labels[-1], next_state])
                 new_labels.append(new_labels[-1])
-                if error_count == 100:
-                    print('Warning_delete_false_transitions')
-                    file_object = open('Warning_error.txt', 'a')
-                    file_object.write(filename + '\n')
-                    file_object.close()
+                # if len(error_count) == 1000:
+                #     print('Warning_delete_false_transitions')
+                #     file_object = open('Warning_error.txt', 'a')
+                #     file_object.write(filename + '\n')
+                #     file_object.close()
             else:
                 new_labels.append(next_state)
         if end_state != labels[-1]:
             print('Warning: end is not the same')
         return new_labels
+
 
     @staticmethod
     def valid_state_transition(state1, state2):
@@ -707,6 +717,16 @@ class ConfigSpace_Maze(ConfigSpace):
         if state1 == pre_final_state and state2 == final_state:
             return True
 
+        if set(state1) == set(state2):
+            return True
+
+        elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
+            return False
+
+        if (state1[0] == state2[0] or len(set(state1) & set(state2)) == 2 or \
+               (state1 == pre_final_state and state2 == final_state)):
+            return True
+
         return False
 
     @classmethod
@@ -714,7 +734,7 @@ class ConfigSpace_Maze(ConfigSpace):
         grouped = [(''.join(k), sum(1 for _ in g)) for k, g in groupby([tuple(label) for label in labels])]
         new_labels = [grouped[0][0] for _ in range(grouped[0][1])]
         for i, (label, length) in enumerate(grouped[1:-1], 1):
-            if length <= min and cls.valid_transition(new_labels[-1], grouped[i + 1][0]):
+            if length <= min and cls.valid_state_transition(new_labels[-1], grouped[i + 1][0]):
                 # print(grouped[i - 1][0] + ' => ' + grouped[i + 1][0])
                 new_labels = new_labels + [new_labels[-1] for _ in range(length)]
             else:
@@ -724,10 +744,11 @@ class ConfigSpace_Maze(ConfigSpace):
 
     @classmethod
     def correct_time_series(cls, time_series, filename=''):
+        time_series = cls.add_initial_state(time_series)
         time_series = cls.add_final_state(time_series)
+        time_series = cls.add_missing_transitions(time_series)
         time_series = cls.delete_false_transitions(time_series, filename=filename)
         time_series = cls.get_rid_of_short_lived_states(time_series)
-        time_series = cls.add_missing_transitions(time_series)
         return time_series
 
     @classmethod
@@ -741,7 +762,7 @@ class ConfigSpace_Maze(ConfigSpace):
             # if state1 in ['cg', 'ac'] and state2 in ['cg', 'ac'] and state1 != state2:
             #     DEBUG = 1
             state1 = new_labels[-1]
-            if not cls.valid_transition(state1, state2):
+            if not cls.valid_state_transition(state1, state2):
                 if state1 in ['f', 'e'] and state2 == 'i':
                     new_labels.append(state1)  # only for small SPT ants
                 elif state1 in ['eg', 'dg', 'cg'] and state2 == 'g':
@@ -757,17 +778,6 @@ class ConfigSpace_Maze(ConfigSpace):
             else:
                 new_labels.append(state2)
         return new_labels
-
-    @classmethod
-    def valid_transition(cls, state1, state2):
-        if not cls.valid_state_transition(state1, state2):
-            return False
-        if set(state1) == set(state2):
-            return True
-        elif set(state1) in [set('fg'), set('fd')] and set(state2) in [set('fg'), set('fd')]:
-            return False
-        return state1[0] == state2[0] or len(set(state1) & set(state2)) == 2 or \
-               (state1 == pre_final_state and state2 == final_state)
 
     @staticmethod
     def necessary_transitions(state1, state2, ii: int = '') -> list:
@@ -1327,7 +1337,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
         if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
             return default + 4
-        if self.solver == 'ant':
+        if self.solver in ['ant', 'gillespie']:
             if self.size == 'S':
                 return default + 4
             return default + 3
@@ -1461,7 +1471,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # if len(self.space_labeled[ind]) == 0:
         #     self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
-    def find_closest_state(self, index: list, border=10, last_label=None) -> str:
+    def find_closest_state(self, index: list, border=10) -> str:
         """
         :return: name of the ps_state closest to indices_to_coords, chosen from ps_states
         """

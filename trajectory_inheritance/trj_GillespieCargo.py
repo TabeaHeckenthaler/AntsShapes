@@ -8,7 +8,7 @@ from PhysicsEngine.drawables import Arrow, Line
 time_step = 0.01
 
 
-class Trajectory_gillespie(Trajectory):
+class TrajectoryGillespie(Trajectory):
     def __init__(self, size=None, shape=None, filename='gillespie_test', fps=time_step, winner=bool, free=False):
 
         solver = 'gillespie'
@@ -76,4 +76,3 @@ class Trajectory_gillespie(Trajectory):
 
     def averageCarrierNumber(self):
         return self.GillespieCargo.N_max  # TODO: this is maximum, not average...
-

@@ -8,14 +8,22 @@ from Analysis.PathLength.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from tqdm import tqdm
-from DataFrame.dataFrame import myDataFrame
+from DataFrame.dataFrame import myDataFrame, myDataFrame_sim
 from Directories import network_dir
 import os
 import json
 from matplotlib import pyplot as plt
 
-
 time_step = 0.25  # seconds
+
+color_dict = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c',
+              # 'bf': '#d108ba',
+              # 'a': '#fc0000',
+              'ac': '#fc0000', 'ab': '#802424',
+              'c': '#fc8600', 'cg': '#8a4b03',
+              'e': '#fcf400', 'eb': '#a6a103', 'eg': '#05f521',
+              'f': '#30a103',
+              'h': '#085cd1'}
 
 
 class Path:
@@ -34,17 +42,13 @@ class Path:
         self.time_series = time_series
         if self.time_series is None and x is not None:
             self.time_series = self.get_time_series(conf_space_labeled, x)
-
-            # # for 'small_20220308115942_20220308120334'
-            # if self.time_series[114:125] == ['bd', 'bd', 'bd', 'db', 'db', 'd', 'db', 'db', 'd', 'ba', 'ba']:
-            #     self.time_series[114:125] = ['bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'bd', 'ba', 'ba', 'ba', 'ba']
-            # # x.play(path=self, wait=15)
-
+            # print('No correction')
             self.time_series = conf_space_labeled.correct_time_series(self.time_series, filename=x.filename)
             # self.save_transition_images(x)
             if only_states:
                 self.time_series = [l[0] for l in self.time_series]
-        self.state_series = self.calculate_state_series(self.time_series)
+        # self.state_series = self.calculate_state_series(self.time_series, conf_space_labeled)
+        self.state_series = None
 
     @staticmethod
     def show_configuration(x, coords, save_dir='', text_in_snapshot='', frame=0):
@@ -74,7 +78,7 @@ class Path:
         for i, index in enumerate(indices):
             # if i == 11360:
             #     DEBUG = 1
-            labels.append(self.label_configuration(index, conf_space_labeled, last_label=labels[-1]))
+            labels.append(self.label_configuration(index, conf_space_labeled))
         labels = labels[1:]
 
         if pre_final_state in labels[-1] and pre_final_state != labels[-1]:
@@ -82,10 +86,10 @@ class Path:
 
         return labels
 
-    def label_configuration(self, index, conf_space_labeled, last_label=None) -> str:
+    def label_configuration(self, index, conf_space_labeled) -> str:
         label = conf_space_labeled.space_labeled[index]
         if label == '0':
-            label = conf_space_labeled.find_closest_state(index, last_label=last_label)
+            label = conf_space_labeled.find_closest_state(index)
         # if set(label) == set('d'):
         #     conf_space_labeled.draw_ind(index)
         return label
@@ -153,14 +157,14 @@ class Path:
     #     return labels
 
     @staticmethod
-    def calculate_state_series(time_series):
+    def calculate_state_series(time_series, conf_space_labeled):
         """
         Reduces time series to series of states. No self loops anymore.
         :return:
         """
         labels = [''.join(ii[0]) for ii in groupby([tuple(label) for label in time_series])]
         labels = Path.combine_transitions(labels)
-        labels = Path.add_final_state(labels)
+        labels = conf_space_labeled.add_final_state(labels)
         return labels
 
     @staticmethod
@@ -196,54 +200,65 @@ class Path:
             df = myDataFrame[myDataFrame['solver'] == solver].sort_values('size')
             groups = df.groupby(by=['size'])
             for size, cs_group in groups:
-                if size == 'L':
-                    print('only L')
-                    cs_labeled = ConfigSpace_class(solver, size, shape, solver_geometry[solver])
-                    cs_labeled.load_labeled_space()
-                    for _, exp in tqdm(cs_group.iterrows()):
-                        print(exp['filename'])
-                        if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
-                            dictio_ts[exp['filename']] = None
-                            dictio_ss[exp['filename']] = None
-                        else:
-                            x = get(exp['filename'])
-                            path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
-                            dictio_ts[exp['filename']] = path_x.time_series
-                            dictio_ss[exp['filename']] = path_x.state_series
+                cs_labeled = ConfigSpace_class(solver, size, shape, solver_geometry[solver])
+                cs_labeled.load_labeled_space()
+                for _, exp in tqdm(cs_group.iterrows()):
+                    print(exp['filename'])
+                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                        dictio_ts[exp['filename']] = None
+                        dictio_ss[exp['filename']] = None
+                    else:
+                        if exp['filename'] == 'L_SPT_4080010_SpecialT_1_ants (part 1)':
+                            DEBUG = 1
+                        x = get(exp['filename'])
+                        path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
+                        dictio_ts[exp['filename']] = path_x.time_series
+                        dictio_ss[exp['filename']] = path_x.state_series
         return dictio_ts, dictio_ss
 
+    @staticmethod
+    def find_missing(myDataFrame, solver=None):
+        myDataFrame = myDataFrame[myDataFrame['shape'] == 'SPT']
+
+        if solver is not None:
+            myDataFrame = myDataFrame[myDataFrame['solver'] == solver]
+
+        to_add = myDataFrame[~myDataFrame['filename'].isin(time_series_dict.keys())]
+        return to_add
+
     @classmethod
-    def add_to_dict(cls, myDataFrame, ConfigSpace_class, time_series_dict, state_series_dict, solver='ant') -> tuple:
+    def add_to_dict(cls, to_add, ConfigSpace_class, time_series_dict, state_series_dict, solver=None) -> tuple:
         """
 
         """
         dictio_ts = {}
         dictio_ss = {}
-        print('only ants')
-        myDataFrame = myDataFrame[myDataFrame['shape'] == 'SPT'][myDataFrame['solver'] == solver]
-        to_add = myDataFrame[~myDataFrame['filename'].isin(time_series_dict.keys())]
-        size_groups = to_add.groupby('size')
 
-        for size, cs_group in size_groups:
-            print(size)
-            cs_labeled = ConfigSpace_class(solver, size, 'SPT', solver_geometry[solver])
-            cs_labeled.load_labeled_space()
-            for _, exp in tqdm(cs_group.iterrows()):
-                print(exp['filename'])
-                if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
-                    dictio_ts[exp['filename']] = None
-                    dictio_ss[exp['filename']] = None
-                else:
-                    x = get(exp['filename'])
-                    path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
-                    dictio_ts[exp['filename']] = path_x.time_series
-                    dictio_ss[exp['filename']] = path_x.state_series
+        solver_groups = to_add.groupby('solver')
+        for solver, solver_group in solver_groups:
+            size_groups = solver_group.groupby('size')
+            for size, cs_group in size_groups:
+                print(size)
+                cs_labeled = ConfigSpace_class(solver, size, 'SPT', solver_geometry[solver])
+                cs_labeled.load_labeled_space()
+                for _, exp in tqdm(cs_group.iterrows()):
+                    print(exp['filename'])
+                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                        dictio_ts[exp['filename']] = None
+                        dictio_ss[exp['filename']] = None
+                    else:
+                        x = get(exp['filename'])
+                        path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
+                        dictio_ts[exp['filename']] = path_x.time_series
+                        dictio_ss[exp['filename']] = path_x.state_series
         time_series_dict.update(dictio_ts)
         state_series_dict.update(dictio_ss)
         return time_series_dict, state_series_dict
 
     def bar_chart(self, ax, axis_label='', winner=False, food=False, block=False):
         ts = self.time_series
+        if 'i' in ts:
+            ts.remove('i')
         # ts = Path.only_states(self.time_series)
         # ts = Path.symmetrize(ts)
         # dur = Path.state_duration(ts)
@@ -251,13 +266,9 @@ class Path:
 
         # prop_cycle = plt.rcParams['axes.prop_cycle']
         # colors = prop_cycle.by_key()['color']
-        # color_dict = {state: color for state, color in zip(['a', 'b', 'c', 'd', 'h', 'f', 'i'], colors)}
+        # color_dict = {state: color for state, color in zip(['a', 'b', 'c', 'd', 'h', 'f'], colors)}
 
-        color_dict = {'a': '#1f77b4', 'b': '#ff7f0e', 'c': '#2ca02c', 'e': '#d62728', 'f': '#8c564b', 'h': '#9467bd',
-                      'i': '#e377c2',
-                      'a1': '', 'a2': '', 'be': '', 'bf': '', 'eb': '', 'eg': ''}
         left = 0
-
         given_names = {}
 
         for name, duration in dur:
@@ -307,20 +318,32 @@ class Path:
 
 time_series_dict, state_series_dict = Path.get_dicts()
 time_series_dict_selected_states, state_series_dict_selected_states = Path.get_dicts(name='_selected_states')
+time_series_dict_selected_states_sim, state_series_dict_selected_states_sim = Path.get_dicts(name='_selected_states_sim')
 
 DEBUG = 1
 if __name__ == '__main__':
-    # filename = 'S_SPT_4750016_SSpecialT_1_ants (part 1)'
+    # filename = 'M_SPT_4700022_MSpecialT_1_ants'
     # x = get(filename)
-    # x.play()
     # cs_labeled = ConfigSpace_AdditionalStates(x.solver, x.size, x.shape, x.geometry())
     # cs_labeled.load_labeled_space()
     # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-    # print(path.state_series)
-    # x.play(path=path)
-
+    # x.play(step=5, path=path, videowriter=True)
+    #
     ConfigSpace_class = ConfigSpace_AdditionalStates
-    time_series_dict, state_series_dict = Path.create_dicts(myDataFrame, ConfigSpace_class)
-    # time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame, ConfigSpace_class, time_series_dict, state_series_dict)
 
-    Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states')
+    time_series_dict_selected_states, state_series_dict_selected_states = Path.create_dicts(myDataFrame_sim,
+                                                                                            ConfigSpace_class)
+    Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states_sim')
+
+    # to_add = Path.find_missing(myDataFrame)
+    # time_series_dict_selected_states, state_series_dict_selected_states = Path.add_to_dict(to_add,
+    #                                                                                        ConfigSpace_class,
+    #                                                                                        time_series_dict_selected_states,
+    #                                                                                        state_series_dict_selected_states)
+    # filenames = []
+    # to_recalculate = myDataFrame[myDataFrame['filename'].isin(filenames)]
+    # time_series_dict_selected_states, state_series_dict_selected_states = Path.add_to_dict(to_recalculate,
+    #                                             ConfigSpace_class, time_series_dict_selected_states,
+    #                                             state_series_dict_selected_states)
+
+    # Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states')

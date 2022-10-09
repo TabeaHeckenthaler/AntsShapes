@@ -1,7 +1,7 @@
 import pandas as pd
 from trajectory_inheritance.get import get
 
-length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
+length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm', 'gillespie': 'cm'}
 
 
 def length_unit_func(solver):

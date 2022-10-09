@@ -31,6 +31,7 @@ time_series_dict, state_series_dict = Path.get_dicts()
 for pop in to_pop:
     print(time_series_dict.pop(pop))
     print(state_series_dict.pop(pop))
+raise ValueError
 time_series_dict, state_series_dict = Path.add_to_dict(myDataFrame, time_series_dict, state_series_dict)
 Path.save_dicts(time_series_dict, state_series_dict)
 
