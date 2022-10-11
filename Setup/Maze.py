@@ -36,6 +36,7 @@ StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3
               'circle': [0]}
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+                 'pheidole': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
                  'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
                  'humanhand': {'': 1}}
 ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])

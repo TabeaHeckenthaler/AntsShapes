@@ -25,7 +25,7 @@ def is_extension(name) -> bool:
 
 
 def get_image_analysis_results_files(solver, size, shape, free=False):
-    if solver == 'ant':
+    if solver in ['ant', 'pheidole']:
         return [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free)) if
                 size + shape in mat_file]
     elif solver == 'human':
@@ -44,7 +44,7 @@ def find_unpickled(solver, size, shape, free=False):
     :return: list of un-pickled .mat file names (without .mat extension)
     """
     pickled = get_filenames(solver, size=size, free=free)
-    if solver in ['ant', 'human', 'humanhand']:
+    if solver in ['ant', 'pheidole', 'human', 'humanhand']:
         expORsim = 'exp'
     else:
         expORsim = 'sim'
@@ -71,8 +71,8 @@ def Load_Experiment(solver: str, filename: str, falseTracking: list, winner: boo
     winner: boolean, whether the trail was successful
     fsp: frames per second of the camera
     """
-    if solver == 'ant':
-        x = Trajectory_ant(size=size, shape=shape, old_filename=filename, free=free, winner=winner,
+    if solver in ['ant', 'pheidole']:
+        x = Trajectory_ant(size=size, shape=shape, solver=solver, old_filename=filename, free=free, winner=winner,
                            fps=fps, x_error=x_error, y_error=y_error, angle_error=angle_error,
                            falseTracking=[falseTracking])
         # if x.free:
@@ -179,8 +179,8 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    solver, shape, free = 'ant', 'SPT', False
-    fps = {'human': 30, 'ant': 50, 'humanhand': 30}
+    solver, shape, free = 'pheidole', 'SPT', False
+    fps = {'human': 30, 'ant': 50, 'pheidole': 50, 'humanhand': 30}
     #
     # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
     #           'LSPT_4650007_LSpecialT_1_ants (part 1r).mat',
@@ -230,6 +230,8 @@ if __name__ == '__main__':
                 x.fps = int(x.fps / np.argmax(counts))
 
                 # x = x.add_missing_frames(chain, free)
+                # x = x.cut_off([0, 4660])
+                print(x.winner)
                 x.play(step=2)
                 # x.angle = (x.angle + np.pi) % (2 * np.pi)
                 # plt.plot(x.frames)

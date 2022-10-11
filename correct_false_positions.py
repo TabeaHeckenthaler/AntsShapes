@@ -41,26 +41,24 @@ def find_most_problematic(d):
     return df.head(n=26)
 
 
-def correct_traj(s):
-    x = get(s.name)
-
-    maxi_ind = int(s['maxi_ind'])
+def correct_traj(x):
+    # x = get(s.name)
     # maxi_ind = 53422
 
     # x.frames[maxi_ind]
     # maxi_ind = 37529
-    buffer = 10
+    buffer = 20
     start = max(0, maxi_ind - buffer)
     end = maxi_ind + buffer
-    # start = 4500
-    # end = 2000
+    # start = 5150
+    # end = 10600
 
     new_pos = x.position.copy()
     new_angle = x.angle.copy()
 
     plot_buffer = 100
     plt.figure()
-    s, e = max(start - plot_buffer, 1), end + plot_buffer
+    s, e = max(start - plot_buffer, 1), min(end + plot_buffer, len(new_angle))
     plt.plot(list(range(s, e)), new_pos[s: e, 0])
     plt.plot(list(range(s, e)), new_pos[s: e, 1])
     plt.plot(start, new_pos[start, 0], '*', markersize=10)
@@ -81,7 +79,7 @@ def correct_traj(s):
     x.angle = new_angle
     x.save()
     x.play(frames=[s, e], wait=5)
-    x.play(step=1)
+    x.play(step=10)
     # mid = 24430
     # pos_24430 = [2.8, 3.1]
     # ang_24430 = 2.42920
@@ -103,26 +101,28 @@ def correct_traj(s):
 
 if __name__ == '__main__':
     # create_dict()
-    filename = 'M_SPT_5050016_MSpecialT_1'
+    filename = 'M_SPT_5210003_MSpecialT_1 (part 1)'
     x = get(filename)
     # x.play()
     max_r, maxi_ind = find_longest_jump(x)
+    correct_traj(x)
 
-    with open(dir, 'r') as json_file:
-        d = json.load(json_file)
-        json_file.close()
-
-    df_prob = find_most_problematic(d)
-    for i in range(10, len(df_prob)):
-        correct_traj(df_prob.iloc[i])
-
-    # TO SMOOTH
-    from scipy.signal import medfilt
-    x.position[:, 0] = medfilt(x.position[:, 0], 109)
-    x.position[:, 0] = medfilt(x.position[:, 0], 109)
-    x.angle = medfilt(x.angle, 109)
-
-    filename = 'M_SPT_5050016_MSpecialT_1'
-    x = get(filename)
-    x.play(frames=[46016-300, 46016+300], wait=10)
-    DEBUG = 1
+    # # CORRECT MANY MISTAKES
+    # with open(dir, 'r') as json_file:
+    #     d = json.load(json_file)
+    #     json_file.close()
+    #
+    # df_prob = find_most_problematic(d)
+    # for i in range(10, len(df_prob)):
+    #     correct_traj(df_prob.iloc[i])
+    #
+    # # TO SMOOTH
+    # from scipy.signal import medfilt
+    # x.position[:, 0] = medfilt(x.position[:, 0], 109)
+    # x.position[:, 0] = medfilt(x.position[:, 0], 109)
+    # x.angle = medfilt(x.angle, 109)
+    #
+    # filename = 'M_SPT_5050016_MSpecialT_1'
+    # x = get(filename)
+    # x.play(frames=[46016-300, 46016+300], wait=10)
+    # DEBUG = 1

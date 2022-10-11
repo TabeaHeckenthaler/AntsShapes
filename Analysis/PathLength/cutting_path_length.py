@@ -41,7 +41,8 @@ class Path_length_cut_off_df(Altered_DataFrame):
 
     @staticmethod
     def get_maximum_value(dic, measure) -> float:
-        df = pd.concat([v2[measure] for v2 in flatten([v1.values() for v1 in [v for v in dic.values()]])])
+        f = flatten([list(v1.values()) for v1 in [v for v in dic.values()]])
+        df = pd.concat([v2[measure] for v2 in f])
         return df.max()
 
     def split_separate_groups(self, df=None):

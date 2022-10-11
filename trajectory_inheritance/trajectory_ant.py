@@ -12,11 +12,17 @@ from Analysis.GeneralFunctions import ranges
 
 length_unit = 'cm'
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
-                                                                                        path.sep, path.sep)
+                                                                                  path.sep, path.sep)
+trackedPheidoleMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Pheidole Shapes Results'.format(path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep)
+
+
 class Trajectory_ant(Trajectory):
-    def __init__(self, size=None, shape=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
+    def __init__(self, size=None, shape=None, solver=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
                  angle_error=0, falseTracking=[]):
-        solver = 'ant'
         filename = NewFileName(old_filename, solver, size, shape, 'exp')
 
         super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
@@ -125,6 +131,9 @@ class Trajectory_ant(Trajectory):
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
                                'SPT': 'Special T', 'T': 'T'}
+        if self.solver == 'pheidole':
+            return trackedPheidoleMovieDirectory + path.sep + self.size + path.sep + 'Output Data'
+
         if not self.free:
             return trackedAntMovieDirectory + path.sep + 'Slitted' + path.sep + shape_folder_naming[
                 self.shape] + path.sep + self.size + path.sep + 'Output Data'
@@ -227,7 +236,7 @@ class Trajectory_ant(Trajectory):
         per = periodicity[self.shape]
 
         for frames in x.falseTracking[0]:
-            frame1, frame2 = max(frames[0] - 1, x.frames[0]), min(frames[1] + 1, x.frames[-1])
+            frame1, frame2 = max(frames[0], x.frames[0]), min(frames[1], x.frames[-1])
             index1, index2 = np.where(x.frames == frame1)[0][0], np.where(x.frames == frame2)[0][0]
 
             con_frames = index2 - index1

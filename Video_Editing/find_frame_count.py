@@ -3,7 +3,7 @@ import os
 import scipy.io as sio
 import pandas as pd
 import numpy as np
-
+from os import path
 
 folder_exc_mat = {'large': 'Large maze', 'medium': 'Medium maze', 'small': 'Small near maze', 'small2': 'Small far maze'}
 sizes_exc_mat = {'L': 'large', 'M': 'medium', 'SN': 'small', 'SF': 'small2'}
@@ -17,7 +17,7 @@ class Experiment:
         self.size = sizes_exc_mat[pd_Series['Maze Size']]
         self.movie_name = pd_Series['Video File Name'].split('\n')[0].strip()
         self.init_frame = pd_Series['Initial Frame']
-        self.end_frame = pd_Series['End Frame']
+        self.end_frame = int(pd_Series['End Frame'].split(' ')[-1])
         self.movie_extensions = pd_Series['Video File Name'].split('\n')[1:]
         self.num_part = int(pd_Series['Group Size'])
 
@@ -55,18 +55,29 @@ class Experiment:
                     np.array([1, self.last_frame(name)])
                 ]], dtype=object)
                 line = np.concatenate([line, new_line])
+            line[-1][-1][-1] = self.end_frame
         else:
             line = []
         return line
 
     def last_frame(self, movie) -> int:
-        video_directory = os.path.join('P:\\', 'Tabea', 'Human Experiments',
-                                       'Raw Data and Videos', date, 'Videos', folder_exc_mat[self.size])
-        address = os.path.join(video_directory, movie + '.asf')
+        # date = '2022-09-07'
+        #
+        # video_directory = os.path.join('P:\\', 'Tabea', 'Human Experiments',
+        #                                'Raw Data and Videos', date, 'Videos', folder_exc_mat[self.size])
+        video_directory = os.path.join('P:\\', 'Tabea', 'Human Experiments')
+        filename = movie + '.asf'
+        address = None
+        for root, dirs, files in os.walk(video_directory):
+            for dir in dirs:
+                if filename in os.listdir(path.join(root, dir)):
+                    address = path.join(root, dir, filename)
+
+        if address is None:
+            raise ValueError('Didnt find the movie')
+
         cap = cv2.VideoCapture(address)
         frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
-        if frames == -1:
-            DEBUG = 1
         cap.release()
         return frames
 
@@ -94,7 +105,6 @@ class ExperimentAdder:
 testable_dir = '\\\\phys-guru-cs\\ants\\Tabea\\Human Experiments\\Testable.xlsx'
 matlab_dir = '\\\\phys-guru-cs\\ants\\Aviram\\Shapes Tracking Software\\Homo sapiens sapiens\\' \
              'Input Files\\human_shapes_video_data.mat'
-date = '2022-09-07'
 sizes = [size + ' maze' for size in ['Large', 'Medium', 'Small far', 'Small near']]
 
 if __name__ == '__main__':
@@ -114,6 +124,6 @@ if __name__ == '__main__':
         m_line = exp.matlab_line()
         new_matlab_cell = np.vstack([new_matlab_cell, m_line])
 
-    sio.savemat(matlab_dir.split('.')[0] + '_python' + '.mat', {'human_shapes_video_data_cell': new_matlab_cell})
+    # sio.savemat(matlab_dir.split('.')[0] + '_python' + '.mat', {'human_shapes_video_data_cell': new_matlab_cell})
 
     DEBUG = 1

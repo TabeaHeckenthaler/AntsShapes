@@ -3,12 +3,13 @@ from datetime import datetime
 
 # home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
 # data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
-home = path.join(path.abspath(__file__).split('\\')[0]+path.sep, *path.abspath(__file__).split(path.sep)[1:-1])
+home = path.join(path.abspath(__file__).split('\\')[0] + path.sep, *path.abspath(__file__).split(path.sep)[1:-1])
 data_home = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'PyCharm_Data', 'AntsShapes')
 
 work_dir = path.join(data_home, 'Pickled_Trajectories')
 SaverDirectories = {'ant': {True: path.join(work_dir, 'Ant_Trajectories', 'Free'),
                             False: path.join(work_dir, 'Ant_Trajectories', 'Slitted')},
+                    'pheidole': path.join(work_dir, 'Pheidole_Trajectories'),
                     'human': path.join(work_dir, 'Human_Trajectories'),
                     'humanhand': path.join(work_dir, 'HumanHand_Trajectories'),
                     'gillespie': path.join(work_dir, 'Gillespie_Trajectories'),
@@ -16,6 +17,7 @@ SaverDirectories = {'ant': {True: path.join(work_dir, 'Ant_Trajectories', 'Free'
 
 mini_work_dir = path.join(data_home, 'mini_Pickled_Trajectories')
 mini_SaverDirectories = {'ant': path.join(mini_work_dir, 'Ant_Trajectories'),
+                         'pheidole': path.join(mini_work_dir, 'Pheidole_Trajectories'),
                          'human': path.join(mini_work_dir, 'Human_Trajectories'),
                          'humanhand': path.join(mini_work_dir, 'HumanHand_Trajectories'),
                          'gillespie': path.join(mini_work_dir, 'Gillespie_Trajectories'),
@@ -38,6 +40,11 @@ if not path.exists(video_directory):
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
+trackedPheidoleMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Pheidole Shapes Results'.format(path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep,
+                                                                                                      path.sep)
 trackedHumanMovieDirectory = path.join(excel_sheet_directory, 'Output')
 trackedHumanHandMovieDirectory = 'C:\\Users\\tabea\\PycharmProjects\\ImageAnalysis\\Results\\Data'  # TODO
 
@@ -75,7 +82,6 @@ def SetupDirectories():
 
 
 def MatlabFolder(solver, size, shape, free=False):
-
     if solver == 'ant':
         shape_folder_naming = {'LASH': 'Asymmetric H', 'RASH': 'Asymmetric H', 'ASH': 'Asymmetric H',
                                'H': 'H', 'I': 'I', 'LongT': 'Long T',
@@ -84,6 +90,9 @@ def MatlabFolder(solver, size, shape, free=False):
             return path.join(trackedAntMovieDirectory, 'Slitted', shape_folder_naming[shape], size, 'Output Data')
         else:
             return path.join(trackedAntMovieDirectory, 'Free', 'Output Data', shape_folder_naming[shape])
+
+    if solver == 'pheidole':
+        return path.join(trackedPheidoleMovieDirectory, size, 'Output Data')
 
     if solver == 'human':
         return path.join(trackedHumanMovieDirectory, size, 'Data')
@@ -106,7 +115,7 @@ def NewFileName(old_filename: str, solver: str, size: str, shape: str, expORsim:
             return filename.replace(old_filename.split('_')[0], size + '_' + shape)
 
         else:
-            if solver == 'ant':
+            if solver in ['ant', 'pheidole']:
                 if size + shape in filename or size + '_' + shape in filename:
                     return filename.replace(size + shape, size + '_' + shape)
                 else:

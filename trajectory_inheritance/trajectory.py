@@ -24,14 +24,16 @@ from matplotlib import pyplot as plt
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
+         'pheidole': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
          'human': ['Small Far', 'Small Near', 'Medium', 'Large'],
          'humanhand': ''}
 
 solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                   'pheidole': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                    'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
                    'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
 
-solvers = ['ant', 'human', 'humanhand', 'ps_simulation']
+solvers = ['ant', 'pheidole', 'human', 'humanhand', 'ps_simulation']
 
 length_unit = {'ant': 'cm', 'human': 'm', 'humanhand': 'cm', 'ps_simulation': 'cm'}
 

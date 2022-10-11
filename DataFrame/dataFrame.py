@@ -9,7 +9,7 @@ from DataFrame.SingleExperiment import SingleExperiment
 from trajectory_inheritance.trajectory_human import perfect_filenames
 
 pd.options.mode.chained_assignment = None
-exp_solvers = ['ant', 'human', 'humanhand']
+exp_solvers = ['ant', 'human', 'humanhand', 'pheidole']
 
 
 def get_filenames(solver, size='', shape='', free=False):
@@ -21,8 +21,11 @@ def get_filenames(solver, size='', shape='', free=False):
                                '': ''}
         return [filename for filename in listdir(SaverDirectories[solver])
                 if ('_' in filename and shape_folder_naming[size] in filename)]
-    if solver == 'ant':
+    if solver in ['ant']:
         return [filename for filename in listdir(SaverDirectories[solver][free])
+                if size in filename and shape in filename]
+    if solver in ['pheidole']:
+        return [filename for filename in listdir(SaverDirectories[solver])
                 if size in filename and shape in filename]
     if solver == 'humanhand':
         return [filename for filename in listdir(SaverDirectories[solver])]
@@ -186,7 +189,7 @@ if __name__ == '__main__':
     #     myDataFrame.drop_experiment(drop)
 
     # myDataFrame.add_column()
-    for new_experiment in myDataFrame.new_experiments(solver='ant', shape='SPT'):
+    for new_experiment in myDataFrame.new_experiments(solver='pheidole', shape='SPT'):
         print(new_experiment['filename'].values[0])
         myDataFrame = myDataFrame + new_experiment
     myDataFrame.save()

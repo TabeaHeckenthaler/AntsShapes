@@ -1,4 +1,6 @@
-exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far', 'Small Near'],
+exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'],
+                     'pheidole': ['XL', 'L', 'M', 'S'],
+                     'human': ['Large', 'Medium', 'Small Far', 'Small Near'],
                      'ps_simulation': ['XL', 'L', 'M', 'S', 'Large', 'Medium', 'Small Far', 'Small Near', ''],
                      'humanhand': [''],
                      'gillespie': ['XL', 'L', 'M', 'S']},
@@ -10,6 +12,7 @@ solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimension
                    'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
                    'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx'),
                    'gillespie': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                   'pheidole': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                    }
 
 ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
