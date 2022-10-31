@@ -3,7 +3,7 @@ from Directories import SaverDirectories, df_minimal_dir, minimal_path_length_di
 import os
 import pandas as pd
 from DataFrame.dataFrame import myDataFrame
-from Analysis.PathLength.PathLength import PathLength
+from Analysis.Efficiency.PathLength import PathLength
 from trajectory_inheritance.get import get
 import json
 

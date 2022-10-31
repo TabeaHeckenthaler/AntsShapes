@@ -1,4 +1,4 @@
-from DataFrame.dataFrame import myDataFrame, myDataFrame_sim
+from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.get import get
 from trajectory_inheritance.trajectory_humanhand import ExcelSheet
 from trajectory_inheritance.exp_types import solver_geometry

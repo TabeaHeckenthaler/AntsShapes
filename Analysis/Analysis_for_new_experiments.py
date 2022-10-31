@@ -1,5 +1,5 @@
 from DataFrame.dataFrame import DataFrame, pd, df_dir
-from Analysis.PathLength.PathLength import PathLength
+from Analysis.Efficiency.PathLength import PathLength
 from Analysis.PathPy.Path import Path
 from Analysis.find_first_starting_frame import FirstFrame
 

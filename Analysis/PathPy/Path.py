@@ -4,11 +4,11 @@ from trajectory_inheritance.get import get
 from trajectory_inheritance.exp_types import solver_geometry
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled, pre_final_state
 from ConfigSpace.ConfigSpace_SelectedStates import ConfigSpace_AdditionalStates
-from Analysis.PathLength.PathLength import PathLength
+from Analysis.Efficiency.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from tqdm import tqdm
-from DataFrame.dataFrame import myDataFrame, myDataFrame_sim
+from DataFrame.dataFrame import myDataFrame
 from Directories import network_dir
 import os
 import json
@@ -307,6 +307,7 @@ class Path:
 
     @staticmethod
     def save_dicts(time_series_dict, state_series_dict, name=''):
+        print('saved!')
         with open(os.path.join(network_dir, 'time_series' + name + '.json'), 'w') as json_file:
             json.dump(time_series_dict, json_file)
             json_file.close()
@@ -316,9 +317,7 @@ class Path:
             json_file.close()
 
 
-time_series_dict, state_series_dict = Path.get_dicts()
-time_series_dict_selected_states, state_series_dict_selected_states = Path.get_dicts(name='_selected_states')
-time_series_dict_selected_states_sim, state_series_dict_selected_states_sim = Path.get_dicts(name='_selected_states_sim')
+time_series_dict, state_series_dict = Path.get_dicts('_selected_states')
 
 DEBUG = 1
 if __name__ == '__main__':
@@ -329,21 +328,21 @@ if __name__ == '__main__':
     # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
     # x.play(step=5, path=path, videowriter=True)
     #
+    # ConfigSpace_class = ConfigSpace_AdditionalStates
+    # time_series_dict_selected_states, state_series_dict_selected_states = Path.create_dicts(myDataFrame,
+    #                                                                                         ConfigSpace_class)
+    # Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states_sim')
+
     ConfigSpace_class = ConfigSpace_AdditionalStates
-
-    time_series_dict_selected_states, state_series_dict_selected_states = Path.create_dicts(myDataFrame_sim,
-                                                                                            ConfigSpace_class)
-    Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states_sim')
-
-    # to_add = Path.find_missing(myDataFrame)
-    # time_series_dict_selected_states, state_series_dict_selected_states = Path.add_to_dict(to_add,
-    #                                                                                        ConfigSpace_class,
-    #                                                                                        time_series_dict_selected_states,
-    #                                                                                        state_series_dict_selected_states)
+    to_add = Path.find_missing(myDataFrame)
+    time_series_dict_selected_states, state_series_dict_selected_states = Path.add_to_dict(to_add,
+                                                                                           ConfigSpace_class,
+                                                                                           time_series_dict,
+                                                                                           state_series_dict)
     # filenames = []
     # to_recalculate = myDataFrame[myDataFrame['filename'].isin(filenames)]
     # time_series_dict_selected_states, state_series_dict_selected_states = Path.add_to_dict(to_recalculate,
     #                                             ConfigSpace_class, time_series_dict_selected_states,
     #                                             state_series_dict_selected_states)
 
-    # Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states')
+    Path.save_dicts(time_series_dict_selected_states, state_series_dict_selected_states, name='_selected_states')

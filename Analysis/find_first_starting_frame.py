@@ -22,6 +22,9 @@ class FirstFrame:
         Path length the sum of the distances of the points in the list.
         When the shape is standing still, the path length increases. Penalizing for being stuck.
         """
+        if self.x.solver == 'human':
+            raise ValueError('In P:\Tabea\Human Experiments you have a list that Lena made, that would help you!')
+
         # TODO: What is first frame for humans?
         v_norm = np.linalg.norm(self.x.velocity(), axis=1)
         # plt.plot(v_norm)

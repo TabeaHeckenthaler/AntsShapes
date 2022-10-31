@@ -1,5 +1,5 @@
 from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
-from Analysis.PathLength.PathLength import path_length_dict
+from Analysis.Efficiency.PathLength import path_length_dict
 from Analysis.PathPy.Path import time_series_dict, state_series_dict, time_series_dict_selected_states, \
     state_series_dict_selected_states, Path
 from trajectory_inheritance.exp_types import solver_geometry, exp_types

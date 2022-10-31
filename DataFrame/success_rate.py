@@ -12,7 +12,7 @@ for solver in solvers:
 
     df = Altered_DataFrame()
     df.choose_experiments(solver=solver, shape=shape, geometry=geometry, init_cond='back')
-    df.choose_columns(columns)
+    df.df = df.df[columns]
 
     df.df.to_json('success_rate.txt', orient='split')
     df = pd.read_json('success_rate.txt', orient='split')

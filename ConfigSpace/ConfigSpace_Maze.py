@@ -772,7 +772,7 @@ class ConfigSpace_Maze(ConfigSpace):
                 elif len(state2) == 2 and state1 == state2[1]:
                     new_labels.append(state2[1] + state2[0])
                 else:
-                    for t in self.necessary_transitions(state1, state2, ii=ii):
+                    for t in cls.necessary_transitions(state1, state2, ii=ii):
                         new_labels.append(t)
                     new_labels.append(state2)
             else:
@@ -1337,7 +1337,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
         if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
             return default + 4
-        if self.solver in ['ant', 'gillespie']:
+        if self.solver in ['ant', 'gillespie', 'pheidole']:
             if self.size == 'S':
                 return default + 4
             return default + 3
@@ -1575,7 +1575,8 @@ if __name__ == '__main__':
 
             ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
             ps.load_eroded_labeled_space()
-            ps.visualize_transitions(reduction=2)
+            # ps.visualize_transitions(reduction=2)
+            ps.visualize_space(reduction=2)
             DEBUG = 1
 
 

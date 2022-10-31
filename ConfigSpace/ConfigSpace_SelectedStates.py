@@ -163,11 +163,11 @@ class ConfigSpace_AdditionalStates(ConfigSpace_Labeled):
 
 if __name__ == '__main__':
     DEBUG = 1
-    # solver, size, shape, geometry = ('ant', 'M', 'SPT',
-    #                                  ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+    solver, size, shape, geometry = ('ant', 'S', 'SPT',
+                                     ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
 
-    solver, size, shape, geometry = ('human', 'Medium', 'SPT',
-                                     ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    # solver, size, shape, geometry = ('human', 'Medium', 'SPT',
+    #                                  ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
 
     cs_labeled = ConfigSpace_AdditionalStates(solver, size, shape, geometry)
     cs_labeled.load_labeled_space()

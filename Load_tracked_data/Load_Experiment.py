@@ -179,7 +179,7 @@ with open('winner_dictionary.txt', 'r') as json_file:
 
 if __name__ == '__main__':
 
-    solver, shape, free = 'pheidole', 'SPT', False
+    solver, shape, free = 'human', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'pheidole': 50, 'humanhand': 30}
     #
     # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',

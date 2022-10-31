@@ -214,8 +214,6 @@ class Network(pathpy.Network):
                                   index=transient_state_order,
                                   columns=self.T.index[-num_absorbing:]
                                   )  # absorption probabilities
-            self.t = np.matmul(self.N, np.ones(self.N.shape[0]))
-
 
     def create_higher_order_network(self, k=2, null_model=True) -> pathpy.Network:
         hon = pathpy.HigherOrderNetwork(self.paths, k=k, null_model=null_model)
@@ -302,7 +300,12 @@ def plot_diffusion_time(networks, index, ax, size, shape, solver):
                 format='png', pad_inches=0.5, bbox_inches='tight')
 
 
-def all():
+if __name__ == '__main__':
+    geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                  'gillespie': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
+                  'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
+                  'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
+
     shape = 'SPT'
     solvers = ['human', 'ant', 'humanhand']
     sizes = {'ant': ['XL', 'L', 'M', 'S'], 'human': ['Large', 'Medium', 'Small Far'], 'humanhand': ['']}
@@ -317,7 +320,7 @@ def all():
             axs = [axs]
         for size, ax in zip(sizes[solver], axs):
             print(size)
-            paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
+            paths = PathWithoutSelfLoops(solver, shape, geometries[solver], size=size)
             paths.load_paths()
             my_network = Network.init_from_paths(paths, solver, shape, size)
             my_network.markovian_analysis()
@@ -325,16 +328,10 @@ def all():
             # plot_diffusion_time(networks, index, ax, size, shape, solver)
         DEBUG = 1
 
-
-if __name__ == '__main__':
-    geometries = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
-                  'human': ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
-                  'humanhand': ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')}
-    all()
     # shape, solver, size, communication = 'SPT', 'human', 'Large', None
     # paths = PathWithoutSelfLoops(solver, size, shape, geometries[solver])
     # paths.load_paths(only_states=True)
     # my_network = Network.init_from_paths(paths, solver, size, shape)
     # # my_network.markovian_analysis()
     # my_network.plot_transition_matrix()
-    # DEBUG = 1
+    DEBUG = 1

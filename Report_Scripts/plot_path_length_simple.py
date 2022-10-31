@@ -1,6 +1,6 @@
-from Analysis.PathLength.cutting_path_length import *
+from Analysis.Efficiency.cutting_path_length import *
 from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
-from Analysis.PathLength.PathLength import penalized_path_length_dict, path_length_dict
+from Analysis.Efficiency.PathLength import penalized_path_length_dict, path_length_dict
 from Analysis.average_carrier_number.averageCarrierNumber import averageCarrierNumber_dict
 
 font = {'family': 'Times New Roman',
