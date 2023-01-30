@@ -1,20 +1,15 @@
 from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
 from Analysis.Efficiency.PathLength import path_length_dict
-from Analysis.PathPy.Path import time_series_dict, state_series_dict, time_series_dict_selected_states, \
-    state_series_dict_selected_states, Path
+from Analysis.PathPy.Path import create_bar_chart
+from Analysis.PathPy.Path import time_series_dict, state_series_dict, Path
 from trajectory_inheritance.exp_types import solver_geometry, exp_types
 from matplotlib import pyplot as plt
 from trajectory_inheritance.get import get
 import pandas as pd
 from DataFrame.plot_dataframe import save_fig
-from DataFrame.Altered_DataFrame import Altered_DataFrame, myDataFrame_sim
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 from Analysis.average_carrier_number.averageCarrierNumber import myDataFrame
 from DataFrame.food_in_the_back import myDataFrame as df_food
-
-
-def exp_day(filename):
-    return '_'.join(filename.split('_')[:3])
-
 
 def time_spent_in_states(state_series, time_step=0.25):
     state_series = Path.only_states(state_series)
@@ -24,23 +19,6 @@ def time_spent_in_states(state_series, time_step=0.25):
     for state in set(state_series):
         d[state] = state_series.count(state) * time_step
     return d
-
-
-def create_bar_chart(df, ax, block=False, sorted=True):
-    if sorted:
-        df = df.sort_values('time [s]')
-
-    # for filename, ts, winner, food in zip(df['filename'], df['time series'], df['winner'], df['food in back']):
-    for filename, ts in zip(df['filename'], df['time series']):
-        p = Path(time_step=0.25, time_series=ts)
-        print(filename)
-        p.bar_chart(ax=ax, axis_label=exp_day(filename), block=block)
-        if not block:
-            ax.set_xlabel('time [min]')
-        else:
-            ax.set_xlabel('')
-        # ax.set_xlim([0, 20])
-    DEBUG = 1
 
 
 def in_state_chart():

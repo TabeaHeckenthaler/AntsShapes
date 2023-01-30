@@ -1,5 +1,5 @@
 import math
-from mayavi import mlab
+# from mayavi import mlab
 import numpy as np
 from copy import copy
 from ConfigSpace.ConfigSpace_Maze import PS_Mask, ConfigSpace

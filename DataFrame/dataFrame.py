@@ -35,8 +35,8 @@ def get_filenames(solver, size='', shape='', free=False):
 
 columns = pd.Index(
     ['filename', 'solver', 'size', 'shape', 'winner', 'communication', 'length unit', 'initial condition',
-     'force meter', 'fps', 'maze dimensions', 'load dimensions', 'comment', 'counted carrier number',
-     'time [s]'],
+     'force meter', 'fps', 'maze dimensions', 'load dimensions', 'comment', 'time [s]', 'VideoChain', 'tracked_frames',
+     'free'],
     dtype='object')
 
 
@@ -83,6 +83,7 @@ class DataFrame(pd.DataFrame):
 
     def save(self, name=df_dir):
         self.to_json(name)
+        self.to_excel('\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.xlsx')
 
     def back_up(self):
         if bool(int(input('Check the DataFrame carefully!'))):
@@ -107,9 +108,37 @@ class DataFrame(pd.DataFrame):
             raise ValueError('Your experiments \n' + str(problematic['filename']) + "\nare problematic")
 
     def add_column(self):
-        pass
         # self['time [s]'] = self['filename'].progress_apply(lambda x: get(x).timer())
         # self['maze dimensions'], self['load dimensions'] = self['filename'].progress_apply(lambda x: get(x).geometry())
+
+        def get_v(x):
+            if hasattr(x, 'VideoChain'):
+                return x.VideoChain
+            else:
+                return None
+
+        def get_tf(x):
+            if hasattr(x, 'tracked_frames'):
+                return x.tracked_frames
+            else:
+                return None
+
+        def get_free(x):
+            if hasattr(x, 'free'):
+                return x.free
+            else:
+                return None
+
+        def get_fps(x):
+            if hasattr(x, 'fps'):
+                return x.fps
+            else:
+                return None
+
+        self['VideoChain'] = self['filename'].progress_apply(lambda x: get_v(get(x)))
+        self['tracked_frames'] = self['filename'].progress_apply(lambda x: get_tf(get(x)))
+        self['free'] = self['filename'].progress_apply(lambda x: get_free(get(x)))
+        # self['fps'] = self['filename'].progress_apply(lambda x: get_fps(get(x)))
 
     def fill_column(self):
         for i, row in tqdm(self.iterrows()):
@@ -143,9 +172,26 @@ class DataFrame(pd.DataFrame):
         for filename in perfect_filenames:
             self.drop_experiment(filename)
 
+# def recalculating_cut_off_experiments() -> None:
+#     """
+#     These are the experiments which were cut off, because I used the wrong movie player.
+#     I retracked
+#
+#     """
+#     done_filenames = []
+#
+#     new_filenames = []
+#
+#     for filename in new_filenames:
+#         myDataFrame = myDataFrame.recalculate_experiment(filename)
+#
+#     with open('retracked.txt', 'w') as file:
+#         json.dump(done_filenames + new_filenames, file)
+
 
 tqdm.pandas()
 myDataFrame = DataFrame(pd.read_json(df_dir))
+myDataFrame.exclude_perfect()
 # myDataFrame_sim = DataFrame(pd.read_json(df_sim_dir))
 # myDataFrame[((myDataFrame['solver'] == 'human') & (myDataFrame['size'].isin(['Large', 'Medium'])))]
 # myDataFrame = DataFrame(pd.read_excel(df_excel_dir))
@@ -158,38 +204,23 @@ myDataFrame = DataFrame(pd.read_json(df_dir))
 
 DEBUG = 1
 
-
-def recalculating_cut_off_experiments() -> None:
-    """
-    These are the experiments which were cut off, because I used the wrong movie player.
-    I retracked
-
-    """
-    done_filenames = []
-
-    new_filenames = []
-
-    for filename in new_filenames:
-        myDataFrame = myDataFrame.recalculate_experiment(filename)
-
-    with open('retracked.txt', 'w') as file:
-        json.dump(done_filenames + new_filenames, file)
-
-
 if __name__ == '__main__':
-    solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
+    # solver_filenames = {solver: get_filenames(solver) for solver in exp_solvers}
     # DataFrame.create(solver_filenames)
     # TODO: add new contacts to contacts json file
     # TODO: Some of the human experiments don't have time [s].
 
     # drops = ['M_SPT_4690011_MSpecialT_1_ants', 'M_SPT_4690011_MSpecialT_1_ants (part 1)']
-    # drops = ['S_H_4130039_smallH_1_ants']
-    # #
+    # drops = ['S_SPT_4720016_SSpecialT_1_ants']
+    #
     # for drop in drops:
     #     myDataFrame.drop_experiment(drop)
 
     # myDataFrame.add_column()
-    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
-        print(new_experiment['filename'].values[0])
-        myDataFrame = myDataFrame + new_experiment
+    #
+    # DEBUG = 1
+    #
+    # for new_experiment in myDataFrame.new_experiments(solver='pheidole', shape='SPT'):
+    #     print(new_experiment['filename'].values[0])
+    #     myDataFrame = myDataFrame + new_experiment
     myDataFrame.save()

@@ -17,16 +17,17 @@ perfect_filenames = ['large_20210805171741_20210805172610_perfect',
 
 class Trajectory_human(Trajectory):
     def __init__(self, size=None, shape=None, filename=None, fps=30, winner=bool, x_error: float = 0,
-                 y_error: float = 0, angle_error: float = 0, falseTracking: list = [], VideoChain=str(),
-                 forcemeter=bool()):
+                 y_error: float = 0, angle_error: float = 0, falseTracking: list = [], VideoChain=str(), position=None,
+                 angle=None, frames=None, tracked_frames=None):
 
-        super().__init__(size=size, shape=shape, solver='human', filename=filename, fps=fps, winner=winner)
+        super().__init__(size=size, shape=shape, solver='human', filename=filename, fps=fps, winner=winner,
+                         position=position, angle=angle, frames=frames)
 
         self.x_error = x_error
         self.y_error = y_error
         self.angle_error = angle_error
         self.falseTracking = falseTracking
-        self.tracked_frames = []
+        self.tracked_frames = tracked_frames
         self.state = np.empty((1, 1), int)
         self.VideoChain = VideoChain  # this is an evil artifact. I don't want to have this attribute
         self.communication = self.communication()

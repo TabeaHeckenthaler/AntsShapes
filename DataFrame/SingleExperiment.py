@@ -28,9 +28,12 @@ class SingleExperiment(pd.DataFrame):
         self['initial condition'] = str(x.initial_cond())
         self['force meter'] = bool(x.has_forcemeter())
         self['maze dimensions'], self['load dimensions'] = x.geometry()
-        self['counted carrier number'] = None
         self['time [s]'] = x.timer()
         self['comment'] = ''
+        raise Exception('not implemented')
+        self['VideoChain'] = x.VideoChain
+        self['tracked_frames'] = x.tracked_frames
+        self['free'] = x.free
 
         """
         This is all Analysis that I want to save separately. 

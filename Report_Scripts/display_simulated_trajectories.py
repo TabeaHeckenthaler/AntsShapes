@@ -34,7 +34,7 @@ def create_df():
         x = get(filename)
         carrierNumbers.update({filename: x.averageCarrierNumber()})
 
-    df['counted carrier number'] = df['filename'].map(carrierNumbers)
+    df['average Carrier Number'] = df['filename'].map(carrierNumbers)
     myDataFrame = DataFrame(df)
     myDataFrame.save(df_sim_dir)
 

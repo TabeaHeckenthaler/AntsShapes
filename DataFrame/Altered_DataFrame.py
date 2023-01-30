@@ -2,8 +2,14 @@ from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.get import get
 from trajectory_inheritance.trajectory_humanhand import ExcelSheet
 from trajectory_inheritance.exp_types import solver_geometry
+from Directories import df_dir, averageCarrierNumber_dir, lists_exp_dir, original_movies_dir_ant, \
+    original_movies_dir_human, original_movies_dir_humanhand
+import json
+import os
+import numpy as np
 
-plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}}
+plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': {'': []}, 'pheidole': {'': []}}
+
 
 class Altered_DataFrame:
     def __init__(self, df=None):
@@ -61,7 +67,8 @@ class Altered_DataFrame:
             df = df[(df['communication'] == communication)]
 
         if free is not None:
-            df = df[~(df['filename'].str.contains('free'))]
+            # choose only the trajectories that have 'free' in the filename
+            df = df[df['filename'].str.contains('free') == free]
 
         self.df = df
 
@@ -79,7 +86,11 @@ class Altered_DataFrame:
                     filenames[solver + ' ' + size + ' ' + sep] = list(df['filename'])
         return filenames
 
-    def get_separate_data_frames(self, solver, plot_separately, shape=None, geometry=None, initial_cond='back'):
+    def get_separate_data_frames(self, solver, plot_separately, shape=None, geometry=None, initial_cond='back') -> dict:
+        # with open(averageCarrierNumber_dir, 'r') as json_file:
+        #     averageCarrierNumber_dict = json.load(json_file)
+        # self.df['average Carrier Number'] = self.df['filename'].map(averageCarrierNumber_dict)
+
         if 'solver' in self.df.columns:
             df = self.df[self.df['solver'] == solver]
         else:
@@ -88,7 +99,7 @@ class Altered_DataFrame:
             df = df[df['shape'] == shape]
         if 'maze dimensions' in self.df.columns and geometry is not None:
             df = df[(df['maze dimensions'] == geometry[0])]
-        if 'initial condition' in self.df.columns:
+        if 'initial condition' in self.df.columns and initial_cond is not None:
             df = df[df['initial condition'] == initial_cond]
 
         df_to_plot = {}
@@ -105,6 +116,18 @@ class Altered_DataFrame:
                                                        df[~df['average Carrier Number'].isin(plot_separately['S'])]),
                       'Single (1)': split_winners_loosers('S',
                                                           df[df['average Carrier Number'].isin(plot_separately['S'])])}
+            df_to_plot.update(df_add)
+
+        if solver == 'pheidole':
+            def split_winners_loosers(size, df):
+                winner = df[df['winner'] & (df['size'] == size)]
+                looser = df[~df['winner'] & (df['size'] == size)]
+                return {'winner': winner, 'looser': looser}
+
+            df_add = {'XL': split_winners_loosers('XL', df),
+                      'L': split_winners_loosers('L', df),
+                      'M': split_winners_loosers('M', df),
+                      'S (> 1)': split_winners_loosers('S', df)}
             df_to_plot.update(df_add)
 
         if 'human' in solver.split('_'):
@@ -145,6 +168,73 @@ class Altered_DataFrame:
 
         return df_to_plot
 
+    def find_directory_of_original(self):
+        def find_dir(name, solver):
+            # name = 'large_20201220135801_20201220140247'
+            if solver == 'human':
+                for root, dirs, files in os.walk(original_movies_dir_human):
+                    for dir in [hu for hu in dirs if hu.startswith('2')]:
+                        for size in os.listdir(os.path.join(root, dir, 'Videos')):
+                            human_dir = os.path.join(root, dir, 'Videos', size)
+                            movies = [n for n in os.listdir(human_dir) if (n.endswith('.asf') and n.startswith('NVR'))]
+                            if name.split('_')[1] in [n.split('_')[3] for n in movies]:
+                                index = np.where(name.split('_')[1] ==
+                                                 np.array([n.split('_')[3] for n in movies]))[0][0]
+                                address = os.path.join(human_dir, movies[index])
+                                # print(address)
+                                return address
+
+            elif solver in ['ant', 'pheidole']:
+                for direct in original_movies_dir_ant:
+                    for root, dirs, files in os.walk(direct):
+                        for dir in dirs:
+                            if name.split('_')[2] in [n[1:8] for n in os.listdir(os.path.join(root, dir))]:
+                                index = np.where(name.split('_')[2] ==
+                                                 np.array([n[1:8] for n in os.listdir(os.path.join(root, dir))]))[0][0]
+                                # print(os.path.join(root, dir, os.listdir(os.path.join(root, dir))[index]))
+                                return os.path.join(root, dir, os.listdir(os.path.join(root, dir))[index])
+            if solver == 'humanhand':
+                return os.path.join(original_movies_dir_humanhand, name + '.MP4')
+            print('not found ', name)
+            return None
+        self.df['directory'] = self.df[['filename', 'solver']].apply(lambda x: find_dir(x['filename'], x['solver']),
+                                                                     axis=1)
+
+    def save_separate_excel(self):
+        with open(averageCarrierNumber_dir, 'r') as json_file:
+            averageCarrierNumber_dict = json.load(json_file)
+        self.df['average Carrier Number'] = self.df['filename'].map(averageCarrierNumber_dict)
+
+        self.df.to_excel(lists_exp_dir + '\\exp.xlsx')
+
+        dfss = self.get_separate_data_frames(solver='ant', plot_separately=plot_separately['ant'],
+                                             geometry=('MazeDimensions_new2021_SPT_ant.xlsx',
+                                                       'LoadDimensions_new2021_SPT_ant.xlsx'))
+        for size, dfs in dfss.items():
+            for sep, df in dfs.items():
+                size_str = size.replace('>', 'more than')
+                df.to_excel(lists_exp_dir + '\\exp_ant_' + size_str + '_' + sep + '.xlsx')
+
+        dfss = self.get_separate_data_frames(solver='human', plot_separately=plot_separately['human'])
+        for size, dfs in dfss.items():
+            for communcation in ['communication', 'non_communication']:
+                size_str = size.replace('>', 'more than ')
+                dfs[communcation].to_excel(lists_exp_dir + '\\exp_human_' + size_str + '_' + communcation + '.xlsx')
+
+        dfss = self.get_separate_data_frames(solver='humanhand', plot_separately=plot_separately['humanhand'])
+        for winner, dfs in dfss.items():
+            for communcation in ['with_eyesight', 'without_eyesight']:
+                dfs[communcation].to_excel(lists_exp_dir + '\\exp_humanhand_' + communcation + '.xlsx')
+
+        dfss = self.get_separate_data_frames(solver='pheidole', plot_separately=plot_separately['pheidole'])
+        for size, dfs in dfss.items():
+            for sep, df in dfs.items():
+                size_str = size.replace('>', 'more than')
+                dfs[sep].to_excel(lists_exp_dir + '\\exp_pheidole_' + size_str + '_' + sep + '_.xlsx')
+
+        ad.choose_experiments(free=True)
+        self.df.to_excel(lists_exp_dir + '\\exp_free.xlsx')
+
 
 def choose_trajectories(solver='human', size='Large', shape='SPT',
                         geometry: tuple = ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'),
@@ -162,4 +252,8 @@ def choose_trajectories(solver='human', size='Large', shape='SPT',
 
 if __name__ == '__main__':
     ad = Altered_DataFrame()
-    ad.choose_experiments(solver='ant', size='S', shape='SPT', init_cond='back', winner=True)
+    ad.find_directory_of_original()
+    DEBUG = 1
+
+    # ad.save_separate_excel()
+    # ad.choose_experiments(solver='ant', size='S', shape='SPT', init_cond='back', winner=True)

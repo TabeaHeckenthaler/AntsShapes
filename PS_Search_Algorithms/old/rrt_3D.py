@@ -22,14 +22,12 @@ Rojas (rafaelrojasmiliani@gmail.com)
 
 
 """
-from progressbar import progressbar
+from tqdm import tqdm
 import math
 import random
 from ConfigSpace import ConfigSpace_Maze
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node_rrt import Node
-
-from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir
@@ -96,7 +94,7 @@ class RRT:
         """
 
         self.node_list = [self.start]
-        for i in progressbar(range(self.max_iter)):
+        for i in tqdm(range(self.max_iter)):
             rnd_node = self.get_random_node()
             nearest_node = rnd_node.get_nearest_node(self.node_list, self.average_radius)
 

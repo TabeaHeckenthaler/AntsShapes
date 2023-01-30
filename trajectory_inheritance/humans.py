@@ -12,26 +12,26 @@ from PhysicsEngine.drawables import colors, Circle, Line
 participant_number = {'Small Near': 1, 'Small Far': 1, 'Medium': 9, 'Large': 26}
 
 angle_shift = {  # the number keys describe the names, zero based (Avirams numbering is 1 based)
-                'Medium': {0: 0,
-                           1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
-                           4: np.pi, 5: np.pi,
-                           6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
+    'Medium': {0: 0,
+               1: np.pi / 2, 2: np.pi / 2, 3: np.pi / 2,
+               4: np.pi, 5: np.pi,
+               6: -np.pi / 2, 7: -np.pi / 2, 8: -np.pi / 2},
 
-                # the number keys describe the names, based on 0=A, ..., 25=Z.
-                'Large': {0: 0, 1: 0,
-                          2: np.pi / 2,
-                          3: np.pi / 2, 4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2, 7: np.pi / 2, 8: np.pi / 2,
-                          9: np.pi / 2,
-                          10: 0,
-                          11: np.pi / 2,
-                          12: np.pi, 13: np.pi, 14: np.pi, 15: np.pi,
-                          16: -np.pi / 2,
-                          17: np.pi / 2,  # this seems to be a mistake in Avirams code
-                          18: -np.pi / 2, 19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2,
-                          24: -np.pi / 2,
-                          25: -np.pi / 2,
-                          },
-              }
+    # the number keys describe the names, based on 0=A, ..., 25=Z.
+    'Large': {0: 0, 1: 0,
+              2: np.pi / 2,
+              3: np.pi / 2, 4: np.pi / 2, 5: np.pi / 2, 6: np.pi / 2, 7: np.pi / 2, 8: np.pi / 2,
+              9: np.pi / 2,
+              10: 0,
+              11: np.pi / 2,
+              12: np.pi, 13: np.pi, 14: np.pi, 15: np.pi,
+              16: -np.pi / 2,
+              17: np.pi / 2,  # this seems to be a mistake in Avirams code
+              18: -np.pi / 2, 19: -np.pi / 2, 20: -np.pi / 2, 21: -np.pi / 2, 22: -np.pi / 2, 23: -np.pi / 2,
+              24: -np.pi / 2,
+              25: -np.pi / 2,
+              },
+}
 
 
 def get_excel_worksheet_index(filename) -> int:
@@ -50,7 +50,7 @@ def get_excel_worksheet_index(filename) -> int:
     for i in range(2, number_exp + 2):
         if i == 246:
             DEBUG = 1
-        in_filled_lines = (i <= number_exp+1 and sheet.cell(row=i, column=1).value is not None)
+        in_filled_lines = (i <= number_exp + 1 and sheet.cell(row=i, column=1).value is not None)
         old_filename_times = sheet.cell(row=i, column=1).value.split('\n')[0].split(' ')[0].split('_')
         if len([ii for ii in range(len(times_list))
                 if in_filled_lines and times_list[ii] in old_filename_times]) > 1:
@@ -67,9 +67,17 @@ def get_excel_worksheet_index(filename) -> int:
         return possible_lines[int(np.argmin([sheet.cell(row=index, column=6).value for index in possible_lines]))]
     elif len(times_list[-1]) == 1:
         return possible_lines[np.argsort([sheet.cell(row=index, column=6).value
-                                   for index in possible_lines])[int(times_list[-1]) - 1]]
+                                          for index in possible_lines])[int(times_list[-1]) - 1]]
     elif len(possible_lines) == 0:
         print('cant find your movie')
+
+
+def give_gender(filenames) -> dict:
+    d = {}
+    for filename in filenames:
+        i = get_excel_worksheet_index(filename)
+        d[filename] = sheet.cell(row=i, column=17).value
+    return d
 
 
 class Humans_Frame:
@@ -119,7 +127,7 @@ class Humans(Participants, ABC):
             gaps = [[s, e] for s, e in zip(nums, nums[1:]) if s + 1 < e]
             edges = iter(nums[:1] + sum(gaps, []) + nums[-1:])
             edges = list(zip(edges, edges))
-            return [(a, b+1) for (a, b) in edges]
+            return [(a, b + 1) for (a, b) in edges]
 
         def switching(receiver, donor):
             frames_switch = [fr for fr in range(len(matlab_cell)) if len(np.where(matlab_cell[fr] == donor)[0]) != 0]
@@ -143,6 +151,7 @@ class Humans(Participants, ABC):
             matlab_cell[frame] = np.delete(matlab_cell[frame],
                                            np.where(matlab_cell[frame][:, 4] == hat)[0],
                                            0)
+
         for hat in hats_initial:
 
             switch_frames = [i for i, frame in enumerate(matlab_cell) if hat not in frame[:, 4]]
@@ -247,7 +256,7 @@ class Humans(Participants, ABC):
     def draw(self, display) -> None:
         for part in self.occupied:
             Circle(self.positions[display.i, part], 0.1, colors['hats'], hollow=False).draw(display)
-            text = display.font.render(str(part), True, colors['text']) # TODO: Tabea, do this!
+            text = display.font.render(str(part), True, colors['text'])  # TODO: Tabea, do this!
             display.screen.blit(text, display.m_to_pixel(self.positions[display.i, part]))
             if hasattr(self, 'forces'):
                 force_attachment = display.my_maze.force_attachment_positions()

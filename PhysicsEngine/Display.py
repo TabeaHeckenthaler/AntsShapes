@@ -3,16 +3,18 @@ from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE)
 from PhysicsEngine.drawables import colors
 import os
 import numpy as np
-import cv2
 import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
 from os import path
+from plotly import express as px
+import cv2
 
-try:
-    from mayavi import mlab
-except:
-    pass
+
+# try:
+#     from mayavi import mlab
+# except:
+#     pass
 
 
 class Display:
@@ -47,7 +49,8 @@ class Display:
         self.cs = cs
         if self.cs is not None:
             self.scale_factor = {'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
-                                 'Small Near': 0.2, 'Small': 0.2, 'M': 0.25, 'L': 0.5, 'XL': 1, 'S': 0.25}[self.my_maze.size]
+                                 'Small Near': 0.2, 'Small': 0.2, 'M': 0.25, 'L': 0.5, 'XL': 1, 'S': 0.25}[
+                self.my_maze.size]
 
         if videowriter:
             if self.cs is not None:
@@ -89,15 +92,17 @@ class Display:
         end = self.keyboard_events()
         return end
 
-    def renew_screen(self, movie_name=None):
-        self.screen.fill(colors['background'])
+    def renew_screen(self, movie_name=None, frame_index=None, color_background=(250, 250, 250)):
+        self.screen.fill(color_background)
 
         self.drawGrid()
         self.polygons = self.circles = self.points = self.arrows = []
 
         text = self.font.render(movie_name, True, colors['text'])
         text_rect = text.get_rect()
-        text2 = self.font.render('Frame: ' + str(self.i), True, colors['text'])
+        if frame_index is None:
+            frame_index = self.i
+        text2 = self.font.render('Frame: ' + str(frame_index), True, colors['text'])
         self.screen.blit(text2, [0, 50])
         self.screen.blit(text, text_rect)
 
@@ -107,7 +112,7 @@ class Display:
             self.screen.blit(text_state, [0, 100])
 
     def time(self) -> float:
-        return self.i/self.fps
+        return self.i / self.fps
 
     def end_screen(self):
         if hasattr(self, 'VideoWriter'):
@@ -132,7 +137,7 @@ class Display:
     def draw(self, x):
         self.my_maze.draw(self)
         if self.cs is not None:
-            if self.i <= 1 or self.i >= len(x.angle)-1:
+            if self.i <= 1 or self.i >= len(x.angle) - 1:
                 kwargs = {'color': (0, 0, 0), 'scale_factor': self.scale_factor}
             else:
                 kwargs = {'scale_factor': self.scale_factor}
@@ -152,6 +157,26 @@ class Display:
 
     def display(self):
         pygame.display.flip()
+
+    def calc_fraction_of_circumference(self):
+        img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+        shape_mask = np.logical_and(img[:, :, 0] == 250, img[:, :, 1] == 0)
+
+        shift = 5
+        size_borders = {'XL': [0, 472+shift, 683+shift, shape_mask.shape[1] - 1],
+                        'L': [0, 474+shift, 700+shift, shape_mask.shape[1] - 1],
+                        'M': [0, 450+shift, 660+shift, shape_mask.shape[1] - 1],
+                        'S': [0, 491+shift, 633+shift, shape_mask.shape[1] - 1]}
+
+        borders = size_borders[self.my_maze.size]
+
+        fraction_of_circumference = np.zeros(shape=3)
+        for i, (edge_left, edge_right) in enumerate(zip(borders[:-1], borders[1:])):
+            chamber = np.zeros_like(shape_mask).astype(bool)
+            chamber[:, edge_left:edge_right] = True
+
+            fraction_of_circumference[i] = np.sum(np.logical_and(shape_mask, chamber)) / np.sum(shape_mask)
+        return fraction_of_circumference
 
     def write_to_Video(self):
         img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)

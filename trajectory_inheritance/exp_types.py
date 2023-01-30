@@ -1,3 +1,9 @@
+from Directories import home
+from os import path
+import json
+
+centerOfMass_shift = - 0.08  # shift of the center of mass away from the center of the SpT load. # careful!
+
 exp_types = {'SPT': {'ant': ['XL', 'L', 'M', 'S'],
                      'pheidole': ['XL', 'L', 'M', 'S'],
                      'human': ['Large', 'Medium', 'Small Far', 'Small Near'],
@@ -15,12 +21,20 @@ solver_geometry = {'ant': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimension
                    'pheidole': ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'),
                    }
 
-ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'human': {'Small': 0.25, 'Small Near': 0.25, 'Small Far': 0.25, 'Medium': 0.5, 'Large': 1},
-                 'humanhand': {'': 1},
-                 'gillespie': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 }
+with open(path.join(home, 'Setup', 'ResizeFactors.json'), "r") as read_content:
+    ResizeFactors = json.load(read_content)
 
+color = {'Large communication': '#cc3300',
+         'Large non_communication': '#ff9966',
+         'M (>7) communication': '#339900',
+         'M (>7) non_communication': '#99cc33',
+         'Small non_communication': '#0086ff',
+         'XL': '#ff00c1',
+         'L': '#9600ff',
+         'M': '#4900ff',
+         'S (> 1)': '#00b8ff',
+         'Single (1)': '#00fff9',
+         }
 
 def is_exp_valid(shape, solver, size):
     error_msg = 'Shape ' + shape + ', Solver ' + solver + ', Size ' + size + ' is not valid.'

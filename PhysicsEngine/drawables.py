@@ -70,7 +70,7 @@ class Point(Drawables):
         self.center = center
 
     def draw(self, display):
-        pygame.draw.circle(display.screen, colors['text'],
+        pygame.draw.circle(display.screen, self.color,
                            [int(self.center[0] * display.ppm), display.height - int(self.center[1] * display.ppm)], 5)
 
 

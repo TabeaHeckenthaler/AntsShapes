@@ -1,6 +1,8 @@
 import numpy as np
-from Box2D import b2CircleShape, b2FixtureDef
-from Setup.Maze import ResizeFactors, centerOfMass_shift
+from trajectory_inheritance.exp_types import centerOfMass_shift
+from os import path
+from Directories import home
+import json
 
 ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
 periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
@@ -11,6 +13,9 @@ SPT_ratio = 2.44 / 4.82
 
 # I multiply all these values with 2, because I got them in L, but want to state them in XL.
 # StartedScripts: Does the load have a preferred orientation while moving?
+
+with open(path.join(home, 'Setup', 'ResizeFactors.json'), "r") as read_content:
+    ResizeFactors = json.load(read_content)
 
 
 def loops(Box2D_Object, vertices=None):

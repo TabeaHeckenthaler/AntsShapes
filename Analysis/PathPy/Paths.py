@@ -99,7 +99,7 @@ class Paths(pp.Paths):
             print(i)
             if cs_labeled is None or cs_labeled.size != x.size:
                 cs_labeled = ConfigSpace_Labeled(x.solver, size, x.shape, self.geometry)
-                cs_labeled.load_labeled_space()
+                cs_labeled.load_final_labeled_space()
             self.single_paths[x.filename] = Path(self.time_step, conf_space_labeled=cs_labeled, x=x,
                                                  only_states=only_states)
 

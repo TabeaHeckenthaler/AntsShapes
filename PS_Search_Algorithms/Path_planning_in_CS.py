@@ -3,7 +3,6 @@ from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simula
 from Setup.Maze import start, end, Maze
 from PS_Search_Algorithms.classes.Node import Node3D, Node2D, Node_constructors
 from copy import copy
-from mayavi import mlab
 import os
 import numpy as np
 from Analysis.GeneralFunctions import graph_dir

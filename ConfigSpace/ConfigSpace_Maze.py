@@ -1,25 +1,23 @@
 import numpy as np
 import pickle
-from PhysicsEngine.Contact import possible_configuration
-import os
+from os import path
 import itertools
-from Setup.Maze import Maze
-from Directories import PhaseSpaceDirectory
-from Analysis.resolution import resolution
 from scipy import ndimage
 from datetime import datetime
-import string
 from skfmm import distance
 from tqdm import tqdm
-import networkx as nx
+from mayavi import mlab
 from matplotlib import pyplot as plt
+# import pyvista as pv
 from copy import copy
-from Analysis.GeneralFunctions import flatten
-from Setup.Load import loops
 from PIL import Image, ImageDraw
 import string
 from itertools import groupby
 
+from Directories import PhaseSpaceDirectory
+from Analysis.resolution import resolution
+from Setup.Load import loops, centerOfMass_shift
+from Setup.Maze import Maze
 
 cc_to_keep = 8
 final_state = string.ascii_lowercase[cc_to_keep]
@@ -48,11 +46,10 @@ allowed_transition_attempts = ['ab', 'ac',
 
 all_states = states + forbidden_transition_attempts + allowed_transition_attempts
 
-
-try:
-    from mayavi import mlab
-except:
-    print('mayavi not installed')
+# try:
+#     from mayavi import mlab
+# except:
+#     print('mayavi not installed')
 
 try:
     import cc3d
@@ -106,23 +103,23 @@ class ConfigSpace(object):
     def overlapping(self, ps_area):
         return np.any(self.space[ps_area.space])
 
-    def draw_dual_space(self):  # the function which draws a lattice defined as networkx grid
-
-        lattice = self.dual_space
-
-        plt.figure(figsize=(6, 6))
-        pos = {(x, y): (y, -x) for x, y in lattice.nodes()}
-        nx.draw(lattice, pos=pos,
-                node_color='yellow',
-                with_labels=True,
-                node_size=600)
-
-        edge_labs = dict([((u, v), d["weight"]) for u, v, d in lattice.edges(data=True)])
-
-        nx.draw_networkx_edge_labels(lattice,
-                                     pos,
-                                     edge_labels=edge_labs)
-        plt.show()
+    # def draw_dual_space(self):  # the function which draws a lattice defined as networkx grid
+    #     import networkx as nx
+    #     lattice = self.dual_space
+    #
+    #     plt.figure(figsize=(6, 6))
+    #     pos = {(x, y): (y, -x) for x, y in lattice.nodes()}
+    #     nx.draw(lattice, pos=pos,
+    #             node_color='yellow',
+    #             with_labels=True,
+    #             node_size=600)
+    #
+    #     edge_labs = dict([((u, v), d["weight"]) for u, v, d in lattice.edges(data=True)])
+    #
+    #     nx.draw_networkx_edge_labels(lattice,
+    #                                  pos,
+    #                                  edge_labels=edge_labs)
+    #     plt.show()
 
     def neighbors(self, node) -> list:
         cube = list(np.ndindex((3, 3, 3)))
@@ -137,22 +134,29 @@ class ConfigSpace(object):
         b = [tu for i, tu in enumerate(a1) if i not in out_of_boundary]
         return b
 
-    def calc_dual_space(self, periodic=False) -> nx.grid_graph:
-        dual_space = nx.grid_graph(dim=self.space.shape[::-1], periodic=periodic)
+    # def calc_dual_space(self, periodic=False) -> nx.grid_graph:
+    #     dual_space = nx.grid_graph(dim=self.space.shape[::-1], periodic=periodic)
+    #
+    #     nodes = list(copy(dual_space.nodes))
+    #
+    #     for node in nodes:
+    #         for neighbor in self.neighbors(node):
+    #             dual_space.add_edge(node, neighbor)
+    #
+    #     for edge in list(dual_space.edges):
+    #         m = self.space[edge[0]] * self.space[edge[1]]
+    #         if m == 0:
+    #             dual_space.remove_edge(edge[0], edge[1])
+    #         else:
+    #             nx.set_edge_attributes(dual_space, {edge: {"weight": 1 - m}})
+    #     return dual_space
 
-        nodes = list(copy(dual_space.nodes))
 
-        for node in nodes:
-            for neighbor in self.neighbors(node):
-                dual_space.add_edge(node, neighbor)
-
-        for edge in list(dual_space.edges):
-            m = self.space[edge[0]] * self.space[edge[1]]
-            if m == 0:
-                dual_space.remove_edge(edge[0], edge[1])
-            else:
-                nx.set_edge_attributes(dual_space, {edge: {"weight": 1 - m}})
-        return dual_space
+def flatten(t: list):
+    if isinstance(t[0], list):
+        return [item for sublist in t for item in sublist]
+    else:
+        return t
 
 
 class ConfigSpace_Maze(ConfigSpace):
@@ -192,7 +196,7 @@ class ConfigSpace_Maze(ConfigSpace):
         self.fig = None
 
         load = maze.bodies[-1]
-        maze_corners = np.array_split(maze.corners(), maze.corners().shape[0]//4)
+        maze_corners = np.array_split(maze.corners(), maze.corners().shape[0] // 4)
         load_corners = np.array(flatten(loops(load)))
         # loop_indices = [0, 1, 2, 3, 0]
 
@@ -200,16 +204,17 @@ class ConfigSpace_Maze(ConfigSpace):
 
         self.load_points = []
         self.load_edges = []
-        for i, load_vertices_list in enumerate(np.array_split(load_corners, int(load_corners.shape[0]/4))):
+        for i, load_vertices_list in enumerate(np.array_split(load_corners, int(load_corners.shape[0] / 4))):
             self.load_points.extend(load_vertices_list)
-            self.load_edges.extend(rect_edge_indices + 4*i)
+            self.load_edges.extend(rect_edge_indices + 4 * i)
         self.load_points = np.array(self.load_points, float)
 
         self.maze_points = []
         self.maze_edges = []
         for i, maze_vertices_list in enumerate(maze_corners):
             self.maze_points.extend(maze_vertices_list)
-            self.maze_edges.extend(rect_edge_indices + 4*i)
+            self.maze_edges.extend(rect_edge_indices + 4 * i)
+        self.eroded_space = None
 
         # self.monitor = {'left': 3800, 'top': 160, 'width': 800, 'height': 800}
         # self.VideoWriter = cv2.VideoWriter('mayavi_Capture.mp4v', cv2.VideoWriter_fourcc(*'DIVX'), 20,
@@ -218,7 +223,7 @@ class ConfigSpace_Maze(ConfigSpace):
 
     @staticmethod
     def shift_by_pi(space):
-        middle = space.shape[2]//2
+        middle = space.shape[2] // 2
         space = np.concatenate([space[:, :, middle:], space[:, :, :middle], ], axis=-1)
         return space
 
@@ -240,15 +245,15 @@ class ConfigSpace_Maze(ConfigSpace):
             filename = self.size + '_' + self.shape + '_' + self.geometry[0][:-5]
 
         if point_particle:
-            return os.path.join(PhaseSpaceDirectory, self.shape, filename + addition + '_pp.pkl')
+            return path.join(PhaseSpaceDirectory, self.shape, filename + addition + '_pp.pkl')
         if erosion_radius is not None:
-            path_ = os.path.join(PhaseSpaceDirectory, self.shape, filename + '_labeled_erosion_'
-                                 + str(erosion_radius) + addition + '.pkl')
+            path_ = path.join(PhaseSpaceDirectory, self.shape, filename + '_labeled_erosion_'
+                              + str(erosion_radius) + addition + '.pkl')
             if small:
                 path_ = path_[:-4] + '_small' + '.pkl'
             return path_
 
-        path_ = os.path.join(PhaseSpaceDirectory, self.shape, filename + addition + '.pkl')
+        path_ = path.join(PhaseSpaceDirectory, self.shape, filename + addition + '.pkl')
         if small:
             path_ = path_[:-4] + '_small' + '.pkl'
         return path_
@@ -320,10 +325,7 @@ class ConfigSpace_Maze(ConfigSpace):
         for i, theta in enumerate(thet_arr):
             if not i % 50: print(f"{i}/{space_shape[2]}")
             final_arr[:, :, i] = self.calc_theta_slice(theta, space_shape[0], space_shape[1], xbounds, ybounds)
-
-
-        self.space = self.shift_by_pi(final_arr) # somehow this was shifted by pi...
-
+        self.space = self.shift_by_pi(final_arr)  # somehow this was shifted by pi...
 
     def calc_theta_slice(self, theta, res_x, res_y, xbounds, ybounds):
         arr = np.ones((res_x, res_y), bool)
@@ -332,7 +334,7 @@ class ConfigSpace_Maze(ConfigSpace):
 
         s, c = np.sin(theta), np.cos(theta)
         rotation_mat = np.array(((c, -s), (s, c)))
-        load_points = (rotation_mat@(self.load_points.T)).T
+        load_points = (rotation_mat @ (self.load_points.T)).T
 
         for maze_edge in self.maze_edges:
             maze_edge = (self.maze_points[maze_edge[0]],
@@ -514,7 +516,7 @@ class ConfigSpace_Maze(ConfigSpace):
         if not hasattr(self, 'space_boundary') and self.space_boundary is not None:
             self.calculate_boundary()
         if directory is None:
-            if os.path.exists(self.directory()):
+            if path.exists(self.directory()):
                 # now = datetime.now()
                 # date_string = '_' + now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
                 directory = self.directory(addition='')
@@ -532,7 +534,7 @@ class ConfigSpace_Maze(ConfigSpace):
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
         directory = self.directory(point_particle=point_particle)
-        if os.path.exists(directory):
+        if path.exists(directory):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(directory, 'rb'))
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
@@ -562,7 +564,7 @@ class ConfigSpace_Maze(ConfigSpace):
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
 
-    def coords_to_index(self, axis: int, value):
+    def coords_to_index_unhandy(self, axis: int, value):
         """
         Translating coords to index of axis
         :param axis: What axis is coordinate describing
@@ -587,8 +589,8 @@ class ConfigSpace_Maze(ConfigSpace):
         :param theta: orientation of axis in radian
         :return: (xi, yi, thetai)
         """
-        return self.coords_to_index(0, x), self.coords_to_index(1, y), \
-               self.coords_to_index(2, theta % (2 * np.pi))
+        return self.coords_to_index_unhandy(0, x), self.coords_to_index_unhandy(1, y), \
+            self.coords_to_index_unhandy(2, theta % (2 * np.pi))
 
     def empty_space(self) -> np.array:
         return np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
@@ -693,7 +695,6 @@ class ConfigSpace_Maze(ConfigSpace):
             print('Warning: end is not the same')
         return new_labels
 
-
     @staticmethod
     def valid_state_transition(state1, state2):
         # transition like ab -> ba or b -> b
@@ -706,7 +707,7 @@ class ConfigSpace_Maze(ConfigSpace):
         if len(state2 + state1) == 3 and len(set(state1 + state2)) == 2:
             if state1[0] == state2[0]:
                 return True
-            if ''.join(list(set(state1+state2))) in allowed_transition_attempts:
+            if ''.join(list(set(state1 + state2))) in allowed_transition_attempts:
                 return True
 
         # transition like bf -> ba
@@ -724,7 +725,7 @@ class ConfigSpace_Maze(ConfigSpace):
             return False
 
         if (state1[0] == state2[0] or len(set(state1) & set(state2)) == 2 or \
-               (state1 == pre_final_state and state2 == final_state)):
+                (state1 == pre_final_state and state2 == final_state)):
             return True
 
         return False
@@ -797,11 +798,13 @@ class ConfigSpace_Maze(ConfigSpace):
             if transition in allowed_transition_attempts:
                 return [transition]
             else:
-                print('Skipped 3 states: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
+                with open("state_calc.txt", "a") as f:
+                    f.write('\n' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
                 return []
 
         elif len(state1) == len(state2) == 2:
-            print('Moved from transition to transition: ' + state1 + '_' + state2 + ' in ii ' + str(ii))
+            with open("state_calc.txt", "a") as f:
+                f.write('\n' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
             return []
 
         elif ''.join(sorted(state1 + state2[0])) in allowed_transition_attempts:
@@ -814,7 +817,8 @@ class ConfigSpace_Maze(ConfigSpace):
         elif len(state1) > 1 and ''.join(sorted(state1[1] + state2)) in allowed_transition_attempts:
             return [state1[1], ''.join(sorted(state1[1] + state2))]
         else:
-            print('What happened: ' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
+            with open("state_calc.txt", "a") as f:
+                f.write('\n' + state1 + ' -> ' + state2 + ' in ii ' + str(ii))
             return []
 
     @staticmethod
@@ -824,10 +828,9 @@ class ConfigSpace_Maze(ConfigSpace):
         :param radius: radius of dilation
         """
         struct = np.ones([radius for _ in range(space.ndim)], dtype=bool)
-        # return np.array(ndimage.binary_dilation(space, structure=struct), dtype=bool)
-        return np.array(ndimage.morphology.grey_dilation(space, size=tuple(radius for _ in range(space.ndim))),
-                        dtype=bool)
-
+        return np.array(ndimage.binary_dilation(space, structure=struct), dtype=bool)
+        # return np.array(ndimage.morphology.grey_dilation(space, size=tuple(radius for _ in range(space.ndim))),
+        #                 dtype=bool)
 
     @staticmethod
     def erode(space, radius: int) -> np.array:
@@ -837,9 +840,9 @@ class ConfigSpace_Maze(ConfigSpace):
         :param space: Actual space you want to erode
         :param radius: radius of erosion
         """
-        print('Eroding space...')
 
         def erode_space(space, struct):
+            print('Eroding space...')
             return ndimage.binary_erosion(space, structure=struct)
             # return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=bool)
 
@@ -870,8 +873,8 @@ class ConfigSpace_Maze(ConfigSpace):
             chosen_cc.shape[0])
         return chosen_cc, labels, stats['centroids']
 
-    def extend_ps_states_to_eroded_space(self, ps_states):
-        for ps_state in tqdm(ps_states):
+    def extend_ps_states_to_eroded_space(self, ps_states: dict) -> dict:
+        for ps_state in tqdm(ps_states.values()):
             ps_state.distance = ps_state.calculate_distance(ps_state.space, self.space)
 
         distance_stack = np.stack([ps_state.distance for ps_state in ps_states], axis=3)
@@ -889,12 +892,11 @@ class ConfigSpace_Maze(ConfigSpace):
         # interesting_indices = (207, 175, 407), (207, 176, 408)  # human large
         if self.eroded_space is None:
 
-            if self.solver == 'humanhand': # somehow otherwise the states will not properly be separated.
+            if self.solver == 'humanhand':  # somehow otherwise the states will not properly be separated.
                 directory = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \
                             '_SPT_MazeDimensions_humanhand_pre_erosion.pkl'
-                if os.path.exists(directory):
+                if path.exists(directory):
                     (space, _, _) = pickle.load(open(directory, 'rb'))
-
             else:
                 space = self.space
             self.eroded_space = self.erode(space, radius=self.erosion_radius)
@@ -903,48 +905,44 @@ class ConfigSpace_Maze(ConfigSpace):
         spaces = [np.bool_(labels == cc) for cc in chosen_cc]
         centroids = [centroids[cc] for cc in chosen_cc]
 
-        ps_states = []
+        ps_states = dict()
         given_names = []
 
         for space, centroid in zip(spaces, centroids):
             # self.visualize_space(space=space, reduction=4)
-            connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states]
+            connected = [saved_ps.try_to_connect_periodically(space, centroid) for saved_ps in ps_states.values()]
 
             if not np.any(connected):
                 name = self.name_for_state(space)
                 if name in given_names:
                     raise ValueError()
                 given_names.append(name)
-
-                ps = PS_Area(self, space, name, centroid=centroid)
-                ps_states.append(ps)
+                ps_states[name] = PS_Area(self, space, name, centroid=centroid)
 
         self.ps_states = self.extend_ps_states_to_eroded_space(ps_states)
         self.correct_ps_states()
 
     def name_for_state(self, space):
         shape = self.space.shape
-        if np.mean(np.where(space)[0])/shape[0] < 0.25:
+        if np.mean(np.where(space)[0]) / shape[0] < 0.25:
             return 'a'
-        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and (0 in np.where(space)[2] or shape[2]-1 in np.where(space)[2]):
+        if 0.3 < np.mean(np.where(space)[0]) / shape[0] < 0.5 and (
+                0 in np.where(space)[2] or shape[2] - 1 in np.where(space)[2]):
             return 'b'
-        if 0.3 < np.mean(np.where(space)[0])/shape[0] < 0.5 and shape[2]//2 in np.where(space)[2]:
+        if 0.3 < np.mean(np.where(space)[0]) / shape[0] < 0.5 and shape[2] // 2 in np.where(space)[2]:
             return 'c'
-        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and (0 in np.where(space)[2] or shape[2]-1 in np.where(space)[2]):
+        if 0.5 < np.mean(np.where(space)[0]) / shape[0] < 0.8 and (
+                0 in np.where(space)[2] or shape[2] - 1 in np.where(space)[2]):
             return 'f'
-        if 0.5 < np.mean(np.where(space)[0])/shape[0] < 0.8 and shape[2]//2 in np.where(space)[2]:
+        if 0.5 < np.mean(np.where(space)[0]) / shape[0] < 0.8 and shape[2] // 2 in np.where(space)[2]:
             return 'g'
-        if 0.75 < np.mean(np.where(space)[0])/shape[0]:
+        if 0.75 < np.mean(np.where(space)[0]) / shape[0]:
             return 'h'
-        if np.mean(np.where(space)[2])/shape[2] < 0.5:
+        if np.mean(np.where(space)[2]) / shape[2] < 0.5:
             return 'e'
-        if 0.5 < np.mean(np.where(space)[2])/shape[2]:
+        if 0.5 < np.mean(np.where(space)[2]) / shape[2]:
             return 'd'
         raise ValueError
-
-
-    def ps_name_dict(self):
-        return {ps_state.name: i for i, ps_state in enumerate(self.ps_states)}
 
     def correct_ps_states(self):
         """
@@ -961,7 +959,7 @@ class ConfigSpace_Maze(ConfigSpace):
         index = np.argmin(g_indices[2])
         g_ind = g_indices[:, index]
 
-        b_indices_low = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, :self.space.shape[2]//2]))
+        b_indices_low = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, :self.space.shape[2] // 2]))
         index = np.argmax(b_indices_low[2])
         b_ind = b_indices_low[:, index]
 
@@ -970,8 +968,10 @@ class ConfigSpace_Maze(ConfigSpace):
             self.ps_states[ps_name_dict['c']].space[tuple(transfer_from_c_to_e[:, i])] = False
             self.ps_states[ps_name_dict['e']].space[tuple(transfer_from_c_to_e[:, i])] = True
 
-        transfer_from_f_to_e = np.array(np.where(self.ps_states[ps_name_dict['f']].space[:, :, b_ind[2]:self.space.shape[2]//2]))
-        transfer_from_f_to_e = transfer_from_f_to_e + np.array([[0, 0, b_ind[2]] for _ in range(transfer_from_f_to_e.shape[1])]).transpose()
+        transfer_from_f_to_e = np.array(
+            np.where(self.ps_states[ps_name_dict['f']].space[:, :, b_ind[2]:self.space.shape[2] // 2]))
+        transfer_from_f_to_e = transfer_from_f_to_e + np.array(
+            [[0, 0, b_ind[2]] for _ in range(transfer_from_f_to_e.shape[1])]).transpose()
         for i in range(transfer_from_f_to_e.shape[1]):
             self.ps_states[ps_name_dict['f']].space[tuple(transfer_from_f_to_e[:, i])] = False
             self.ps_states[ps_name_dict['e']].space[tuple(transfer_from_f_to_e[:, i])] = True
@@ -980,8 +980,9 @@ class ConfigSpace_Maze(ConfigSpace):
         Correction of d
         """
 
-        b_indices_high = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, self.space.shape[2]//2:]))
-        b_indices_high = b_indices_high + np.array([[0, 0, self.space.shape[2]//2] for _ in range(b_indices_high.shape[1])]).transpose()
+        b_indices_high = np.array(np.where(self.ps_states[ps_name_dict['b']].space[:, :, self.space.shape[2] // 2:]))
+        b_indices_high = b_indices_high + np.array(
+            [[0, 0, self.space.shape[2] // 2] for _ in range(b_indices_high.shape[1])]).transpose()
         index = np.argmin(b_indices_high[2])
         b_ind = b_indices_high[:, index]
 
@@ -990,23 +991,26 @@ class ConfigSpace_Maze(ConfigSpace):
         g_ind = g_indices[:, index]
 
         transfer_from_c_to_d = np.array(np.where(self.ps_states[ps_name_dict['c']].space[:, :, g_ind[2]:]))
-        transfer_from_c_to_d = transfer_from_c_to_d + np.array([[0, 0, g_ind[2]] for _ in range(transfer_from_c_to_d.shape[1])]).transpose()
+        transfer_from_c_to_d = transfer_from_c_to_d + np.array(
+            [[0, 0, g_ind[2]] for _ in range(transfer_from_c_to_d.shape[1])]).transpose()
         for i in range(transfer_from_c_to_d.shape[1]):
             self.ps_states[ps_name_dict['c']].space[tuple(transfer_from_c_to_d[:, i])] = False
             self.ps_states[ps_name_dict['d']].space[tuple(transfer_from_c_to_d[:, i])] = True
 
-        transfer_from_f_to_d = np.array(np.where(self.ps_states[ps_name_dict['f']].space[:, :, self.space.shape[2]//2:b_ind[2]]))
-        transfer_from_f_to_d = transfer_from_f_to_d + np.array([[0, 0, self.space.shape[2]//2] for _ in range(transfer_from_f_to_d.shape[1])]).transpose()
+        transfer_from_f_to_d = np.array(
+            np.where(self.ps_states[ps_name_dict['f']].space[:, :, self.space.shape[2] // 2:b_ind[2]]))
+        transfer_from_f_to_d = transfer_from_f_to_d + np.array(
+            [[0, 0, self.space.shape[2] // 2] for _ in range(transfer_from_f_to_d.shape[1])]).transpose()
         for i in range(transfer_from_f_to_d.shape[1]):
             self.ps_states[ps_name_dict['f']].space[tuple(transfer_from_f_to_d[:, i])] = False
             self.ps_states[ps_name_dict['d']].space[tuple(transfer_from_f_to_d[:, i])] = True
-
 
         self.ps_states[ps_name_dict['e']].clean()
         self.ps_states[ps_name_dict['d']].clean()
 
         self.visualize_space(space=self.ps_states[ps_name_dict['e']].space)
         self.visualize_space(space=self.ps_states[ps_name_dict['d']].space)
+
 
 class PS_Area(ConfigSpace_Maze):
     def __init__(self, ps: ConfigSpace_Maze, space: np.array, name: str, centroid=None):
@@ -1165,13 +1169,17 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         Load Phase Space pickle. Load both eroded space, and ps_states, centroids and everything
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
-        directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius)
+        directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius, small=False)
 
-        if os.path.exists(directory):
+        if path.exists(directory):
             print('Loading labeled from ', directory, '...')
             self.eroded_space, self.ps_states, self.space_labeled = pickle.load(open(directory, 'rb'))
-            if len(self.ps_states) != cc_to_keep:
+            if type(self.ps_states) == list:
+                ps_s = {ps.name: ps for ps in self.ps_states}
+                self.ps_states = ps_s
+            if self.ps_states is not None and len(self.ps_states) != cc_to_keep:
                 print('Wrong number of cc')
+            # self.space_labeled = pickle.load(open(directory, 'rb'))
         else:
             if self.ps_states is None:
                 self.create_ps_states()
@@ -1189,7 +1197,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
         directory = self.directory(point_particle=point_particle, erosion_radius=self.erosion_radius, small=True)
 
-        if os.path.exists(directory):
+        if path.exists(directory):
             print('Loading labeled from ', directory, '.')
             # self.space_labeled = pickle.load(open(path, 'rb'))
             self.space_labeled = pickle.load(open(directory, 'rb'))
@@ -1245,8 +1253,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
 
         :param fig: mylab figure reference
-        :param colormap: What color do you want the available states to appear in?
         :param reduction: What amount of reduction?
+        :param only_states: list of only certain states
         :return:
         """
         if self.ps_states is None:
@@ -1262,17 +1270,18 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
         colors = itertools.cycle(['Reds', 'Purples', 'Greens'])
 
-        for ps_state, colormap in tqdm(zip(self.ps_states, colors)):
+        for ps_state, colormap in tqdm(zip(self.ps_states.values(), colors)):
             ps_state.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction)
             mlab.text3d(*(np.array(ps.indices_to_coords(*ps_state.centroid)) * [1, 1, self.average_radius]),
                         ps_state.name,
                         scale=self.scale_of_letters(reduction))
+        mlab.show()
 
     def scale_of_letters(self, reduction):
         return {'Large': 1, 'Medium': 0.5, 'Small Far': 0.2, 'Small Near': 0.2, 'Small': 0.2,
                 'L': 0.5, 'XL': 1, 'M': 0.5, 'S': 0.25, '': 1}[self.size] * reduction
 
-    def visualize_transitions(self, fig=None, reduction: int = 1) -> None:
+    def visualize_transitions(self, fig=None, reduction: int = 1, only_states=None) -> None:
         """
 
         :param fig: mylab figure reference
@@ -1286,11 +1295,15 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.fig = fig
 
         if self.space_labeled is None:
-            self.load_labeled_space()
+            self.load_final_labeled_space()
+
+        if only_states is None:
+            ps_states_to_draw = [trans for trans in np.unique(self.space_labeled) if len(trans) > 1]
+        else:
+            ps_states_to_draw = only_states
 
         print('Draw transitions')
-        transitions = [trans for trans in np.unique(self.space_labeled) if len(trans) > 1]
-        for label, colormap in tqdm(zip(transitions, itertools.cycle(['Reds', 'Purples', 'Greens']))):
+        for label, colormap in tqdm(zip(ps_states_to_draw, itertools.cycle(['Reds', 'Purples', 'Greens']))):
             space = np.array(self.space_labeled == label, dtype=bool)
             centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
             self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
@@ -1307,7 +1320,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if directory is None:
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition='')
 
-        if os.path.exists(directory):
+        if path.exists(directory):
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string)
@@ -1318,7 +1331,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # Actually, I don't really need all this information.  self.space_labeled should be enough
         directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition='', small=True)
 
-        if os.path.exists(directory):
+        if path.exists(directory):
             now = datetime.now()
             date_string = now.strftime("%Y") + '_' + now.strftime("%m") + '_' + now.strftime("%d")
             directory = self.directory(point_particle=False, erosion_radius=self.erosion_radius, addition=date_string,
@@ -1355,27 +1368,30 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             distance_cm = (maze.slits[1] - maze.slits[0]) / 2
         else:
             distance_cm = maze.exit_size / 2
-        return self.coords_to_index(0, distance_cm)
-        # return (self.coords_to_index(0, distance_cm) + self.erosion_radius * 2)
+        return self.coords_to_index_unhandy(0, distance_cm)
+        # return (self.coords_to_index_unhandy(0, distance_cm) + self.erosion_radius * 2)
 
     def add_false_connections(self) -> np.array:
-        ps_name_dict = self.ps_name_dict()
+        if self.ps_states is None:
+            labels = np.unique(self.space_labeled)
+            self.ps_states = {label: PS_Area(self, np.bool_(self.space_labeled == label), label)
+                              for label in labels}
         space_with_false_connections = copy(self.space)
 
         state1, state2 = 'bf'
         axis_connect = 0
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()
-                     if inds[1]==int(self.space.shape[1]/2)], key=lambda x: x[2])[-1]
-        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])), s1[1], s1[2])
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices()
+                     if inds[1] == int(self.space.shape[1] / 2)], key=lambda x: x[2])[-1]
+        s2 = (np.min(np.where(self.ps_states[state2].space[:, s1[1], s1[2]])), s1[1], s1[2])
         space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
 
         state1, state2 = 'cg'
         axis_connect = 0
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()
-                               if inds[2]==int(self.space.shape[2]/2) and inds[1]==int(self.space.shape[1]/2)],
-                              key=lambda x: x[2])[-1]
-        s2 = (np.min(np.where(self.ps_states[ps_name_dict[state2]].space[:, s1[1], s1[2]])),
-                        s1[1], s1[2])
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices()
+                     if inds[2] == int(self.space.shape[2] / 2) and inds[1] == int(self.space.shape[1] / 2)],
+                    key=lambda x: x[2])[-1]
+        s2 = (np.min(np.where(self.ps_states[state2].space[:, s1[1], s1[2]])),
+              s1[1], s1[2])
         space_with_false_connections[s1[0] - 1:s2[0] + 1, s1[1], s1[2]] = True
 
         def connect_dots():
@@ -1383,32 +1399,34 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             space_with_false_connections[s2[0], min(s1[1], s2[1]) - 1: max(s1[1], s2[1]) + 1, s1[2]] = True
             space_with_false_connections[s2[0], s2[1], min(s1[2], s2[2]) - 1: max(s1[2], s2[2]) + 1] = True
 
-        state1, state2 = 'bd'
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] > 100],
-                              key = lambda x: x[1])[0]
-        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
-                              key=lambda x: x[2])[-1]
+        state1, state2 = 'be'
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices() if inds[2] < 200],
+                    key=lambda x: x[1])[-1]
+        s2 = sorted([inds for inds in self.ps_states[state2].get_indices()],
+                    key=lambda x: x[2])[0]
         connect_dots()
 
-        state1, state2 = 'be'
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices() if inds[2] < 200],
-                              key = lambda x: x[1])[-1]
-        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices()],
-                              key=lambda x: x[2])[0]
+        state1, state2 = 'bd'
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices() if inds[2] > 100],
+                    key=lambda x: x[1])[0]
+        s2 = sorted([inds for inds in self.ps_states[state2].get_indices()],
+                    key=lambda x: x[2])[-1]
         connect_dots()
 
         state1, state2 = 'eg'
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
-                              key=lambda x: x[2])[-1]
-        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] < self.space.shape[2]//2],
-                              key=lambda x: x[1])[-1]
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices()],
+                    key=lambda x: x[2])[-1]
+        s2 = sorted(
+            [inds for inds in self.ps_states[state2].get_indices() if inds[2] < self.space.shape[2] // 2],
+            key=lambda x: x[1])[-1]
         connect_dots()
 
         state1, state2 = 'dg'
-        s1 = sorted([inds for inds in self.ps_states[ps_name_dict[state1]].get_indices()],
-                              key=lambda x: x[2])[0]
-        s2 = sorted([inds for inds in self.ps_states[ps_name_dict[state2]].get_indices() if inds[2] > self.space.shape[2]//2],
-                              key=lambda x: x[1])[0]
+        s1 = sorted([inds for inds in self.ps_states[state1].get_indices()],
+                    key=lambda x: x[2])[0]
+        s2 = sorted(
+            [inds for inds in self.ps_states[state2].get_indices() if inds[2] > self.space.shape[2] // 2],
+            key=lambda x: x[1])[0]
         connect_dots()
         return space_with_false_connections
 
@@ -1419,28 +1437,49 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         """
         # interesting_indices = (207, 175, 407) # human large
         if self.ps_states is None:
-            self.create_ps_states()
-        ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states)}
+            if self.space_labeled is None:
+                self.create_ps_states()
+            else:
+                labels = np.unique(self.space_labeled)
+                self.ps_states = {label: PS_Area(self, np.bool_(self.space_labeled == label), label) for label in
+                                  labels}
 
-        print('Calculating distances from every node for ', str(len(self.ps_states)), ' different states in', self.name)
         space_with_false_connections = self.add_false_connections()
-        # dilated_space = self.dilate(self.space, self.erosion_radius_default())
+        # self.visualize_space(space=space_with_false_connections)
 
-        for ps_state in tqdm(self.ps_states):
+        for label, ps_state in tqdm(self.ps_states.items()):
+            print('Calculating distances from every node for ', str(label), ' different states')
             ps_state.distance = ps_state.calculate_distance(ps_state.space, space_with_false_connections)
 
         # distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)
-        distance_stack = copy(np.stack([ps_state.distance for ps_state in self.ps_states], axis=3))
+        distance_stack = copy(np.stack([ps_state.distance for label, ps_state in self.ps_states.items()], axis=3))
         far_away = distance_stack > self.max_distance_for_transition()
         distance_stack[far_away] = np.inf
 
         self.space_labeled = np.zeros_like(self.space, dtype=np.dtype('U2'))
         print('Iterating over every node and assigning label')
         # self.assign_label(interesting_indices, distance_stack, ps_name_dict)
-        [self.assign_label(indices, distance_stack, ps_name_dict) for indices in self.iterate_space_index()]
+        # ps_name_dict = {i: ps_state.name for i, ps_state in enumerate(self.ps_states.values())}
+        [self.assign_label(indices, distance_stack)
+         for indices in self.iterate_space_index()]
         self.fix_edges_labeling()
 
-    def assign_label(self, ind: tuple, distance_stack: np.array, ps_name_dict: dict):
+        # in order to fix the small Far human
+        # mask = np.zeros_like(self.space, dtype=bool)
+        # mask[242, 199, 84] = True
+        # mask = self.dilate(mask, 20)
+        # new_mask = np.logical_or(np.logical_and(self.space_labeled == 'ba', mask),
+        #                          np.logical_and(self.space_labeled == 'b', mask))
+        # self.space_labeled[new_mask] = 'be'
+
+        mask = np.zeros_like(self.space, dtype=bool)
+        mask[242, 131, 669] = True
+        mask = self.dilate(mask, 20)
+        new_mask = np.logical_or(np.logical_and(self.space_labeled == 'ba', mask),
+                                 np.logical_and(self.space_labeled == 'b', mask))
+        self.space_labeled[new_mask] = 'be'
+
+    def assign_label(self, ind: tuple, distance_stack: np.array):
         """
 
         """
@@ -1449,9 +1488,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
             self.space_labeled[ind] = '0'
             return
 
-        # # everything in self.ps_states.
-        # for i, ps_state in enumerate(self.ps_states):
-        #     if ps_state.space[ind]:
+        ps_name_dict = list(self.ps_states.keys())
         label = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
                          if distance_stack[ind].data[ii] < np.inf])
         if label in forbidden_transition_attempts + allowed_transition_attempts:
@@ -1462,14 +1499,6 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         if len(self.space_labeled[ind]) == 0:
             raise ValueError(ind)
         return
-        # in eroded space
-        # self.visualize_states()
-        # self.draw_ind(indices)
-        # self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack[ind])[:2]
-        #                                    if distance_stack[ind].data[ii] < np.inf])
-
-        # if len(self.space_labeled[ind]) == 0:
-        #     self.space_labeled[ind] = ''.join([ps_name_dict[ii] for ii in np.argsort(distance_stack_original[ind])[:2]])
 
     def find_closest_state(self, index: list, border=10) -> str:
         """
@@ -1518,19 +1547,18 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         for state in d.keys():
             # if np.sum(np.array(list(d.values())) > 20) == 1:
             #     return list(d.keys())[np.where(np.array(list(d.values())) > 20)[0][0]]
-            distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[border, border, border]
+            distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[
+                border, border, border]
         return min(distances, key=distances.get)
 
     def fix_edges_labeling(self):
         """
         for some reason some single states for larger x are called a. I make them empty states, here.
         """
-        problematic_states = {'a': {'human': {'Large': 200, 'Medium': 140, 'Small Far': 250},
-                                    'humanhand': {'': 250},
-                                    'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}},
-                              # 'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
-                              #        'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}
-                              }
+        problematic_states = {'a': {'human': {'Large': 200, 'Medium': 140, 'Small Far': 250}, 'humanhand': {'': 250},
+                                    'ant': {'XL': 180, 'L': 180, 'M': 150, 'S': 250}}}
+        # 'ca': {'human': {'Large': None, 'Medium': None, 'Small Far': None},
+        #        'ant': {'XL': None, 'L': None, 'M': None, 'S': None}}
         problematic_states['ab'] = {'humanhand': {'': 270},
                                     'human': {'Large': 220, 'Medium': 160, 'Small Far': 270},
                                     'ant': {'XL': 200, 'L': 200, 'M': 170, 'S': 270}}
@@ -1552,51 +1580,134 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                     self.space_labeled[tuple(to_change)] = '0'
 
 
+def fix_medium_human():
+    dis = int(ps.space_labeled.shape[2] * 0.07467532467532467)
+    theta_ind_min_dg = np.min(np.where(ps.space_labeled == 'dg')[2])
+    theta_ind_dg = theta_ind_min_dg + dis
+    mask_protect_correct = np.ones(shape=ps.space_labeled.shape, dtype=bool)
+    mask_protect_correct[:, :, theta_ind_dg:] = False
+    mask_is_d = ps.space_labeled == 'd'
+    mask_to_dg = np.logical_and(mask_is_d, mask_protect_correct)
+    # ps.visualize_space(reduction=2, space=mask_to_dg)
+    ps.space_labeled[mask_to_dg] = 'dg'
+
+    theta_ind_max_eg = np.max(np.where(ps.space_labeled == 'eg')[2])
+    theta_ind_eg = theta_ind_max_eg - dis
+    mask_protect_correct = np.ones(shape=ps.space_labeled.shape, dtype=bool)
+    mask_protect_correct[:, :, :theta_ind_eg] = False
+    mask_is_e = ps.space_labeled == 'e'
+    mask_to_eg = np.logical_and(mask_is_e, mask_protect_correct)
+    # ps.visualize_space(reduction=2, space=mask_to_eg)
+    ps.space_labeled[mask_to_eg] = 'eg'
+
+    theta_ind_min_eb = np.min(np.where(ps.space_labeled == 'eb')[2])
+    theta_ind_eb = theta_ind_min_eb + dis
+    mask_protect_correct = np.ones(shape=ps.space_labeled.shape, dtype=bool)
+    mask_protect_correct[:, :, theta_ind_eb:] = False
+    mask_is_e = ps.space_labeled == 'e'
+    mask_to_eb = np.logical_and(mask_is_e, mask_protect_correct)
+    # ps.visualize_space(reduction=2, space=mask_to_dg)
+    ps.space_labeled[mask_to_eb] = 'eb'
+
+    theta_ind_max_db = np.max(np.where(ps.space_labeled == 'db')[2])
+    theta_ind_db = theta_ind_max_db - dis
+    mask_protect_correct = np.ones(shape=ps.space_labeled.shape, dtype=bool)
+    mask_protect_correct[:, :, :theta_ind_db] = False
+    mask_is_d = ps.space_labeled == 'd'
+    mask_to_db = np.logical_and(mask_is_d, mask_protect_correct)
+    # ps.visualize_space(reduction=2, space=mask_to_eg)
+    ps.space_labeled[mask_to_db] = 'db'
+
+
+def fix_bf():
+    x_min = maze.slits[1] - maze.getLoadDim()[1] * (-centerOfMass_shift + 0.5)
+    # maze.set_configuration(position=(x_min, maze.arena_height/2), angle=0)
+    # maze.draw()
+
+    to_b = np.logical_or(np.logical_or(ps.space_labeled == 'bf', ps.space_labeled == 'b1'), ps.space_labeled == 'b2')
+    ps.space_labeled[to_b] = 'b'
+    mask_possibly_bf = np.ones(shape=ps.space_labeled.shape, dtype=bool)
+
+    x_min_i, _, _ = ps.coords_to_indices(x_min, maze.arena_height / 2, 0)
+
+    mask_possibly_bf[:x_min_i, :, :] = False
+    mask_possibly_bf = np.logical_and(mask_possibly_bf, ps.space_labeled == 'b')
+    ps.space_labeled[mask_possibly_bf] = 'bf'
+
+
+def create_circular_mask(array_shape, center, radius):
+    X, Y, Z = np.ogrid[:array_shape[0], :array_shape[1], :array_shape[2]]
+    dist_from_center = np.sqrt((X - center[0]) ** 2 + (Y - center[1]) ** 2 + (Z - center[2]) ** 2)
+
+    mask = dist_from_center <= radius
+    return mask
+
+
+def fix_cg():
+    x_min = maze.slits[1] - maze.getLoadDim()[1] * (centerOfMass_shift + 0.5)
+    # maze.set_configuration(position=(x_min, maze.arena_height / 2), angle=np.pi)
+    # maze.draw()
+
+    y_min = (-maze.exit_size / 2 + maze.arena_height / 2 + maze.getLoadDim()[2] / 2)
+    # maze.set_configuration(position=(x_min, y_min), angle=np.pi)
+    # maze.draw()
+
+    xi, yi, thetai = ps.coords_to_indices(x_min, maze.arena_height / 2, np.pi)
+    _, y_radius, _ = ps.coords_to_indices(x_min, y_min, np.pi)
+    radius = yi - y_radius
+    ps.space_labeled[ps.space_labeled == 'cg'] = 'c'
+
+    mask_cg = create_circular_mask(ps.space_labeled.shape, center=(xi, yi, thetai), radius=2 * radius)
+    mask_cg = np.logical_and(mask_cg, ps.space_labeled == 'c')
+    ps.space_labeled[mask_cg] = 'cg'
+
+
+def fix_be():
+    x_center = maze.slits[0]
+    y_center = maze.arena_height / 2
+
+    x_center1 = maze.slits[0] + 0.2 * (maze.slits[1] - maze.slits[0])
+    y_center1 = maze.arena_height / 2 + maze.exit_size / 2
+    radius = np.linalg.norm([x_center - x_center1, y_center - y_center1])
+
+    ps.space_labeled[ps.space_labeled == 'be'] = 'b'
+
+    xi, yi, thetai = ps.coords_to_indices(x_center, y_center, np.pi * 0.25)
+    radius, _, _ = ps.coords_to_indices(radius, 0, 0)
+
+    mask_be1 = create_circular_mask(ps.space_labeled.shape, center=(xi, yi, thetai), radius=radius)
+
+    xi, yi, thetai = ps.coords_to_indices(x_center, y_center, np.pi * 1.75)
+    mask_be2 = create_circular_mask(ps.space_labeled.shape, center=(xi, yi, thetai), radius=radius)
+
+    mask_be = np.logical_and(np.logical_or(mask_be1, mask_be2), ps.space_labeled == 'b')
+    ps.space_labeled[mask_be] = 'be'
+
+    # maze.set_configuration(position=(x_center, y_center), angle=np.pi * 0.25)
+    # maze.set_configuration(position=(x_center1, y_center1), angle=np.pi * 0.25)
+    # maze.draw()
+
 
 if __name__ == '__main__':
-    shape = 'SPT'
-    geometries_to_change = {('humanhand', ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')): ['']}
-
     geometries = {
         ('ant', ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')): ['XL', 'L', 'M', 'S'],
         ('human', ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')): ['Large', 'Medium', 'Small Far'],
         ('humanhand', ('MazeDimensions_humanhand.xlsx', 'LoadDimensions_humanhand.xlsx')): ['']
-        }
+    }
 
-    for (solver, geometry), sizes in list(geometries_to_change.items()):
+    for (solver, geometry), sizes in list(geometries.items()):
         for size in sizes:
+            maze = Maze(size=size, shape='SPT', solver=solver, geometry=geometry)
+
+            ps = ConfigSpace_Labeled(solver=solver, size=size, shape='SPT', geometry=geometry)
+
             print(solver, size)
-            # ps = ConfigSpace_Maze(solver=solver, size=size, shape=shape, geometry=geometry)
-            # ps.load_space()
-            # ps.space = ps.shift_by_pi(ps.space)
-            # ps.visualize_space(reduction=4)
-            # ps.save_space()
-            # DEBUG = 1
-
-            ps = ConfigSpace_Labeled(solver=solver, size=size, shape=shape, geometry=geometry)
             ps.load_eroded_labeled_space()
-            # ps.visualize_transitions(reduction=2)
-            ps.visualize_space(reduction=2)
-            DEBUG = 1
 
+            fix_cg()
+            fix_bf()
+            fix_be()
 
-            # ps.eroded_space = ps.shift_by_pi(ps.eroded_space)
-            # ps.visualize_space(space=ps.eroded_space, reduction=4)
-            #
-            # for i in range(len(ps.ps_states)):
-            #     ps.ps_states[i].space = ps.shift_by_pi(ps.ps_states[i].space)
-            #
-            # ps.space_labeled = None
-            # ps.label_space()
-            #
-            #
-            # # ps.visualize_states(reduction=4)
-            # # ps.visualize_transitions(reduction=4)
-            #
-            #
-            # ps.save_labeled()
-            # # ps.save_labeled()
-            # DEBUG = 1
-
-            # TODO: I think there is still a problem with 'ca' and 'ac' in the human medium CS.
-
+            # ps.visualize_transitions(reduction=2, only_states=['cg', 'bf', 'be'])
+            # mlab.show()
+            ps.save_labeled()

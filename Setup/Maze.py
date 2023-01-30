@@ -3,44 +3,43 @@ from Box2D import b2BodyDef, b2_staticBody, b2World, b2_dynamicBody, b2FixtureDe
 from Setup.MazeFunctions import BoxIt
 from scipy.spatial import cKDTree
 from pandas import read_excel
-from Directories import maze_dimension_directory
+from Directories import maze_dimension_directory, home
 from PhysicsEngine.drawables import Polygon, Point, Circle, colors
 from copy import copy
 from os import path
-from trajectory_inheritance.exp_types import is_exp_valid
+from trajectory_inheritance.exp_types import is_exp_valid, centerOfMass_shift
+import json
+from typing import Union
 
-ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie']  # also in Maze.py
+ant_dimensions = ['ant', 'ps_simulation', 'sim', 'gillespie', 'pheidole']  # also in Maze.py
 
 # TODO: x = get(myDataFrame.loc[429].filename).play() displays a maze, that does not make any sense!
 
-periodicity = {'H': 2, 'I': 2, 'RASH': 2, 'LASH': 2, 'SPT': 1, 'T': 1}
 ASSYMETRIC_H_SHIFT = 1.22 * 2
 # SPT_RATIO = 2.44 / 4.82  # ratio between shorter and longer side on the Special T
-centerOfMass_shift = - 0.08  # shift of the center of mass away from the center of the load. # careful!
 # My PS are still for the original value below!!
 # centerOfMass_shift = - 0.10880829015544041  # shift of the center of mass away from the center of the load.
 
-size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
-                          'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
-                          'T': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
-                          'SPT': ['S', 'M', 'L', 'XL'],
-                          'RASH': ['S', 'M', 'L', 'XL'],
-                          'LASH': ['S', 'M', 'L', 'XL'],
-                          },
-                  'human': {'SPT': ['S', 'M', 'L']},
-                  'humanhand': {'SPT': ['']}
-                  }
+# size_per_shape = {'ant': {'H': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
+#                           'I': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
+#                           'T': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
+#                           'SPT': ['S', 'M', 'L', 'XL'],
+#                           'RASH': ['S', 'M', 'L', 'XL'],
+#                           'LASH': ['S', 'M', 'L', 'XL'],
+#                           },
+#                   'human': {'SPT': ['S', 'M', 'L']},
+#                   'humanhand': {'SPT': ['']}
+#                   }
 
-StateNames = {'H': [0, 1, 2, 3, 4, 5], 'I': [0, 1, 2, 3, 4, 5], 'T': [0, 1, 2, 3, 4, 5],
-              'SPT': [0, 1, 2, 3, 4, 5, 6], 'LASH': [0, 1, 2, 3, 4, 5, 6], 'RASH': [0, 1, 2, 3, 4, 5, 6],
-              'circle': [0]}
+with open(path.join(home, 'Setup', 'ResizeFactors.json'), "r") as read_content:
+    ResizeFactors = json.load(read_content)
 
-ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'pheidole': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
-                 'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
-                 'humanhand': {'': 1}}
-ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
-ResizeFactors['gillespie'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
+# ResizeFactors = {'ant': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+#                  'pheidole': {'XL': 1, 'SL': 0.75, 'L': 0.5, 'M': 0.25, 'S': 0.125, 'XS': 0.125 / 2},
+#                  'human': {'Small Near': 1, 'Small Far': 1, 'Medium': 1, 'Large': 1},
+#                  'humanhand': {'': 1}}
+# ResizeFactors['ps_simulation'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
+# ResizeFactors['gillespie'] = dict(ResizeFactors['ant'], **ResizeFactors['human'], **ResizeFactors['humanhand'])
 
 
 def start(x, initial_cond: str):
@@ -419,7 +418,7 @@ class Maze_parent(b2World):
         return np.array(
             [np.array(self.bodies[-1].GetWorldPoint(b2Vec2(r))) for r in positions])  # r vectors in the lab frame
 
-    def draw(self, display=None):
+    def draw(self, display=None, points=[], color=None):
         if display is None:
             from PhysicsEngine.Display import Display
             d = Display('', 1, self)
@@ -437,6 +436,11 @@ class Maze_parent(b2World):
 
             if body.userData == 'load':
                 Point(np.array(body.position)).draw(d)
+
+        for point in points:
+
+            Point(np.array(point), color=color).draw(d)
+
         if display is None:
             d.display()
 
@@ -555,6 +559,29 @@ class Maze(Maze_parent):
                           (C[0] + self.wallthick / 2)]  # These are the x positions at which the slits are positions
 
         self.slitpoints = np.empty((len(self.slits) * 2, 4, 2), float)
+
+    def in_what_Chamber(self, r: np.array) -> Union[int, None]:
+        """
+        Only works for SPT maze
+        Check the x coordinate of the object and return the chamber number
+        __________________
+                  |    |
+            0       1    2
+                  |    |
+        __________________
+        :param r: position of the particle
+        :return: the index of the chamber in which the particle is
+        """
+        if self.shape != 'SPT':
+            raise ValueError('No Chambers defined for shape ' + self.shape)
+
+        if r[0] < self.slits[0]:
+            return 0
+        elif r[0] < self.slits[1]:
+            return 1
+        elif r[0] < self.slits[1] + (self.slits[1]-self.slits[0]):
+            return 2
+        return None
 
     def CreateSlitObject(self):
         # # The x and y position describe the point, where the middle (in x direction) of the top edge (y direction)
@@ -709,3 +736,8 @@ class Maze_free_space(Maze_parent):
             vertices=[(0, 0), (0, self.arena_height), (self.arena_length, self.arena_height),
                       (self.arena_length, 0)])
         return my_maze
+
+#
+# print({size: Maze(size=size, shape='SPT', solver='human',
+#                   geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')).average_radius()
+#        for size in ['Large', 'Medium', 'Small Far']})

@@ -25,7 +25,7 @@ radius = 0.57
 N_max = 20
 #
 k_c = 0.7
-# beta, I am not sure, what this is
+# calc_beta, I am not sure, what this is
 beta = 1.65
 # connected to the ants decision making process
 f_ind = 10 * f_0

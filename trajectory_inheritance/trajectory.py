@@ -6,12 +6,17 @@ Created on Wed May  6 11:24:09 2020
 """
 import numpy as np
 from os import path
+import os
+
+import pandas as pd
+
+from DataFrame.import_excel_dfs import df_all, df_minimal
 from Setup.MazeFunctions import ConnectAngle
 import pickle
 from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter
 import json
-from Directories import SaverDirectories, work_dir, mini_SaverDirectories, home
+from Directories import SaverDirectories, work_dir, mini_SaverDirectories, home, lists_exp_dir
 from copy import deepcopy
 from Setup.Maze import Maze
 from Setup.Load import periodicity
@@ -20,7 +25,8 @@ from scipy.signal import savgol_filter
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
-from matplotlib import pyplot as plt
+import plotly.express as px
+
 
 """ Making Directory Structure """
 sizes = {'ant': ['XS', 'S', 'M', 'L', 'SL', 'XL'],
@@ -71,22 +77,26 @@ def continue_time_dict(name):
 
 
 class Trajectory:
-    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, VideoChain=None):
+    def __init__(self, size=None, shape=None, solver=None, filename=None, fps=50, winner=bool, VideoChain=None,
+                 angle=np.empty((1, 1), float), position=np.empty((1, 2), float), frames=np.empty(0, float)):
         is_exp_valid(shape, solver, size)
         self.shape = shape  # shape (maybe this will become name of the maze...) (H, I, T, SPT)
         self.size = size  # size (XL, SL, L, M, S, XS)
         self.solver = solver  # ant, human, sim, humanhand
         self.filename = filename  # filename: shape, size, path length, sim/ants, counter
+
         if VideoChain is None:
             self.VideoChain = [self.filename]
         else:
             self.VideoChain = VideoChain
+
         self.fps = fps  # frames per second
-        self.position = np.empty((1, 2), float)  # np.array of x and y positions of the centroid of the shape
-        self.angle = np.empty((1, 1), float)  # np.array of angles while the shape is moving
-        self.frames = np.empty(0, float)
+        self.position = position  # np.array of x and y positions of the centroid of the shape
+        self.angle = angle  # np.array of angles while the shape is moving
+        self.frames = frames
         self.winner = winner  # whether the shape crossed the exit
         self.participants = None
+
 
     def __bool__(self):
         return self.winner
@@ -198,6 +208,10 @@ class Trajectory:
     def solving_time(self):
         return self.timer()
 
+    def play_raw_movie(self):
+        df = pd.read_excel(lists_exp_dir + '\\exp.xlsx')
+        os.startfile(df[df['filename'] == self.filename]['directory'].iloc[0])
+
     def iterate_coords(self, time_step: float = 1) -> iter:
         """
         Iterator over (x, y, theta) of the trajectory, time_step is given in seconds
@@ -238,7 +252,7 @@ class Trajectory:
         """
 
         if v_min is None:
-            v_min = {'ant': 0.1, 'human': 0.1, 'humanhand': 0.5}[self.solver]
+            v_min = {'ant': 0.1, 'pheidole': 0.1, 'human': 0.1, 'humanhand': 0.5}[self.solver]
 
         slow_array = [v < v_min for v in np.abs(vel_norm)]
         # if self.solver == 'ant' and self.size not in ['S', 'XS']:
@@ -280,12 +294,20 @@ class Trajectory:
     def velocity(self, *args, fps=None):
         av_rad = Maze(self).average_radius()
         if len(args) == 0:
-            kernel_size = 2 * (self.fps // 2) + 1
+            kernel_size = 4 * (self.fps // 2) + 1
             position_filtered, unwrapped_angle_filtered = self.smoothed_pos_angle(self.position, self.angle,
                                                                                   kernel_size)
             args = (position_filtered[:, 0], position_filtered[:, 1], unwrapped_angle_filtered * av_rad)
+
+            # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
+            # fig.show()
+
+            # fig = px.scatter(x=self.frames[1:], y=np.linalg.norm(np.diff(position_filtered, axis=0), axis=1))
+            # fig.show()
+
         if fps is None:
             fps = self.fps
+
         return np.column_stack([np.diff(a) for a in args]) * fps
 
     def number_of_frames_in_part(self, i) -> int:
@@ -410,6 +432,7 @@ class Trajectory:
         return x
 
     def geometry(self):
+        return df_minimal[df_minimal['filename'] == self.filename].iloc[0][['maze dimensions', 'load dimensions']].tolist()
         pass
 
     def save(self, address=None) -> None:
@@ -483,7 +506,7 @@ class Trajectory:
                     display.end_screen()
                     self.frames = self.frames[:i]
                     break
-                display.renew_screen(movie_name=self.filename)
+                display.renew_screen(movie_name=self.filename, frame_index=self.frames[display.i])
         if display is not None:
             display.end_screen()
 
@@ -501,6 +524,14 @@ class Trajectory:
 
     def communication(self):
         return False
+
+    def reduce_fps(self, scale: int):
+        self.fps = self.fps/scale  # frames per second
+        self.position = self.position[::scale, :]  # np.array of x and y positions of the centroid of the shape
+        self.angle = self.angle[::scale]  # np.array of angles while the shape is moving
+        self.frames = self.frames[::scale]
+        if self.participants is not None:
+            raise ValueError('I have to change the participants as well')
 
 
 class Trajectory_part(Trajectory):

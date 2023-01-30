@@ -7,7 +7,6 @@ from os import path
 from Setup.Load import periodicity
 from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
-from trajectory_inheritance.get import get
 from Analysis.GeneralFunctions import ranges
 
 length_unit = 'cm'
@@ -21,18 +20,21 @@ trackedPheidoleMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Pheidole S
 
 
 class Trajectory_ant(Trajectory):
-    def __init__(self, size=None, shape=None, solver=None, old_filename=None, free=False, fps=50, winner=bool, x_error=0, y_error=0,
-                 angle_error=0, falseTracking=[]):
-        filename = NewFileName(old_filename, solver, size, shape, 'exp')
-
-        super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner)
+    def __init__(self, size=None, shape=None, solver=None, old_filename=None, free=False, fps=50, winner=bool,
+                 x_error=0, y_error=0, angle_error=0, falseTracking=[], filename=None,
+                 position=None, angle=None, frames=None, VideoChain=None, tracked_frames=None):
+        if filename is None:
+            filename = NewFileName(old_filename, solver, size, shape, 'exp')
+        super().__init__(size=size, shape=shape, solver=solver, filename=filename, fps=fps, winner=winner,
+                         position=position, angle=angle, frames=frames, VideoChain=VideoChain)
         self.x_error = x_error
         self.y_error = y_error
         self.angle_error = angle_error
         self.falseTracking = falseTracking
         self.tracked_frames = []
         self.free = free
-        self.state = np.empty((1, 1), int)
+        self.state = np.empty((1, 1), int)  # I think I can delete this.
+        self.tracked_frames = tracked_frames
 
     # def __del__(self):
     #     remove(ant_address(self.filename))
@@ -141,12 +143,14 @@ class Trajectory_ant(Trajectory):
             return trackedAntMovieDirectory + path.sep + 'Free' + path.sep + 'Output Data' + path.sep + \
                    shape_folder_naming[self.shape]
 
-    def matlab_loading(self, old_filename: str):
+    def matlab_loading(self, old_filename: str, address=None):
         """
         old_filename: str of old_filename with .mat extension
         """
         if not (old_filename == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat'):
-            file = sio.loadmat(self.matlabFolder() + path.sep + old_filename)
+            if address is None:
+                address = self.matlabFolder()
+            file = sio.loadmat(address + path.sep + old_filename)
 
             # if 'Direction' not in file.keys():
             #     file['Direction'] = 'R2L'
@@ -254,10 +258,12 @@ class Trajectory_ant(Trajectory):
             for index in range(index1, index2):
                 x.angle[index] = np.mod(x.angle[index], 2 * np.pi)
 
-    def load_participants(self) -> None:
+    def load_participants(self, frames: iter = None) -> None:
         from trajectory_inheritance.ants import Ants
         if not hasattr(self, 'participants') or self.participants is None:
             self.participants = Ants(self)
+        if abs(len(self.frames)/len(self.participants.frames)-1) > 0.001:
+            raise ValueError('The number of frames in the load and the participants do not match')
 
     def communication(self):
         return False
@@ -265,6 +271,30 @@ class Trajectory_ant(Trajectory):
     def averageCarrierNumber(self) -> float:
         self.load_participants()
         return self.participants.averageCarrierNumber()
+
+    def find_fraction_of_circumference(self, ts=None) -> np.array:
+        x = deepcopy(self)
+        my_maze = Maze(self)
+        display = Display(x.filename, x.fps, my_maze)
+        fc = np.zeros(shape=(0, 3))
+        i = 0
+        while i < len(self.frames):
+            display.renew_screen(movie_name=self.filename,
+                                 frame_index=str(self.frames[display.i]) + ', state: ' + ts[i])
+            if i == 185:
+                DEBUG = 1
+            self.step(my_maze, i, display=display)
+            if display is not None:
+                end = display.update_screen(self, i)
+                if end:
+                    display.end_screen()
+                    self.frames = self.frames[:i]
+                    break
+            fc = np.vstack([fc, display.calc_fraction_of_circumference()])
+            i += 1
+        if display is not None:
+            display.end_screen()
+        return fc
 
     def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, path=None):
         """
@@ -317,33 +347,33 @@ class Trajectory_ant(Trajectory):
                 return where[frames]
         else:
             return frames
-
-
-if __name__ == '__main__':
-    from matplotlib import pyplot as plt
-    # filename = 'S_SPT_4800009_SSpecialT_1_ants (part 1)'
-    filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
-    # filename = 'M_SPT_4710005_MSpecialT_1_ants'
-    x = get(filename)
-    v = x.velocity(4)
-    vel_norm = np.linalg.norm(v, axis=0)
-    plt.plot(vel_norm)
-    stuck = x.stuck(vel_norm=vel_norm, v_min=0.005)
-    plt.plot(np.array(stuck).astype(bool) * 0.2, marker='.', linestyle='', markersize=0.2)
-    # x.angle_error = 0
-    # x.save()
-    # print(x.stuck(v_min=0.005))
-    # TODO: fix that ant traj are saved as simulations
-    DEBUG = 1
-
-    # k_on, k_off = {}, {}
-    # experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',
-    #                'L': 'L_SPT_4080033_SpecialT_1_ants (part 1)',
-    #                'M': 'M_SPT_4680005_MSpecialT_1_ants',
-    #                'S': 'S_SPT_4800001_SSpecialT_1_ants (part 1)'}
-    #
-    # for size in experiments.keys():
-    #     x = get('L_SPT_4080033_SpecialT_1_ants (part 1)')
-    #     # x.play()
-    #     x = Trajectory_ant(size=x.size, shape=x.shape, old_filename=x.old_filenames(0), free=False, fps=x.fps, winner=x.winner,
-    #                        x_error=0, y_error=0, angle_error=0, falseTracking=x.falseTracking)
+#
+#
+# if __name__ == '__main__':
+#     from matplotlib import pyplot as plt
+#     # filename = 'S_SPT_4800009_SSpecialT_1_ants (part 1)'
+#     filename = 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+#     # filename = 'M_SPT_4710005_MSpecialT_1_ants'
+#     x = get(filename)
+#     v = x.velocity(4)
+#     vel_norm = np.linalg.norm(v, axis=0)
+#     plt.plot(vel_norm)
+#     stuck = x.stuck(vel_norm=vel_norm, v_min=0.005)
+#     plt.plot(np.array(stuck).astype(bool) * 0.2, marker='.', linestyle='', markersize=0.2)
+#     # x.angle_error = 0
+#     # x.save()
+#     # print(x.stuck(v_min=0.005))
+#     # TODO: fix that ant traj are saved as simulations
+#     DEBUG = 1
+#
+#     # k_on, k_off = {}, {}
+#     # experiments = {'XL': 'XL_SPT_4290009_XLSpecialT_2_ants',
+#     #                'L': 'L_SPT_4080033_SpecialT_1_ants (part 1)',
+#     #                'M': 'M_SPT_4680005_MSpecialT_1_ants',
+#     #                'S': 'S_SPT_4800001_SSpecialT_1_ants (part 1)'}
+#     #
+#     # for size in experiments.keys():
+#     #     x = get('L_SPT_4080033_SpecialT_1_ants (part 1)')
+#     #     # x.play()
+#     #     x = Trajectory_ant(size=x.size, shape=x.shape, old_filename=x.old_filenames(0), free=False, fps=x.fps, winner=x.winner,
+#     #                        x_error=0, y_error=0, angle_error=0, falseTracking=x.falseTracking)

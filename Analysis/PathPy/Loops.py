@@ -1,4 +1,4 @@
-from Analysis.PathPy.Path import time_series_dict_selected_states, time_series_dict_selected_states_sim
+from Analysis.PathPy.Path import time_series_dict, time_series_dict_selected_states_sim
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from DataFrame.dataFrame import myDataFrame, myDataFrame_sim
 from trajectory_inheritance.exp_types import exp_types, solver_geometry
@@ -53,7 +53,7 @@ filenames_sim = {'gillespie M': myDataFrame_sim.df['filename'].tolist()}
 
 myDataFrame = Altered_DataFrame(myDataFrame)
 myDataFrame.choose_experiments(shape='SPT', init_cond='back', free=False, geometry='new')
-myDataFrame.df['time series'] = myDataFrame.df['filename'].map(time_series_dict_selected_states)
+myDataFrame.df['time series'] = myDataFrame.df['filename'].map(time_series_dict)
 filenames = myDataFrame.get_seperate_filenames()
 
 filenames.update(filenames_sim)

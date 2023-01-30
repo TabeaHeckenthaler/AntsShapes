@@ -494,7 +494,7 @@ def theta_trajectory(twoD_vec, unit='RADIAN'):
 
 def calc_angle_diff(alpha, beta):
     """
-    Calculates the angular difference between two angles alpha and beta (floats, in degrees).
+    Calculates the angular difference between two angles calc_alpha and calc_beta (floats, in degrees).
     returns d_alpha: (float, in degrees between 0 and 360)
     """
     d = alpha - beta

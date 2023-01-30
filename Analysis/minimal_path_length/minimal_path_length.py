@@ -1,11 +1,13 @@
 from DataFrame.SingleExperiment import SingleExperiment
-from Directories import SaverDirectories, df_minimal_dir, minimal_path_length_dir
+from Directories import SaverDirectories, df_minimal_dir, minimal_path_length_dir, home
 import os
 import pandas as pd
 from DataFrame.dataFrame import myDataFrame
 from Analysis.Efficiency.PathLength import PathLength
 from trajectory_inheritance.get import get
 import json
+from DataFrame.import_excel_dfs import df_all, df_minimal
+from os import path
 
 missing = set()
 
@@ -71,6 +73,7 @@ class MinimalDataFrame(pd.DataFrame):
 
     def update_dict(self, myDataFrame, m):
         to_add = set(myDataFrame['filename']) - set(m.keys())
+        print(to_add)
 
         for series in myDataFrame[myDataFrame['filename'].isin(to_add)].iterrows():
             m.update({series[1]['filename']: self.find_minimal(series[1])})
@@ -80,14 +83,44 @@ class MinimalDataFrame(pd.DataFrame):
 
 # x = get('minimal_Large_SPT_back_MazeDimensions_human_LoadDimensions_human')
 # PathLength(x).calculate_first_frame(sigma=0)
-minimal_path_length_dict = MinimalDataFrame.get_dict()
+# minimal_path_length_dict = MinimalDataFrame.get_dict()
+def find_minimal_filename(series):
+    self = df_minimal
+    if series['shape'] != 'SPT':
+        return None
+    if series['size'] == 'Small Near':
+        series['size'] = 'Small Far'
+
+    ind = self.loc[(self['size'] == series['size'])
+                   & (self['initial condition'] == series['initial condition'])
+                   & (self['maze dimensions'] == series['maze dimensions'])].index
+    if len(ind) > 1:
+        if series['solver'] == 'human' and self.loc[ind[0]]['size'].split(' ')[0] == 'Small':
+            return self.loc[ind[0]]['filename']
+        print(series['filename'])
+        raise ValueError('too many minimal trajectories')
+    if len(ind) == 1:
+        result = self.loc[ind]['filename'].iloc[0]
+        return result
+
 
 if __name__ == '__main__':
+    df_all['minimal filename'] = df_all.apply(find_minimal_filename, axis=1)
+    minimal_filename_dict = dict(zip(df_all['filename'], df_all['minimal filename']))
+    minimal_path_length_dir = path.join(home, 'Analysis', 'minimal_path_length', 'minimal_filename_dict.json')
+
+    with open(minimal_path_length_dir, 'w') as json_file:
+        json.dump(minimal_filename_dict, json_file)
+        json_file.close()
+
     DEBUG = 1
-    # MinimalDataFrame.create_source()
+    m = MinimalDataFrame()
+    # m.to_excel(lists_exp_dir + '\\exp_minimal.xlsx')
+
+    MinimalDataFrame.create_source()
     myMinimalDataFrame = MinimalDataFrame()
     # myMinimalDataFrame.create_dict()
     minimal_path_length_dict = MinimalDataFrame.get_dict()
-    minimal_path_length_dict_new = myMinimalDataFrame.update_dict(myDataFrame, minimal_path_length_dict)
-    myMinimalDataFrame.save_dict(minimal_path_length_dict_new)
+    minimal_path_length_dict = myMinimalDataFrame.update_dict(myDataFrame, minimal_path_length_dict)
+    myMinimalDataFrame.save_dict(minimal_path_length_dict)
     DEBUG = 1

@@ -1,7 +1,8 @@
 from Directories import data_home, home
 import pandas as pd
 import numpy as np
-from Setup.Maze import ResizeFactors
+import json
+from os import path
 
 # resolution ...
 # find out for every size of experiment, what is the noise in angle (3 exp each)
@@ -10,6 +11,8 @@ from Setup.Maze import ResizeFactors
 # What is the dependency on size?
 # Give an upper boundary on the noise for XL and recalculate for size.
 
+with open(path.join(home, 'Setup', 'ResizeFactors.json'), "r") as read_content:
+    ResizeFactors = json.load(read_content)
 
 specific_resolution = 1
 

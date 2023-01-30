@@ -4,17 +4,21 @@ Created on Sun May  3 10:35:01 2020
 
 @author: tabea
 """
+from matplotlib import pyplot as plt
 from DataFrame.dataFrame import get_filenames
 from os import listdir
+from trajectory_inheritance.trajectory_human import Trajectory_human
 from Directories import MatlabFolder, NewFileName, trackedHumanHandMovieDirectory
+from trajectory_inheritance.trajectory_ant import Trajectory_ant
+from trajectory_inheritance.trajectory_humanhand import Trajectory_humanhand
+from trajectory_inheritance.get import get
 from tqdm import tqdm
 import json
 from trajectory_inheritance.exp_types import exp_types
-from trajectory_inheritance.trajectory_human import Trajectory_human
-from trajectory_inheritance.trajectory_ant import Trajectory_ant
-from trajectory_inheritance.trajectory_humanhand import Trajectory_humanhand
+import os
+from DataFrame.Altered_DataFrame import Altered_DataFrame
 import numpy as np
-from matplotlib import pyplot as plt
+import pandas as pd
 
 
 def is_extension(name) -> bool:
@@ -130,7 +134,7 @@ def extension_exists(filename, solver, size, shape, free=False) -> list:
     :return: list with candidates for being an extension.
     """
     movie_number = str(int(filename.split('_')[1]) + 1)
-    if solver == 'ant':
+    if solver in ['ant', 'pheidole']:
         if 'ant' not in filename:
             iteration_number = str(int(filename.split('_')[-1][0]) + 1)
         else:
@@ -144,9 +148,9 @@ def extension_exists(filename, solver, size, shape, free=False) -> list:
 
     extension_candidates = [mat_file for mat_file in listdir(MatlabFolder(solver, size, shape, free=free))
                             if
-                            (((same_movie in mat_file and iteration_number == mat_file.split('_')[-1][0])
+                            (((same_movie in mat_file and iteration_number == mat_file.split('_')[-2][0])
                               or next_movie in mat_file)
-                             and 'part ' + part_number in mat_file)]
+                             and ('part ' + part_number in mat_file) and same_movie in mat_file)]
     if len(extension_candidates) > 1:
         raise ValueError('to many extensions')
     return extension_candidates
@@ -170,16 +174,139 @@ def load(filename, solver, size, shape, fps, falseTracking, winner=None, free=Fa
     return Load_Experiment(solver, filename, falseTracking, winner, fps, size=size, shape=shape, free=free)
 
 
+dir = os.getcwd() + '\\longest_jump.json'
+
+
+def find_longest_jump(x) -> tuple:
+    r = x.position
+    distances = np.linalg.norm(np.diff(r, axis=0), axis=1)
+    plt.close('all')
+    plt.figure()
+    plt.plot(distances)
+    plt.pause(1)
+    maxi_ind = int(np.argmax(distances))
+    maxi = float(np.max(distances))
+    return maxi, maxi_ind
+
+
+def create_dict():
+    dictio_p = {}
+    ad = Altered_DataFrame()
+    ad.choose_experiments(solver='ant')
+    for filename in tqdm(ad.df['filename']):
+        x = get(filename)
+        dictio_p[filename] = find_longest_jump(x)
+
+    with open(dir, 'w') as json_file:
+        json.dump(dictio_p, json_file)
+        json_file.close()
+
+
+def find_most_problematic(d):
+    df = pd.DataFrame(d).T
+    df.columns = ['maxi', 'maxi_ind']
+    df.sort_values(by='maxi', inplace=True, ascending=False)
+    return df.head(n=26)
+
+
+def correct_traj_many_mistakes(x):
+    # CORRECT MANY MISTAKES
+    with open(dir, 'r') as json_file:
+        d = json.load(json_file)
+        json_file.close()
+
+    df_prob = find_most_problematic(d)
+    for i in range(10, len(df_prob)):
+        correct_traj(df_prob.iloc[i])
+
+    # TO SMOOTH
+    from scipy.signal import medfilt
+    window = 9
+    x.position[:, 0] = medfilt(x.position[:, 0], window)
+    x.position[:, 1] = medfilt(x.position[:, 1], window)
+    x.angle = medfilt(x.angle, window)
+
+    filename = 'M_SPT_5050016_MSpecialT_1'
+    x = get(filename)
+    x.play(frames=[46016-300, 46016+300], wait=10)
+    DEBUG = 1
+
+
+def show_new_mistake(start, end):
+    new_pos = x.position.copy()
+    new_angle = x.angle.copy()
+    plot_buffer = 200
+    s, e = max(start - plot_buffer, 1), min(end + plot_buffer, len(new_angle))
+
+    plt.figure()
+    plt.plot(list(range(s, e)), new_pos[s: e, 0])
+    plt.plot(list(range(s, e)), new_pos[s: e, 1])
+    plt.plot(start, new_pos[start, 0], '*', markersize=10)
+    plt.plot(end, new_pos[end, 0], '*', markersize=10)
+    new_pos[start:end] = np.linspace(new_pos[start], new_pos[end], num=end - start)
+    plt.plot(list(range(start, end)), new_pos[start: end, 0], color='k')
+    plt.plot(list(range(start, end)), new_pos[start: end, 1], color='k')
+
+    plt.figure()
+    plt.plot(list(range(s, e)), new_angle[s: e], '.')
+    plt.plot(start, new_angle[start], '*', markersize=10)
+    plt.plot(end, new_angle[end], '*', markersize=10)
+    new_angle[start:end] = np.linspace(new_angle[start], new_angle[end], num=end - start)
+    plt.plot(list(range(start, end)), new_angle[start: end], '.', color='k')
+    # plt.show()
+
+    plt.pause(1)
+    return new_pos, new_angle
+
+
+def correct_traj(x):
+    max_r, maxi_ind = find_longest_jump(x)
+    while max_r > 0.2:
+        print(max_r)
+        print(x.VideoChain, x.frames[maxi_ind])
+        buffer = 20
+        start = max(0, maxi_ind - buffer)
+        end = maxi_ind + buffer
+        new_pos, new_angle = show_new_mistake(start, end)
+        # new_pos, new_angle = show_new_mistake(np.where(x.frames == 1746)[0][0],
+        #                                       np.where(x.frames == 5266)[0][0])
+        # maxi_ind = int(x.fps * 0.25 * 5873)
+        x.position = new_pos
+        x.angle = new_angle
+        max_r, maxi_ind = find_longest_jump(x)
+    # x.play(frames=[start-50, end+50], wait=5)
+    # x.position = x.position + np.array([-0.15, 0.1])
+    # x.play(step=10)
+    return x
+
+# x.position[53184: 67948] = x.position[53184: 67948] + np.array([-0.2, 0])
+
+
 with open('time_dictionary.txt', 'r') as json_file:
     time_dict = json.load(json_file)
 
 with open('winner_dictionary.txt', 'r') as json_file:
     winner_dict = json.load(json_file)
 
+x = get('S_SPT_5190011_SSpecialT_1_ants')
+from scipy.signal import medfilt
+
+window = 9
+x.position[:, 0] = medfilt(x.position[:, 0], window)
+x.position[:, 1] = medfilt(x.position[:, 1], window)
+x.angle = medfilt(x.angle, window)
+
+# x = get('S_SPT_4760017_SSpecialT_1_ants (part 1)')
+# plt.plot(x.angle[43537: 54537])
+# correct_traj(x)
+# maxi_ind = int(x.fps * 0.25 * 5212)
+# x.play(frames=[maxi_ind - 500, maxi_ind + 500, ], wait=10)
+DEBUG = 1
+
 
 if __name__ == '__main__':
 
-    solver, shape, free = 'human', 'SPT', False
+    solver, shape, free = 'ant', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'pheidole': 50, 'humanhand': 30}
     #
     # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
@@ -193,37 +320,44 @@ if __name__ == '__main__':
     #     x = x + part
     #
     # plt.plot(x.frames)
-    # plt.show(block=False)
+    # plt.show()
     # # x = x.add_missing_frames(chain, free)
-    # x.play(step=5)
+    # x.play()
     # x.play(frames=[-250, -200], wait=10)
     # # x.angle = (x.angle + np.pi) % (2 * np.pi)
     # x.save()
 
-    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',
-                   ]
+    still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',]
 
-    for size in exp_types[shape][solver]:
+    # for size in exp_types[shape][solver]:
+    for size in ['L']:
+
         unpickled = find_unpickled(solver, size, shape)
+        unpickled = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat']
         winner_dict = continue_winner_dict(solver, shape)
         if len(unpickled) > 0:
             for results_filename in tqdm([u for u in unpickled if u not in still_to_do]):
                 print(results_filename)
                 parts_ = parts(results_filename, solver, size, shape)
+                parts_ = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat',
+                          'LSPT_4660001_LSpecialT_1_ants (part 1r).mat',
+                          'LSPT_4660002_LSpecialT_1_ants (part 2).mat']
                 winner = winner_dict[results_filename]
-
-                # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
-                #           'LSPT_4650007_LSpecialT_2_ants (part 1r).mat',
-                #           'LSPT_4650008_LSpecialT_1_ants (part 2).mat',
-                #           ]
-
                 chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]
+                # x.position = x.position + np.array([-0.2, -0.1])
+                x.play(wait=5)
+
+                check = 1
                 for part in chain[1:]:
+                    print(part.filename)
+                    # part.position = part.position + np.array([-0.1, 0])
+                    part.play(wait=2)
+                    # part.position = part.position + np.array([1.05, 0])
                     x = x + part
 
                 plt.plot(x.frames, marker='.')
-                plt.show(block=False)
+                plt.pause(1)
 
                 # sometimes tracked only every 5th frame
                 counts = np.bincount(np.abs(np.diff(x.frames)))
@@ -232,12 +366,15 @@ if __name__ == '__main__':
                 # x = x.add_missing_frames(chain, free)
                 # x = x.cut_off([0, 4660])
                 print(x.winner)
-                x.play(step=2)
-                # x.angle = (x.angle + np.pi) % (2 * np.pi)
-                # plt.plot(x.frames)
-                x.save()
 
-                # TODO: 'L_SPT_5000004_LSpecialT_1_ants (part 1)' ... correct false positions
+                # x.play(wait=2, step=5)
+                # x.angle = (x.angle + np.pi) % (2 * np.pi)
+                # x.angle[2717:3175] = (x.angle[2717:3175] + np.pi) % (2 * np.pi)
+                # x.position[2717:3175, 0] = x.position[2717:3175, 0] - 0.1
+                # plt.plot(x.frames)
+
+                x = correct_traj(x)
+                x.save()
 
     # free trajectories
     # solver, shape = 'ant', 'SPT'

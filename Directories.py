@@ -1,10 +1,11 @@
 from os import path, mkdir
-from datetime import datetime
 
 # home = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\'
 # data_home = '{sep}{sep}phys-guru-cs{sep}ants{sep}Tabea{sep}PyCharm_Data{sep}AntsShapes{sep}'.format(sep=path.sep)
 home = path.join(path.abspath(__file__).split('\\')[0] + path.sep, *path.abspath(__file__).split(path.sep)[1:-1])
 data_home = path.join(path.sep + path.sep + 'phys-guru-cs', 'ants', 'Tabea', 'PyCharm_Data', 'AntsShapes')
+
+network_dir = path.join(data_home, 'Time_Series')
 
 work_dir = path.join(data_home, 'Pickled_Trajectories')
 SaverDirectories = {'ant': {True: path.join(work_dir, 'Ant_Trajectories', 'Free'),
@@ -31,12 +32,22 @@ contacts_dir = path.join(data_home, 'Contacts', 'ant')
 df_dir = path.join(data_home, 'DataFrame', 'data_frame.json')
 df_sim_dir = path.join(data_home, 'DataFrame', 'data_frame_sim.json')
 df_minimal_dir = path.join(data_home, 'DataFrame', 'data_frame_minimal.json')
-network_dir = path.join(home, 'Analysis', 'PathPy')
 maze_dimension_directory = path.join(home, 'Setup')
+
+lists_exp_dir = path.join(data_home, 'DataFrame', 'excel_experiment_lists')
 
 video_directory = path.join(home, 'Videos')
 if not path.exists(video_directory):
     mkdir(video_directory)
+
+original_movies_dir_ant = [
+    '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Videos'.format(path.sep, path.sep, path.sep, path.sep, path.sep),
+    '{0}{1}phys-guru-cs{2}ants{3}Lena{4}Movies'.format(path.sep, path.sep, path.sep, path.sep, path.sep),
+    '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes'.format(path.sep, path.sep, path.sep, path.sep, path.sep)]
+original_movies_dir_human = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Experiments{5}Raw Data and Videos'.format(path.sep, path.sep, path.sep, path.sep, path.sep, path.sep)
+original_movies_dir_humanhand = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Hand Experiments{5}Raw Data{6}' \
+                                '2022_04_04 (Department Retreat)'.format(path.sep, path.sep, path.sep, path.sep,
+                                                                         path.sep, path.sep, path.sep)
 
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
                                                                                         path.sep, path.sep)
@@ -56,29 +67,30 @@ path_length_dir = path.join(home, 'Analysis', 'Efficiency', 'path_length.json')
 penalized_path_length_dir = path.join(home, 'Analysis', 'Efficiency', 'penalized_path_length.json')
 
 
-def SetupDirectories():
-    if not (path.isdir(SaverDirectories['ant'][False])):
-        if not path.isdir('\\\\' + SaverDirectories['ant'][False].split('\\')[2]):
-            return
-        mkdir(SaverDirectories['ant'])
-    if not (path.isdir(SaverDirectories['human'])):
-        mkdir(SaverDirectories['human'])
-    if not (path.isdir(SaverDirectories['humanhand'])):
-        mkdir(SaverDirectories['humanhand'])
-    if not (path.isdir(SaverDirectories['ps_simulation'])):
-        mkdir(SaverDirectories['ps_simulation'])
-
-    if not (path.isdir(mini_SaverDirectories['ant'])):
-        if not path.isdir('\\\\' + mini_SaverDirectories['ant'].split('\\')[2]):
-            return
-        mkdir(mini_SaverDirectories['ant'])
-    if not (path.isdir(mini_SaverDirectories['human'])):
-        mkdir(mini_SaverDirectories['human'])
-    if not (path.isdir(mini_SaverDirectories['humanhand'])):
-        mkdir(mini_SaverDirectories['humanhand'])
-    if not (path.isdir(mini_SaverDirectories['ps_simulation'])):
-        mkdir(mini_SaverDirectories['ps_simulation'])
-    return
+#
+# def SetupDirectories():
+#     if not (path.isdir(SaverDirectories['ant'][False])):
+#         if not path.isdir('\\\\' + SaverDirectories['ant'][False].split('\\')[2]):
+#             return
+#         mkdir(SaverDirectories['ant'])
+#     if not (path.isdir(SaverDirectories['human'])):
+#         mkdir(SaverDirectories['human'])
+#     if not (path.isdir(SaverDirectories['humanhand'])):
+#         mkdir(SaverDirectories['humanhand'])
+#     if not (path.isdir(SaverDirectories['ps_simulation'])):
+#         mkdir(SaverDirectories['ps_simulation'])
+#
+#     if not (path.isdir(mini_SaverDirectories['ant'])):
+#         if not path.isdir('\\\\' + mini_SaverDirectories['ant'].split('\\')[2]):
+#             return
+#         mkdir(mini_SaverDirectories['ant'])
+#     if not (path.isdir(mini_SaverDirectories['human'])):
+#         mkdir(mini_SaverDirectories['human'])
+#     if not (path.isdir(mini_SaverDirectories['humanhand'])):
+#         mkdir(mini_SaverDirectories['humanhand'])
+#     if not (path.isdir(mini_SaverDirectories['ps_simulation'])):
+#         mkdir(mini_SaverDirectories['ps_simulation'])
+#     return
 
 
 def MatlabFolder(solver, size, shape, free=False):
@@ -123,5 +135,4 @@ def NewFileName(old_filename: str, solver: str, size: str, shape: str, expORsim:
             elif solver in ['human', 'humanhand']:
                 return filename
 
-
-SetupDirectories()
+# SetupDirectories()

@@ -1,23 +1,26 @@
-# from DataFrame.dataFrame import myDataFrame
-# import pandas as pd
-#
-#
-# def solving_percentage(size):
-#     df = myDataFrame[(myDataFrame['size'] == size) &
-#                                  (myDataFrame['shape'] == 'SPT') &
-#                                  (myDataFrame['initial condition'] == 'back')]
-#     print(pd.value_counts(df['winner']))
-#
-#
-# if __name__ == '__main__':
-#     solving_percentage('M')
-#     DEBUG = 1
 
-from Analysis.PathPy.Path import *
+# Amir: per size 6 experiments
+# from every exp. dict with keys '0', '1', '2' and values list of counts
+# the values list of lists {'0': [[10, 20], [6, 6], ...], '1'}
 
-filename = 'large_20210419100024_20210419100547'
-x = get(filename)
-cs_labeled = ConfigSpace_AdditionalStates(x.solver, x.size, x.shape, x.geometry())
-cs_labeled.load_labeled_space()
-path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
-x.play(frames=[0, -50], path=path, videowriter=True)
+# average density of FREE ants
+
+# CM is in the 0th chamber
+# Measure the average density (average number of ants in area in chamber 0, 1 and 2)
+# Expectation: roughly the same density in both chambers
+
+# CM is in the 1st chamber
+# Measure the average density (average number of ants in area in chamber 0, 1 and 2)
+# Expectation: average density in chamber 1 is higher than in chamber 0
+
+
+"""
+Chamber naming:
+___________________
+|          |    |
+|    0       1    2    -> nest
+|          |    |
+|__________________
+
+"""
+

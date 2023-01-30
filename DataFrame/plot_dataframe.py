@@ -6,8 +6,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 df = pd.read_json(df_dir)
-df_gr_solver = df.groupby(by='solver')
-df_gr_shape = df.groupby(by='shape')
 
 
 def reduce_legend(ax):
@@ -18,14 +16,16 @@ def reduce_legend(ax):
     plt.legend(by_label.values(), by_label.keys())
 
 
-def save_fig(fig, name):
+def save_fig(fig, name, svg=False):
     name = "".join(x for x in name if x.isalnum())
     if fig.__module__ == 'plotly.graph_objs._figure':
         fig.write_image(graph_dir() + path.sep + name + '.pdf')
-        fig.write_image(graph_dir() + path.sep + name + '.svg')
+        if svg:
+            fig.write_image(graph_dir() + path.sep + name + '.svg')
     else:
         fig.savefig(graph_dir() + path.sep + name + '.pdf', format='pdf', pad_inches=0.5, bbox_inches='tight')
-        fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=0.5, bbox_inches='tight')
+        if svg:
+            fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=0.5, bbox_inches='tight')
 
 
 def Carrier_Number_Binning(df, solver, number_of_bins=5):
