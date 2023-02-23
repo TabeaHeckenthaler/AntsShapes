@@ -23,7 +23,7 @@ from Analysis.PathPy.Path import Path
 filename = 'S_SPT_5190017_SSpecialT_1_ants'
 x = get(filename)
 # frames has to be
-x.reduce_fps(x.fps)
+x.adapt_fps(1)
 x.load_participants()
 x.play(wait=100)
 

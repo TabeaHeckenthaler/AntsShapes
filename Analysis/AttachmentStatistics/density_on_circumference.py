@@ -56,7 +56,7 @@ class ChamberDensity(ChamberCounter):
         ch1[zero_circumference[:, 1]] = 0
         ch2[zero_circumference[:, 2]] = 0
 
-        # apply a gaussian filter to smooth the data to axis 0
+        # apply a gaussian smooth to smooth the data to axis 0
         self.circ_in_chambers = {0: ch0.tolist(), 1: ch1.tolist(), 2: ch2.tolist()}
 
     def corrected_density(self, d):
@@ -92,7 +92,7 @@ class ChamberDensity(ChamberCounter):
     @classmethod
     def get_density_of_exp(cls, filename):
         x = get(filename)
-        x.reduce_fps(chamberCount_fps * x.fps)
+        x.adapt_fps(chamberCount_fps)
 
         cc = ChamberDensity(x, ts=time_series_dict[filename])
 

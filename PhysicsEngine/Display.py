@@ -1,3 +1,5 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from pygame.locals import (QUIT, KEYDOWN, K_ESCAPE, K_SPACE)
 from PhysicsEngine.drawables import colors
@@ -206,6 +208,7 @@ class Display:
                 rect = pygame.Rect(x * block_size, self.height -
                                    y * block_size, block_size, block_size)
                 pygame.draw.rect(self.screen, colors['grid'], rect, 1)
+
 
     def keyboard_events(self):
         events = pygame.event.get()

@@ -57,12 +57,12 @@ class Trajectory_ant(Trajectory):
                                    + [44200] +  # Udi's camera 2022
                                    list(range(5000, 6000, 10))  # Lena's camera 2022
                                    ]
-        if np.any([new_starting_condition in self.filename
+        if np.any([self.filename.split('_')[2].startswith(new_starting_condition)
                    for new_starting_condition in new_starting_conditions]):
             return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
 
-        elif not self.free:
-            print('You are using old dimensions!, and maybe inaccurate LoadDimensions')
+        # elif not self.free:
+            # print('You are using old dimensions!, and maybe inaccurate LoadDimensions')
 
         return 'MazeDimensions_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
 
@@ -296,7 +296,7 @@ class Trajectory_ant(Trajectory):
             display.end_screen()
         return fc
 
-    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, path=None):
+    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, path=None, geometry=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -317,7 +317,7 @@ class Trajectory_ant(Trajectory):
         x.frames = x.frames[f1:f2:step]
 
         if not x.free:
-            my_maze = Maze(x)
+            my_maze = Maze(x, geometry=geometry)
         else:
             my_maze = Maze_free_space(x)
             x.position[:, 0] = x.position[:, 0] - np.min(x.position[:, 0])
@@ -334,6 +334,22 @@ class Trajectory_ant(Trajectory):
             return np.sum(cC != 0) / self.fps
         else:
             return self.timer()
+
+    def confine_to_new_dimensions(self) -> 'Trajectory':
+        x_new = deepcopy(self)
+        my_maze = Maze(x_new)
+        new_maze = Maze([], size=x_new.size, shape=x_new.shape, solver='ant',
+                        geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+        shift_in_x = my_maze.slits[0] - new_maze.slits[0]
+
+        x_new.position[:, 0] = np.maximum(np.zeros_like(x_new.position[:, 0]), x_new.position[:, 0] - shift_in_x)
+        x_new.position[:, 1] = x_new.position[:, 1] - (my_maze.arena_height - new_maze.arena_height)/2
+
+        x_new.position[:, 1] = np.minimum(np.maximum(np.zeros_like(x_new.position[:, 1]), x_new.position[:, 1]),
+                                         new_maze.arena_height)
+        return x_new
+        # not fully confining the trajectory_inheritance to the new dimensions
+
 
     def frame_count_after_solving_time(self, t):
         frames = t * self.fps

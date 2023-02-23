@@ -218,7 +218,7 @@ def mean_one_size(df) -> dict:
     d = {}
     for filename in df['filename']:
         x = get(filename)
-        x.reduce_fps(x.fps)
+        x.adapt_fps(1)
         cc = ChamberCounter(x)
         cc.load()
         d[filename] = cc.get_number_of_ants_based_on_CM()
@@ -238,7 +238,7 @@ if __name__ == '__main__':
 
     # filename = 'S_SPT_4770007_SSpecialT_1_ants (part 1)'
     # x = get(filename)
-    # x.reduce_fps(chamberCount_fps * x.fps)
+    # x.adapt_fps(chamberCount_fps * x.fps)
     # cc = ChamberCounter(x)
     # cc.get_number_of_ants_based_on_CM()
     # x.play(10)
@@ -274,7 +274,7 @@ if __name__ == '__main__':
         for filename in df['filename']:
             if not path.isfile(os.path.join('Chamber_Counts\\without_attached', f'{filename}_chamber_counts.json')):
                 x = get(filename)
-                x.reduce_fps(x.fps)
+                x.adapt_fps(1)
                 cc = ChamberCounter(x)
                 cc.calc_raw_counts(with_attached=False)
                 cc.calc_filtered_counts()

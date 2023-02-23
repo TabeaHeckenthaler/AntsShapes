@@ -54,5 +54,3 @@ def Carrier_Number_Binning(df, solver, number_of_bins=5):
         for i in range(bin_content, len(df), bin_content):
             sorted_df = set_boundary_group_indices(sorted_df, i)
         return sorted_df
-
-

@@ -13,7 +13,8 @@ from matplotlib import pyplot as plt
 try:
     import cc3d
 except:
-    print('cc3d not installed')
+    pass
+#     print('cc3d not installed')
 
 
 class Path_planning_in_CS:

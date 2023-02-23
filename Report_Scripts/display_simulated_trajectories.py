@@ -1,6 +1,6 @@
 from Directories import SaverDirectories, df_sim_dir
 import os
-from trajectory_inheritance.trajectory_gillespie import TrajectoryGillespie
+from trajectory_inheritance.trajectory_gillespie import Trajectory_gillespie
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 import numpy as np
 from matplotlib import pyplot as plt

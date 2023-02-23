@@ -1,5 +1,7 @@
 from abc import abstractmethod
 from PhysicsEngine.drawables import Drawables, colors
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import numpy as np
 

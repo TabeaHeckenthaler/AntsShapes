@@ -251,7 +251,7 @@ def single_force_check_func(SOURCE, ADDRESS, sensor, x, action='save', size='M',
 
 def single_force_check_experiment(ADDRESS, sensor, x, action='save', size='M', filter='NORMAL', measured_forces=None,
                                   ratio=1):
-    """ Tabea, this produces the graph with Ofers filter! """
+    """ Tabea, this produces the graph with Ofers smooth! """
     sensor_num = x.participants.occupied
     relevant_lines = [x.participants.frames[k].forces for k in range(len(x.frames))]
     frames = x.frames
@@ -313,7 +313,7 @@ def single_force_check_experiment(ADDRESS, sensor, x, action='save', size='M', f
 
 def all_forces_toghether_exp(SOURCE, ADDRESS, x, action='save', size='M', filter='NORMAL', measured_forces=None,
                              ratio=1):
-    """ Tabea, this produces the graph with Ofers filter! """
+    """ Tabea, this produces the graph with Ofers smooth! """
     sensor_num = x.participants.occupied
     relevant_lines = [x.participants.frames[k].forces for k in range(len(x.frames))]
     frames = x.frames

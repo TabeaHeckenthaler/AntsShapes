@@ -54,7 +54,8 @@ all_states = states + forbidden_transition_attempts + allowed_transition_attempt
 try:
     import cc3d
 except:
-    print('cc3d not installed')
+    pass
+#     print('cc3d not installed')
 
 traj_color = (1.0, 0.0, 0.0)
 start_end_color = (0.0, 0.0, 0.0)
@@ -160,7 +161,8 @@ def flatten(t: list):
 
 
 class ConfigSpace_Maze(ConfigSpace):
-    def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name="", space=None):
+    def __init__(self, solver: str, size: str, shape: str, geometry: tuple, name="", x_range=None, y_range=None,
+                 pos_resolution=None, theta_resolution=None, space=None):
         """
 
         :param solver: type of solver (ps_simluation, ant, human, etc.)
@@ -170,7 +172,6 @@ class ConfigSpace_Maze(ConfigSpace):
         :param name: name of the PhaseSpace.
         """
         super().__init__(space)
-        maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
 
         if len(name) == 0:
             name = size + '_' + shape
@@ -181,16 +182,32 @@ class ConfigSpace_Maze(ConfigSpace):
         self.size = size
         self.geometry = geometry
 
-        x_range = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
-        y_range = (0, maze.arena_height)
+        maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
+        if geometry == ('MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx',
+                        'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx'):
+            factor = {'Xl': 4, 'L': 2, 'M': 1, 'S': 0.5}[size]
+            maze_M = Maze(size='M', shape=shape, solver=solver, geometry=geometry)
+            if x_range is None:
+                x_range = (0, (maze_M.slits[-1] + max(maze_M.getLoadDim()) + 1)*factor)
+            if y_range is None:
+                y_range = (0, maze_M.arena_height * factor)
+        else:
+            if x_range is None:
+                x_range = (0, maze.slits[-1] + max(maze.getLoadDim()) + 1)
+            if y_range is None:
+                y_range = (0, maze.arena_height)
 
         self.extent = {'x': x_range,
                        'y': y_range,
                        'theta': (0, np.pi * 2)}
         self.average_radius = maze.average_radius()
 
-        self.pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
-        self.theta_resolution = 2 * np.pi / self.number_of_points()['theta']
+        if pos_resolution is None:
+            pos_resolution = self.extent['y'][1] / self.number_of_points()['y']
+        self.pos_resolution = pos_resolution
+        if theta_resolution is None:
+            theta_resolution = 2 * np.pi / self.number_of_points()['theta']
+        self.theta_resolution = theta_resolution
 
         self.space_boundary = None
         self.fig = None
@@ -305,8 +322,8 @@ class ConfigSpace_Maze(ConfigSpace):
     def calculate_space(self, mask=None) -> None:
         """
         This module calculated a space.
-        :param point_particle:
-        :param mask: If a mask is given only the unmasked area is calcuted. This is used to finetune maze dimensions.
+        param point_particle:
+        :param mask: If a mask is given only the unmasked area is calculated. This is used to finetune maze dimensions.
         :return:
         This was beautifully created by Rotem!!!
         """
@@ -345,6 +362,15 @@ class ConfigSpace_Maze(ConfigSpace):
                 self.imprint_boundary(draw, arr.shape, load_edge, maze_edge, xbounds, ybounds)
 
         return np.array(im)  # type: ignore  # this is the canonical way to convert Image to ndarray
+
+    def screenshot(self, dir: str):
+        if self.fig is None:
+            raise ValueError("Figure is not initialized")
+        arr = mlab.screenshot(figure=self.fig, mode='rgb')
+        arr = mlab.screenshot(figure=self.fig, mode='rgb')
+        im = Image.fromarray(arr)
+        # im.save('images\\CS_check\\' + label + '\\' + solver + geometry[0].split('.')[0] + size + '.jpeg')
+        im.save(dir)
 
     @staticmethod
     def imprint_boundary(draw, shape, edge_1, edge_2, xbounds, ybounds):
@@ -533,9 +559,17 @@ class ConfigSpace_Maze(ConfigSpace):
         Load Phase Space pickle.
         :param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
         """
-        directory = self.directory(point_particle=point_particle)
+        if self.solver == 'gillespie':
+            directory = '\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\Configuration_Spaces\\SPT\\' \
+                        'M_SPT_MazeDimensions_new2021_SPT_ant.pkl'
+        else:
+            directory = self.directory(point_particle=point_particle)
         if path.exists(directory):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(directory, 'rb'))
+            if self.solver == 'gillespie':
+                factor = {'Xl': 4, 'L': 2, 'M': 1, 'S': 0.5}[self.size]
+                self.extent['x'] = tuple(d*factor for d in self.extent['x'])
+                self.extent['y'] = tuple(d*factor for d in self.extent['y'])
             self.initialize_maze_edges()
             if self.extent['theta'] != (0, 2 * np.pi):
                 print('need to correct' + self.name)
@@ -564,7 +598,7 @@ class ConfigSpace_Maze(ConfigSpace):
                 self.extent['y'][0] + iy * self.pos_resolution,
                 self.extent['theta'][0] + itheta * self.theta_resolution)
 
-    def coords_to_index_unhandy(self, axis: int, value):
+    def coords_to_index_unhandy(self, axis: int, value, shape):
         """
         Translating coords to index of axis
         :param axis: What axis is coordinate describing
@@ -574,14 +608,16 @@ class ConfigSpace_Maze(ConfigSpace):
         if value is None:
             return None
         resolut = {0: self.pos_resolution, 1: self.pos_resolution, 2: self.theta_resolution}[axis]
-        value_i = min(int(np.round((value - list(self.extent.values())[axis][0]) / resolut)),
-                      self.space.shape[axis] - 1)
+        value_i = min(int(np.round((value - list(self.extent.values())[axis][0]) / resolut)), shape[axis] - 1)
 
         if value_i >= self.space.shape[axis] or value_i <= -1:
-            print('check', list(self.extent.keys())[axis])
+            if self.adapt_to_new_dimensions:
+                value_i = min(max(0, value_i), shape[axis] - 1)
+            else:
+                print('check', list(self.extent.keys())[axis])
         return value_i
 
-    def coords_to_indices(self, x: float, y: float, theta: float) -> tuple:
+    def coords_to_indices(self, x: float, y: float, theta: float, shape=None) -> tuple:
         """
         convert coordinates into indices_to_coords in PhaseSpace
         :param x: x position of CM in cm
@@ -589,8 +625,10 @@ class ConfigSpace_Maze(ConfigSpace):
         :param theta: orientation of axis in radian
         :return: (xi, yi, thetai)
         """
-        return self.coords_to_index_unhandy(0, x), self.coords_to_index_unhandy(1, y), \
-            self.coords_to_index_unhandy(2, theta % (2 * np.pi))
+        if shape is None:
+            shape = self.space.shape
+        return self.coords_to_index_unhandy(0, x, shape), self.coords_to_index_unhandy(1, y, shape), \
+            self.coords_to_index_unhandy(2, theta % (2 * np.pi), shape)
 
     def empty_space(self) -> np.array:
         return np.zeros((int(np.ceil((self.extent['x'][1] - self.extent['x'][0]) / float(self.pos_resolution))),
@@ -603,7 +641,7 @@ class ConfigSpace_Maze(ConfigSpace):
         """
         Calculate the boundary of a given PhaseSpace.
         :param point_particle:
-        :param mask: Where to calculate space (usefull just for testing)
+        :param mask: Where to calculate space (useful just for testing)
         :return:
         """
         if self.space is None:
@@ -840,9 +878,9 @@ class ConfigSpace_Maze(ConfigSpace):
         :param space: Actual space you want to erode
         :param radius: radius of erosion
         """
+        print('Eroding space...')
 
         def erode_space(space, struct):
-            print('Eroding space...')
             return ndimage.binary_erosion(space, structure=struct)
             # return np.array(~ndimage.binary_erosion(~np.array(space, dtype=bool), structure=struct), dtype=bool)
 
@@ -1347,17 +1385,18 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         we use this function.
         :return:
         """
-        default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
-        if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
-            return default + 4
-        if self.solver in ['ant', 'gillespie', 'pheidole']:
-            if self.size == 'S':
-                return default + 4
-            return default + 3
-        if self.solver == 'humanhand':
-            return default - 2
-        return default
-        # return int(np.ceil(self.coords_to_indices(0, 0.9, 0)[0]))
+        return int()
+        # TODO: I hope I dont need this anymore...
+        # default = self.coords_to_indices(0, (self.extent['y'][1] / 21.3222222), 0)[1]
+        # if self.size in ['Small Far', 'Small Near'] and self.solver == 'human':
+        #     return default + 4
+        # if self.solver in ['ant', 'gillespie', 'pheidole']:
+        #     if self.size == 'S':
+        #         return default + 4
+        #     return default + 3
+        # if self.solver == 'humanhand':
+        #     return default - 2
+        # return default
 
     def max_distance_for_transition(self) -> int:
         """
@@ -1522,8 +1561,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
                                           ], axis=-1)
             else:
                 cut_out = self.space_labeled[max(0, index[0] - border):index[0] + border,
-                          max(0, index[1] - border):index[1] + border,
-                          index[2] - border:index[2] + border]
+                                             max(0, index[1] - border):index[1] + border,
+                                             index[2] - border:index[2] + border]
             states = np.unique(cut_out).tolist()
 
             if '0' in states:
@@ -1531,6 +1570,11 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
 
             if len(states) > 0:
                 found_close_state = True
+                center_x_shift, center_y_shift = 0, 0
+                if index[0] - border < 0:
+                    center_x_shift = border - index[0]
+                if index[1] - border < 0:
+                    center_y_shift = border - index[1]
             else:
                 border += 10
         if len(states) == 1:
@@ -1545,10 +1589,8 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         d = {key: d[key] for key in d.copy().keys() if key not in to_pop}
 
         for state in d.keys():
-            # if np.sum(np.array(list(d.values())) > 20) == 1:
-            #     return list(d.keys())[np.where(np.array(list(d.values())) > 20)[0][0]]
             distances[state] = self.calculate_distance(cut_out == state, np.ones(shape=cut_out.shape, dtype=bool))[
-                border, border, border]
+                border-center_x_shift, border-center_y_shift, border]
         return min(distances, key=distances.get)
 
     def fix_edges_labeling(self):

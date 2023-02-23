@@ -304,7 +304,8 @@ class Maze_parent(b2World):
         # if self.excel_file_load in ['LoadDimensions_ant.xlsx']:
         #     d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
-        elif self.excel_file_load in ['LoadDimensions_ant_L_I_425.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx']:
+        elif self.excel_file_load in ['LoadDimensions_ant_L_I_425.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx',
+                                      'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx']:
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
 
         elif self.excel_file_load in ['LoadDimensions_human.xlsx']:
@@ -489,10 +490,17 @@ class Maze(Maze_parent):
         self.slitTree = list()
 
         if len(args) > 0 and type(args[0]).__name__ in ['Trajectory_human', 'Trajectory_ps_simulation',
-                                                        'Trajectory_ant', 'TrajectoryGillespie', 'Trajectory',
+                                                        'Trajectory_ant', 'Trajectory_gillespie', 'Trajectory',
                                                         'Trajectory_part', 'Trajectory_humanhand']:
             x = args[0]
-            self.excel_file_maze, self.excel_file_load = x.geometry()
+            if geometry is None:
+                self.excel_file_maze, self.excel_file_load = x.geometry()
+            elif x.solver == 'gillespie':
+                self.excel_file_maze, self.excel_file_load = \
+                    ('MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx',
+                     'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx')
+            else:
+                self.excel_file_maze, self.excel_file_load = geometry
             self.shape = x.shape
             self.size = x.size
             self.solver = x.solver
@@ -504,7 +512,7 @@ class Maze(Maze_parent):
             self.size = size
             self.solver = solver
 
-        is_exp_valid(shape, solver, size)
+        is_exp_valid(self.shape, self.solver, self.size)
         self.getMazeDim()
         super().__init__(position=position, angle=angle, point_particle=point_particle, bb=bb)
         self.CreateSlitObject()
@@ -518,10 +526,12 @@ class Maze(Maze_parent):
         return np.array(corners + list(np.resize(self.slitpoints, (16, 2))))
 
     def getMazeDim(self):
+
         df = read_excel(path.join(maze_dimension_directory, self.excel_file_maze), engine='openpyxl')
 
         if self.excel_file_maze in ['MazeDimensions_ant.xlsx', 'MazeDimensions_ant_L_I_425.xlsx',
-                                    'MazeDimensions_new2021_SPT_ant.xlsx']:  # all measurements in cm
+                                    'MazeDimensions_new2021_SPT_ant.xlsx',
+                                    'MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx']:  # all measurements in cm
             d = df.loc[df['Name'] == self.size + '_' + self.shape]
             self.arena_length = d['arena_length'].values[0]
             self.arena_height = d['arena_height'].values[0]

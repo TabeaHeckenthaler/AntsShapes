@@ -1,6 +1,6 @@
-from trajectory_inheritance.trajectory_gillespie import TrajectoryGillespie
+from trajectory_inheritance.trajectory_gillespie import Trajectory_gillespie
 
-x = TrajectoryGillespie(size='XL', shape='SPT', filename='gillespie_trajectory1')
+x = Trajectory_gillespie(size='XL', shape='SPT', filename='gillespie_trajectory1')
 x.setup_simulation()
 x.run_simulation(frameNumber=5000)
 

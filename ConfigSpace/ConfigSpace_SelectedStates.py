@@ -54,7 +54,11 @@ connected = [['ab', 'ac'], ['ab', 'b', 'be', 'b1', 'b2'], ['ac', 'c'], ['c', 'e'
 
 class ConfigSpace_SelectedStates(ConfigSpace_Labeled):
     def __init__(self, solver, size, shape, geometry):
+        # if solver == 'gillespie':
+        #     size = 'M'
+        #     geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
         super().__init__(solver=solver, size=size, shape=shape, geometry=geometry)
+        self.adapt_to_new_dimensions = False
 
     # def reduce_states(self):
     #     for name_initial, name_final in same_names:
@@ -127,17 +131,35 @@ class ConfigSpace_SelectedStates(ConfigSpace_Labeled):
         # DEBUG = 1
 
     def load_final_labeled_space(self):
-        if self.size in ['Small Far', 'Small Near']:  # both have same dimensions
-            filename = 'Small' + '_' + self.shape + '_' + self.geometry[0][:-5]
+        if self.geometry == ('MazeDimensions_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'):
+            geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+            self.adapt_to_new_dimensions = True
+            size = self.size
+        elif self.geometry == ('MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx',
+                               'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx') and self.solver == 'gillespie':
+            geometry = ('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx')
+            size = 'M'
         else:
-            filename = self.size + '_' + self.shape + '_' + self.geometry[0][:-5]
+            geometry = self.geometry
+            size = self.size
+
+        if self.size in ['Small Far', 'Small Near']:  # both have same dimensions
+            filename = 'Small' + '_' + self.shape + '_' + geometry[0][:-5]
+
+        else:
+            filename = size + '_' + self.shape + '_' + geometry[0][:-5]
 
         directory = path.join(PhaseSpaceDirectory, self.shape, filename + '_labeled_final.pkl')
+        if not path.exists(directory):
+            raise ValueError('File does not exist: ', directory)
         print('Loading labeled from ', directory, '.')
         self.space_labeled = pickle.load(open(directory, 'rb'))
+        print('finished loading')
 
     # I should never need this function again...
-    # def load_labeled_space(self, point_particle: bool = False) -> None:
+    def load_labeled_space(self, point_particle: bool = False) -> None:
+        raise ValueError('use load_final_labeled_space')
+
     #     """
     #     Load Phase Space pickle.
     #     param point_particle: point_particles=True means that the load had no fixtures when ps was calculated.
@@ -170,7 +192,6 @@ class ConfigSpace_SelectedStates(ConfigSpace_Labeled):
 
         directory = path.join(PhaseSpaceDirectory, self.shape, filename + '_labeled_final.pkl')
         pickle.dump(self.space_labeled, open(directory, 'wb'))
-
 
     @classmethod
     def add_missing_transitions(cls, labels) -> list:
@@ -214,9 +235,8 @@ class ConfigSpace_SelectedStates(ConfigSpace_Labeled):
         return new_labels
 
 
-
 def fix_cg():
-    x_min = maze.slits[1] - maze.getLoadDim()[1] * (centerOfMass_shift + 1/2)
+    x_min = maze.slits[1] - maze.getLoadDim()[1] * (centerOfMass_shift + 1 / 2)
     # maze.set_configuration(position=(x_min, maze.arena_height / 2), angle=np.pi)
     # maze.draw()
 

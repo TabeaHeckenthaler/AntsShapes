@@ -21,11 +21,8 @@ for (solver, geometry), sizes in list(geometries.items()):
         for label in labels:
             cs_labeled.visualize_transitions(reduction=2, only_states=[label])
             cs_labeled.visualize_space(reduction=2)
-
-            arr = mlab.screenshot(cs_labeled.fig, mode='rgb')
-            arr = mlab.screenshot(cs_labeled.fig, mode='rgb')
-            im = Image.fromarray(arr)
-            im.save('images\\CS_check\\' + label + '\\' + solver + geometry[0].split('.')[0] + size + '.jpeg')
+            cs_labeled.screenshot(dir='images\\CS_check\\' + label + '\\' + solver + geometry[0].split('.')[0] + size +
+                                      '.jpeg')
             mlab.close()
 
         DEBUG = 1

@@ -6,6 +6,7 @@ import numpy as np
 from trajectory_inheritance.trajectory import Trajectory
 from trajectory_inheritance.trajectory_ant import Trajectory_ant
 from trajectory_inheritance.trajectory_human import Trajectory_human
+from trajectory_inheritance.trajectory_gillespie import Trajectory_gillespie
 # from trajectory_inheritance.trajectory_ps_simulation import Trajectory_ps_simulation
 import pandas as pd
 
@@ -23,9 +24,10 @@ def get(filename):
                 address = path.join(root, dir, filename)
 
                 with open(address, 'rb') as f:
-                    shape, size, solver, filename, fps, position, angle, frames, winner = pickle.load(f)
+                    file = pickle.load(f)
 
                 if 'Ant_Trajectories' in address:
+                    shape, size, solver, filename, fps, position, angle, frames, winner = file
                     df = pd.read_json(df_dir)
                     x = Trajectory_ant(size=size, solver=solver, shape=shape, filename=filename, fps=fps,
                                        winner=winner, position=position, angle=angle, frames=frames,
@@ -34,6 +36,7 @@ def get(filename):
                     return x
 
                 if 'Human_Trajectories' in address:
+                    shape, size, solver, filename, fps, position, angle, frames, winner = file
                     df = pd.read_json(df_dir)
                     x = Trajectory_human(size=size, shape=shape, filename=filename, fps=fps,
                                          winner=winner, position=position, angle=angle, frames=frames,
@@ -42,6 +45,7 @@ def get(filename):
                     return x
 
                 if 'Pheidole_Trajectories' in address:
+                    shape, size, solver, filename, fps, position, angle, frames, winner = file
                     df = pd.read_json(df_dir)
                     x = Trajectory_ant(size=size, solver=solver, shape=shape, filename=filename, fps=fps,
                                        winner=winner, position=position, angle=angle, frames=frames,
@@ -50,11 +54,19 @@ def get(filename):
                     return x
 
                 if 'PS_simulation_Trajectories' in address:
+                    shape, size, solver, filename, fps, position, angle, frames, winner = file
                     x = Trajectory(shape=shape, size=size, solver=solver, filename=filename, position=position,
                                    angle=angle, frames=frames, winner=winner)
                     return x
 
-                raise Exception('implement get for : ' + solver)
+                if 'Gillespie' in address:
+                    shape, size, solver, filename, fps, position, angle, linVel, angVel, frames, winner = file
+                    # position = position * {'XL': 4, 'L': 2, 'M': 1, 'S': 1/2}[size]
+                    x = Trajectory_gillespie(shape=shape, size=size, filename=address.split('\\')[-1],
+                                             position=position, angle=angle % (2*np.pi), frames=frames, winner=winner, fps=fps)
+                    return x
+
+                raise Exception('implement get for: ?')
                 # return Trajectory(shape=shape, size=size, solver=solver, filename=filename, position=position,
                 #                   angle=angle, frames=frames, winner=winner)
 

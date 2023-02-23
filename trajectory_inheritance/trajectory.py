@@ -9,7 +9,7 @@ from os import path
 import os
 
 import pandas as pd
-
+from Analysis.smoothing import smooth_array
 from DataFrame.import_excel_dfs import df_all, df_minimal
 from Setup.MazeFunctions import ConnectAngle
 import pickle
@@ -21,7 +21,6 @@ from copy import deepcopy
 from Setup.Maze import Maze
 from Setup.Load import periodicity
 from PhysicsEngine.Display import Display
-from scipy.signal import savgol_filter
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
@@ -149,12 +148,16 @@ class Trajectory:
         return file12
 
     def step(self, my_maze, i, display=None):
+
         my_maze.set_configuration(self.position[i], self.angle[i])
 
     def smooth(self):
-        self.position[:, 0] = savgol_filter(self.position[:, 0], self.fps + 1, 3)
-        self.position[:, 1] = savgol_filter(self.position[:, 1], self.fps + 1, 3)
-        self.angle = savgol_filter(np.unwrap(self.angle), self.fps + 1, 3) % (2 * np.pi)
+        if self.solver == 'gillespie':
+            return
+        self.position[:, 0] = smooth_array(self.position[:, 0], self.fps)
+        self.position[:, 1] = smooth_array(self.position[:, 1], self.fps)
+        unwrapped_angle = ConnectAngle(self.angle, self.shape)
+        self.angle = smooth_array(unwrapped_angle, self.fps)
 
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
@@ -212,7 +215,7 @@ class Trajectory:
         df = pd.read_excel(lists_exp_dir + '\\exp.xlsx')
         os.startfile(df[df['filename'] == self.filename]['directory'].iloc[0])
 
-    def iterate_coords(self, time_step: float = 1) -> iter:
+    def iterate_coords_for_ps(self, time_step: float = 1) -> iter:
         """
         Iterator over (x, y, theta) of the trajectory, time_step is given in seconds
         :return: tuple (x, y, theta) of the trajectory
@@ -318,7 +321,7 @@ class Trajectory:
         lengths.append(len(self.frames) - np.sum(lengths))
         return lengths[i]
 
-    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, path=None):
+    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, path=None, geometry=None):
         """
         Displays a given trajectory_inheritance (self)
         :param videowriter:
@@ -351,7 +354,10 @@ class Trajectory:
                 x.participants.forces.abs_values = x.participants.forces.abs_values[f1:f2:step, :]
                 x.participants.forces.angles = x.participants.forces.angles[f1:f2:step, :]
 
-        my_maze = Maze(x, geometry=x.geometry())
+        if geometry is None:
+            geometry = x.geometry()
+
+        my_maze = Maze(x, geometry=geometry)
         return x.run_trj(my_maze, display=Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter,
                                                   path=path))
 
@@ -525,17 +531,44 @@ class Trajectory:
     def communication(self):
         return False
 
-    def reduce_fps(self, scale: int):
-        self.fps = self.fps/scale  # frames per second
-        self.position = self.position[::scale, :]  # np.array of x and y positions of the centroid of the shape
-        self.angle = self.angle[::scale]  # np.array of angles while the shape is moving
-        self.frames = self.frames[::scale]
-        if self.participants is not None:
-            raise ValueError('I have to change the participants as well')
+    def adapt_fps(self, new_fps: int):
+        """
+        param new_fps: if scale is larger than 1 it the fps will be reduced, if it is smaller than 1 it will be increased
+        """
+        # new_fps = self.fps / scale
+        scale = self.fps / new_fps
+        if scale > 1:
+            scale = int(np.ceil(scale))
+            self.fps = scale * self.fps  # this is supposed to be new_fps, frames per second
+            self.position = self.position[::scale, :]  # np.array of x and y positions of the centroid of the shape
+            self.angle = self.angle[::scale]  # np.array of angles while the shape is moving
+            self.frames = self.frames[::scale]
+            if self.participants is not None:
+                raise ValueError('I have to change the participants as well')
+        elif scale < 1:
+            lengthen_by = int(1 / scale)
+            # interpolate the position and angle
+            if int(self.fps*lengthen_by) != new_fps:
+                raise ValueError('I cannot interpolate the frames to the desired fps')
+            self.fps = new_fps
+            # calculate the new number of points
+            new_size = len(self.position) * 3
+            # create a new array with the interpolated points
+            new_array = np.zeros((new_size, 2))
+            new_array[:, 0] = np.interp(np.linspace(0, len(self.position) - 1, lengthen_by * len(self.position)),
+                                        np.arange(len(self.position)), self.position[:, 0])
+            new_array[:, 1] = np.interp(np.linspace(0, len(self.position) - 1, lengthen_by * len(self.position)),
+                                        np.arange(len(self.position)), self.position[:, 1])
+            self.position = new_array
+            self.angle = np.interp(np.linspace(0, len(self.angle) - 1, lengthen_by * len(self.angle)),
+                                   np.arange(len(self.angle)), self.angle)
+            self.frames = np.interp(np.linspace(0, len(self.frames) - 1, lengthen_by * len(self.frames)),
+                                    np.arange(len(self.frames)), self.frames).astype(int)
+            DEBUG = 1
 
 
 class Trajectory_part(Trajectory):
-    def __init__(self, parent_traj, VideoChain: list, frames: list, tracked_frames: list):
+    def __init__(self, parent_traj, VideoChain: list, frames: list, tracked_frames: list, states=None):
         """
 
         :param parent_traj: trajectory that the part is taken from
@@ -545,6 +578,7 @@ class Trajectory_part(Trajectory):
         super().__init__(size=parent_traj.size, shape=parent_traj.shape, solver=parent_traj.solver,
                          filename=parent_traj.filename, fps=parent_traj.fps, winner=parent_traj.winner,
                          VideoChain=VideoChain)
+        frames = [int(f) for f in frames]
         self.parent_traj = parent_traj
         self.frames_of_parent = frames
         self.frames = parent_traj.frames[frames[0]:frames[-1]]
@@ -552,6 +586,10 @@ class Trajectory_part(Trajectory):
         self.angle = parent_traj.angle[frames[0]:frames[-1]]
         self.tracked_frames = tracked_frames
         self.falseTracking = []
+        if states is not None:
+            self.states = states[frames[0]:frames[-1]]
+        else:
+            self.states = None
 
     def is_connector(self):
         if self.VideoChain[-1] is None:

@@ -106,7 +106,7 @@ def Attempts(x, *args, **kwargs):
 
     attempts_smoothed = median_filter(attempts, size=window)
     if 'Caption' in kwargs:
-        addition = 'Median filter with window ' + str(smoothing_window) + ' s, when separating attempts '
+        addition = 'Median smooth with window ' + str(smoothing_window) + ' s, when separating attempts '
         kwargs['Caption'] + addition
 
     at = pd.DataFrame({"a": attempts_smoothed})

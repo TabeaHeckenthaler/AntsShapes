@@ -13,10 +13,13 @@ time_step = 0.01
 #     return filename
 
 
-class TrajectoryGillespie(Trajectory):
-    def __init__(self, size=None, shape=None, filename='gillespie_test', fps=time_step, winner=bool, free=False,
-                 number_of_attached_ants=None):
-        super().__init__(size=size, shape=shape, solver='gillespie', filename=filename, fps=fps, winner=winner, )
+class Trajectory_gillespie(Trajectory):
+    def __init__(self, shape=None, size=None, position=None, angle=None, frames=None, winner=None,
+                 filename='gillespie_test', fps=time_step, free=False, number_of_attached_ants=None):
+
+        super().__init__(size=size, shape=shape, solver='gillespie', filename=filename, fps=fps, winner=winner,
+                         position=position, angle=angle, frames=frames)
+
         self.free = free
         self.gillespie = None
         self.number_of_attached_ants = number_of_attached_ants
@@ -107,5 +110,22 @@ class TrajectoryGillespie(Trajectory):
     def averageCarrierNumber(self):
         return np.mean(self.number_of_attached_ants)
 
-    def geometry(self):
-        return 'MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'
+    def geometry(self) -> tuple:
+        return ('MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx',
+                'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx')
+
+    def iterate_coords_for_ps(self, time_step: float = 1) -> iter:
+        """
+        Iterator over (x, y, theta) of the trajectory, time_step is given in seconds
+        :return: tuple (x, y, theta) of the trajectory
+        """
+        number_of_frames = self.angle.shape[0]
+        length_of_movie_in_seconds = number_of_frames/self.fps
+        len_of_slicer = np.floor(length_of_movie_in_seconds/time_step).astype(int)
+
+        # because we use the Medium sized phase space
+        position = self.position * {'XL': 1/4, 'L': 1/2, 'M': 1, 'S': 2}[self.size]
+
+        slicer = np.cumsum([time_step*self.fps for _ in range(len_of_slicer)][:-1]).astype(int)
+        for pos, angle in zip(position[slicer], self.angle[slicer]):
+            yield pos[0], pos[1], angle

@@ -44,12 +44,12 @@ class Ants(Participants):
             return False
 
     def carriers_in_frame(self, fps):
-        # many short-lived attachment and detachment events. We get rid of them with a median filter.
+        # many short-lived attachment and detachment events. We get rid of them with a median smooth.
         medfilt_cc = medfilt([len(frame.position) for frame in self.frames], 2 * fps + 1)
         return medfilt_cc
 
     def carriers_attached(self, fps):
-        # many short-lived attachment and detachment events. We get rid of them with a median filter.
+        # many short-lived attachment and detachment events. We get rid of them with a median smooth.
         medfilt_cc = medfilt([np.sum(frame.carrying) for frame in self.frames], 2 * fps + 1)
         return medfilt_cc
 

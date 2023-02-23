@@ -261,7 +261,7 @@ def show_new_mistake(start, end):
 
 def correct_traj(x):
     max_r, maxi_ind = find_longest_jump(x)
-    while max_r > 0.2:
+    while max_r > 0.1:
         print(max_r)
         print(x.VideoChain, x.frames[maxi_ind])
         buffer = 20
@@ -282,23 +282,23 @@ def correct_traj(x):
 # x.position[53184: 67948] = x.position[53184: 67948] + np.array([-0.2, 0])
 
 
-with open('time_dictionary.txt', 'r') as json_file:
-    time_dict = json.load(json_file)
+# with open('time_dictionary.txt', 'r') as json_file:
+#     time_dict = json.load(json_file)
+#
+# with open('winner_dictionary.txt', 'r') as json_file:
+#     winner_dict = json.load(json_file)
+#
+# x = get('S_SPT_5190011_SSpecialT_1_ants')
+# from scipy.signal import medfilt
+#
+# window = 9
+# x.position[:, 0] = medfilt(x.position[:, 0], window)
+# x.position[:, 1] = medfilt(x.position[:, 1], window)
+# x.angle = medfilt(x.angle, window)
 
-with open('winner_dictionary.txt', 'r') as json_file:
-    winner_dict = json.load(json_file)
-
-x = get('S_SPT_5190011_SSpecialT_1_ants')
-from scipy.signal import medfilt
-
-window = 9
-x.position[:, 0] = medfilt(x.position[:, 0], window)
-x.position[:, 1] = medfilt(x.position[:, 1], window)
-x.angle = medfilt(x.angle, window)
-
-# x = get('S_SPT_4760017_SSpecialT_1_ants (part 1)')
+x = get('M_SPT_4340004_MSpecialT_1_ants')
 # plt.plot(x.angle[43537: 54537])
-# correct_traj(x)
+x = correct_traj(x)
 # maxi_ind = int(x.fps * 0.25 * 5212)
 # x.play(frames=[maxi_ind - 500, maxi_ind + 500, ], wait=10)
 DEBUG = 1

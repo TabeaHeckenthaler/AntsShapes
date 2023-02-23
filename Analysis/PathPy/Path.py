@@ -14,7 +14,7 @@ import os
 import json
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
-from DataFrame.import_excel_dfs import df_relevant
+from DataFrame.import_excel_dfs import df_relevant, dfs_ant_old, dfs_ant, dfs_human, dfs_pheidole
 
 time_step = 0.25  # seconds
 
@@ -24,7 +24,7 @@ color_dict = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c',
               'ac': '#fc0000', 'ab': '#802424',
               'c': '#fc8600', 'cg': '#8a4b03',
               'e': '#fcf400', 'eb': '#a6a103', 'eg': '#05f521',
-              'f': '#30a103',
+              'f': '#30a103', 'g': '#000000',
               'h': '#085cd1', False: '#000000', True: '#ccffcc'}
 
 c = {'edge-moving': '#00ff00',
@@ -36,6 +36,8 @@ c = {'edge-moving': '#00ff00',
 color_dict.update(c)
 
 def exp_day(filename):
+    if filename.startswith('sim'):
+        return filename
     if len(filename.split('_')) == 3:
         return '_'.join(filename.split('_')[:3])
     return '_'.join(filename.split('_')[:3]) + '_' + filename.split('_')[4]
@@ -49,6 +51,8 @@ def create_bar_chart(df: pd.DataFrame, ax: plt.Axes, block=False, sorted=False):
     for filename, ts in zip(df['filename'], df['time series']):
         p = Path(time_step=0.25, time_series=ts)
         print(filename)
+        if filename == 'M_SPT_4340004_MSpecialT_1_ants':
+            DEBUG = 1
         p.bar_chart(ax=ax, axis_label=exp_day(filename), block=block)
         if not block:
             ax.set_xlabel('time [min]')
@@ -66,7 +70,7 @@ class Path:
 
     def __init__(self, time_step: float, time_series=None, x=None, conf_space_labeled=None, only_states=False):
         """
-        :param step: after how many frames I add a label to my label list
+        param step: after how many frames I add a label to my label list
         :param x: trajectory
         :return: list of strings with labels
         """
@@ -80,6 +84,7 @@ class Path:
             if only_states:
                 self.time_series = [l[0] for l in self.time_series]
         self.state_series = self.calculate_state_series(self.time_series)
+        DEBUG = 1
         # self.state_series = None
 
     @staticmethod
@@ -93,7 +98,7 @@ class Path:
             display.snapshot(save_dir)
 
     def save_transition_images(self, x):
-        coords = [coords for coords in x.iterate_coords(step=self.time_step)]
+        coords = [coords for coords in x.iterate_coords_for_ps()]
         Path.show_configuration(x, coords[0],
                                 'State_transition_images\\' + str(int(0 * self.time_step)) + '.png',
                                 text_in_snapshot=self.time_series[0], frame=0)
@@ -104,13 +109,25 @@ class Path:
                                         text_in_snapshot=label1, frame=int(i * self.time_step * x.fps))
 
     def get_time_series(self, conf_space_labeled, x):
-        coords = [coords for coords in x.iterate_coords(time_step=self.time_step)]
-        indices = [conf_space_labeled.coords_to_indices(*coords) for coords in coords]
+        if conf_space_labeled.adapt_to_new_dimensions:
+            x = x.confine_to_new_dimensions()
+            # x.play(geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+        coords_in_cs = [coords for coords in x.iterate_coords_for_ps(time_step=self.time_step)]
+        # coo = (4.2649902310867205, 4.834794427139041, 4.863976661556442)
+        # conf_space_labeled.coords_to_indices(*coo, shape=conf_space_labeled.space_labeled.shape)
+        indices = [conf_space_labeled.coords_to_indices(*coords, shape=conf_space_labeled.space_labeled.shape)
+                   for coords in coords_in_cs]
         labels = [None]
-        for i, index in enumerate(indices):
-            # if i == 170:
+        # maze = Maze(x, geometry=conf_space_labeled.geometry)
+        for i, index in tqdm(enumerate(indices)):
+            # if i == 889:
             #     DEBUG = 1
             labels.append(self.label_configuration(index, conf_space_labeled))
+            # print(labels[-1])
+            # display = Display(labels[-1], 1, maze, frame=i)
+            # maze.set_configuration(coords[i][0:2], coords[i][2])
+            # maze.draw(display)
+            # display.display()
         labels = labels[1:]
 
         if pre_final_state in labels[-1] and pre_final_state != labels[-1]:
@@ -121,6 +138,7 @@ class Path:
     def label_configuration(self, index, conf_space_labeled) -> str:
         label = conf_space_labeled.space_labeled[index]
         if label == '0':
+            DEBUG = 1
             label = conf_space_labeled.find_closest_state(index)
         # if set(label) == set('d'):
         #     conf_space_labeled.draw_ind(index)
@@ -225,45 +243,51 @@ class Path:
     #     return hey_path_length
 
     @classmethod
-    def create_dicts(cls, df_all, ConfigSpace_class=ConfigSpace_Labeled):
-        dictio_ts = {}
-        dictio_ss = {}
+    def create_dicts(cls, df_all, ConfigSpace_class=ConfigSpace_SelectedStates, dictio_ts=None, dictio_ss=None):
+        if dictio_ts is None:
+            dictio_ts = {}
+        if dictio_ss is None:
+            dictio_ss = {}
         shape = 'SPT'
         df_all = df_all[df_all['shape'] == shape]
 
         for solver in df_all['solver'].unique():
             print(solver)
             df = df_all[df_all['solver'] == solver].sort_values('size')
-            groups = df.groupby(by=['size'])
-            for size, cs_group in groups:
-                cs_labeled = ConfigSpace_class(solver, size, shape, solver_geometry[solver])
+            groups = df.groupby(by=['size', 'maze dimensions', 'load dimensions'])
+            for (size, maze_dim, load_dim), cs_group in groups:
+                cs_labeled = ConfigSpace_class(solver, size, shape, (maze_dim, load_dim))
                 cs_labeled.load_final_labeled_space()
                 for _, exp in tqdm(cs_group.iterrows()):
                     with open("state_calc.txt", "a") as f:
                         f.write('\n' + exp['filename'])
                     print(exp['filename'])
-                    if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
-                        dictio_ts[exp['filename']] = None
-                        dictio_ss[exp['filename']] = None
-                    else:
-                        # if exp['filename'] == 'L_SPT_4080010_SpecialT_1_ants (part 1)':
-                        #     DEBUG = 1
+                    if exp['filename'] not in dictio_ts.keys():
+                        # if (exp['maze dimensions'], exp['load dimensions']) != solver_geometry[solver]:
+                        #     dictio_ts[exp['filename']] = None
+                        #     dictio_ss[exp['filename']] = None
+                        # else:
+                            # if exp['filename'] == 'L_SPT_4080010_SpecialT_1_ants (part 1)':
+                            #     DEBUG = 1
+                        # x = get('L_SPT_4080002_SpecialT_1_ants (part 1)')
+                        # print('L_SPT_4080002_SpecialT_1_ants (part 1)')
                         x = get(exp['filename'])
                         path_x = Path(time_step=0.25, x=x, conf_space_labeled=cs_labeled)
                         dictio_ts[exp['filename']] = path_x.time_series
                         dictio_ss[exp['filename']] = path_x.state_series
-        return dictio_ts, dictio_ss
+                        # dictio_ts[exp['filename']] = None
+                        # dictio_ss[exp['filename']] = None
+            return dictio_ts, dictio_ss
 
     @classmethod
-    def plot_paths(cls, df_all):
-        from DataFrame.import_excel_dfs import dfs_ant, dfs_human, dfs_pheidole
-        for solver, df_dict in zip(['ant', 'human', 'pheidole'], [dfs_ant, dfs_human, dfs_pheidole]):
+    def plot_paths(cls, zipped, time_series_dict):
+        for solver, df_dict in zipped:
             for size, df in df_dict.items():
                 fig, ax = plt.subplots()
                 df['time series'] = df['filename'].map(time_series_dict)
 
                 create_bar_chart(df, ax, block=False)
-                save_fig(fig, 'bar_chart2_' + solver + '_' + str(size))
+                save_fig(fig, 'bar_chart_' + solver + '_' + str(size))
 
         # shape = 'SPT'
         # df_all = df_all[df_all['shape'] == shape]
@@ -362,7 +386,8 @@ class Path:
         # if food:
         #     plt.text(left + 2, b.patches[0].xy[-1], 'f', color='black')
 
-        labels = list(color_dict.keys())
+        # labels = list(color_dict.keys())
+        labels = list(given_names.keys())
         handles = [plt.Rectangle((0, 0), 1, 1, color=color_dict[label]) for label in labels]
         plt.legend(handles, labels)
 
@@ -379,14 +404,16 @@ class Path:
 
     @staticmethod
     def save_dicts(time_series_dict, state_series_dict, name=''):
-        print('saved!')
+        print('saving in', os.path.join(network_dir, 'time_series' + name + '.json'))
         with open(os.path.join(network_dir, 'time_series' + name + '.json'), 'w') as json_file:
             json.dump(time_series_dict, json_file)
             json_file.close()
 
+        print('saving in', os.path.join(network_dir, 'state_series' + name + '.json'))
         with open(os.path.join(network_dir, 'state_series' + name + '.json'), 'w') as json_file:
             json.dump(state_series_dict, json_file)
             json_file.close()
+        print('saved!')
 
 
 # time_series_dict, state_series_dict = Path.get_dicts('_selected_states')
@@ -398,12 +425,14 @@ class Path:
 
 DEBUG = 1
 if __name__ == '__main__':
-    # ConfigSpace_class = ConfigSpace_AdditionalStates
-    # filename = 'L_SPT_4660001_LSpecialT_1_ants (part 1)'
-    # cs_labeled = ConfigSpace_class('ant', 'L', 'SPT', solver_geometry['ant'])
-    # cs_labeled.load_final_labeled_space()
-    # x = get(filename)
-    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    filename = 'S_SPT_4350024_SSpecialT_1_ants'
+    x = get(filename)
+    x.geometry()
+    x_new = x.confine_to_new_dimensions()
+    x_new.play(geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+    cs_labeled = ConfigSpace_SelectedStates('ant', x.size, 'SPT', x.geometry())
+    cs_labeled.load_final_labeled_space()
+    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
 
     # with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'w') as json_file:
     #     json.dump(time_series_dict, json_file)
@@ -419,24 +448,32 @@ if __name__ == '__main__':
     # cs_labeled = ConfigSpace_AdditionalStates(x.solver, x.size, x.shape, x.geometry())
     # cs_labeled.load_final_labeled_space()
     # x.play(path=path, videowriter=False)
-    #
 
-    # time_series_dict, state_series_dict = Path.create_dict_edge_walked(df_relevant, ConfigSpace_SelectedStates)
-    # Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states')
-    # DEBUG = 1
-    #
-    with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
+    with open(os.path.join(network_dir, 'time_series_selected_states_new.json'), 'r') as json_file:
         time_series_dict = json.load(json_file)
         json_file.close()
 
-    with open(os.path.join(network_dir, 'state_series_selected_states.json'), 'r') as json_file:
+    with open(os.path.join(network_dir, 'state_series_selected_states_new.json'), 'r') as json_file:
         state_series_dict = json.load(json_file)
         json_file.close()
 
-    df_relevant['time series'] = df_relevant['filename'].map(time_series_dict)
-    df_relevant['state series'] = df_relevant['filename'].map(state_series_dict)
+    del time_series_dict['S_SPT_4350024_SSpecialT_1_ants']
+    del state_series_dict['S_SPT_4350024_SSpecialT_1_ants']
 
-    Path.plot_paths(df_relevant)
+    time_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.time_series
+    state_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.state_series
+
+    # df_all = pd.concat([pd.concat(dfs_ant_old.values()), df_relevant])
+    # time_series_dict, state_series_dict = Path.create_dicts(df_all, ConfigSpace_SelectedStates,
+    #                                                         dictio_ts=time_series_dict, dictio_ss=state_series_dict)
+    Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states_new')
+    # DEBUG = 1
+
+    # df_relevant['time series'] = df_relevant['filename'].map(time_series_dict)
+    # df_relevant['state series'] = df_relevant['filename'].map(state_series_dict)
+
+    # Path.plot_paths(zip(['ant', 'ant_old', 'human', 'pheidole'], [dfs_ant, dfs_ant_old, dfs_human, dfs_pheidole]))
+    Path.plot_paths(zip(['ant_old'], [dfs_ant_old]), time_series_dict)
 
     # ConfigSpace_class = ConfigSpace_AdditionalStates
     # to_add = Path.find_missing(myDataFrame)
@@ -445,7 +482,7 @@ if __name__ == '__main__':
     #                                                        ConfigSpace_class,
     #                                                        time_series_dict,
     #                                                        state_series_dict)
-    # time_series_dict, state_series_dict = Path.create_dict_edge_walked(myDataFrame, ConfigSpace_class)
+    # time_series_dict, state_series_dict = Path.create_edge_walked_dict(myDataFrame, ConfigSpace_class)
 
     # filenames = []
     # to_recalculate = myDataFrame[myDataFrame['filename'].isin(filenames)]
