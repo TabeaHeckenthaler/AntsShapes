@@ -39,6 +39,25 @@ class Trajectory_ant(Trajectory):
     # def __del__(self):
     #     remove(ant_address(self.filename))
 
+    def velocity(self, *args, fps=None):
+        av_rad = Maze(self).average_radius()
+        if len(args) == 0:
+            kernel_size = 2 * (self.fps // 2) + 1
+            position_filtered, unwrapped_angle_filtered = self.smoothed_pos_angle(self.position, self.angle,
+                                                                                  kernel_size)
+            args = (position_filtered[:, 0], position_filtered[:, 1], unwrapped_angle_filtered * av_rad)
+
+            # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
+            # fig.show()
+
+            # fig = px.scatter(x=self.frames[1:], y=np.linalg.norm(np.diff(position_filtered, axis=0), axis=1))
+            # fig.show()
+
+        if fps is None:
+            fps = self.fps
+
+        return np.column_stack([np.diff(a) for a in args]) * fps
+
     def geometry(self) -> tuple:
         """
         I restarted experiments and altered the maze dimensions for the S, M, L and XL SPT.

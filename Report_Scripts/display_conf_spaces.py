@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.get import get
-# import mayavi
+import mayavi
 from Setup.Maze import Maze
 
 scale_factor = {'XL': 0.1, 'L': 0.08, 'M': 0.05, 'S': 0.03}
@@ -59,7 +59,14 @@ if __name__ == '__main__':
     for size, filenames in size_filenames.items():
         for filename in filenames:
             x = get(filename)
+            #
+            # ps = ConfigSpace_Maze(solver='human', size='Large', shape='SPT', name='',
+            #                       geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+            # ps.load_space()
+            # ps.visualize_space(reduction=1)
+
             print(x.size, Maze(x).average_radius())
+
             # draw_in_cs(size, [filename])
             # print(size, path_length_dict[filenames[0]] / minimal_path_length_dict[filenames[0]])
 

@@ -25,7 +25,7 @@ color_dict = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c',
               'c': '#fc8600', 'cg': '#8a4b03',
               'e': '#fcf400', 'eb': '#a6a103', 'eg': '#05f521',
               'f': '#30a103', 'g': '#000000',
-              'h': '#085cd1', False: '#000000', True: '#ccffcc'}
+              'h': '#085cd1', False: '#000000', True: '#ccffcc', 'i': '#000000',}
 
 c = {'edge-moving': '#00ff00',
      'free-moving': '#004d00',

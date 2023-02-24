@@ -294,6 +294,9 @@ class Trajectory:
             raise Exception('only one old filename available')
         return self.filename
 
+    def speed(self):
+        return np.linalg.norm(self.velocity(), axis=1)
+
     def velocity(self, *args, fps=None):
         av_rad = Maze(self).average_radius()
         if len(args) == 0:
