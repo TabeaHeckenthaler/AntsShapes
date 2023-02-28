@@ -117,6 +117,7 @@ class Experiment_Sliding:
             if self.boundary[indices]:
                 on_edge[i] = True
         self.on_edge = on_edge
+
     def play_edge_walk(self) -> None:
         x = deepcopy(self.traj)
         my_maze = Maze(x)

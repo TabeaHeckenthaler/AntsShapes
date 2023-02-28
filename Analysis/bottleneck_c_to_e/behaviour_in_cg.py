@@ -4,6 +4,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 from DataFrame.plot_dataframe import save_fig
 from trajectory_inheritance.get import get
+from trajectory_inheritance.trajectory_sep_into_states import Traj_sep_by_state
 import os
 import json
 from tqdm import tqdm
@@ -24,13 +25,6 @@ import pandas as pd
 #         super().__init__(parent_traj, VideoChain, frames, tracked_frames, states=None)
 
 
-def extend_time_series_to_match_frames(ts, traj):
-    indices_to_ts_to_frames = np.cumsum([1 / (int(len(traj.frames) / len(ts) * 10) / 10)
-                                         for _ in range(len(traj.frames))]).astype(int)
-    ts_extended = [ts[min(i, len(ts) - 1)] for i in indices_to_ts_to_frames]
-    return ts_extended
-
-
 def cut_traj(traj, ts, buffer=0) -> tuple:
     """
     Divide the trajectory into two lists.
@@ -38,7 +32,7 @@ def cut_traj(traj, ts, buffer=0) -> tuple:
     Second, split traj into subtrajs that are (1) outside c and cg and (2) within c and cg.
     Return these two lists.
     """
-    ts_extended = extend_time_series_to_match_frames(ts, traj)
+    ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, traj)
     indices_cg = np.where(np.logical_or(np.array(ts_extended) == 'c', np.array(ts_extended) == 'cg'))[0]
     ind_succ = np.split(indices_cg, np.where(np.diff(indices_cg) != 1)[0] + 1)
 
@@ -67,7 +61,7 @@ def cut_traj_after_c_e_crossing(traj) -> Trajectory_part:
     Second, split traj into subtrajs that are (1) outside c and cg and (2) within c and cg.
     Return these two lists.
     """
-    ts_extended = extend_time_series_to_match_frames(time_series_dict[traj.filename], traj)
+    ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(time_series_dict[traj.filename], traj)
     indices_e = np.where(np.array(ts_extended) == 'e')[0]
     return Trajectory_part(traj, frames=[indices_e[0], -1], VideoChain=[], tracked_frames=[])
 
@@ -103,7 +97,7 @@ def c_to_e_passage_func(filename, ts) -> list:
     c_ac_or_e = {key: value for key, value in c_ac_or_e.items() if value is not None}
     return list(c_ac_or_e.values())
 
-# THIS is not in In_the_bottle class
+# THIS is now in In_the_bottle class
 # def distance_on_off_edge(in_c_list, ps, radius, edge_walk=None) -> tuple:
 #     on_edge, off_edge = [], []
 #

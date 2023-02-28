@@ -124,8 +124,8 @@ class ConfigSpace_SelectedStates(ConfigSpace_Labeled):
             space = np.array(self.space_labeled == label, dtype=bool)
             centroid = self.indices_to_coords(*np.array(np.where(space))[:, 0])
             self.visualize_space(fig=self.fig, colormap=colormap, reduction=reduction, space=space)
-            mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label,
-                        scale=self.scale_of_letters(reduction))
+            # mlab.text3d(*(a * b for a, b in zip(centroid, [1, 1, self.average_radius])), label,
+            #             scale=self.scale_of_letters(reduction))
         # self.draw_ind((194, 149,  62))
         # self.draw_ind((194, 103, 554))
         # DEBUG = 1
@@ -268,7 +268,8 @@ if __name__ == '__main__':
             ps = ConfigSpace_SelectedStates(solver, size, 'SPT', geometry)
             ps.load_final_labeled_space()
             fix_cg()
-            ps.visualize_space(reduction=2)
-            ps.visualize_transitions(only_states=['cg'], reduction=2)
-            ps.save_final_labeled()
+            ps.visualize_space()
+            # ps.visualize_transitions(only_states=['cg'], reduction=2)
+            # ps.visualize_transitions()
+            # ps.save_final_labeled()
             DEBUG = 1

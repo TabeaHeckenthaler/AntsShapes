@@ -156,18 +156,27 @@ class In_the_bottle:
 
         percent_solved = {}
         average_fraction = {}
+        sem_fractions = {}
 
         for size, df_clean_size in df_clean.groupby(['size']):
             percent_solved[size] = {sink: len(df_sink) / len(df_clean_size)
                                     for sink, df_sink in df_clean_size.groupby(['sink'])}
             average_fraction[size] = {sink: df_sink['fraction_on_edge'].mean()
                                       for sink, df_sink in df_clean_size.groupby(['sink'])}
+            sem_fractions[size] = {sink: df_sink['fraction_on_edge'].std()/len(df_sink['fraction_on_edge'])
+                                      for sink, df_sink in df_clean_size.groupby(['sink'])}
 
         solved_fractions = pd.DataFrame(percent_solved).transpose()
         edge_fractions = pd.DataFrame(average_fraction).transpose()
+        sem_fractions = pd.DataFrame(sem_fractions).transpose()
 
+        print('solved_fractions')
         print(solved_fractions)
+        print('edge_fractions')
         print(edge_fractions)
+        print('sem_fractions')
+        print(sem_fractions)
+
 
     @classmethod
     def plot_statistics(cls, df_results):
@@ -216,7 +225,7 @@ class In_the_bottle:
             # limit y axis to 0 to 15
             # fig.update_yaxes(range=[0, y_max])
             print('sink', sink, 'size', size, 'len', len(df_size_sink))
-            # save_fig(fig, size + 'sink' + sink)
+            save_fig(fig, size + 'sink' + sink)
         DEBUG = 1
 
     @staticmethod
@@ -273,11 +282,24 @@ if __name__ == '__main__':
     #     time_series_dict = json.load(json_file)
     #     json_file.close()
     # radius = 10
+    solver = 'gillespie'
 
-    with open(os.path.join(network_dir, 'time_series_selected_states_gillespie.json'), 'r') as json_file:
-        time_series_dict = json.load(json_file)
-        json_file.close()
-    df_dict_sep_by_size = dfs_gillespie
+    if solver == 'gillespie':
+        df_dict_sep_by_size = dfs_gillespie
+        with open(os.path.join(network_dir, 'time_series_selected_states_gillespie.json'), 'r') as json_file:
+            time_series_dict = json.load(json_file)
+            json_file.close()
+        df_results = pd.read_excel(home + '\\Analysis\\bottleneck_c_to_e\\results\\correlation_results_gillespie.xlsx',
+                                   usecols=columns)
+    elif solver == 'ant':
+        df_dict_sep_by_size = dfs_ant
+        df_results = pd.read_excel(home + '\\Analysis\\bottleneck_c_to_e\\results\\correlation_results_ant.xlsx',
+                                   usecols=columns)
+        # 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
+        df_results = df_results[~(df_results['filename'].isin(df_dict_sep_by_size['Single (1)']['filename']))]
+        DEBUG = 1
+    else:
+        raise ValueError('solver must be ant or gillespie')
     radius = 10
 
     # for filename in ['sim_S_20230129-192126New', 'sim_L_20230129-184654New']:
@@ -293,18 +315,19 @@ if __name__ == '__main__':
     #     DEBUG = 1
 
     # # read pandas dataframe to save all results
-    df_results = pd.read_excel(home + '\\Analysis\\bottleneck_c_to_e\\results\\correlation_results.xlsx', usecols=columns)
-    # df_results = pd.DataFrame(columns=columns)
-    df_results = df_results[df_results['solver'] != 'gillespie']
-    to_do = {size: [f for f in df_size['filename'].values if f not in df_results['filename'].values]
-             for size, df_size in df_dict_sep_by_size.items()}
-
-    # del to_do['L']
-    # del to_do['M']
-
-    new_df_results = In_the_bottle.calc(to_do)
-    df_results = pd.concat([df_results, new_df_results], ignore_index=True)
-    df_results.to_excel('results\\correlation_results.xlsx')
+    # # df_results = pd.DataFrame(columns=columns)
+    # df_results = df_results[df_results['solver'] != 'gillespie']
+    # to_do = {size: [f for f in df_size['filename'].values if f not in df_results['filename'].values]
+    #          for size, df_size in df_dict_sep_by_size.items()}
     #
-    In_the_bottle.plot_statistics(df_results[df_results['filename'].isin(pd.concat(df_dict_sep_by_size.values())['filename'])])
-    # In_the_bottle.find_fractions()
+    # # del to_do['L']
+    # # del to_do['M']
+    #
+    # new_df_results = In_the_bottle.calc(to_do)
+    # df_results = pd.concat([df_results, new_df_results], ignore_index=True)
+    # df_results.to_excel('results\\correlation_results.xlsx')
+    #
+
+    # In_the_bottle.plot_statistics(df_results[df_results['filename'].isin(
+    #     pd.concat(df_dict_sep_by_size.values())['filename'])])
+    In_the_bottle.find_fractions()
