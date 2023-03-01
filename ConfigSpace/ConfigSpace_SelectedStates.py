@@ -267,7 +267,7 @@ if __name__ == '__main__':
             maze = Maze(size=size, shape='SPT', solver=solver, geometry=geometry)
             ps = ConfigSpace_SelectedStates(solver, size, 'SPT', geometry)
             ps.load_final_labeled_space()
-            fix_cg()
+            # fix_cg()
             ps.visualize_space()
             # ps.visualize_transitions(only_states=['cg'], reduction=2)
             # ps.visualize_transitions()

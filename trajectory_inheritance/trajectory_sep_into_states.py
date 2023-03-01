@@ -29,6 +29,21 @@ class Traj_sep_by_state:
             return traj_parts[number]
         return traj_parts
 
+    def percent_of_succession1_ended_like_succession2(self, succession1, succession2):
+        """
+        Get the percentage of trajectory parts with the given succesion of states that ended like the given succession
+        :param succesion1: succesion of states
+        :param succesion2: succesion of states
+        :return: percentage
+        """
+        if succession1 != succession2[:len(succession1)]:
+            raise ValueError('The first succession should be the first part of the second succession')
+        traj_parts1 = self.get_successions_of_states(succession1)
+        traj_parts2 = self.get_successions_of_states(succession2)
+        if len(traj_parts1) == 0:
+            return None
+        return len(traj_parts2) / len(traj_parts1)
+
     def get_successions_of_states(self, succession: list) -> list:
         """
         Get the trajectory parts with the given succesion of states

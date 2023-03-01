@@ -5,7 +5,7 @@ import pandas as pd
 from Directories import network_dir, home
 from mayavi import mlab
 import os
-from DataFrame.import_excel_dfs import dfs_human
+from DataFrame.import_excel_dfs import dfs_human, dfs_ant
 import json
 import numpy as np
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
@@ -60,10 +60,6 @@ class ExtremalPoints:
                     new_results = new_results.append(d, ignore_index=True)
         return new_results
 
-    def percentage_of_entrances_to_unique_state_followed_succession(self):
-
-        pass
-
 
 if __name__ == '__main__':
 
@@ -73,7 +69,7 @@ if __name__ == '__main__':
 
     unique_s = 'ab'
     necessary_succ = [['ab'], ['b', 'b1', 'b2', 'be'], ['ab'], ['ac'], ['c']]
-    e = ExtremalPoints(coordinates=[], unique_state=unique_s, succession=necessary_succ)
+    e = ExtremalPoints(df=None, unique_state=unique_s, succession=necessary_succ)
     # new_results = e.calc_extremal_points(pd.concat(dfs_human))
     # new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'extremal_points_' + unique_s + '.xlsx'))
 
@@ -93,5 +89,24 @@ if __name__ == '__main__':
     #     DEBUG = 1
 
     # how many percentage of times the shape entered ... it did this succession?
+    columns = ['filename', 'size', 'solver', 'start', 'end', 'percent']
+    new_results = pd.DataFrame(columns=columns)
+
     for size, df in dfs_human.items():
-        e = ExtremalPoints(unique_state=unique_s, succession=necessary_succ, )
+        for filename in tqdm(df['filename']):
+            x = get(filename)
+            print(x.filename)
+
+            ts = time_series_dict[x.filename]
+            ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
+            t_sep = Traj_sep_by_state(x, ts_extended)
+            start, end = necessary_succ[:2], necessary_succ[2:]
+            perc = t_sep.percent_of_succession1_ended_like_succession2(succession1=start,
+                                                                       succession2=start+end)
+            d = {'filename': x.filename, 'size': x.size, 'solver': x.solver,
+                 'start': start, 'end': end, 'percent': perc}
+            new_results = new_results.append(d, ignore_index=True)
+
+    new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'perc_of_succession_ending_' + unique_s + '.xlsx'))
+
+

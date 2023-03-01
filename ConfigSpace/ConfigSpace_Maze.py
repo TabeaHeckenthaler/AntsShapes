@@ -457,7 +457,8 @@ class ConfigSpace_Maze(ConfigSpace):
 
         cont = mlab.contour3d(x, y, theta,
                               space[:x.shape[0], :x.shape[1], :x.shape[2]],
-                              opacity=0.08,  # 0.15
+                              # opacity=0.08,  # 0.15
+                              opacity=0.05,  # 0.15
                               figure=self.fig,
                               colormap=colormap)
 
