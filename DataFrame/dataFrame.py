@@ -220,7 +220,7 @@ if __name__ == '__main__':
     #
     # DEBUG = 1
     #
-    # for new_experiment in myDataFrame.new_experiments(solver='pheidole', shape='SPT'):
-    #     print(new_experiment['filename'].values[0])
-    #     myDataFrame = myDataFrame + new_experiment
+    for new_experiment in myDataFrame.new_experiments(solver='human', shape='SPT'):
+        print(new_experiment['filename'].values[0])
+        myDataFrame = myDataFrame + new_experiment
     myDataFrame.save()

@@ -17,6 +17,7 @@ from plotly import express as px
 from ConfigSpace.experiment_sliding import Experiment_Sliding
 from Analysis.greed import Trajectory
 import pandas as pd
+from correlation_edge_walk_decision_c_e_ac import In_the_bottle
 
 #
 # class Traj_in_cg(Trajectory_part):
@@ -171,7 +172,7 @@ def calc_and_save_all(radius):
                 pL_in_c[filename] = [pL(traj) for traj in in_cs]
                 pL_out_c[filename] = [pL(traj) for traj in out_cs[:-1]]  # before they finally passed the bottleneck
                 distance_in_c_on_edge[filename], distance_in_c_off_edge[filename] = \
-                    distance_on_off_edge(in_cs, ps, radius, edge_walk=ew)
+                    In_the_bottle.distance_on_off_edge(in_cs, ps, radius, edge_walk=ew)
                 print(sum(distance_in_c_on_edge[filename])/sum(distance_in_c_on_edge[filename] + distance_in_c_off_edge[filename]))
                 c_to_e_passage[filename] = c_to_e_passage_func(filename, time_series_dict[filename])
 
@@ -429,7 +430,7 @@ if __name__ == '__main__':
         print('times_entered_to_c', len(in_c))
         print('pL_in_c', [pL(traj) for traj in in_c])
         print('pL_out_c', [pL(traj) for traj in out_c[:-1]])  # this is before they finally passed the bottleneck
-        on, off = distance_on_off_edge(in_c, ps, radius=radius)
+        on, off = In_the_bottle.distance_on_off_edge(in_c, ps, radius=radius)
         print('distance_on_edge',  on)
         print('distance_off_edge',  off)
         print('on_edge_fraction', sum(on)/sum(on+off))

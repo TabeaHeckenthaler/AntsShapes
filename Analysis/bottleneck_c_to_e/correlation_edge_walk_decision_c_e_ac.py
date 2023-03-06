@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 from typing import Union
 from mayavi import mlab
 from Analysis.Efficiency.PathLength import PathLength
+from matplotlib import pyplot as plt
 
 
 import plotly.figure_factory as ff
@@ -111,6 +112,7 @@ class In_the_bottle:
         return {'filename': self.filename, 'frames_of_parent': self.frames_of_parent, 'source': self.source,
                 'sink': self.sink, 'on_edge': self.on_edge, 'off_edge': self.off_edge,
                 'fraction_on_edge': self.fraction_on_edge(), 'solver': self.traj.solver, 'size': self.traj.size}
+
 
     def plot_traj_in_cs(self, ps: ConfigSpace_SelectedStates, bool_to_plot: Union[list, None]):
         """
@@ -266,7 +268,8 @@ class In_the_bottle:
 
                     in_the_bottle = In_the_bottle(in_c, ps, ew, radius=3)
 
-                    in_the_bottle.plot_traj_in_cs(ps, ew.on_edge)
+                    # in_the_bottle.plot_traj_in_cs(ps, ew.on_edge)
+                    in_the_bottle.plot_traj_in_2D(bool_to_plot=ew.on_edge)
 
                     print(in_the_bottle.to_dict()['fraction_on_edge'])
                     print(in_the_bottle.to_dict()['filename'])
@@ -277,12 +280,10 @@ class In_the_bottle:
 
 
 if __name__ == '__main__':
-    # df_dict_sep_by_size = {size: pd.concat([dfs_ant[size], dfs_ant_old[size]]) for size in dfs_ant.keys()}
-    # with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
-    #     time_series_dict = json.load(json_file)
-    #     json_file.close()
-    # radius = 10
-    solver = 'gillespie'
+    solver = 'ant'
+    with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
+        time_series_dict = json.load(json_file)
+        json_file.close()
 
     if solver == 'gillespie':
         df_dict_sep_by_size = dfs_gillespie
@@ -292,7 +293,7 @@ if __name__ == '__main__':
         df_results = pd.read_excel(home + '\\Analysis\\bottleneck_c_to_e\\results\\correlation_results_gillespie.xlsx',
                                    usecols=columns)
     elif solver == 'ant':
-        df_dict_sep_by_size = dfs_ant
+        df_dict_sep_by_size = {size: pd.concat([dfs_ant[size], dfs_ant_old[size]]) for size in dfs_ant.keys()}
         df_results = pd.read_excel(home + '\\Analysis\\bottleneck_c_to_e\\results\\correlation_results_ant.xlsx',
                                    usecols=columns)
         # 'S_SPT_4710014_SSpecialT_1_ants (part 1)'
@@ -319,15 +320,17 @@ if __name__ == '__main__':
     # df_results = df_results[df_results['solver'] != 'gillespie']
     # to_do = {size: [f for f in df_size['filename'].values if f not in df_results['filename'].values]
     #          for size, df_size in df_dict_sep_by_size.items()}
+
+    to_do = {size: df_size['filename'].values for size, df_size in df_dict_sep_by_size.items()}
     #
     # # del to_do['L']
     # # del to_do['M']
     #
-    # new_df_results = In_the_bottle.calc(to_do)
+    new_df_results = In_the_bottle.calc(to_do)
     # df_results = pd.concat([df_results, new_df_results], ignore_index=True)
     # df_results.to_excel('results\\correlation_results.xlsx')
     #
 
     # In_the_bottle.plot_statistics(df_results[df_results['filename'].isin(
     #     pd.concat(df_dict_sep_by_size.values())['filename'])])
-    In_the_bottle.find_fractions()
+    # In_the_bottle.find_fractions()
