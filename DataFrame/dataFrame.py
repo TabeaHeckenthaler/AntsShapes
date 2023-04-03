@@ -190,8 +190,8 @@ class DataFrame(pd.DataFrame):
 
 
 tqdm.pandas()
-myDataFrame = DataFrame(pd.read_json(df_dir))
-myDataFrame.exclude_perfect()
+myDataFrame = DataFrame(pd.read_excel(df_dir, usecols=columns))
+# myDataFrame.exclude_perfect()
 # myDataFrame_sim = DataFrame(pd.read_json(df_sim_dir))
 # myDataFrame[((myDataFrame['solver'] == 'human') & (myDataFrame['size'].isin(['Large', 'Medium'])))]
 # myDataFrame = DataFrame(pd.read_excel(df_excel_dir))

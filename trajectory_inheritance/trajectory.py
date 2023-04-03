@@ -24,6 +24,7 @@ from PhysicsEngine.Display import Display
 from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
+from matplotlib import pyplot as plt
 import plotly.express as px
 
 
@@ -96,7 +97,6 @@ class Trajectory:
         self.winner = winner  # whether the shape crossed the exit
         self.participants = None
 
-
     def __bool__(self):
         return self.winner
 
@@ -105,26 +105,7 @@ class Trajectory:
         return string
 
     def __add__(self, file2):
-        #     max_distance_for_connecting = {'XS': 0.8, 'S': 0.3, 'M': 0.3, 'L': 0.3, 'SL': 0.3, 'XL': 0.3}
-        #     if not (self.shape == file2.shape) or not (self.size == file2.size):
-        #         print('It seems, that these files should not be joined together.... Please break... ')
-        #         breakpoint()
-        #
-        #     if abs(self.position[-1, 0] - file2.position[0, 0]) > max_distance_for_connecting[self.size] or \
-        #             abs(self.position[-1, 1] - file2.position[0, 1]) > max_distance_for_connecting[self.size]:
-        #         print('does not belong together')
-        #         # breakpoint()
-
         file12 = deepcopy(self)
-        # if not hasattr(file2, 'x_error'):  # if for example this is from simulations.
-        #     file2.x_error = 0
-        #     file2.y_error = 0
-        #     file2.angle_error = 0
-        #
-        # file12.x_error = [self.x_error, file2.x_error]  # these are lists that we want to join together
-        # file12.y_error = [self.y_error, file2.y_error]  # these are lists that we want to join together
-        # file12.angle_error = [self.angle_error, file2.angle_error]  # these are lists that we want to join together
-
         file12.position = np.vstack((self.position, file2.position))
 
         per = 2 * np.pi / periodicity[file12.shape]
@@ -151,13 +132,13 @@ class Trajectory:
 
         my_maze.set_configuration(self.position[i], self.angle[i])
 
-    def smooth(self):
+    def smooth(self, sec_smooth):
         if self.solver == 'gillespie':
             return
-        self.position[:, 0] = smooth_array(self.position[:, 0], self.fps)
-        self.position[:, 1] = smooth_array(self.position[:, 1], self.fps)
+        self.position[:, 0] = smooth_array(self.position[:, 0], sec_smooth * self.fps)
+        self.position[:, 1] = smooth_array(self.position[:, 1], sec_smooth * self.fps)
         unwrapped_angle = ConnectAngle(self.angle, self.shape)
-        self.angle = smooth_array(unwrapped_angle, self.fps)
+        self.angle = smooth_array(unwrapped_angle, sec_smooth * self.fps)
 
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
@@ -571,28 +552,34 @@ class Trajectory:
 
 
 class Trajectory_part(Trajectory):
-    def __init__(self, parent_traj, VideoChain: list, frames: list, tracked_frames: list, states=None):
+    def __init__(self, parent_traj, VideoChain: list, indices: iter, tracked_frames: list, parent_states=None):
         """
 
         :param parent_traj: trajectory that the part is taken from
         :param VideoChain: list of names of videos that are supposed to be part of the trajectory part
-        :param frames: []
+        :param indices: []
+        :param tracked_frames: list of frames that are tracked
+        :param parent_states: list of states of parents
+        :param parent_vel: velocity of the parent
         """
         super().__init__(size=parent_traj.size, shape=parent_traj.shape, solver=parent_traj.solver,
                          filename=parent_traj.filename, fps=parent_traj.fps, winner=parent_traj.winner,
                          VideoChain=VideoChain)
-        frames = [int(f) for f in frames]
+        if len(indices) == 2 and indices[0] != indices[1]-1:
+            raise ValueError('The indices are not consecutive')
+        indices = [int(i) for i in indices]
         self.parent_traj = parent_traj
-        self.frames_of_parent = frames
-        self.frames = parent_traj.frames[frames[0]:frames[-1]]
-        self.position = parent_traj.position[frames[0]:frames[-1]]
-        self.angle = parent_traj.angle[frames[0]:frames[-1]]
+        self.frames_of_parent = indices
+        self.frames = parent_traj.frames[indices]
+        self.position = parent_traj.position[indices]
+        self.angle = parent_traj.angle[indices]
         self.tracked_frames = tracked_frames
         self.falseTracking = []
-        if states is not None:
-            self.states = states[frames[0]:frames[-1]]
+        if parent_states is not None:
+            self.states = [parent_states[i] for i in indices]
         else:
             self.states = None
+
 
     def is_connector(self):
         if self.VideoChain[-1] is None:
@@ -602,3 +589,90 @@ class Trajectory_part(Trajectory):
     def geometry(self):
         return self.parent_traj.geometry()
 
+    def __add__(self, file2):
+        file12 = deepcopy(self)
+        file12.position = np.vstack((self.position, file2.position))
+
+        per = 2 * np.pi / periodicity[file12.shape]
+        a0 = np.floor(self.angle[-1] / per) * per + np.mod(file2.angle[1], per)
+        file12.angle = np.hstack((self.angle, file2.angle - file2.angle[1] + a0))
+        file12.frames = np.hstack((self.frames, file2.frames))
+        file12.tracked_frames = file12.tracked_frames + file2.tracked_frames
+
+        # if not self.free:
+        #     # file12.contact = self.contact + file2.contact  # We are combining two lists here...
+        #     # file12.state = np.hstack((np.squeeze(self.state), np.squeeze(file2.state)))
+        #     file12.winner = file2.winner  # The success of the attempt is determined, by the fact that the last file
+        #     # is either winner or looser.
+
+        file12.VideoChain = self.VideoChain + file2.VideoChain
+        file12.falseTracking = self.falseTracking + file2.falseTracking
+
+        if self.states is not None:
+            file12.states = self.states + file2.states
+        else:
+            file12.states = None
+
+        # Delete the load of filename
+        return file12
+
+    def split_at_directional_change_in_turning(self) -> list:
+        """
+        Split the trajectory into continuous movements
+        :param axis: axis along which the movement is continuous
+        :return: list of Trajectory_parts
+        """
+        traj_parts = []
+        traj_copy = deepcopy(self)
+        # traj_copy.smooth(sec_smooth=1)
+        vel = np.diff(traj_copy.angle)
+        # find all the indices where the absolute velocity is below 0.005
+        if self.solver == 'human':
+            standing_still = np.where([np.abs(vel) < 1/1000 * 10])[1]
+        if self.solver == 'ant':
+            standing_still = np.where([np.abs(vel) < 1 / 1000 * 10])[1]
+        # group the indices into continuous blocks
+        standing_still_episodes = np.split(standing_still, np.where(np.diff(standing_still) != 1)[0] + 1)
+
+        # for every standing still episode, split in half and set the velocity to 0.1 or -0.1
+        # depending on the sign of the velocity
+
+        # completely standing still
+        if len(standing_still_episodes[0]) == len(vel):
+            return [traj_copy]
+
+        if standing_still_episodes[0][0] == 0:
+            vel[standing_still_episodes[0]] = np.sign(vel[standing_still_episodes[0][-1]+1]) * 0.000001
+
+        if standing_still_episodes[-1][-1] == len(vel) - 1:
+            vel[standing_still_episodes[-1]] = np.sign(vel[standing_still_episodes[-1][0]-1]) * 0.000001
+
+        for episode in standing_still_episodes:
+            if len(episode) > 1:
+                half_mark = episode[0] + int(len(episode)/2)
+                vel[episode[0]: half_mark] = np.sign(vel[episode[0]]) * 0.000001
+                vel[half_mark: episode[-1]] = np.sign(vel[episode[-1]]) * 0.000001
+
+        # find the indices where the vel changes sign and goes beyond absolute value of 0.1
+        direction_change_indices = np.where(np.abs(np.diff(np.sign(vel))) > 1)[0]
+        direction_change_indices = np.hstack((0, direction_change_indices, len(vel) - 1))
+
+        plt.close()
+        plt.plot(self.frames[:-1], vel * 1000, label='vel * 1000, fixed')
+        plt.plot(self.frames[:-1], np.diff(traj_copy.angle) * 1000, label='vel * 1000')
+        plt.plot(self.frames, traj_copy.angle, label='angle')
+        plt.plot(self.frames[direction_change_indices], vel[direction_change_indices] * 100, 'ro')
+        # mark the frames where standing_still with red background
+        for episode in standing_still_episodes:
+            plt.axvspan(self.frames[episode[0]], self.frames[episode[-1]], facecolor='r', alpha=0.1)
+        plt.legend()
+        # set y limit to -pi to pi
+        plt.ylim(-6 * np.pi, 6 * np.pi)
+
+        if len(direction_change_indices) > 2:
+            print('There are more than two direction changes in the trajectory')
+
+        for (start, end) in zip(direction_change_indices[:-1], direction_change_indices[1:]):
+            traj_parts.append(Trajectory_part(self, indices=range(start, end), VideoChain=[], tracked_frames=[],
+                                              parent_states=self.states))
+        return traj_parts

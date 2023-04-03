@@ -33,7 +33,7 @@ def cut_traj_to_cg_part(filename):
     frames = [index_successions[0][0], index_successions[0][-1]]
     print(filename + str(frames[0]))
 
-    traj_cg = Trajectory_part(traj, VideoChain=[], frames=frames, tracked_frames=[])
+    traj_cg = Trajectory_part(traj, VideoChain=[], indices=frames, tracked_frames=[])
     return traj_cg
 
 

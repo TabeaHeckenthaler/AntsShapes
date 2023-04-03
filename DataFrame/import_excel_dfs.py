@@ -5,11 +5,28 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
+import numpy as np
 
 df_minimal = pd.read_excel(path.join(lists_exp_dir, 'exp_minimal.xlsx'), engine='openpyxl')
-def find_minimal(s):
-    return df_minimal[(df_minimal['size'] == s['size']) & (df_minimal['shape'] == 'SPT') & (
-            df_minimal['initial condition'] == 'back')].iloc[0]['path length [length unit]']
+
+
+def find_minimal_pL(s):
+    if s['size'] == 'Small Near':
+        size = 'Small Far'
+    else:
+        size = s['size']
+    index = (df_minimal['size'] == size) & (df_minimal['shape'] == 'SPT') & \
+            (df_minimal['initial condition'] == 'back') & (df_minimal['maze dimensions'] == s['maze dimensions'])
+    # find where index is true
+    if len(index[index].index) != 1 & \
+            np.unique([df_minimal.iloc[i]['path length [length unit]'] for i in index[index].index]).size > 1:
+        raise Exception('index is not unique')
+
+    # print(s['filename'])
+    # if s['filename'] == 'small_20201223095702_20201223100014':
+    #     DEBUG = 1
+    return df_minimal[index].iloc[0]['path length [length unit]']
+
 
 df_all = pd.read_excel(path.join(lists_exp_dir, 'exp.xlsx'), engine='openpyxl')
 
@@ -89,7 +106,7 @@ df_exp_human_L_NC = pd.read_excel(file_path_exp_human_L_NC, engine='openpyxl')
 df_exp_human_M_C = pd.read_excel(file_path_exp_human_M_C, engine='openpyxl')
 df_exp_human_M_NC = pd.read_excel(file_path_exp_human_M_NC, engine='openpyxl')
 df_exp_human_S = pd.read_excel(file_path_exp_human_S, engine='openpyxl')
-print('Have you added the human experiment from the 19/02?')
+# print('Have you added the human experiment from the 13/03?')
 
 dfs_human = {'Large C': df_exp_human_L_C,
              'Large NC': df_exp_human_L_NC,

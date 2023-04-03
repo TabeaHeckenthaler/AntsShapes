@@ -85,12 +85,12 @@ plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': 
 
 # solver = 'ant'
 # categories = ['XL', 'L', 'M', 'S (> 1)', 'Single (1)']
+#
+# solver = 'pheidole'
+# categories = ['XL', 'L', 'M', 'S (> 1)', 'Single (1)']
 
-solver = 'pheidole'
-categories = ['XL', 'L', 'M', 'S (> 1)', 'Single (1)']
-
-# solver = 'human'
-# categories = ['Large C', 'Large NC', 'Medium C', 'Medium NC', 'Small']
+solver = 'human'
+categories = ['Large C', 'Large NC', 'Medium C', 'Medium NC', 'Small']
 
 with open(averageCarrierNumber_dir, 'r') as json_file:
     averageCarrierNumber_dict = json.load(json_file)
@@ -203,7 +203,7 @@ def plot_nth_decision(n: int = 0):
                        for key, decisions in c_withoutNones.items()}
             error = {}
             for key, decisions in c_withoutNones.items():
-                if len(decisions) > 1 and results[key] is not None:
+                if len(decisions) > 8 and results[key] is not None:
                     # https://en.wikipedia.org/wiki/Binomial_distribution
                     error[key] = np.sqrt(results[key] * (1 - results[key])) / (len(decisions) - 1)
                 else:
@@ -224,20 +224,35 @@ def plot_nth_decision(n: int = 0):
     save_fig(fig, str(n) + 'decision' + solver)
 
 
-def plot_nth_decisions():
-    fig, axs = plt.subplots(2, 3)
+def plot_nth_decisions(fig, axs):
     axs = axs.flatten()
     for fork, ax in zip(forks, axs):
+        print(fork)
         for size, df_size in dfs_solver.items():
             df = df_solver[df_solver['filename'].isin(df_size['filename'])]
             c_withNones = {n: np.array([d[n] for d in df[fork]]) for n in nth_times}
             c_withoutNones = {n: c[c != np.array(None)] for n, c in c_withNones.items()}
 
-            results = {key: decisions.sum() / len(decisions) if len(decisions) > 3 else np.NaN
-                       for key, decisions in c_withoutNones.items()}
+            # find last value which is not None in df_to_last_decision.iloc[0]
+            def funct(df_copy):
+                last_index = [k for k, v in df_copy.items() if v is not None]
+                if len(last_index) == 0:
+                    return None
+                fixed = {k: v if v is not None else df_copy[last_index[-1]] for k, v in df_copy.items()}
+                return fixed
+
+            df_to_last_decision = df[fork].map(funct).dropna()
+            c_Nones_to_last = {n: np.array([d[n] for d in df_to_last_decision]) for n in nth_times}
+
+            # c = c_withoutNones
+            c = c_Nones_to_last
+
+            results = {key: decisions.sum() / len(decisions)
+            if len(decisions) > 0 else np.NaN
+                       for key, decisions in c.items()}
 
             error = {}
-            for key, decisions in c_withoutNones.items():
+            for key, decisions in c.items():
                 if len(decisions) > 1 and not np.isnan(results[key]):
                     # https://en.wikipedia.org/wiki/Binomial_distribution
                     error[key] = np.sqrt(results[key] * (1 - results[key])) / (len(decisions) - 1)
@@ -253,8 +268,18 @@ def plot_nth_decisions():
         ax.axhline(y=0, color='k', linestyle='--')
         ax.axhline(y=1, color='k', linestyle='--')
         ax.set_ylim([-0.1, 1.1])
-    fig.set_size_inches(10, 7)
-    save_fig(fig, 'long_memory' + '_' + solver)
+
+        # make xticklabels integers
+        ax.set_xticks(range(0, 20, 2))
+        ax.set_xticklabels(range(0, 20, 2))
+
+        # set xlabel and ylabel
+        ax.set_xlabel('visit number')
+        ax.set_ylabel('decision')
+
+    fig.tight_layout()
+    fig.set_size_inches(5, 7)
+    save_fig(fig, 'long_memory_less' + '_' + solver)
 
 
 def mistakes(decisions, invert=False):
@@ -264,43 +289,49 @@ def mistakes(decisions, invert=False):
 
 
 if __name__ == '__main__':
-    forks = ['ab_b_or_c', 'b_b1b2_or_be', 'c_cg_or_e', 'e_f_or_eg', 'c_ac_or_e']
     fig, axs_all = plt.subplots(2, 2)
-    for solver, axs in zip(['ant', 'human'], axs_all):
+    for solver, axs in zip(['human', 'ant', ], axs_all):
+        # forks = ['ab_b_or_c', 'b_b1b2_or_be', 'c_cg_or_e', 'e_f_or_eg', 'c_ac_or_e']
+        # fig, axs = plt.subplots(2, 3)
+        forks = ['ab_b_or_c', 'c_cg_or_e']
+        fig, axs1 = plt.subplots(2)
         df_solver, dfs_solver = {'human': (df_human, dfs_human),
                                  'ant': (df_ant, dfs_ant),
                                  'pheidole': (df_pheidole, dfs_pheidole),
                                  'gillespie': (df_gillespie, dfs_gillespie)}[solver]
-        nth_times = [i for i in range(6)]
+        nth_times = [i for i in range(20)]
         ab_b_or_c, b_b1b2_or_be, c_cg_or_e, e_f_or_eg, c_ac_or_e = get_decisions_at_forks(df_solver['filename'], nth_times)
 
-        for fork_name, (fork, ax) in {'ab_b_or_c': (ab_b_or_c, axs[0]), 'c_ac_or_e': (c_ac_or_e, axs[1])}.items():
-            mean_number_mistakes, sem_number_mistakes = {}, {}
-            # find mean number of entries to b from ac
-            for group_type, df in dfs_solver.items():
-                decisions = df['filename'].map(fork)
-                df['mistakes'] = decisions.apply(mistakes)
-                mean_number_mistakes[group_type] = np.mean(df['mistakes'])
-                sem_number_mistakes[group_type] = np.std(df['mistakes'])/len(df['mistakes'])
+        #     for fork_name, (fork, ax) in {'ab_b_or_c': (ab_b_or_c, axs[0]), 'c_ac_or_e': (c_ac_or_e, axs[1])}.items():
+        #         mean_number_mistakes, sem_number_mistakes = {}, {}
+        #         # find mean number of entries to b from ac
+        #         for group_type, df in dfs_solver.items():
+        #             decisions = df['filename'].map(fork)
+        #             # if df['filename'] == 'large_20220916093357_20220916093455':
+        #             #     DEBUG = 1
+        #             df['mistakes'] = decisions.apply(mistakes)
+        #             mean_number_mistakes[group_type] = np.mean(df['mistakes'])
+        #             sem_number_mistakes[group_type] = np.std(df['mistakes'])/len(df['mistakes'])
+        #
+        #         # plot mean number of mistakes
+        #         ax.errorbar(list(mean_number_mistakes.keys()), list(mean_number_mistakes.values()),
+        #                             yerr=list(sem_number_mistakes.values()))
+        #         ax.set_title('Mean number of mistakes: ' + fork_name)
+        #         # plot a horizontal line at 1
+        #         ax.axhline(y=1, color='k', linestyle='--')
+        #         # set x_axis range to 0 to maximal value
+        #         ax.set_ylim([0, max(mean_number_mistakes.values()) + max(sem_number_mistakes.values())])
+        # # prevent axis labels from overlapping
+        # fig.tight_layout()
+        # save_fig(fig, 'mean_number_mistakes')
 
-            # plot mean number of mistakes
-            ax.errorbar(list(mean_number_mistakes.keys()), list(mean_number_mistakes.values()),
-                                yerr=list(sem_number_mistakes.values()))
-            ax.set_title('Mean number of mistakes: ' + fork_name)
-            # plot a horizontal line at 1
-            ax.axhline(y=1, color='k', linestyle='--')
-            # set x_axis range to 0 to maximal value
-            ax.set_ylim([0, max(mean_number_mistakes.values()) + max(sem_number_mistakes.values())])
-    # prevent axis labels from overlapping
-    fig.tight_layout()
-    save_fig(fig, 'mean_number_mistakes')
-
-    # df_solver['ab_b_or_c'] = df_solver['filename'].map(ab_b_or_c)
-    # df_solver['b_b1b2_or_be'] = df_solver['filename'].map(b_b1b2_or_be)
-    # df_solver['c_cg_or_e'] = df_solver['filename'].map(c_cg_or_e)
-    # df_solver['e_f_or_eg'] = df_solver['filename'].map(e_f_or_eg)
-    # df_solver['c_ac_or_e'] = df_solver['filename'].map(c_ac_or_e)
-    # plot_nth_decisions()
+        df_solver['ab_b_or_c'] = df_solver['filename'].map(ab_b_or_c)
+        df_solver['b_b1b2_or_be'] = df_solver['filename'].map(b_b1b2_or_be)
+        df_solver['c_cg_or_e'] = df_solver['filename'].map(c_cg_or_e)
+        df_solver['e_f_or_eg'] = df_solver['filename'].map(e_f_or_eg)
+        df_solver['c_ac_or_e'] = df_solver['filename'].map(c_ac_or_e)
+        plot_nth_decisions(fig, axs1)
+        DEBUG = 1
 
     #
     # forks = ['c_ac_or_e']

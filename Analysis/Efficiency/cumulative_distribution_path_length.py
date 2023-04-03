@@ -5,6 +5,7 @@ from DataFrame.plot_dataframe import save_fig
 from os import path
 from Directories import home
 import json
+from colors import colors_humans as colors
 
 translation_dir = path.join(home, 'Analysis', 'Efficiency', 'translation.json')
 rotation_dir = path.join(home, 'Analysis', 'Efficiency', 'rotation.json')
@@ -22,22 +23,10 @@ with open(minimal_filename_dict, 'r') as json_file:
     minimal_filename_dict = json.load(json_file)
     json_file.close()
 
-colors = {'Large C': '#8931EF',
-          'Large NC': '#cfa9fc',
-          'Medium C': '#FF8600',
-          'Medium NC': '#fab76e',
-          'Small': '#000000',
-          'XL': '#ff00c1',
-          'L': '#9600ff',
-          'M': '#4900ff',
-          'S (> 1)': '#00b8ff',
-          'Single (1)': '#00fff9',
-          }
-
 plt.rcParams.update({'font.size': 22, 'font.family': 'Times New Roman'})
 solver_step = {'human': 0.05, 'ant': 1, 'pheidole': 1}
 
-solver = 'pheidole'
+solver = 'human'
 
 df_solver, dfs_solver = {'human': (df_human, dfs_human),
                          'ant': (df_ant, dfs_ant),
@@ -50,6 +39,36 @@ df_solver['minimal translation'] = df_solver['minimal filename'].map(translation
 df_solver['minimal rotation'] = df_solver['minimal filename'].map(rotation_dict)
 df_solver['norm translation'] = df_solver['translation'] / df_solver['minimal translation']
 df_solver['norm rotation'] = df_solver['rotation'] / df_solver['minimal rotation']
+
+# __________ROT  +  TRANS_____________
+
+fig, ax = plt.subplots()
+plt.xlabel('normalized translation + rotation')
+plt.ylabel('percentage solved')
+plt.show(block=0)
+plt.title(solver + ' CDF')
+
+for size, df_size in dfs_solver.items():
+    df = df_solver[df_solver['filename'].isin(df_size['filename'])]
+
+    df['path length'] = df['norm translation'] + df['norm rotation']
+
+    x_values = np.arange(0, df['path length'].max(), step=solver_step[solver])
+    y_values = []
+
+    for x in x_values:
+        suc = df[(df['path length'] < x) & (df['winner'])]
+        y_values.append(len(suc) / len(df))
+    plt.step(x_values, y_values, label=size, color=colors[size], linewidth=2)
+
+plt.ylim([-0.05, 1.05])
+plt.legend(prop={'size': 20})
+save_fig(fig, solver + 'cum_distribution_path_length')
+DEBUG = 1
+
+# _______________________
+
+
 
 fig, ax = plt.subplots()
 plt.xlabel('normalized translation')

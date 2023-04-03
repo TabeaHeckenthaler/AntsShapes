@@ -11,13 +11,14 @@ from tqdm import tqdm
 from Directories import network_dir
 from trajectory_inheritance.trajectory import Trajectory_part
 from ConfigSpace.ConfigSpace_SelectedStates import ConfigSpace_SelectedStates
-from DataFrame.import_excel_dfs import dfs_ant, df_minimal, dfs_ant_old
+from DataFrame.import_excel_dfs import dfs_ant, df_minimal, dfs_ant_old, dfs_human
 from DataFrame.gillespie_dataFrame import dfs_gillespie
 from plotly import express as px
 from ConfigSpace.experiment_sliding import Experiment_Sliding
 from Analysis.greed import Trajectory
 import pandas as pd
 from correlation_edge_walk_decision_c_e_ac import In_the_bottle
+from Analysis.Efficiency.PathLength import PathLength
 
 #
 # class Traj_in_cg(Trajectory_part):
@@ -46,11 +47,11 @@ def cut_traj(traj, ts, buffer=0) -> tuple:
     where_out_cg = np.array([i for i, x in enumerate(in_cg) if not x])
     index_successions_out_cg = np.split(where_out_cg, np.where(np.diff(where_out_cg) != 1)[0] + 1)
 
-    in_c_trajs = [Trajectory_part(traj, frames=[i[0]-buffer*traj.fps, i[-1]+buffer*traj.fps], VideoChain=[],
-                                  tracked_frames=[], states=ts_extended)
+    in_c_trajs = [Trajectory_part(traj, indices=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
+                                  tracked_frames=[], parent_states=ts_extended)
                   for i in index_successions_in_cg if len(i) > 0]
-    out_c_trajs = [Trajectory_part(traj, frames=[i[0]-buffer*traj.fps, i[-1]+buffer*traj.fps], VideoChain=[],
-                                   tracked_frames=[], states=ts_extended)
+    out_c_trajs = [Trajectory_part(traj, indices=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
+                                   tracked_frames=[], parent_states=ts_extended)
                    for i in index_successions_out_cg if len(i) > 0]
     return in_c_trajs, out_c_trajs
 
@@ -64,7 +65,7 @@ def cut_traj_after_c_e_crossing(traj) -> Trajectory_part:
     """
     ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(time_series_dict[traj.filename], traj)
     indices_e = np.where(np.array(ts_extended) == 'e')[0]
-    return Trajectory_part(traj, frames=[indices_e[0], -1], VideoChain=[], tracked_frames=[])
+    return Trajectory_part(traj, indices=[indices_e[0], -1], VideoChain=[], tracked_frames=[])
 
 
 def pL(traj):
@@ -408,13 +409,13 @@ def plot_means():
 
 
 if __name__ == '__main__':
-    solver, shape = 'gillespie', 'SPT'
-    df_dict_sep_by_size = dfs_gillespie
+    solver, shape = 'human', 'SPT'
+    df_dict_sep_by_size = dfs_human
     # x = get(df_dict_sep_by_size['S'].iloc[0]['filename'])
     # x.play()
     radius = 3
     _add = '_gillespie' + str(radius)
-    with open(os.path.join(network_dir, 'time_series_selected_states_gillespie' + '.json'), 'r') as json_file:
+    with open(os.path.join(network_dir, 'time_series_selected_states' + '.json'), 'r') as json_file:
         time_series_dict = json.load(json_file)
         json_file.close()
 
@@ -451,11 +452,11 @@ if __name__ == '__main__':
     # # del df_dict_sep_by_size['S (> 1)']
     # # del df_dict_sep_by_size['Single (1)']
 
-    # radius = 10
-    # _add = '_ant' + str(radius)
-    # with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
-    #     time_series_dict = json.load(json_file)
-    #     json_file.close()
+    radius = 10
+    _add = '_human' + str(radius)
+    with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
+        time_series_dict = json.load(json_file)
+        json_file.close()
 
     # pL_in_c = {}
     # pL_out_c = {}
@@ -485,19 +486,10 @@ if __name__ == '__main__':
     df['distance_in_c_off_edge'] = df['filename'].map(distance_in_c_off_edge).apply(np.sum)
     df['on_edge_fraction'] = df['distance_in_c_on_edge'] / (
             df['distance_in_c_on_edge'] + df['distance_in_c_off_edge'])
-    #
+
     check = df[['filename', 'size', 'on_edge_fraction']]
     # check_XL = check[check['filename'] == 'XL']
     to_plot = check[(check['size'] == 'S') & (check['on_edge_fraction'] < 0.85)]['filename'].tolist()
-
-    # filenames = ['XL_SPT_4290004_XLSpecialT_1_ants (part 1)', 'XL_SPT_4290006_XLSpecialT_1_ants',
-    #              'XL_SPT_4290007_XLSpecialT_1_ants', 'XL_SPT_4290008_XLSpecialT_1_ants',
-    #              'XL_SPT_4290008_XLSpecialT_2_ants',
-    #              'XL_SPT_4290008_XLSpecialT_3_ants (part 1)', 'XL_SPT_4290009_XLSpecialT_2_ants',
-    #              'XL_SPT_4290009_XLSpecialT_3_ants (part 1)', 'XL_SPT_4300003_XLSpecialT_1_ants',
-    #              'XL_SPT_4300003_XLSpecialT_2_ants (part 1)', 'XL_SPT_4300004_XLSpecialT_2_ants',
-    #              'XL_SPT_4300004_XLSpecialT_3_ants (part 1)', 'XL_SPT_4340011_XLSpecialT_1_ants (part 1)',
-    #              'XL_SPT_4280005_XLSpecialT_1_ants (part 1)']
 
     df_plot = df[df['filename'].isin(to_plot)]
     plot_in_CS_and_save(df_plot)

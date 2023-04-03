@@ -1,4 +1,4 @@
-from Directories import home, SaverDirectories, mini_work_dir, work_dir, df_dir
+from Directories import home, SaverDirectories, mini_work_dir, work_dir, df_dir, data_home
 import os
 from os import path
 import pickle
@@ -28,7 +28,7 @@ def get(filename):
 
                 if 'Ant_Trajectories' in address:
                     shape, size, solver, filename, fps, position, angle, frames, winner = file
-                    df = pd.read_json(df_dir)
+                    df = pd.read_excel(df_dir)
                     x = Trajectory_ant(size=size, solver=solver, shape=shape, filename=filename, fps=fps,
                                        winner=winner, position=position, angle=angle, frames=frames,
                                        VideoChain=df[(df['filename'] == filename)]['VideoChain'].iloc[0],
@@ -37,16 +37,57 @@ def get(filename):
 
                 if 'Human_Trajectories' in address:
                     shape, size, solver, filename, fps, position, angle, frames, winner = file
-                    df = pd.read_json(df_dir)
-                    x = Trajectory_human(size=size, shape=shape, filename=filename, fps=fps,
-                                         winner=winner, position=position, angle=angle, frames=frames,
-                                         VideoChain=df[(df['filename'] == filename)]['VideoChain'].iloc[0],
-                                         tracked_frames=df[(df['filename'] == filename)]['tracked_frames'].iloc[0])
+
+                    df = pd.read_excel(df_dir)
+
+                    if filename not in df['filename'].values:
+                        g = {'filename': filename, 'solver': 'human', 'size': size, 'shape': shape, 'winner': winner,
+                             'fps': fps, 'communication': None,
+                             'length unit': 'm', 'initial condition': 'back', 'force meter': False,
+                             'maze dimensions': 'MazeDimensions_human.xlsx',
+                             'load dimensions': 'LoadDimensions_human.xlsx', 'time [s]': None,
+                             'comment': '', 'VideoChain': None,
+                             'tracked_frames': None, 'free': 0}
+                        df2 = pd.DataFrame([g])
+                        # df = pd.read_excel(df_dir, usecols=['filename', 'VideoChain', 'tracked_frames'])
+                        # df2 = df.append(pd.Series(g), ignore_index=True)
+                        df_dir2 = path.join(data_home, 'DataFrame', 'data_frame_add_stuff.xlsx')
+                        df2.to_excel(df_dir2)
+
+                        # open excel file and add the new entry
+                        os.startfile(df_dir2)
+                        input('Add entry to excel file and press enter to continue...')
+                        df2 = pd.read_excel(df_dir2)
+                        if len(df2['tracked_frames']) > 2:
+                            raise Exception('More than 2 tracked frames in excel file.')
+                        f = eval(df2['tracked_frames'].values[0])
+                        df2['time [s]'] = (f[1] - f[0]) / df2['fps']
+
+                        # concat df to df2 with new index
+                        df = pd.concat([df, df2])
+                        # drop unnamed column
+                        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+                        df.reset_index(inplace=True)
+                        df.to_json(df_dir)
+                        df.to_excel('\\\\phys-guru-cs\\ants\\Tabea\\PyCharm_Data\\AntsShapes\\DataFrame\\data_frame.xlsx')
+
+
+                    if filename in df['filename'].values:
+                        x = Trajectory_human(size=size, shape=shape, filename=filename, fps=fps,
+                                             winner=winner, position=position, angle=angle, frames=frames,
+                                             VideoChain=df[(df['filename'] == filename)]['VideoChain'].iloc[0],
+                                             tracked_frames=df[(df['filename'] == filename)]['tracked_frames'].iloc[0])
+                    else:
+                        print('No entry in df for this file.')
+                        x = Trajectory_human(size=size, shape=shape, filename=filename, fps=fps,
+                                             winner=winner, position=position, angle=angle, frames=frames,
+                                             VideoChain=None,
+                                             tracked_frames=None)
                     return x
 
                 if 'Pheidole_Trajectories' in address:
                     shape, size, solver, filename, fps, position, angle, frames, winner = file
-                    df = pd.read_json(df_dir)
+                    df = pd.read_excel(df_dir)
                     x = Trajectory_ant(size=size, solver=solver, shape=shape, filename=filename, fps=fps,
                                        winner=winner, position=position, angle=angle, frames=frames,
                                        VideoChain=df[(df['filename'] == filename)]['VideoChain'].iloc[0],

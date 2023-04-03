@@ -17,13 +17,12 @@ import plotly.graph_objects as go
 from copy import deepcopy
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
-from Analysis.PathPy.Path import Path, exp_day
+from Analysis.PathPy.Path import Path, exp_day, color_dict
 from Directories import network_dir, home
 from DataFrame.plot_dataframe import save_fig
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 from trajectory_inheritance.trajectory import Trajectory_part
-from Analysis.PathPy.Path import color_dict
 from typing import Union
 
 
@@ -380,7 +379,7 @@ class Experiment_Sliding:
     def plot_correlation_of_time_pL_state(df) -> go.Figure:
 
         def get_point(traj, indices):
-            sliding_window = Sliding_Window(Trajectory_part(traj, VideoChain=[], frames=indices, tracked_frames=[]),
+            sliding_window = Sliding_Window(Trajectory_part(traj, VideoChain=[], indices=indices, tracked_frames=[]),
                                             ts=ts_extended[indices[0]:indices[-1]])
             pL = sliding_window.pathLength()
             time = sliding_window.timer()

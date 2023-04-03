@@ -10,13 +10,13 @@ import pandas as pd
 from Directories import network_dir, home
 from Setup.Maze import Maze
 from mayavi import mlab
-from Analysis.bottleneck_c_to_e.behaviour_in_cg import extend_time_series_to_match_frames
+from trajectory_inheritance.trajectory_sep_into_states import Traj_sep_by_state
 from Setup.MazeFunctions import ConnectAngle
 from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Maze
 from DataFrame.plot_dataframe import save_fig
 from DataFrame.gillespie_dataFrame import dfs_gillespie
 from tqdm import tqdm
-from DataFrame.import_excel_dfs import find_minimal, dfs_ant, dfs_ant_old, dfs_human
+from DataFrame.import_excel_dfs import find_minimal_pL, dfs_ant, dfs_ant_old, dfs_human
 
 columns = ['filename', 'size', 'solver', 'mean_speed', 'frames', 'state', 'states', 'time', 'coordinates']
 states = {'ab', 'ac', 'b', 'be', 'b1', 'b2', 'c', 'cg', 'e', 'eb', 'eg', 'f', 'g', 'h'}
@@ -93,7 +93,7 @@ class SlowDown:
             x = get(filename)
             speed_x = x.speed()
             ts = time_series_dict[x.filename]
-            ts_extended = extend_time_series_to_match_frames(ts, x)
+            ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
             # fig = cs.new_fig()
             # cs.visualize_space(fig=fig)
 
@@ -101,7 +101,7 @@ class SlowDown:
             # SlowDown.plot_slow_down(x, slow_down_indices, save=True)
 
             for inds in slow_down_indices:
-                traj_part = Trajectory_part(x, frames=inds, VideoChain=[], tracked_frames=[], states=ts_extended)
+                traj_part = Trajectory_part(x, indices=inds, VideoChain=[], tracked_frames=[], parent_states=ts_extended)
                 slowDown = SlowDown(traj_part, speed=speed_x[inds[0]:inds[1]])
                 d = slowDown.to_dict()
                 new_results = new_results.append(d, ignore_index=True)
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     dfs = dfs_ant
 
     results = pd.read_excel(os.path.join(home, 'Analysis', 'discretisation', 'slow_down_ant.xlsx'))
-    # plot the means and std of the number of slow downs per state per group type
+    # plot the means and std of the number of slow-downs per state per group type
     # SlowDown.plot_mean_number_of_slowdowns()
     for group_type, df in dfs.items():
         SlowDown.plot_2d_density(df)

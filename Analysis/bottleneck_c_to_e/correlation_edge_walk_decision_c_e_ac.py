@@ -11,7 +11,7 @@ import pandas as pd
 import os
 from plotly import express as px
 from Directories import home
-from DataFrame.import_excel_dfs import find_minimal, dfs_ant, dfs_ant_old
+from DataFrame.import_excel_dfs import find_minimal_pL, dfs_ant, dfs_ant_old
 from DataFrame.plot_dataframe import save_fig
 import plotly.graph_objects as go
 from typing import Union
@@ -73,12 +73,12 @@ class In_the_bottle:
         where_out_cg = np.array([i for i, x in enumerate(in_cg) if not x])
         index_successions_out_cg = np.split(where_out_cg, np.where(np.diff(where_out_cg) != 1)[0] + 1)
 
-        in_c_trajs = [Trajectory_part(traj, frames=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
-                                      tracked_frames=[], states=ts_extended)
+        in_c_trajs = [Trajectory_part(traj, indices=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
+                                      tracked_frames=[], parent_states=ts_extended)
                       for i in index_successions_in_cg if len(i) > 0]
         out_c_trajs = [
-            Trajectory_part(traj, frames=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
-                            tracked_frames=[], states=ts_extended)
+            Trajectory_part(traj, indices=[i[0] - buffer * traj.fps, i[-1] + buffer * traj.fps], VideoChain=[],
+                            tracked_frames=[], parent_states=ts_extended)
             for i in index_successions_out_cg if len(i) > 0]
         return in_c_trajs, out_c_trajs
 
@@ -102,9 +102,9 @@ class In_the_bottle:
         where_off_edge = np.array([i for i, x in enumerate(edge_boolean) if not x])
         index_successions_off_edge = np.split(where_off_edge, np.where(np.diff(where_off_edge) != 1)[0] + 1)
 
-        on_edge += [self.pL(Trajectory_part(self.traj, frames=[i[0], i[-1]], VideoChain=[], tracked_frames=[]))
+        on_edge += [self.pL(Trajectory_part(self.traj, indices=[i[0], i[-1]], VideoChain=[], tracked_frames=[]))
                     for i in index_successions_on_edge if len(i) > 0 and i[-1] - i[0] > 0]
-        off_edge += [self.pL(Trajectory_part(self.traj, frames=[i[0], i[-1]], VideoChain=[], tracked_frames=[]))
+        off_edge += [self.pL(Trajectory_part(self.traj, indices=[i[0], i[-1]], VideoChain=[], tracked_frames=[]))
                      for i in index_successions_off_edge if len(i) > 0 and i[-1] - i[0] > 0]
         return on_edge, off_edge
 
@@ -149,7 +149,7 @@ class In_the_bottle:
         df_results['size_int'] = df_results['size'].map({'XL': 4, 'L': 3, 'M': 2, 'S': 1})
         df_results['on_edge'] = df_results['on_edge'].apply(lambda x: cls.to_list(x))
         df_results['on_edge_sum'] = df_results['on_edge'].apply(lambda x: np.sum(x))
-        df_results['minimal path length'] = df_results.apply(find_minimal, axis=1)
+        df_results['minimal path length'] = df_results.apply(find_minimal_pL, axis=1)
         df_results['on_edge_scaled_sum'] = df_results['on_edge_sum'] / df_results['minimal path length']
 
         df_results.sort_values('size_int', inplace=True)
@@ -184,7 +184,7 @@ class In_the_bottle:
     def plot_statistics(cls, df_results):
         df_results['on_edge'] = df_results['on_edge'].apply(lambda x: cls.to_list(x))
         df_results['on_edge_sum'] = df_results['on_edge'].apply(lambda x: np.sum(x))
-        df_results['minimal path length'] = df_results.apply(find_minimal, axis=1)
+        df_results['minimal path length'] = df_results.apply(find_minimal_pL, axis=1)
         df_results['on_edge_scaled_sum'] = df_results['on_edge_sum'] / df_results['minimal path length']
         marker_dict = {'ac': 'circle', 'e': 'x', 'cg': 'diamond'}
         color_dict = {'XL': 'black', 'L': 'red', 'M': 'blue', 'S': 'green'}

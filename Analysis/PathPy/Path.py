@@ -3,29 +3,22 @@ import numpy as np
 from trajectory_inheritance.get import get
 from trajectory_inheritance.exp_types import solver_geometry
 import pandas as pd
-from ConfigSpace.ConfigSpace_Maze import ConfigSpace_Labeled, pre_final_state
+from ConfigSpace.ConfigSpace_Maze import pre_final_state
 from ConfigSpace.ConfigSpace_SelectedStates import ConfigSpace_SelectedStates
 # from Analysis.Efficiency.PathLength import PathLength
 from Setup.Maze import Maze
 from PhysicsEngine.Display import Display
 from tqdm import tqdm
-from Directories import network_dir
+from Directories import network_dir, df_minimal_dir
 import os
 import json
 from matplotlib import pyplot as plt
 from DataFrame.plot_dataframe import save_fig
+from DataFrame.dataFrame import myDataFrame
 from DataFrame.import_excel_dfs import df_relevant, dfs_ant_old, dfs_ant, dfs_human, dfs_pheidole
+from colors import colors_state as color_dict
 
 time_step = 0.25  # seconds
-
-color_dict = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c',
-              # 'bf': '#d108ba',
-              # 'a': '#fc0000',
-              'ac': '#fc0000', 'ab': '#802424',
-              'c': '#fc8600', 'cg': '#8a4b03',
-              'e': '#fcf400', 'eb': '#a6a103', 'eg': '#05f521',
-              'f': '#30a103', 'g': '#000000',
-              'h': '#085cd1', False: '#000000', True: '#ccffcc', 'i': '#000000',}
 
 c = {'edge-moving': '#00ff00',
      'free-moving': '#004d00',
@@ -286,7 +279,7 @@ class Path:
                 fig, ax = plt.subplots()
                 df['time series'] = df['filename'].map(time_series_dict)
 
-                create_bar_chart(df, ax, block=False)
+                create_bar_chart(df, ax)
                 save_fig(fig, 'bar_chart_' + solver + '_' + str(size))
 
         # shape = 'SPT'
@@ -425,14 +418,14 @@ class Path:
 
 DEBUG = 1
 if __name__ == '__main__':
-    filename = 'S_SPT_4350024_SSpecialT_1_ants'
-    x = get(filename)
-    x.geometry()
-    x_new = x.confine_to_new_dimensions()
-    x_new.play(geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
-    cs_labeled = ConfigSpace_SelectedStates('ant', x.size, 'SPT', x.geometry())
-    cs_labeled.load_final_labeled_space()
-    path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
+    # filename = 'S_SPT_4350024_SSpecialT_1_ants'
+    # x = get(filename)
+    # x.geometry()
+    # x_new = x.confine_to_new_dimensions()
+    # x_new.play(geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+    # cs_labeled = ConfigSpace_SelectedStates('ant', x.size, 'SPT', x.geometry())
+    # cs_labeled.load_final_labeled_space()
+    # path = Path(time_step, x=x, conf_space_labeled=cs_labeled)
 
     # with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'w') as json_file:
     #     json.dump(time_series_dict, json_file)
@@ -449,39 +442,57 @@ if __name__ == '__main__':
     # cs_labeled.load_final_labeled_space()
     # x.play(path=path, videowriter=False)
 
-    with open(os.path.join(network_dir, 'time_series_selected_states_new.json'), 'r') as json_file:
+    with open(os.path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
         time_series_dict = json.load(json_file)
         json_file.close()
 
-    with open(os.path.join(network_dir, 'state_series_selected_states_new.json'), 'r') as json_file:
+    with open(os.path.join(network_dir, 'state_series_selected_states.json'), 'r') as json_file:
         state_series_dict = json.load(json_file)
         json_file.close()
 
-    del time_series_dict['S_SPT_4350024_SSpecialT_1_ants']
-    del state_series_dict['S_SPT_4350024_SSpecialT_1_ants']
+    ConfigSpace_class = ConfigSpace_SelectedStates
+    # to_add = Path.find_missing(myDataFrame)
+    myDataFrame = pd.read_json(df_minimal_dir)
+    # to_add_names = ['minimal_Large_SPT_back_MazeDimensions_human_LoadDimensions_human']
 
-    time_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.time_series
-    state_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.state_series
+    # check whether the load dimensions contain 'human' or 'ant'
+    myDataFrame['human'] = myDataFrame['load dimensions'].apply(lambda x: 'human' in x)
+    human_df = myDataFrame[myDataFrame['human']]
+    human_df.drop(16, inplace=True)
+    # set solver to human
+    human_df['solver'] = 'human'
+
+    myDataFrame[myDataFrame['human']]['solver'] = 'human'
+    myDataFrame['ant'] = myDataFrame['load dimensions'].apply(lambda x: 'ant' in x)
+    myDataFrame[myDataFrame['ant']]['solver'] = 'ant'
+    ant_df = myDataFrame[myDataFrame['ant']]
+    ant_df['solver'] = 'ant'
+    to_add = pd.concat([human_df, ant_df])
+    time_series_dict, state_series_dict = Path.add_to_dict(to_add,
+                                                           ConfigSpace_class,
+                                                           time_series_dict,
+                                                           state_series_dict)
+    Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states')
+
+    # del time_series_dict['S_SPT_4350024_SSpecialT_1_ants']
+    # del state_series_dict['S_SPT_4350024_SSpecialT_1_ants']
+    #
+    # time_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.time_series
+    # state_series_dict['S_SPT_4350024_SSpecialT_1_ants'] = path.state_series
 
     # df_all = pd.concat([pd.concat(dfs_ant_old.values()), df_relevant])
     # time_series_dict, state_series_dict = Path.create_dicts(df_all, ConfigSpace_SelectedStates,
     #                                                         dictio_ts=time_series_dict, dictio_ss=state_series_dict)
-    Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states_new')
+    # Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states_new')
     # DEBUG = 1
 
     # df_relevant['time series'] = df_relevant['filename'].map(time_series_dict)
     # df_relevant['state series'] = df_relevant['filename'].map(state_series_dict)
 
     # Path.plot_paths(zip(['ant', 'ant_old', 'human', 'pheidole'], [dfs_ant, dfs_ant_old, dfs_human, dfs_pheidole]))
-    Path.plot_paths(zip(['ant_old'], [dfs_ant_old]), time_series_dict)
+    # Path.plot_paths(zip(['ant_old'], [dfs_ant_old]), time_series_dict)
+    Path.plot_paths(zip(['minimal'], [myDataFrame]), time_series_dict)
 
-    # ConfigSpace_class = ConfigSpace_AdditionalStates
-    # to_add = Path.find_missing(myDataFrame)
-    # to_add = ['L_SPT_4660001_LSpecialT_1_ants (part 1)']
-    # time_series_dict, state_series_dict = Path.add_to_dict(to_add,
-    #                                                        ConfigSpace_class,
-    #                                                        time_series_dict,
-    #                                                        state_series_dict)
     # time_series_dict, state_series_dict = Path.create_edge_walked_dict(myDataFrame, ConfigSpace_class)
 
     # filenames = []
@@ -490,4 +501,4 @@ if __name__ == '__main__':
     #                                             ConfigSpace_class, time_series_dict_selected_states,
     #                                             state_series_dict_selected_states)
 
-    # Path.save_dicts(time_series_dict, state_series_dict, name='_selected_states')
+    #

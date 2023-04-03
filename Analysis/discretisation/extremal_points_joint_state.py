@@ -15,9 +15,9 @@ columns = ['filename', 'size', 'solver', 'state', 'extremal point', 'frame']
 
 
 class ExtremalPoints:
-    def __init__(self, df: pd.DataFrame, unique_state: str, succession: list):
+    def __init__(self, df: pd.DataFrame, unique_states: list, succession: list):
         self.df = df
-        self.unique_state = unique_state
+        self.unique_states = unique_states
         self.succession = succession
 
     @staticmethod
@@ -28,22 +28,23 @@ class ExtremalPoints:
         return minimal_coordinates, frame
 
     def get_coordinates(self):
-        coords = self.df[self.df['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
+        coords = self.df['extremal point'].map(ExtremalPoints.to_list).tolist()
         return coords
 
-    def plot_in_cs(self, cs: ConfigSpace_Maze):
+    def plot_in_cs(self, cs: ConfigSpace_Maze, coords: list):
         scale_factor = {'XL': 0.2, 'L': 0.1, 'M': 0.05, 'S': 0.03, 'Large': 1., 'Medium': 0.5, 'Small Far': 0.2,
                         'Small Near': 0.2, 'Small': 0.2}
-        for coord in self.get_coordinates():
+        for coord in coords:
             cs.draw(coord[:2], coord[2], scale_factor=scale_factor[cs.size])
 
     @staticmethod
     def to_list(string: str):
         return [eval(x) for x in string.strip('][').split(', ') if len(x) > 0]
 
-    def calc_extremal_points(self, df, unique_state) -> pd.DataFrame:
+    def calc_extremal_points(self) -> pd.DataFrame:
         new_results = pd.DataFrame(columns=columns)
-        for filename in tqdm(df['filename']):
+
+        for filename in tqdm(self.df['filename']):
             x = get(filename)
             print(x.filename)
 
@@ -51,13 +52,18 @@ class ExtremalPoints:
             ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
             successions = Traj_sep_by_state(x, ts_extended).get_successions_of_states(self.succession)
 
-            for (traj_parts, states) in successions:
-                for i in [i for i, state in enumerate(states) if state == self.unique_state]:
-                    extremal_point, frame = self.find_minimal_point_in_x(traj_parts[i])
-                    d = {'filename': x.filename, 'size': x.size, 'solver': x.solver,
-                         'state': unique_state, 'extremal point': extremal_point,
-                         'frame': frame}
-                    new_results = new_results.append(d, ignore_index=True)
+            for s in successions:
+                x_suc = s[0][0]
+                for t in s[0]:
+                    x_suc = x_suc + t
+
+            traj_parts = Traj_sep_by_state(x, ts_extended).get_states(wanted_states=self.unique_states)
+
+            for traj_part in traj_parts:
+                extremal_point, frame = self.find_minimal_point_in_x(traj_part)
+                d = {'filename': x.filename, 'size': x.size, 'solver': x.solver, 'state': list(set(traj_part.states)),
+                     'extremal point': extremal_point, 'frame': frame}
+                new_results = new_results.append(d, ignore_index=True)
         return new_results
 
 
@@ -67,46 +73,47 @@ if __name__ == '__main__':
         time_series_dict = json.load(json_file)
         json_file.close()
 
-    unique_s = 'ab'
+    unique_s = ['ab', 'ac']
     necessary_succ = [['ab'], ['b', 'b1', 'b2', 'be'], ['ab'], ['ac'], ['c']]
-    e = ExtremalPoints(df=None, unique_state=unique_s, succession=necessary_succ)
-    # new_results = e.calc_extremal_points(pd.concat(dfs_human))
-    # new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'extremal_points_' + unique_s + '.xlsx'))
+    e = ExtremalPoints(df=pd.concat(dfs_human), unique_states=unique_s, succession=necessary_succ)
+    new_results = e.calc_extremal_points()
+    new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'extremal_points_ab_ac_human' + '.xlsx'))
 
-    directory = os.path.join(home, 'Analysis', 'discretisation', 'extremal_points_' + unique_s + '.xlsx')
-    results = pd.read_excel(directory, usecols=columns)
+    directory = os.path.join(home, 'Analysis', 'discretisation', 'extremal_points_ab_ac_human' + '.xlsx')
+    e_p_results = pd.read_excel(directory, usecols=columns)
 
+    for size, df_size in dfs_human.items():
+        df = e_p_results[e_p_results['filename'].isin(df_size['filename'])]
+        extr_points = ExtremalPoints(unique_states=unique_s, df=df)
+        cs = ConfigSpace_Maze('human', df.iloc[0]['size'], 'SPT',
+                              ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+        cs.visualize_space()
+        coords = extr_points.get_coordinates()
+        # coords = e_p_results[e_p_results['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
+        extr_points.plot_in_cs(cs, coords)
+
+        mlab.show()
+        DEBUG = 1
+
+    # # how many percentage of times the shape entered ... it did this succession?
+    # columns = ['filename', 'size', 'solver', 'start', 'end', 'percent']
+    # new_results = pd.DataFrame(columns=columns)
+    #
     # for size, df in dfs_human.items():
-    #     coords = e_p[e_p['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
+    #     for filename in tqdm(df['filename']):
+    #         x = get(filename)
+    #         print(x.filename)
     #
-    #     extr_points = ExtremalPoints(coordinates=coords, unique_state=unique_s)
-    #     cs = ConfigSpace_Maze('human', size, 'SPT',
-    #                           ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
-    #     cs.visualize_space()
-    #     extr_points.plot_in_cs(cs)
+    #         ts = time_series_dict[x.filename]
+    #         ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
+    #         t_sep = Traj_sep_by_state(x, ts_extended)
+    #         start, end = necessary_succ[:2], necessary_succ[2:]
+    #         perc = t_sep.percent_of_succession1_ended_like_succession2(succession1=start,
+    #                                                                    succession2=start+end)
+    #         d = {'filename': x.filename, 'size': x.size, 'solver': x.solver,
+    #              'start': start, 'end': end, 'percent': perc}
+    #         new_results = new_results.append(d, ignore_index=True)
     #
-    #     mlab.show()
-    #     DEBUG = 1
-
-    # how many percentage of times the shape entered ... it did this succession?
-    columns = ['filename', 'size', 'solver', 'start', 'end', 'percent']
-    new_results = pd.DataFrame(columns=columns)
-
-    for size, df in dfs_human.items():
-        for filename in tqdm(df['filename']):
-            x = get(filename)
-            print(x.filename)
-
-            ts = time_series_dict[x.filename]
-            ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
-            t_sep = Traj_sep_by_state(x, ts_extended)
-            start, end = necessary_succ[:2], necessary_succ[2:]
-            perc = t_sep.percent_of_succession1_ended_like_succession2(succession1=start,
-                                                                       succession2=start+end)
-            d = {'filename': x.filename, 'size': x.size, 'solver': x.solver,
-                 'start': start, 'end': end, 'percent': perc}
-            new_results = new_results.append(d, ignore_index=True)
-
-    new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'perc_of_succession_ending_' + unique_s + '.xlsx'))
+    # new_results.to_excel(os.path.join(home, 'Analysis', 'discretisation', 'perc_of_succession_ending_' + unique_s + '.xlsx'))
 
 

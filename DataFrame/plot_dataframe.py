@@ -4,8 +4,9 @@ from Analysis.GeneralFunctions import graph_dir
 from os import path
 import numpy as np
 from matplotlib import pyplot as plt
+from typing import Union
 
-df = pd.read_json(df_dir)
+df = pd.read_excel(df_dir)
 
 
 def reduce_legend(ax):
@@ -16,7 +17,7 @@ def reduce_legend(ax):
     plt.legend(by_label.values(), by_label.keys())
 
 
-def save_fig(fig, name, svg=False):
+def save_fig(fig, name: str, svg=False):
     name = "".join(x for x in name if x.isalnum())
     if fig.__module__ == 'plotly.graph_objs._figure':
         fig.write_image(graph_dir() + path.sep + name + '.pdf')
@@ -24,6 +25,7 @@ def save_fig(fig, name, svg=False):
             fig.write_image(graph_dir() + path.sep + name + '.svg')
     else:
         fig.savefig(graph_dir() + path.sep + name + '.pdf', format='pdf', pad_inches=0.5, bbox_inches='tight')
+        fig.savefig(graph_dir() + path.sep + name + '.png', format='png', pad_inches=0.5, bbox_inches='tight')
         if svg:
             fig.savefig(graph_dir() + path.sep + name + '.svg', format='svg', pad_inches=0.5, bbox_inches='tight')
 

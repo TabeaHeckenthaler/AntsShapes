@@ -30,10 +30,12 @@ class SingleExperiment(pd.DataFrame):
         self['maze dimensions'], self['load dimensions'] = x.geometry()
         self['time [s]'] = x.timer()
         self['comment'] = ''
-        raise Exception('not implemented')
         self['VideoChain'] = x.VideoChain
-        self['tracked_frames'] = x.tracked_frames
-        self['free'] = x.free
+        self['tracked_frames'] = str(x.tracked_frames)
+        if hasattr(x, 'free'):
+            self['free'] = x.free
+        else:
+            self['free'] = False
 
         """
         This is all Analysis that I want to save separately. 

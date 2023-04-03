@@ -41,8 +41,8 @@ class Path_planning_in_CS:
 
     current = property(_get_current, _set_current)
 
-    def __init__(self, start: Union[Node3D, Node2D], end: Union[Node3D, Node2D], max_iter: int = 100000,
-                 conf_space=None, periodic=(0, 0, 1)) -> None:
+    def __init__(self, start: Union[Node3D, Node2D, None], end: Union[Node3D, Node2D, None], max_iter: int = 100000,
+                 conf_space: object = None, periodic: object = (0, 0, 1)) -> None:
         self.start = start
         self.end = end
         self.max_iter = max_iter
@@ -148,14 +148,15 @@ class Path_planning_in_CS:
         greedy_node.parent = copy(self._current)
         self._current = greedy_node
 
-    def compute_distances(self) -> None:
+    def compute_distances(self, zero_contour_space=None) -> None:
         """
         Computes distance of the current position of the solver to the finish line according to self.planning_space.space
         """
-        zero_contour_space = np.ones_like(self.planning_space.space, dtype=int)
-        mask = ~np.array(self.planning_space.space, dtype=bool)
-        zero_contour_space = np.ma.MaskedArray(zero_contour_space, mask)
-        zero_contour_space[self.end.ind()] = 0
+        if zero_contour_space is None:
+            zero_contour_space = np.ones_like(self.planning_space.space, dtype=int)
+            mask = ~np.array(self.planning_space.space, dtype=bool)
+            zero_contour_space = np.ma.MaskedArray(zero_contour_space, mask)
+            zero_contour_space[self.end.ind()] = 0
 
         # idea: increase in a while loop
         # this is to reduce computing power: we don't have to calculate distance in all space, just in small space

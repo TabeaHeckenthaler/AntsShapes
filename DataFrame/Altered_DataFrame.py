@@ -2,7 +2,7 @@ from DataFrame.dataFrame import myDataFrame
 from trajectory_inheritance.get import get
 from trajectory_inheritance.trajectory_humanhand import ExcelSheet
 from trajectory_inheritance.exp_types import solver_geometry
-from Directories import df_dir, averageCarrierNumber_dir, lists_exp_dir, original_movies_dir_ant, \
+from Directories import averageCarrierNumber_dir, lists_exp_dir, original_movies_dir_ant, \
     original_movies_dir_human, original_movies_dir_humanhand
 import json
 import os
@@ -14,6 +14,7 @@ plot_separately = {'ant': {'S': [1]}, 'human': {'Medium': [2, 1]}, 'humanhand': 
 class Altered_DataFrame:
     def __init__(self, df=None):
         if df is None:
+            myDataFrame.exclude_perfect()
             self.df = myDataFrame.clone()
         else:
             self.df = df
@@ -92,7 +93,10 @@ class Altered_DataFrame:
         #     averageCarrierNumber_dict = json.load(json_file)
         # self.df['average Carrier Number'] = self.df['filename'].map(averageCarrierNumber_dict)
 
-        df = self.df[~self.df['free'].astype(bool)]
+        if solver != 'human':
+            df = self.df[~self.df['free'].astype(bool)]
+        else:
+            df = self.df.copy()
         if 'solver' in self.df.columns:
             df = df[df['solver'] == solver]
         if 'shape' in self.df.columns and shape is not None:
@@ -173,15 +177,15 @@ class Altered_DataFrame:
             averageCarrierNumber_dict = json.load(json_file)
         self.df['average Carrier Number'] = self.df['filename'].map(averageCarrierNumber_dict)
 
-        dfss = self.get_separate_data_frames(solver='ant', plot_separately=plot_separately['ant'],
-                                             initial_cond='front',
-                                             geometry=('MazeDimensions_ant.xlsx',
-                                                       'LoadDimensions_ant.xlsx'))
+        dfss = self.get_separate_data_frames(solver='human', plot_separately=plot_separately['human'],
+                                             initial_cond='back',
+                                             geometry=('MazeDimensions_human.xlsx',
+                                                       'LoadDimensions_human.xlsx'))
         for size, dfs in dfss.items():
             for sep, df in dfs.items():
                 size_str = size.replace('>', 'more than')
                 df = find_directory_of_original(df)
-                df.to_excel(lists_exp_dir + '\\exp_ant_' + size_str + '_' + sep + '_old.xlsx')
+                df.to_excel(lists_exp_dir + '\\exp_human_' + size_str + '_' + sep + '.xlsx')
         DEBUG = 1
 
         # dfss = self.get_separate_data_frames(solver='ant', plot_separately=plot_separately['ant'],

@@ -296,9 +296,9 @@ def correct_traj(x):
 # x.position[:, 1] = medfilt(x.position[:, 1], window)
 # x.angle = medfilt(x.angle, window)
 
-x = get('M_SPT_4340004_MSpecialT_1_ants')
+# x = get('M_SPT_4340004_MSpecialT_1_ants')
 # plt.plot(x.angle[43537: 54537])
-x = correct_traj(x)
+# x = correct_traj(x)
 # maxi_ind = int(x.fps * 0.25 * 5212)
 # x.play(frames=[maxi_ind - 500, maxi_ind + 500, ], wait=10)
 DEBUG = 1
@@ -306,7 +306,7 @@ DEBUG = 1
 
 if __name__ == '__main__':
 
-    solver, shape, free = 'ant', 'SPT', False
+    solver, shape, free = 'human', 'SPT', False
     fps = {'human': 30, 'ant': 50, 'pheidole': 50, 'humanhand': 30}
     #
     # parts_ = ['LSPT_4650007_LSpecialT_1_ants (part 1).mat',
@@ -330,18 +330,18 @@ if __name__ == '__main__':
     still_to_do = ['small_20220606162431_20220606162742_20220606162907_20220606163114.mat',]
 
     # for size in exp_types[shape][solver]:
-    for size in ['L']:
+    for size in ['Medium']:
 
         unpickled = find_unpickled(solver, size, shape)
-        unpickled = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat']
+        # unpickled = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat']
         winner_dict = continue_winner_dict(solver, shape)
         if len(unpickled) > 0:
             for results_filename in tqdm([u for u in unpickled if u not in still_to_do]):
                 print(results_filename)
                 parts_ = parts(results_filename, solver, size, shape)
-                parts_ = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat',
-                          'LSPT_4660001_LSpecialT_1_ants (part 1r).mat',
-                          'LSPT_4660002_LSpecialT_1_ants (part 2).mat']
+                # parts_ = ['LSPT_4660001_LSpecialT_1_ants (part 1).mat',
+                #           'LSPT_4660001_LSpecialT_1_ants (part 1r).mat',
+                #           'LSPT_4660002_LSpecialT_1_ants (part 2).mat']
                 winner = winner_dict[results_filename]
                 chain = [load(filename, solver, size, shape, fps[solver], [], winner=winner) for filename in parts_]
                 x = chain[0]
@@ -373,7 +373,7 @@ if __name__ == '__main__':
                 # x.position[2717:3175, 0] = x.position[2717:3175, 0] - 0.1
                 # plt.plot(x.frames)
 
-                x = correct_traj(x)
+                # x = correct_traj(x)
                 x.save()
 
     # free trajectories
