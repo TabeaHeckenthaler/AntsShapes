@@ -21,9 +21,10 @@ class HumanStateMachine:
     def __init__(self, seed=42):
         self.seeds, self.gen = self.getSeeds(seed)
         self.points = self.getPoints()
-        self.initial_perceived_connection_matrix = self.init_perceivedMatrix()
+        # self.initial_perceived_connection_matrix = self.init_perceived_passage_probabilities()
         self.perceivedDistances = self.distances(self.points)
         self.perceivedDistances[~self.initial_perceived_connection_matrix] = np.inf
+        self.passage_probabilities = self.init_perceived_passage_probabilities()
         self.G = self.create_graph()
         self.initial_state = 'ab'
         self.final_node = 'i'
@@ -31,18 +32,22 @@ class HumanStateMachine:
         self.anim = None
         self.i = 0
 
-    def init_perceivedMatrix(self):
+    def init_perceived_passage_probabilities(self):
         # create a matrix of the perceived connections
         small_average_initialNetworks = \
             pd.read_excel(home + "\\PS_Search_Algorithms\\human_network_simulation\\small_average_initialNetworks.xlsx",
                           index_col=0)
         percievedConnectionMatrix = connectionMatrix.copy()
 
-        for i, j in itertools.combinations(percievedConnectionMatrix.index, 2):
-            p = small_average_initialNetworks.loc[i][j]
-            choice = self.gen.choice([True, False], p=[p, 1-p])
-            percievedConnectionMatrix.loc[i][j] = choice
-            percievedConnectionMatrix.loc[j][i] = choice
+        # passage_probabilities = pd.read_excel(home + "\\PS_Search_Algorithms\\human_network_simulation\\"
+        #                                              "passage_probabilities.xlsx",
+        #                                       index_col=0)
+
+        # for i, j in itertools.combinations(percievedConnectionMatrix.index, 2):
+        #     p = small_average_initialNetworks.loc[i][j]
+        #     choice = self.gen.choice([True, False], p=[p, 1-p])
+        #     percievedConnectionMatrix.loc[i][j] = choice
+        #     percievedConnectionMatrix.loc[j][i] = choice
         return percievedConnectionMatrix
 
     @property
@@ -150,9 +155,12 @@ class HumanStateMachine:
         shortest_paths = dict()
         for option in list(self.G.neighbors(curr_i)):
             shortest_paths[option] = (self.shortest_path(option), self.shortest_path_length(option))
+            passage_probability[option] = self.passage_probabilities.loc[curr_i][option]
 
         print(shortest_paths)
-        p = [1 / v[1] for v in shortest_paths.values()]/sum([1 / v[1] for v in shortest_paths.values()])
+        p = [passage_probability[option] / shortest_paths[option][1]
+             for option in shortest_paths.keys()]
+        p = np.array(p) / np.sum(p)
 
         paths_to_highlight = [shortest_paths[attempt_i][0] for attempt_i in shortest_paths.keys()]
         path_edges_with_labels = {(curr_i, state): round(chance, 2) for state, chance in zip(shortest_paths.keys(), p)}
@@ -306,12 +314,19 @@ class HumanStateMachine:
         df = pd.DataFrame(tuples, columns=['name', 'size', 'winner', 'states_series'])
         return df
 
-    def update_connection(self, state1, state2, connection=False, add_new_node=False):
+    def update_connection_old(self, state1, state2, connection=False, add_new_node=False):
         if add_new_node:
             self.add_new_node(curr_i)
         self.perceivedDistances.loc[state1, state2] = np.inf
         self.perceivedDistances.loc[state2, state1] = np.inf
         self.G = self.create_graph()
+
+    def update_connection(self, state1, state2, connection=False, add_new_node=False):
+        if add_new_node:
+            self.add_new_node(curr_i)
+        self.passage_probabilities.loc[state2, state1] = 0
+        self.passage_probabilities.loc[state1, state2] = 0
+        # self.G = self.create_graph()
 
     def merge(self):
         # merge images
@@ -361,7 +376,9 @@ if __name__ == '__main__':
         # i = 62
         stateMachine = HumanStateMachine(seed=i)
         # TODO: get percentages of first decisions for every junction for single experiments
-        # TODO: with the distances,
+        # TODO: with the distances, calculate the probabilities that humans believe that this junction is open.
+        # TODO: this would be ... prob_to_choose proportional to prob_to_pass/distance
+        # TODO: At every junction sum(prob_to_choose) = 1
         # TODO: at every junction, get the probabilities that humans believe that this junction is open.
 
         # TODO: from the percentages of the single experiments at get the probabilities for first decision
