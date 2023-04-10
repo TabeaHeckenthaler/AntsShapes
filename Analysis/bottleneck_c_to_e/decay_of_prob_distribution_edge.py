@@ -170,7 +170,7 @@ def fit_function_to_histogram(values: list, bins: list, func: callable, name: st
                                                   index=[size]))
 
     fit_results.to_excel(folder + 'fit_results_' + name + '.xlsx')
-    plt.bar(x_bins, values, width=np.diff(bins), align='edge', label='normalized distances')
+    plt.bar(x_bins, values, width=np.diff(bins), align='edge', label='normalized calc_distances')
     plt.plot(x_bins, func(x_bins, popt[0], popt[1]), 'r--',
              label='fit: a=%5.3f, b=%5.3f' % tuple(popt))
     plt.legend()
@@ -317,7 +317,7 @@ if __name__ == '__main__':
             all_coords_frames = json.load(json_file)
             json_file.close()
 
-        # ________________calculate distances _______________________
+        # ________________calculate calc_distances _______________________
         find_distances(all_coords_x, all_coords_y, all_coords_theta, all_coords_frames)
 
         with open(folder + size + 'values.json', 'r') as json_file:

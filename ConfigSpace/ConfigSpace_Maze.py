@@ -292,7 +292,7 @@ class ConfigSpace_Maze(ConfigSpace):
         Calculate the distance of every node in mask to space.
         :param zero_distance_space: Area, which has zero distance.
         :param available_states: Nodes, where distance to the zero_distance_space should be calculated.
-        :return: np.array with distances from each node
+        :return: np.array with calc_distances from each node
         """
 
         # self.distance = distance(np.array((~np.array(self.space, dtype=bool)), dtype=int), periodic=(0, 0, 1))
@@ -1488,7 +1488,7 @@ class ConfigSpace_Labeled(ConfigSpace_Maze):
         # self.visualize_space(space=space_with_false_connections)
 
         for label, ps_state in tqdm(self.ps_states.items()):
-            print('Calculating distances from every node for ', str(label), ' different states')
+            print('Calculating calc_distances from every node for ', str(label), ' different states')
             ps_state.distance = ps_state.calculate_distance(ps_state.space, space_with_false_connections)
 
         # distance_stack_original = np.stack([ps_state.distance for ps_state in self.ps_states], axis=3)

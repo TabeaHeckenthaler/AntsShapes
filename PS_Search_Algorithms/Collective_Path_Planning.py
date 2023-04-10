@@ -34,7 +34,7 @@ class Collective_Path_Planning(Path_planning_in_Maze):
     Then we choose a new solver (randomly), which leads the group according to his minimal path.
 
     Notes =
-    Computation time will stay lower, if we calculate distances on the low resolution CS.
+    Computation time will stay lower, if we calculate calc_distances on the low resolution CS.
 
     Question =
     If we only had two big pixels, the maze would be solved easily. Hence, this only works, if we have a resolution high

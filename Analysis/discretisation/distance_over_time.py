@@ -24,7 +24,7 @@ class Distance_Finder:
         self.distance = None
 
     def compute_distances(self, final_label='h'):
-        print('computing distances...')
+        print('computing calc_distances...')
         zero_contour_space = (cs.space_labeled != final_label).astype(int)
         mask = ~np.array(cs.space, dtype=bool)
         zero_contour_space = np.ma.MaskedArray(zero_contour_space, mask)
@@ -41,11 +41,11 @@ class Distance_Finder:
 
         # interpolate nans in d
         isnan = np.isnan(distances)
-        # distances = np.interp(np.arange(len(distances)), np.flatnonzero(~isnan), distances[~isnan])
+        # calc_distances = np.interp(np.arange(len(calc_distances)), np.flatnonzero(~isnan), calc_distances[~isnan])
         f = interpolate.interp1d(np.arange(len(distances))[~isnan],  distances[~isnan], kind='linear', fill_value='extrapolate')
 
-        # plt.plot(f(range(len(distances))))
-        # plt.plot(distances)
+        # plt.plot(f(range(len(calc_distances))))
+        # plt.plot(calc_distances)
 
         return f(range(len(distances))), distances
 
@@ -102,7 +102,7 @@ class Distance_Finder:
         plt.xlabel('time [s]')
         plt.ylabel('distance')
 
-        plt.savefig('distances' + '\\' + x.filename + '_distance_over_time.png', dpi=300)
+        plt.savefig('calc_distances' + '\\' + x.filename + '_distance_over_time.png', dpi=300)
         plt.close()
 
     @staticmethod
@@ -121,7 +121,7 @@ class Distance_Finder:
         # fig, ax = plt.subplots(figsize=(10, 5))
         # ax.plot(d)
         # ax.plot(peaks, d[peaks], "x", markersize=10, color="red")
-        # save_fig(fig, 'distances' + '\\' + x.filename + '_distance_over_time.png')
+        # save_fig(fig, 'calc_distances' + '\\' + x.filename + '_distance_over_time.png')
         return maxima, minima
 
 

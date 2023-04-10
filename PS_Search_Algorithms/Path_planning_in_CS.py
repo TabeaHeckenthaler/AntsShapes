@@ -50,7 +50,7 @@ class Path_planning_in_CS:
         self._current = self.start
         self.structure = np.ones(tuple((3 for _ in range(self.conf_space.space.ndim))), dtype=int)
         self.planning_space = conf_space
-        # self.planning_space.space is the space according to which distances are calculated and nodes to walk to are
+        # self.planning_space.space is the space according to which calc_distances are calculated and nodes to walk to are
         # chosen, which are closest to the end (not necessarily in self.conf_space.space, if planning_space is warped.)
         self._distance = None
         self.winner = False
@@ -67,12 +67,12 @@ class Path_planning_in_CS:
     def path_planning(self, display_cs=False) -> None:
         """
         While the current node is not the end_screen node, and we have iterated more than max_iter
-        compute the distances to the end_screen node (of adjacent nodes).
+        compute the calc_distances to the end_screen node (of adjacent nodes).
         If distance to the end_screen node is inf, break the loop (there is no solution).
         If distance to end_screen node is finite, find node connected to the
         current node with the minimal distance (+cost) (next_node).
         If you are able to walk to next_node is, make next_node your current_node.
-        Else, recompute your distances.
+        Else, recompute your calc_distances.
         :param display_cs: Whether the path should be displayed during run time.
         """
         # print('Planning the path')
@@ -171,7 +171,7 @@ class Path_planning_in_CS:
         #     if labels[self.end.ind()] == labels[self.start.ind()]:
         #         mask = np.logical_or(mask, self.unnecessary_space())
 
-        # calculate the distances from the goal position, this is the easiest, if the speed is uniform
+        # calculate the calc_distances from the goal position, this is the easiest, if the speed is uniform
         # self.distance = distance(phi, periodic=(0, 0, 1)).data
 
         dist = distance(zero_contour_space, periodic=self.periodic)

@@ -19,7 +19,7 @@ class FirstFrame:
         Reduce path to a list of points that each have distance of at least resolution = 0.1cm
         to the next point.
         Distance between to points is calculated by |x1-x2| + (angle1-angle2) * aver_radius.
-        Path length the sum of the distances of the points in the list.
+        Path length the sum of the calc_distances of the points in the list.
         When the shape is standing still, the path length increases. Penalizing for being stuck.
         """
         if self.x.solver == 'human':

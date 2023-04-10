@@ -23,7 +23,7 @@ class ManyStateMachines:
                 curr_i = communal_choice
                 self.path.append(communal_choice)
             else:
-                [stateMachine.update_connection(curr_i, communal_choice, False) for stateMachine in self.stateMachines]
+                [stateMachine.weaken_connection(curr_i, communal_choice, False) for stateMachine in self.stateMachines]
 
     def run_randomChoice(self):
         curr_i = 'ab'
@@ -36,7 +36,7 @@ class ManyStateMachines:
                 curr_i = randomChoice
                 self.path.append(randomChoice)
             else:
-                [stateMachine.update_connection(curr_i, randomChoice, False) for stateMachine in self.stateMachines]
+                [stateMachine.weaken_connection(curr_i, randomChoice, False) for stateMachine in self.stateMachines]
 
     @staticmethod
     def save(paths, string="states_many.json"):

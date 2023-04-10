@@ -14,7 +14,7 @@ colors_humans = {'Large C': '#8931EF',
                  }
 
 colors_state = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c',
-                # 'bf': '#d108ba',
+                'b1/b2': '#d108ba',
                 # 'a': '#fc0000',
                 'ac': '#fc0000', 'ab': '#802424',
                 'c': '#fc8600', 'cg': '#8a4b03',
