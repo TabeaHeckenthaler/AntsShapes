@@ -23,6 +23,7 @@ colors_state = {'b': '#9700fc', 'be': '#e0c1f5', 'b1': '#d108ba', 'b2': '#38045c
                 'h': '#085cd1', False: '#000000', True: '#ccffcc', 'i': '#000000', }
 
 
+
 def hex_to_rgb(hex_str, norm=1):
     hex_str = hex_str.lstrip('#')
     h_len = len(hex_str)

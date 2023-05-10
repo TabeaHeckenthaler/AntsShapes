@@ -23,7 +23,7 @@ class Distance_Finder:
         self.cs = cs
         self.distance = None
 
-    def compute_distances(self, final_label='h'):
+    def compute_distances_in_cs(self, final_label='h'):
         print('computing calc_distances...')
         zero_contour_space = (cs.space_labeled != final_label).astype(int)
         mask = ~np.array(cs.space, dtype=bool)
@@ -124,14 +124,43 @@ class Distance_Finder:
         # save_fig(fig, 'calc_distances' + '\\' + x.filename + '_distance_over_time.png')
         return maxima, minima
 
+    @staticmethod
+    def recurrence_plot(d):
+        # draw a recurrence plot
+        plt.figure()
+        from pyts.image import RecurrencePlot
+        rp = RecurrencePlot()
+        X_rp = rp.fit_transform(d.reshape(1, -1))
+        plt.imshow(X_rp[0], origin='lower')
+        plt.title('Recurrence Plot', fontsize=16)
+        plt.savefig('images\\recurrence_plot\\' + x.filename + '.png', dpi=300)
+
 
 if __name__ == '__main__':
-    columns = ['filename', 'solver', 'size', 'minima', 'maxima']
 
-    # write dataframe with columns
-    # df_results = pd.DataFrame(columns=columns)
-    df_results = pd.read_excel('minima_maxima_distances.xlsx', usecols=columns)
-    df_results.to_excel('minima_maxima_distances.xlsx')
+    for dfs_solver in [dfs_ant, dfs_human, ]:
+        for group_type, df in dfs_solver.items():
+            print(group_type)
+            exp = df.iloc[0]
+            cs = ConfigSpace_SelectedStates(exp['solver'], exp['size'], exp['shape'],
+                                            (exp['maze dimensions'], exp['load dimensions']))
+            cs.load_final_labeled_space()
+            dist_f = Distance_Finder(cs)
+            dist_f.compute_distances_in_cs()
+            for i in range(10):
+                exp = df.iloc[i]
+
+                x = get(exp['filename'])
+                x.smooth(sec_smooth=1)
+                d_interpolated, d_real = dist_f.calc_distance(x.position[:, 0], x.position[:, 1], x.angle)
+                dist_f.recurrence_plot(d_interpolated)
+    #
+    # columns = ['filename', 'solver', 'size', 'minima', 'maxima']
+    #
+    # # write dataframe with columns
+    # # df_results = pd.DataFrame(columns=columns)
+    # df_results = pd.read_excel('minima_maxima_distances.xlsx', usecols=columns)
+    # df_results.to_excel('minima_maxima_distances.xlsx')
 
     # for dfs_solver in [dfs_human, dfs_ant]:
     #     for group_type, df in dfs_solver.items():
@@ -145,38 +174,38 @@ if __name__ == '__main__':
     #
     #         df_to_plot = df_results[df_results['filename'].isin(df['filename'])]
     #         Distance_Finder.plot_2d_density(df_to_plot, group_type, shade=shade)
-
-    with open(path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
-        time_series_dict = json.load(json_file)
-        json_file.close()
-
-    for dfs_solver in [dfs_human, dfs_ant]:
-        for key, df in dfs_solver.items():
-            exp = df.iloc[0]
-
-            cs = ConfigSpace_SelectedStates(exp['solver'], exp['size'], exp['shape'],
-                                            (exp['maze dimensions'], exp['load dimensions']))
-            cs.load_final_labeled_space()
-            dist_f = Distance_Finder(cs)
-            dist_f.compute_distances()
-
-            for filename in df['filename']:
-                x = get(filename)
-                x.smooth(sec_smooth=1)
-
-                ts = time_series_dict[x.filename]
-                ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
-
-                d_interpolated, d_real = dist_f.calc_distance(x.position[:, 0], x.position[:, 1], x.angle)
-                time = np.arange(len(x.frames))/x.fps
-
-                maxima, minima = dist_f.find_extremata(d_interpolated, time)
-
-                dist_f.plot_distance(d_interpolated, time, ts=ts_extended, peaks=np.concatenate((maxima, minima)), d_real=d_real)
-                mini = [[x.position[m, 0], x.position[m, 1], x.angle[m]] for m in minima]
-                maxi = [[x.position[m, 0], x.position[m, 1], x.angle[m]] for m in maxima]
-                new = {'filename': filename, 'solver': x.solver, 'size': x.size, 'minima': mini, 'maxima': maxi}
-                df_results = df_results.append(new, ignore_index=True)
-            df_results.to_excel('minima_maxima_distances.xlsx')
-    #         DEBUG = 1
+    #
+    # with open(path.join(network_dir, 'time_series_selected_states.json'), 'r') as json_file:
+    #     time_series_dict = json.load(json_file)
+    #     json_file.close()
+    #
+    # for dfs_solver in [dfs_human, dfs_ant]:
+    #     for key, df in dfs_solver.items():
+    #         exp = df.iloc[0]
+    #
+    #         cs = ConfigSpace_SelectedStates(exp['solver'], exp['size'], exp['shape'],
+    #                                         (exp['maze dimensions'], exp['load dimensions']))
+    #         cs.load_final_labeled_space()
+    #         dist_f = Distance_Finder(cs)
+    #         dist_f.compute_distances_in_cs()
+    #
+    #         for filename in df['filename']:
+    #             x = get(filename)
+    #             x.smooth(sec_smooth=1)
+    #
+    #             ts = time_series_dict[x.filename]
+    #             ts_extended = Traj_sep_by_state.extend_time_series_to_match_frames(ts, x)
+    #
+    #             d_interpolated, d_real = dist_f.calc_distance(x.position[:, 0], x.position[:, 1], x.angle)
+    #             time = np.arange(len(x.frames))/x.fps
+    #
+    #             maxima, minima = dist_f.find_extremata(d_interpolated, time)
+    #
+    #             dist_f.plot_distance(d_interpolated, time, ts=ts_extended, peaks=np.concatenate((maxima, minima)), d_real=d_real)
+    #             mini = [[x.position[m, 0], x.position[m, 1], x.angle[m]] for m in minima]
+    #             maxi = [[x.position[m, 0], x.position[m, 1], x.angle[m]] for m in maxima]
+    #             new = {'filename': filename, 'solver': x.solver, 'size': x.size, 'minima': mini, 'maxima': maxi}
+    #             df_results = df_results.append(new, ignore_index=True)
+    #         df_results.to_excel('minima_maxima_distances.xlsx')
+    # #         DEBUG = 1
 

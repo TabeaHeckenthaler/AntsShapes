@@ -9,38 +9,36 @@ import json
 from Analysis.Efficiency.PathLength import PathLength
 import matplotlib.pyplot as plt
 import numpy as np
+from colors import colors_state
 
 states = {'ab', 'ac', 'b', 'be', 'b1', 'b2', 'c', 'cg', 'e', 'eb', 'eg', 'f', 'g', 'h'}
 columns = ['filename', 'size', 'solver', 'state', 'turning radius (norm by 2 pi)']
+plt.rcParams.update({'font.size': 22, 'font.family': 'Times New Roman'})
 
 
 class BackRoomTurning:
     def __init__(self, unique_states: list):
         self.unique_states = unique_states
 
-    def plot(self, results, title: str):
+    def plot(self, df_size, ax):
         # plot results in columns 'turning radius (norm by 2 pi)' in a histogram
-        for size, df_size in results.groupby('size'):
-            print(size)
-            fig, axs = plt.subplots(2)
+        if solver == 'human':
+            limits = [[0, 1], [0, 1]]
+        elif solver == 'ant':
+            limits = [[0, 3], [0, 3]]
 
-            if solver == 'human':
-                limits = [[0, 1], [0, 1]]
-            elif solver == 'ant':
-                limits = [[0, 1], [0, 16]]
+        c_states = {"['ab']": colors_state['ab'],
+                    "['ac', 'ab']": colors_state['ac']}
 
-            for (states, df_state_size), ax, lim in zip(df_size.groupby('state'), axs, limits):
-                theta = df_state_size['turning radius (norm by 2 pi)']
-                ax.hist(theta, bins=20)
-                ax.set_xlabel('turning radius (norm by 2 pi)')
-                ax.set_ylabel('count')
-                ax.set_title(size + ', passed through states: ' + str(states))
-                ax.set_xlim(*lim)
-
-            # plt.show()
-            plt.tight_layout()
-            plt.savefig('images\\turning_radius\\' + title + size + '.png')
-        DEBUG = 1
+        for (states, df_state_size), lim in zip(df_size.groupby('state'), limits):
+            theta = df_state_size['turning radius (norm by 2 pi)']
+            ax.hist(theta, range=lim, bins=40,
+                    color=c_states[states], label=states, alpha=0.5, density=True)
+            ax.set_xlabel('turning angle (norm by 2 pi)')
+            ax.set_ylabel('count')
+            ax.legend()
+            ax.set_title(f'{solver} {size}')
+            ax.set_xlim(*lim)
 
     @staticmethod
     def to_list(string: str):
@@ -98,32 +96,36 @@ if __name__ == '__main__':
     unique_s = ['ab', 'ac']
     brt = BackRoomTurning(unique_states=unique_s)
 
-    for solver, dfs in [['ant', dfs_ant], ['human', dfs_human], ]:
-        # turning radius when in unique states
-        # directory = os.path.join(home, 'Analysis', 'discretisation', 'overturning_in_ab_ac_humans.xlsx')
-        # new_results = brt.calc_turning_angle(pd.concat(dfs_ant))
-        # new_results.to_excel(directory)
+    fig, axs = plt.subplots(2, 5, figsize=(25, 8))
 
-        # turning radius when in unique states and turning in the same direction
+    # new_results.to_excel(directory)
+    for solver, dfs, ax in [['ant', dfs_ant, axs[0]], ['human', dfs_human, axs[1]], ]:
         directory = os.path.join(home, 'Analysis', 'discretisation',
                                  'overturning_in_ab_ac_' + solver + '_intermediate.xlsx')
-        # new_results = brt.calc_turning_angle_intermediate(pd.concat(dfs))
-        # new_results.to_excel(directory)
-
         results = pd.read_excel(directory, usecols=columns)
-
         results['size'] = results['size'].replace('Small Far', 'Small')
         results['size'] = results['size'].replace('Small Near', 'Small')
+        for (size, df_size), a in zip(dfs.items(), ax):
+            # turning radius when in unique states
+            # directory = os.path.join(home, 'Analysis', 'discretisation', 'overturning_in_ab_ac_humans.xlsx')
+            # new_results = brt.calc_turning_angle(pd.concat(dfs_ant))
+            # new_results.to_excel(directory)
 
-        brt.plot(results, 'turning_radius_' + solver + '_')
-        # for size, df in dfs_human.items():
-        #     coords = e_p[e_p['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
-        #
-        #     extr_points = ExtremalPoints(coordinates=coords, unique_state=unique_s)
-        #     cs = ConfigSpace_Maze('human', size, 'SPT',
-        #                           ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
-        #     cs.visualize_space()
-        #     extr_points.plot_in_cs(cs)
-        #
-        #     mlab.show()
-        #     DEBUG = 1
+            # turning radius when in unique states and turning in the same direction
+            # new_results = brt.calc_turning_angle_intermediate(pd.concat(dfs))
+
+            results_size = results[results['filename'].isin(df_size['filename'])]
+            brt.plot(results_size, a)
+    plt.tight_layout()
+    plt.savefig('images\\turning_angle\\' + 'turning_angle.png')
+    # for size, df in dfs_human.items():
+    #     coords = e_p[e_p['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
+    #
+    #     extr_points = ExtremalPoints(coordinates=coords, unique_state=unique_s)
+    #     cs = ConfigSpace_Maze('human', size, 'SPT',
+    #                           ('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx'))
+    #     cs.visualize_space()
+    #     extr_points.plot_in_cs(cs)
+    #
+    #     mlab.show()
+    DEBUG = 1

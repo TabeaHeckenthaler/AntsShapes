@@ -244,8 +244,8 @@ def plot_nth_decisions(fig, axs):
             df_to_last_decision = df[fork].map(funct).dropna()
             c_Nones_to_last = {n: np.array([d[n] for d in df_to_last_decision]) for n in nth_times}
 
-            # c = c_withoutNones
-            c = c_Nones_to_last
+            c = c_withoutNones
+            # c = c_Nones_to_last
 
             results = {key: decisions.sum() / len(decisions)
             if len(decisions) > 0 else np.NaN

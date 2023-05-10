@@ -11,19 +11,14 @@ from itertools import groupby
 from PS_Search_Algorithms.human_network_simulation.StateMachine import HumanStateMachine
 from PS_Search_Algorithms.human_network_simulation.ManyStateMachines import ManyStateMachines
 
-first_state = 'ab'
-last_state = 'h'
-measure = 'states passed ' + first_state + '->' + last_state
 
-
-def func(x: list):
-    # return list which is cut off after first occurence of 'c'
-    # and is cut off at the beginning until first occurence of 'ab'
-
+def len_in_series(x: list, first_state, last_state):
+    # and is cut off at the beginning until first occurence of first_state
+    # return list which is cut off after first occurence of last_state
     try:
-        return x[x.index(first_state):x.index(last_state) + 1]
+        return int(len(x[x.index(first_state):x.index(last_state)]))
     except ValueError:
-        return x
+        return np.NaN
 
 
 def states_series(ts):
@@ -46,9 +41,9 @@ with open(path.join(network_dir, 'time_series_selected_states.json'), 'r') as js
     time_series_dict = json.load(json_file)
     json_file.close()
 
-df_sim_small_human = HumanStateMachine.df()
-df_sim_medium_human = ManyStateMachines.df('Medium', 'states_randomChoice_8')
-df_sim_large_human = ManyStateMachines.df('Large', 'states_randomChoice_20')
+# df_sim_small_human = HumanStateMachine.df()
+# df_sim_medium_human = ManyStateMachines.df('Medium', 'states_randomChoice_8')
+# df_sim_large_human = ManyStateMachines.df('Large', 'states_randomChoice_20')
 
 plt.rcParams.update({'font.size': 22, 'font.family': 'Times New Roman'})
 solver_step = {'human': 0.05, 'ant': 1, 'pheidole': 1}
@@ -63,14 +58,33 @@ perfect_states = ['ab', 'ac', 'c', 'e', 'f', 'h', 'i']
 df_solver['states_series'] = df_solver['time_series'].map(lambda x: states_series(x))
 
 # for df in [df_solver, df_sim_small_human, df_sim_medium_human, df_sim_large_human]:
-#     df[measure] = df['states_series'].map(lambda x: len(func(x)))
+#     df[measure] = df['states_series'].map(lambda x: len(len_in_series(x)))
+
+first_state = 'ab'
+last_state = 'c'
+measure = 'states passed ' + first_state + '->' + last_state
+
 
 for df in [df_solver]:
-    df[measure] = df['states_series'].map(lambda x: len(func(x)))
+    first_state = 'ab'
+    last_state = 'c'
+    measure = 'states passed ' + first_state + '->' + last_state
+
+    df[measure] = df['states_series'].map(lambda x: len_in_series(x, first_state, last_state))
+
+    first_state = 'ab'
+    last_state = 'h'
+    measure = 'states passed ' + first_state + '->' + last_state
+    df[measure] = df['states_series'].map(lambda x: len_in_series(x, first_state, last_state))
+
+    first_state = 'c'
+    last_state = 'h'
+    measure = 'states passed ' + first_state + '->' + last_state
+    df[measure] = df['states_series'].map(lambda x: len_in_series(x, first_state, last_state))
 
 fig, ax = plt.subplots()
 plt.xlabel(measure)
-plt.ylabel('percentage solved')
+plt.ylabel('percentage reached')
 plt.show(block=0)
 plt.title(solver + ' CDF')
 
@@ -92,9 +106,9 @@ plt.ylim([-0.05, 1.05])
 plt.legend(prop={'size': 15})
 
 # draw vertical line at x = len(perfect_states)
-plt.axvline(x=len(func(perfect_states)), color='k', linestyle='--', linewidth=2)
+plt.axvline(x=len_in_series(perfect_states, None, None), color='k', linestyle='--', linewidth=2)
 # write 'minimal' next to this line
-plt.text(len(func(perfect_states)) + 0.5, 0.5, 'minimal', rotation=90, fontsize=15)
+plt.text(len_in_series(perfect_states, None, None) + 0.5, 0.5, 'minimal', rotation=90, fontsize=15)
 
 save_fig(fig, solver + measure)
 DEBUG = 1

@@ -18,25 +18,46 @@ from PIL import Image
 
 false_connections = [('b1', 'f'), ('b2', 'f'), ('be', 'eb'), ('cg', 'g'), ('eg', 'g')]
 
-name = 'pattern_recognition_01_reversible_bias_02'
-pattern_recognition = 0.1 # if 1, no recognition of patterns. If <1, weakening of the specific edge
 
 # how can we bias the network in x direction?
 # increase cost of going against the x direction.
-bias = 0.2 # stretching factor of the distances in x.
+# bias = 0.2 # stretching factor of the distances in x.
 
 connectionMatrix = pd.read_excel(home + "\\PS_Search_Algorithms\\human_network_simulation\\ConnectionMatrix.xlsx", index_col=0, dtype=bool)
 img = plt.imread(home + "\\PS_Search_Algorithms\\human_network_simulation\\cleanCSBW.png")
 
 class HumanStateMachine:
-    def __init__(self, seed=42):
+    def __init__(self, seed=42, pattern_recognition=0.8, bias=1.3, weakening_factor=0.6):
+        """
+
+        :param seed: random seed
+
+        :param pattern_recognition: value between 0 and 1.
+         The smaller, the stronger the effect of pattern recognition.
+         Value by which the 'e' -> 'f' connection is weakened once simulation went from 'ac' to 'c'.
+         Determines how many simulations go to 'eg'. The smaller, the more go to 'eg'.
+         Has to be larger than zero, so that a connection from 'e' -> 'f' is not totally excluded.
+
+        :param bias: bias factor, b < 1.
+         The smaller this value is the more the network is biased in x direction
+         Every pathlength is weighed with self.bias - np.cos(alpha),
+         where alpha is the angle between the path and the bias direction.
+         Determines how many simulations go to 'ac' or 'ab'. The smaller, the more go to 'ab' initially.
+
+        :param weakening_factor: value between 0 and 1.
+         The larger, the more they repeat the same mistake
+         Factor by which the passage probability is reduced once a faulty connection was experienced.
+         Determines the total number passages. The larger, the more passages.
+        """
         self.seeds, self.gen = self.getSeeds(seed)
         self.points = self.getPoints()
+
         self.distances = self.calc_distances(self.points)
+        self.angles = self.calc_angles(self.points)
         # save self.perceivedDistances to excel
         # self.perceivedDistances.to_excel(home + "\\PS_Search_Algorithms\\human_network_simulation\\calc_distances.xlsx")
 
-        self.passage_probabilities = self.init_perceived_passage_probabilities()
+        self.passage_probabilities = self.init_perceived_affinities()
         self.G = self.create_graph()
         self.initial_state = 'ab'
         self.target = 'i'
@@ -44,8 +65,14 @@ class HumanStateMachine:
         self.anim = None
         self.i = 0
         self.dont_go_back = []
+        if 0 < pattern_recognition <= 1:
+            self.pattern_recognition = pattern_recognition
+        else:
+            raise ValueError("0 < pattern_recognition <= 1.")
+        self.bias = bias
+        self.weakening_factor = weakening_factor
 
-    def init_perceived_passage_probabilities(self):
+    def init_perceived_affinities(self):
         # create a matrix of the perceived connections
         small_average_initialNetworks = connectionMatrix.copy()
 
@@ -92,7 +119,7 @@ class HumanStateMachine:
             for j in self.nodes:
                 if self.passage_probabilities.loc[i][j] > 0:
                     G.add_edge(i, j)
-                    edge_costs[(i, j)] = self.distances.loc[i][j] / self.passage_probabilities.loc[i][j]
+                    edge_costs[(i, j)] = self.distances.loc[i][j] # / self.passage_probabilities.loc[i][j]
         nx.set_edge_attributes(G, edge_costs, 'cost')
         return G
 
@@ -119,6 +146,29 @@ class HumanStateMachine:
         path_length = path_weight(self.G, path=path, weight='cost')
         # shortest_path_length = nx.shortest_path_length(self.G, source=source, target=self.target, weight='cost')
         return path_length
+
+    def path_length_biased(self, path) -> float:
+        """
+        bias_factor always > 0
+        -1 <= np.cos(angle) <= 1
+        self.bias - np.cos(self.angles.loc[path[1]][path[0]]) >= 0
+        self.bias > 1
+        :param path:
+        :return: biased path length
+        """
+        # the smaller the path length, the larger the probability of choosing this path.
+        path_length = path_weight(self.G, path=path, weight='cost')
+
+        # shortest_path_length = nx.shortest_path_length(self.G, source=source, target=self.target, weight='cost')
+        total_passage_probability = np.prod([self.passage_probabilities.loc[n1][n2]
+                                             for n1, n2 in zip(path[:-1], path[1:])])
+        # if total_passage_probability < 1:
+        #     DEBUG = 1
+
+        # the smaller the angle, the smaller the bias_factor, which reduces the path_length.
+        bias_factor = self.bias - np.cos(self.angles.loc[path[1]][path[0]])
+        return path_length * bias_factor / total_passage_probability
+
 
     def plot_network(self, G=None, paths=[], curr_i=None, labels: dict = None, attempt_i=None, bottom_text=None):
         if G is None:
@@ -189,69 +239,85 @@ class HumanStateMachine:
             return True
         return False
 
-    def update_state(self):
-        """
-        Update the state of the system
-        """
-        # find next node to go to according to gradient descent in graph
-        global curr_node, last_i, attempt_i
-        # create copy of curr_i
-        last_i = copy(curr_node)
+    def calc_costs(self, paths):
         costs = dict()
-
-        self.dont_go_back.append(curr_node)
-
-        paths = [j for j in nx.shortest_simple_paths(self.G, source=curr_node, target=self.target, weight='cost')]
-
         for path in paths:
             # check if there is already a path that contains exactly the same nodes
             # and no equivalent states in path and self.dont_go_back
 
+            # if len(set(self.dont_go_back[:-2] + [self.dont_go_back[-1]]).intersection(path[1:])) == 0:
             if len(set(self.dont_go_back).intersection(path[1:])) == 0:
                 if not np.any([self.same_paths(path.copy(), eval(s2)) for s2 in costs.keys()]):
-                    costs[str(path)] = self.path_length(path)
+                    costs[str(path)] = self.path_length_biased(path)
+                    # costs[str(path)] = self.path_length(path)
 
-        print(costs)
+        # print(costs)
+        return costs
+
+    def update_state(self, log=False):
+        """
+        Update the state of the system
+        """
+        # find next node to go to according to gradient descent in graph
+        global curr_node, attempt_i
+
+        self.dont_go_back.append(curr_node)
+        paths = [j for j in nx.shortest_simple_paths(self.G, source=curr_node, target=self.target, weight='cost')]
+        costs = self.calc_costs(paths)
+
         p = [1/cost for path, cost in costs.items()]
         p = np.array(p) / np.sum(p)
 
-        paths_to_highlight = [eval(path_str) for path_str in costs.keys()]
+        # if cost.keys contains nans do something
+        if np.any(np.isnan(p)):
+            DEBUG = 1
+            costs = self.calc_costs(paths)
+        if len(costs) == 0:
+            DEBUG = 1
+            costs = self.calc_costs(paths)
+
         chosen_path_str = self.gen.choice(list(costs.keys()), p=p)
+
         chosen_path = eval(chosen_path_str)
 
+        # paths_to_highlight = [eval(path_str) for path_str in costs.keys()]
         # self.plot_network(G=self.G, paths=paths_to_highlight, curr_i=curr_i,
         #                   # labels=path_edges_with_labels,
         #                   attempt_i=path_plan[1],
         #                   bottom_text=path_plan)
 
-        to_log = "\n\n" + 'i:' + str(self.i) + ' \ncurr_node: ' + str(curr_node)
-        to_log += "\n" + 'dont go back ' + str(self.dont_go_back)
-        to_log += "\n" + 'choices ' + str(costs)
-        to_log += "\n" + 'plan:' + chosen_path_str
+        if log:
+            to_log = "\n\n" + 'i:' + str(self.i) + ' \ncurr_node: ' + str(curr_node)
+            to_log += "\n" + 'dont go back ' + str(self.dont_go_back)
+            to_log += "\n" + 'choices ' + str(costs)
+            to_log += "\n" + 'plan:' + chosen_path_str
 
         next_node = chosen_path[1]
 
         if self.is_connected(curr_node, next_node):
-            to_log += "\n" + curr_node + ' ====> ' + next_node
+            if log:
+                to_log += "\n" + curr_node + ' ====> ' + next_node
 
             self.strengthen_connection(curr_node, next_node)
             curr_node = copy(next_node)
             self.path.append(curr_node)
 
         else:
-            to_log += "\n" + curr_node + ' ==/==> ' + next_node
+            if log:
+                to_log += "\n" + curr_node + ' ==/==> ' + next_node
 
             self.weaken_connection(curr_node, next_node, connection=False)
-            self.dont_go_back = []
+            self.dont_go_back = [next_node]
 
-        if not os.path.exists('images\\' + str(i)):
-            os.mkdir('images\\' + str(i))
+        # if not os.path.exists('images\\' + str(i)):
+        #     os.mkdir('images\\' + str(i))
+        #
+        if log:
+            with open('images\\' + str(i) +'\\log.txt', 'a') as f:
+                f.write(to_log)
+                f.close()
 
-        with open('images\\' + str(i) +'\\log.txt', 'a') as f:
-            f.write(to_log)
-            f.close()
-
-        return curr_node, last_i
+        return curr_node
 
     def there_is_another_node(self, name):
         num_existing_nodes = len([n for n in self.nodes if n.strip('.') == name.strip('.')])
@@ -281,20 +347,20 @@ class HumanStateMachine:
         self.distances = pd.concat([self.distances, column_to_duplicate.to_frame()], axis=1)
         self.distances.columns = pd.Index(list(self.distances.columns[:-1]) + [new_name])
 
-    def run(self):
-        global curr_node, last_i
+    def run(self, cutoff=100):
+        global curr_node
         curr_node = self.initial_state
-        last_i = self.initial_state
         self.path = [curr_node]
-        while curr_node != self.target:
-            curr_node, last_i = self.update_state()
+        while curr_node != self.target and self.i < cutoff:
+            curr_node = self.update_state()
             self.i += 1
-            # if self.i  == 4:
-            #     DEBUG = 1
 
     @staticmethod
-    def save(paths):
-        with open(name + "states_small.json", 'w') as f:
+    def save(paths, name):
+        # name = 'pattern_recognition_' + str(pattern_recognition) + '_ineg_bias_' + str(b) + \
+        #        '_weakening_factor_' + str(self.weakening_factor)
+
+        with open('simulation_results\\' + name + "_states_small.json", 'w') as f:
             json.dump(paths, f)
 
     def animate(self): # plt.style.use('dark_background')
@@ -310,7 +376,6 @@ class HumanStateMachine:
 
         global curr_node, last_i, attempt_i
         curr_node = self.initial_state
-        last_i = self.initial_state
         attempt_i = self.initial_state
 
         self.paths = [[curr_node]]
@@ -335,6 +400,20 @@ class HumanStateMachine:
         plt.show()
 
     @staticmethod
+    def calc_angles(points):
+        l = points.shape[0]
+        points_array = np.array(points)
+        deltas = np.repeat(points_array, l, 0).reshape((l, l, 3))
+        deltas -= deltas.swapaxes(0, 1)
+        dists = pd.DataFrame(np.linalg.norm(deltas, axis=-1), index=points.index, columns=points.index)
+
+        # calculate the angle between the vector from i to j and the x axis
+        with np.errstate(divide='ignore', invalid='ignore'):
+            angles = pd.DataFrame(np.arccos(deltas[:, :, 0]/np.linalg.norm(deltas, axis=-1)),
+                                  index = points.index, columns = points.index)
+        return angles
+
+    @staticmethod
     def calc_distances(points):
         l = points.shape[0]
         points_array = np.array(points)
@@ -343,24 +422,23 @@ class HumanStateMachine:
 
         # deltas[:, :, 0] = deltas[:, :, 0] * bias
         # print('biased deltas with factor ', bias, ' in x axis')
-        # dists = pd.DataFrame(np.linalg.norm(deltas, axis=-1), index=points.index, columns=points.index)
+        dists = pd.DataFrame(np.linalg.norm(deltas, axis=-1), index=points.index, columns=points.index)
 
-        against_bias = deltas.copy()
-        against_bias[:, :, 0] = against_bias[:, :, 0] / bias
-        with_bias = deltas.copy()
-        with_bias[:, :, 0] = with_bias[:, :, 0] * bias
+        # against_bias = deltas.copy()
+        # against_bias[:, :, 0] = against_bias[:, :, 0] / bias
+        # with_bias = deltas.copy()
+        # with_bias[:, :, 0] = with_bias[:, :, 0] * bias
+        #
+        # dists_against_bias = pd.DataFrame(np.linalg.norm(against_bias, axis=-1), index=points.index, columns=points.index)
+        # dists_with_bias = pd.DataFrame(np.linalg.norm(with_bias, axis=-1), index=points.index, columns=points.index)
 
-        dists_against_bias = pd.DataFrame(np.linalg.norm(against_bias, axis=-1), index=points.index, columns=points.index)
-        dists_with_bias = pd.DataFrame(np.linalg.norm(with_bias, axis=-1), index=points.index, columns=points.index)
+        # # iterate over all nodes
+        # for i, j in itertools.combinations(dists_against_bias.index, 2):
+        #     # if i has a smaller x value than j use the distance with bias
+        #     if points.loc[i, 'x'] < points.loc[j, 'x']:
+        #         dists_against_bias.loc[i, j] = dists_with_bias.loc[i, j]
+        # dists = dists_against_bias
 
-
-        # iterate over all nodes
-        for i, j in itertools.combinations(dists_against_bias.index, 2):
-            # if i has a smaller x value than j use the distance with bias
-            if points.loc[i, 'x'] < points.loc[j, 'x']:
-                dists_against_bias.loc[i, j] = dists_with_bias.loc[i, j]
-
-        dists = dists_against_bias
         dists.loc['f']['h'] = dists.loc['g']['h']
         dists.loc['h']['f'] = dists.loc['g']['h']
         return dists
@@ -375,8 +453,13 @@ class HumanStateMachine:
         save_fig(fig, name='human_simulation_bar_chart_no_pattern')
 
     @classmethod
-    def df(cls, name='states_small.json'):
-        with open(home + "\\PS_Search_Algorithms\\human_network_simulation\\" + name, 'r') as f:
+    def df(cls, name='states_small.json') -> pd.DataFrame:
+        """
+        Load simulated data and return as a dataframe
+        :param name: name of the json file
+        :return: A dataframe with the columns: name, size, winner, states_series
+        """
+        with open(home + "\\PS_Search_Algorithms\\human_network_simulation\\simulation_results\\" + name, 'r') as f:
             paths = json.load(f)
         # create dataframe with colums: name,
         tuples = [(name, 'Small', True, path) for name, path in enumerate(paths)]
@@ -392,17 +475,19 @@ class HumanStateMachine:
 
     def strengthen_connection(self, state1, state2):
         if (state1 == 'ac' and state2 == 'c' or state1 == 'c' and state2 == 'ac'):
-            self.passage_probabilities.loc['f', 'e'] = pattern_recognition * self.passage_probabilities.loc['f', 'e']
-            self.passage_probabilities.loc['e', 'f'] = pattern_recognition * self.passage_probabilities.loc['e', 'f']
+            self.passage_probabilities.loc['f', 'e'] = self.pattern_recognition * self.passage_probabilities.loc['f', 'e']
+            self.passage_probabilities.loc['e', 'f'] = self.pattern_recognition * self.passage_probabilities.loc['e', 'f']
 
             self.G['f']['e']['cost'] = self.distances.loc['f', 'e'] / self.passage_probabilities.loc['f', 'e']
             self.G['e']['f']['cost'] = self.distances.loc['e', 'f'] / self.passage_probabilities.loc['e', 'f']
-
-            # self.passage_probabilities.loc['f', 'e'] = pattern_recognition * self.passage_probabilities.loc['f', 'e']
-            # self.passage_probabilities.loc['e', 'f'] = pattern_recognition * self.passage_probabilities.loc['e', 'f']
             #
-            # self.G['f']['e']['cost'] = self.distances.loc['f', 'e'] / self.passage_probabilities.loc['f', 'e']
-            # self.G['e']['f']['cost'] = self.distances.loc['e', 'f'] / self.passage_probabilities.loc['e', 'f']
+            # self.passage_probabilities.loc['eg', 'g'] = self.pattern_recognition * self.passage_probabilities.loc['eg', 'g']
+            # self.passage_probabilities.loc['g', 'eg'] = self.pattern_recognition * self.passage_probabilities.loc['g', 'eg']
+
+            # # check whether edge between 'eg' and 'g' are in the graph
+            # if ('eg', 'g') in self.G.edges() and ('g', 'eg') in self.G.edges():
+            #     self.G['eg']['g']['cost'] = self.distances.loc['eg', 'g'] / self.passage_probabilities.loc['eg', 'g']
+            #     self.G['g']['eg']['cost'] = self.distances.loc['g', 'eg'] / self.passage_probabilities.loc['g', 'eg']
 
         self.passage_probabilities.loc[state1, state2] = 1
         self.passage_probabilities.loc[state2, state1] = 1
@@ -413,8 +498,8 @@ class HumanStateMachine:
 
     def weaken_connection(self, state1, state2, connection=False):
         if (state1 == 'eg' and state2 == 'g'):
-            self.passage_probabilities.loc['f', 'e'] = 1/pattern_recognition * self.passage_probabilities.loc['f', 'e']
-            self.passage_probabilities.loc['e', 'f'] = 1/pattern_recognition * self.passage_probabilities.loc['e', 'f']
+            self.passage_probabilities.loc['f', 'e'] = 1 / self.pattern_recognition * self.passage_probabilities.loc['f', 'e']
+            self.passage_probabilities.loc['e', 'f'] = 1 / self.pattern_recognition * self.passage_probabilities.loc['e', 'f']
 
             self.G['f']['e']['cost'] = self.distances.loc['f', 'e'] / self.passage_probabilities.loc['f', 'e']
             self.G['e']['f']['cost'] = self.distances.loc['e', 'f'] / self.passage_probabilities.loc['e', 'f']
@@ -423,18 +508,23 @@ class HumanStateMachine:
         #     self.add_new_node(curr_i)
         # self.passage_probabilities.loc[state2, state1] = self.passage_probabilities.loc[state2, state1] / 2
         # self.passage_probabilities.loc[state1, state2] = self.passage_probabilities.loc[state1, state2] / 2
-        self.passage_probabilities.loc[state2, state1] = 0
-        self.passage_probabilities.loc[state1, state2] = 0
+        if state1 == 'cg':
+            DEBUG = 1
 
-        # cut the connection of state1 and state2 in the graph
+        self.passage_probabilities.loc[state1, state2] = \
+            self.passage_probabilities.loc[state1, state2] * self.weakening_factor
+        self.passage_probabilities.loc[state2, state1] = \
+            self.passage_probabilities.loc[state2, state1] * self.weakening_factor
+
         if self.passage_probabilities.loc[state1, state2] == 0:
             self.G.remove_edge(state1, state2)
-            self.passage_probabilities.loc[state1, state2] = 0
-            self.passage_probabilities.loc[state2, state1] = 0
+            # self.G[state1][state2]['cost'] = np.inf
+            # self.G[state2][state1]['cost'] = np.inf
         else:
             self.G[state1][state2]['cost'] = \
-                self.distances.loc[state1, state2] / \
-                self.passage_probabilities.loc[state1, state2]
+                self.distances.loc[state1, state2] / self.passage_probabilities.loc[state1, state2]
+            self.G[state2][state1]['cost'] = \
+                self.distances.loc[state2, state1] / self.passage_probabilities.loc[state2, state1]
 
     def merge(self):
         # merge images
@@ -446,7 +536,7 @@ class HumanStateMachine:
         # scale = 1 / len(file_paths)
         scale = 1
         images_with_white = [Image.open(fp).resize((int(Image.open(fp).width / scale), Image.open(fp).height)) for fp in
-                  file_paths if fp != dir_path + '\\all.png']
+                             file_paths if fp != dir_path + '\\all.png']
 
         images = []
         for image in images_with_white:
@@ -488,11 +578,7 @@ if __name__ == '__main__':
         # stateMachine.merge()
         DEBUG = 1
 
-    # TODO: not enough enter to b in the beginning
-    # TODO: never do the same mistake twice
-    # TODO: always succeed to leave from f -> h
-
-    stateMachine.save(paths)
+    HumanStateMachine.save(paths)
     # stateMachine.animate()
     # print(stateMachine.paths)
 
