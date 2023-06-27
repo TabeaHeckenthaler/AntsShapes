@@ -38,10 +38,10 @@ class HumanStateMachine:
          Determines how many simulations go to 'eg'. The smaller, the more go to 'eg'.
          Has to be larger than zero, so that a connection from 'e' -> 'f' is not totally excluded.
 
-        :param bias: bias factor, b < 1.
-         The smaller this value is the more the network is biased in x direction
-         Every pathlength is weighed with self.bias - np.cos(alpha),
-         where alpha is the angle between the path and the bias direction.
+        :param bias: bias factor, 0 < b < 1.
+         The larger this value is the more the network is biased in x direction
+         Every pathlength is weighed with (1 - self.bias * np.cos(angle))/(1 + self.bias),
+         where alpha is the angle between the pathד FIRST step and the bias direction.
          Determines how many simulations go to 'ac' or 'ab'. The smaller, the more go to 'ab' initially.
 
         :param weakening_factor: value between 0 and 1.
@@ -69,8 +69,14 @@ class HumanStateMachine:
             self.pattern_recognition = pattern_recognition
         else:
             raise ValueError("0 < pattern_recognition <= 1.")
+
+        if 0 <= bias <= 1:
+            self.pattern_recognition = pattern_recognition
+        else:
+            raise ValueError("0 <= bias <= 1.")
         self.bias = bias
         self.weakening_factor = weakening_factor
+        self.chosen_path = None
 
     def init_perceived_affinities(self):
         # create a matrix of the perceived connections
@@ -149,10 +155,6 @@ class HumanStateMachine:
 
     def path_length_biased(self, path) -> float:
         """
-        bias_factor always > 0
-        -1 <= np.cos(angle) <= 1
-        self.bias - np.cos(self.angles.loc[path[1]][path[0]]) >= 0
-        self.bias > 1
         :param path:
         :return: biased path length
         """
@@ -166,7 +168,12 @@ class HumanStateMachine:
         #     DEBUG = 1
 
         # the smaller the angle, the smaller the bias_factor, which reduces the path_length.
-        bias_factor = self.bias - np.cos(self.angles.loc[path[1]][path[0]])
+        # bias_factor = self.bias - np.cos(self.angles.loc[path[1]][path[0]])
+        bias_factor = (1 - self.bias * np.cos(self.angles.loc[path[1]][path[0]]))/(1 + self.bias)
+
+        # bias_factor should be 1, for all angles given a certain self.bias.
+        # bias_factor should be < 1, for all angles given a certain self.bias
+
         return path_length * bias_factor / total_passage_probability
 
 
@@ -248,11 +255,36 @@ class HumanStateMachine:
             # if len(set(self.dont_go_back[:-2] + [self.dont_go_back[-1]]).intersection(path[1:])) == 0:
             if len(set(self.dont_go_back).intersection(path[1:])) == 0:
                 if not np.any([self.same_paths(path.copy(), eval(s2)) for s2 in costs.keys()]):
-                    costs[str(path)] = self.path_length_biased(path)
+                    costs[str(path)] = self.path_length_biased(path) # ** 2
                     # costs[str(path)] = self.path_length(path)
 
         # print(costs)
         return costs
+
+    def choose_new_path(self):
+        paths = [j for j in nx.shortest_simple_paths(self.G, source=curr_node, target=self.target, weight='cost')]
+        costs = self.calc_costs(paths)
+
+        p = [1 / cost for path, cost in costs.items()]
+        # if nan in p, set to 0
+        p = np.array(p) / np.sum(p)
+
+        if np.any(np.isnan(p)):
+            costs = self.calc_costs(paths)
+        if len(costs) == 0:
+            costs = self.calc_costs(paths)
+
+
+        if np.any(np.isnan(p)):
+            DEBUG = 1
+            self.calc_costs(paths)
+            # p = np.nan_to_num(p)
+        chosen_path_str = self.gen.choice(list(costs.keys()), p=p)
+        self.chosen_path = eval(chosen_path_str)
+        if 'eg' in self.chosen_path:
+
+            DEBUG = 1
+            costs = self.calc_costs(paths)
 
     def update_state(self, log=False):
         """
@@ -260,37 +292,31 @@ class HumanStateMachine:
         """
         # find next node to go to according to gradient descent in graph
         global curr_node, attempt_i
+        if self.chosen_path is None:
+            self.choose_new_path()
+        else:
+            self.chosen_path = self.chosen_path[1:]
+        next_node = self.chosen_path[1]
+
+        if self.is_connected(curr_node, next_node):
+            self.strengthen_connection(curr_node, next_node)
+            curr_node = copy(next_node)
+            self.path.append(curr_node)
+        else:
+            self.weaken_connection(curr_node, next_node, connection=False)
+            self.chosen_path = None
+        return curr_node
+
+
+    def update_state_no_return(self, log=False):
+        """
+        Update the state of the system
+        """
+        # find next node to go to according to gradient descent in graph
+        global curr_node, attempt_i
 
         self.dont_go_back.append(curr_node)
-        paths = [j for j in nx.shortest_simple_paths(self.G, source=curr_node, target=self.target, weight='cost')]
-        costs = self.calc_costs(paths)
-
-        p = [1/cost for path, cost in costs.items()]
-        p = np.array(p) / np.sum(p)
-
-        # if cost.keys contains nans do something
-        if np.any(np.isnan(p)):
-            DEBUG = 1
-            costs = self.calc_costs(paths)
-        if len(costs) == 0:
-            DEBUG = 1
-            costs = self.calc_costs(paths)
-
-        chosen_path_str = self.gen.choice(list(costs.keys()), p=p)
-
-        chosen_path = eval(chosen_path_str)
-
-        # paths_to_highlight = [eval(path_str) for path_str in costs.keys()]
-        # self.plot_network(G=self.G, paths=paths_to_highlight, curr_i=curr_i,
-        #                   # labels=path_edges_with_labels,
-        #                   attempt_i=path_plan[1],
-        #                   bottom_text=path_plan)
-
-        if log:
-            to_log = "\n\n" + 'i:' + str(self.i) + ' \ncurr_node: ' + str(curr_node)
-            to_log += "\n" + 'dont go back ' + str(self.dont_go_back)
-            to_log += "\n" + 'choices ' + str(costs)
-            to_log += "\n" + 'plan:' + chosen_path_str
+        self.choose_new_path()
 
         next_node = chosen_path[1]
 
@@ -352,6 +378,7 @@ class HumanStateMachine:
         curr_node = self.initial_state
         self.path = [curr_node]
         while curr_node != self.target and self.i < cutoff:
+            # curr_node = self.update_state_no_return()
             curr_node = self.update_state()
             self.i += 1
 
@@ -480,6 +507,7 @@ class HumanStateMachine:
 
             self.G['f']['e']['cost'] = self.distances.loc['f', 'e'] / self.passage_probabilities.loc['f', 'e']
             self.G['e']['f']['cost'] = self.distances.loc['e', 'f'] / self.passage_probabilities.loc['e', 'f']
+            self.chosen_path = None
             #
             # self.passage_probabilities.loc['eg', 'g'] = self.pattern_recognition * self.passage_probabilities.loc['eg', 'g']
             # self.passage_probabilities.loc['g', 'eg'] = self.pattern_recognition * self.passage_probabilities.loc['g', 'eg']

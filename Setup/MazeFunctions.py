@@ -186,15 +186,18 @@ def ConnectAngle(angle, shape):
     returner = np.empty([len(not_new_nan)])
 
     ''' reinsert NaNs '''
-    i, ii = 0, 0
-    for insert in not_new_nan:
-        if insert:
-            returner[ii] = unwraped[i]
-            i = i + 1
-        else:
-            returner[ii] = np.NaN
-        ii = ii + 1
+    if np.sum(not_new_nan)/len(not_new_nan) != 1:
+        i, ii = 0, 0
+        for insert in not_new_nan:
+            if insert:
+                returner[ii] = unwraped[i]
+                i = i + 1
+            else:
+                returner[ii] = np.NaN
+            ii = ii + 1
     # unwraped[originalNaN[0]] = np.NaN
+    else:
+        returner = unwraped
 
     return returner
 

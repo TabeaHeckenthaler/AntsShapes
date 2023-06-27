@@ -20,7 +20,7 @@ import cv2
 
 
 class Display:
-    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, videowriter=False, config=None, path=None,
+    def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, videowriter=False, config=None, ts=None,
                  frame=0, position=None):
         self.my_maze = my_maze
         self.fps = fps
@@ -41,7 +41,7 @@ class Display:
         self.points = []
         self.wait = wait
         self.i = frame
-        self.path = path
+        self.ts = ts
         # if path is not None:
         #     path.frame_step = int(self.fps * path.time_step)
         if config is not None:
@@ -102,19 +102,17 @@ class Display:
 
         text = self.font.render(movie_name, True, colors['text'])
         text_rect = text.get_rect()
-        if frame_index is None:
-            frame_index = self.i
-        text2 = self.font.render('Frame: ' + str(frame_index), True, colors['text'])
-        self.screen.blit(text2, [0, 50])
-        self.screen.blit(text, text_rect)
 
-        if self.path is not None:
-            state = self.path.state_at_time(self.time())
+        if frame_index is not None:
+            text2 = self.font.render('Frame: ' + str(frame_index), True, colors['text'])
+            self.screen.blit(text2, [0, 50])
+            self.screen.blit(text, text_rect)
+
+        if self.ts is not None:
+            state = self.ts[self.i]
             text_state = self.font.render('state: ' + state, True, colors['text'])
             self.screen.blit(text_state, [0, 100])
 
-    def time(self) -> float:
-        return self.i / self.fps
 
     def end_screen(self):
         if hasattr(self, 'VideoWriter'):
@@ -180,8 +178,12 @@ class Display:
             fraction_of_circumference[i] = np.sum(np.logical_and(shape_mask, chamber)) / np.sum(shape_mask)
         return fraction_of_circumference
 
-    def write_to_Video(self):
+    def get_image(self):
         img = np.swapaxes(pygame.surfarray.array3d(self.screen), 0, 1)
+        return img
+
+    def write_to_Video(self):
+        img = self.get_image()
         if hasattr(self, 'ps'):
             img = merge_frames([img, mlab.screenshot(self.cs.fig, mode='rgb')],
                                (self.VideoShape[0], self.VideoShape[1], 3),

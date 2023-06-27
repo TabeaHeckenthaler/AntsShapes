@@ -27,6 +27,7 @@ def find_minimal_pL(s):
     #     DEBUG = 1
     return df_minimal[index].iloc[0]['path length [length unit]']
 
+print('Do NOT use the time [s] column, it is not accurate. Use the frameNum dict instead.')
 
 df_all = pd.read_excel(path.join(lists_exp_dir, 'exp.xlsx'), engine='openpyxl')
 
@@ -78,6 +79,22 @@ df_ant = df_all[df_all['solver'] == 'ant']
 df_ant = df_ant[df_ant['filename'].str.contains('SPT')]
 df_ant = df_ant[df_ant['initial condition'] == 'back']
 df_ant = df_ant[df_ant['maze dimensions'].isin(['MazeDimensions_new2021_SPT_ant.xlsx'])]
+
+exclude = ['M_SPT_4690001_MSpecialT_1_ants', 'M_SPT_4690011_MSpecialT_1_ants (part 1)',
+           'L_SPT_4650012_LSpecialT_1_ants (part 1)', 'L_SPT_4660014_LSpecialT_1_ants',
+           'L_SPT_4670008_LSpecialT_1_ants (part 1)', 'L_SPT_4420007_LSpecialT_1_ants (part 1)',
+           'L_SPT_4420004_LSpecialT_1_ants', 'L_SPT_4420005_LSpecialT_1_ants (part 1)',
+           'L_SPT_4420010_LSpecialT_1_ants (part 1)', 'L_SPT_5030001_LSpecialT_1_ants (part 1)',
+           'L_SPT_5030009_LSpecialT_1_ants (part 1)', 'L_SPT_5030006_LSpecialT_1_ants (part 1)',
+           'XL_SPT_4640001_XLSpecialT_1_ants (part 1)', 'XL_SPT_5040006_XLSpecialT_1_ants (part 1)',
+           'XL_SPT_5040012_XLSpecialT_1_ants', 'XL_SPT_5040003_XLSpecialT_1_ants (part 1)']
+# ant density in back room to low
+
+
+df_ant['size'][(df_ant['average Carrier Number'] == 1) & (df_ant['size'] == 'S')] = 'Single (1)'
+df_ant['size'][(df_ant['average Carrier Number'] > 1) & (df_ant['size'] == 'S')] = 'S (> 1)'
+df_ant_excluded = df_ant[~df_ant['filename'].isin(exclude)]
+
 df_ant_old = df_all[(df_all['solver'] == 'ant') & df_all['filename'].str.contains('SPT') &
                     (df_all['initial condition'] == 'back')]
 

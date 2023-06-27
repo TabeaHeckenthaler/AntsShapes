@@ -8,6 +8,7 @@ from Setup.Load import periodicity
 from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
 from Analysis.GeneralFunctions import ranges
+from Setup.MazeFunctions import ConnectAngle
 
 length_unit = 'cm'
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
@@ -39,24 +40,21 @@ class Trajectory_ant(Trajectory):
     # def __del__(self):
     #     remove(ant_address(self.filename))
 
-    def velocity(self, *args, fps=None):
-        av_rad = Maze(self).average_radius()
-        if len(args) == 0:
-            kernel_size = 2 * (self.fps // 2) + 1
-            position_filtered, unwrapped_angle_filtered = self.smoothed_pos_angle(self.position, self.angle,
-                                                                                  kernel_size)
-            args = (position_filtered[:, 0], position_filtered[:, 1], unwrapped_angle_filtered * av_rad)
-
-            # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
-            # fig.show()
-
-            # fig = px.scatter(x=self.frames[1:], y=np.linalg.norm(np.diff(position_filtered, axis=0), axis=1))
-            # fig.show()
-
-        if fps is None:
-            fps = self.fps
-
-        return np.column_stack([np.diff(a) for a in args]) * fps
+    # def velocity(self, smoothed=False, fps=None):
+    #     av_rad = Maze(self).average_radius()
+    #
+    #     if smoothed:
+    #         kernel_size = 2 * (self.fps // 2) + 1
+    #         position, unwrapped_angle = self.smoothed_pos_angle(self.position, self.angle, int(kernel_size))
+    #     else:
+    #         position = self.position
+    #         unwrapped_angle = ConnectAngle(self.angle, self.shape)
+    #     args = (position[:, 0], position[:, 1], unwrapped_angle * av_rad)
+    #
+    #     if fps is None:
+    #         fps = self.fps
+    #
+    #     return np.column_stack([np.diff(a) for a in args]) * fps
 
     def geometry(self) -> tuple:
         """
@@ -281,7 +279,7 @@ class Trajectory_ant(Trajectory):
         from trajectory_inheritance.ants import Ants
         if not hasattr(self, 'participants') or self.participants is None:
             self.participants = Ants(self)
-        if abs(len(self.frames)/len(self.participants.frames)-1) > 0.001:
+        if abs(len(self.frames)/len(self.participants.frames)-1) > 0.004:
             raise ValueError('The number of frames in the load and the participants do not match')
 
     def communication(self):
@@ -315,7 +313,7 @@ class Trajectory_ant(Trajectory):
             display.end_screen()
         return fc
 
-    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, path=None, geometry=None):
+    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -343,7 +341,7 @@ class Trajectory_ant(Trajectory):
             x.position[:, 1] = x.position[:, 1] - np.min(x.position[:, 1])
 
         display = Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter, position=x.position,
-                          path=path)
+                          ts=ts)
         return x.run_trj(my_maze, display=display)
 
     def solving_time(self) -> float:

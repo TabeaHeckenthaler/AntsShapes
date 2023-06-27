@@ -465,7 +465,7 @@ if __name__ == '__main__':
     # filenames = df_exp_ant_XL_winner['filename']
     # filename = filenames.iloc[10]
     traj = get(filename)
-    # Experiment_Sliding(traj=traj, on_edge=edge_walks[filename]).play_edge_walk()
+    # Experiment_Sliding(traj=traj, on_edge=edge_walks[filename]).play_x()
     # fig = px.line(edge_walks[traj.filename])
     # fig.show()
     moving_frames = [(traj.frames[fr[0]], traj.frames[fr[-1]]) for fr in

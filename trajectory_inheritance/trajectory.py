@@ -96,6 +96,7 @@ class Trajectory:
         self.frames = frames
         self.winner = winner  # whether the shape crossed the exit
         self.participants = None
+        self.ts = None
 
     def __bool__(self):
         return self.winner
@@ -278,19 +279,24 @@ class Trajectory:
     def speed(self):
         return np.linalg.norm(self.velocity(), axis=1)
 
-    def velocity(self, *args, fps=None):
+    def velocity(self, fps=None, smoothed=2):
         av_rad = Maze(self).average_radius()
-        if len(args) == 0:
-            kernel_size = 4 * (self.fps // 2) + 1
-            position_filtered, unwrapped_angle_filtered = self.smoothed_pos_angle(self.position, self.angle,
-                                                                                  kernel_size)
-            args = (position_filtered[:, 0], position_filtered[:, 1], unwrapped_angle_filtered * av_rad)
+        if bool(smoothed):
+            kernel_size = smoothed * self.fps
+            # make kernel size odd
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+            position, unwrapped_angle = self.smoothed_pos_angle(self.position, self.angle, int(kernel_size))
+        else:
+            position = self.position
+            unwrapped_angle = ConnectAngle(self.angle, self.shape)
+        args = (position[:, 0], position[:, 1], unwrapped_angle * av_rad)
 
-            # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
-            # fig.show()
+        # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
+        # fig.show()
 
-            # fig = px.scatter(x=self.frames[1:], y=np.linalg.norm(np.diff(position_filtered, axis=0), axis=1))
-            # fig.show()
+        # fig = px.scatter(x=self.frames[1:], y=np.linalg.norm(np.diff(position_filtered, axis=0), axis=1))
+        # fig.show()
 
         if fps is None:
             fps = self.fps
@@ -305,7 +311,7 @@ class Trajectory:
         lengths.append(len(self.frames) - np.sum(lengths))
         return lengths[i]
 
-    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, path=None, geometry=None):
+    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None):
         """
         Displays a given trajectory_inheritance (self)
         :param videowriter:
@@ -343,7 +349,7 @@ class Trajectory:
 
         my_maze = Maze(x, geometry=geometry)
         return x.run_trj(my_maze, display=Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter,
-                                                  path=path))
+                                                  ts=ts))
 
     def check(self) -> None:
         """
@@ -353,16 +359,25 @@ class Trajectory:
         if self.frames.shape != self.angle.shape:
             raise Exception('Your frame shape does not match your angle shape!')
 
-    def cut_off(self, frames: list):
+    def cut_off(self, frame_indices=None, frames=None, time=-1):
         """
 
-        :param frames: frame indices (not the yellow numbers on top)
+        :param frame_indices: frame indices (not the yellow numbers on top)
         :return:
         """
         new = copy(self)
-        new.frames = self.frames[frames[0]:frames[1]]
-        new.position = self.position[frames[0]:frames[1]]
-        new.angle = self.angle[frames[0]:frames[1]]
+        if frames is not None:
+            ind_start = np.where(self.frames == frames[0])[0][time]
+            ind_end = np.where(self.frames == frames[1])[0][time] + 1
+            if ind_start > ind_end:
+                ind_end = -1
+                print('didnt reach the end')
+            frame_indices = [ind_start, ind_end]
+        new.frames = self.frames[frame_indices[0]:frame_indices[1]]
+        new.position = self.position[frame_indices[0]:frame_indices[1]]
+        new.angle = self.angle[frame_indices[0]:frame_indices[1]]
+        if hasattr(self, 'ts') and self.ts is not None:
+            new.ts = self.ts[frame_indices[0]:frame_indices[1]]
         return new
 
     def interpolate(self, frames_list: list):
@@ -515,7 +530,7 @@ class Trajectory:
     def communication(self):
         return False
 
-    def adapt_fps(self, new_fps: int):
+    def adapt_fps(self, new_fps: int) -> None:
         """
         param new_fps: if scale is larger than 1 it the fps will be reduced, if it is smaller than 1 it will be increased
         """
@@ -523,7 +538,7 @@ class Trajectory:
         scale = self.fps / new_fps
         if scale > 1:
             scale = int(np.ceil(scale))
-            self.fps = scale * self.fps  # this is supposed to be new_fps, frames per second
+            self.fps = self.fps/scale  # this is supposed to be new_fps, frames per second
             self.position = self.position[::scale, :]  # np.array of x and y positions of the centroid of the shape
             self.angle = self.angle[::scale]  # np.array of angles while the shape is moving
             self.frames = self.frames[::scale]
@@ -579,7 +594,6 @@ class Trajectory_part(Trajectory):
             self.states = [parent_states[i] for i in indices]
         else:
             self.states = None
-
 
     def is_connector(self):
         if self.VideoChain[-1] is None:

@@ -8,18 +8,43 @@ from trajectory_inheritance.get import get
 from scipy.signal import medfilt
 from Setup.Maze import Maze
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
+slits = {'XL_SPT': [13.02, 18.85], 'L_SPT': [6.42, 9.53], 'M_SPT': [3.23, 4.79], 'S_SPT': [2.65, 3.42]}
+max_wall_closeness = {'XL_SPT': 1, 'L_SPT': 0.7, 'M_SPT': 0.5, 'S_SPT': 0.25}
 
 class Ants_Frame:
-    def __init__(self, position, angle, carrying):
+    def __init__(self, position, angle, carrying, size, shape):
         self.position = position
         self.angle = angle
         self.carrying = carrying  # 0 if not connected, 1 if connected on outer rim of shape, 2 if connected on inner
         # rim of shape
+        self.size = size
+        self.shape = shape
 
-    def carrierCount(self):
+    def clean(self):
+        mask = np.logical_and(self.position[:, 1] > max_wall_closeness[self.size + '_' + self.shape],
+                              self.position[:, 0] > max_wall_closeness[self.size + '_' + self.shape])
+        self.position = self.position[mask]
+        self.angle = self.angle[mask]
+        self.carrying = self.carrying[mask]
+
+    def carrierCount(self) -> int:
         return len([pos for [pos, car] in zip(self.position, self.carrying) if car])
 
+    def count_in_back_room(self) -> tuple:
+        in_the_back = self.position[:, 0] < slits[self.size + '_' + self.shape][0]
+        carrying_in_the_back = np.logical_and(self.carrying, in_the_back)
+        non_carrying_in_the_back = np.sum(in_the_back) - np.sum(carrying_in_the_back)
+        return np.sum(carrying_in_the_back), np.sum(non_carrying_in_the_back)
+
+    def plot(self):
+        in_the_back = self.position[:, 0] < slits[self.size + '_' + self.shape][0]
+        plt.scatter(self.position[:, 0], self.position[:, 1], c=self.carrying)
+        plt.scatter(self.position[:, 0], self.position[:, 1], c=in_the_back)
+        mask = np.logical_or(self.position[:, 1] < 0.7, self.position[:, 0] < 0.7)
+        plt.scatter(self.position[:, 0], self.position[:, 1], c=mask)
+        plt.show()
 
 class Ants(Participants):
     def __init__(self, x):
@@ -109,16 +134,21 @@ class Ants(Participants):
 
         for i in range(len(x.VideoChain)):
             filename = x.old_filenames(i)
-            if 'r).mat' in filename and ant_frames[-1] > 50000:
-                pass  # this means, that we retracked the load. And then we retracked the ants, adn the ants do not have
-                # a separate 1r file. So we skip this one.
+            if 'r).mat' in filename and ant_frames[-1] > 40000 or 'CONNECTOR' in filename:
+                to_add = x.tracked_frames[i * 2 + 1] - x.tracked_frames[i*2] + 1
+                ant_frames += list(range(x.tracked_frames[i * 2], x.tracked_frames[i*2+1]+1))[::scale]
+                new = np.zeros(shape=(to_add, 1))[::scale, :]
+                matlab_cell = np.vstack([matlab_cell, new])
+                first_position_error = np.vstack([first_position_error, [[0, 0] for _ in range(len(new))]])
+                # we retracked the load. And then we retracked the ants, adn the ants do not have
+                # a separate 1r file. So we want to add empty files this one.
+                DEBUG = 1
 
             else:
-                if 'CONNECTOR' in filename:
-                    # self.frames = self.frames + [self.frames[-1] for _ in range(x.number_of_frames_in_part(i))]
-                    raise ValueError('Could not find connector file ' + filename)
-
-                elif path.isfile(path.join(home, 'Analysis', 'AttachmentStatistics', 'retrackedMatlabFiles', filename)):
+                # if 'CONNECTOR' in filename:
+                #     # self.frames = self.frames + [self.frames[-1] for _ in range(x.number_of_frames_in_part(i))]
+                #     raise ValueError('Could not find connector file ' + filename)
+                if path.isfile(path.join(home, 'Analysis', 'AttachmentStatistics', 'retrackedMatlabFiles', filename)):
                     file = sio.loadmat(path.join(home, 'Analysis', 'AttachmentStatistics', 'retrackedMatlabFiles', filename))
 
                 elif path.isfile(MatlabFolder('ant', x.size, x.shape) + path.sep + filename):
@@ -169,7 +199,9 @@ class Ants(Participants):
                         scale = 1
                 ant_frames += file['frames'][0].tolist()[::scale]
                 new = file['ants'][::scale]
-                error = file['load_center'][0] - x.position[0]
+                error = file['load_center'][0] - x.position[len(first_position_error)]
+                if np.sum(error) > 0.5:
+                    raise ValueError('The error is too big: ', filename, ' ', error)
                 matlab_cell = np.vstack([matlab_cell, new])
                 first_position_error = np.vstack([first_position_error, [error for _ in range(len(new))]])
 
@@ -195,14 +227,16 @@ class Ants(Participants):
 
         if ant_frames[0] == x.frames[0] and abs(ant_frames[-1] - x.frames[-1])/x.fps < 50:
             pass
-        if abs(len(matlab_cell) / len(x.frames) - 1) > 0.001:
+        if abs(len(matlab_cell) / len(x.frames) - 1) > 0.004:
             nth = ((x.frames[1] - x.frames[0])/(ant_frames[1] - ant_frames[0])).astype(int)
             matlab_cell = matlab_cell[::nth]
             if nth not in [5, 50, 10]:
-                raise ValueError('Check something here')
+                raise ValueError('The length of matlab_cell is ', len(matlab_cell), ' not ', len(x.frames), ' in', x.filename)
 
         for data, pos_error in tqdm(zip(matlab_cell, first_position_error), desc='Loading ants in ' + filename):
-            if data.size != 0:
+            if type(data) == float:
+                ants_frame = None
+            elif data.size != 0:
                 # real_ants = [self.is_ant(mal) for mal in data[:, 6]]
                 if self.size is not 'S':
                     real_ants = np.ones(data.shape[0]).astype(bool)
@@ -218,9 +252,9 @@ class Ants(Participants):
                 # is_attached = [self.is_attached(p_ant, p_shape, max_distance)
                 #                for p_ant, p_shape in zip(position, x.position)]
                 carrying = data[real_ants, 4]
-                ants_frame = Ants_Frame(position, angle, carrying)
+                ants_frame = Ants_Frame(position, angle, carrying, x.size, x.shape)
             else:
-                ants_frame = Ants_Frame(np.array([]), np.array([]), [])
+                ants_frame = Ants_Frame(np.array([]), np.array([]), [], x.size, x.shape)
             self.frames.append(ants_frame)
 
         if x.old_filenames(0) == 'XLSPT_4280007_XLSpecialT_1_ants (part 3).mat':

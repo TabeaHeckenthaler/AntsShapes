@@ -17,6 +17,18 @@ def get(filename):
     :param filename: Name of the trajectory that is supposed to be un-pickled
     :return: trajectory object
     """
+    if filename.startswith('sim'):
+        size = filename.split('_')[1]
+        address = path.join(SaverDirectories['gillespie'], '2023_06_27', size, filename)
+        with open(address, 'rb') as f:
+            file = pickle.load(f)
+
+        shape, size, solver, filename, fps, position, angle, linVel, angVel, frames, winner = file
+        # position = position * {'XL': 4, 'L': 2, 'M': 1, 'S': 1/2}[size]
+        x = Trajectory_gillespie(shape=shape, size=size, filename=address.split('\\')[-1],
+                                 position=position, angle=angle % (2 * np.pi), frames=frames, winner=winner, fps=fps)
+        return x
+
     # this is on labs network
     for root, dirs, files in os.walk(mini_work_dir):
         for dir in dirs:
@@ -31,8 +43,8 @@ def get(filename):
                     df = pd.read_excel(df_dir)
                     x = Trajectory_ant(size=size, solver=solver, shape=shape, filename=filename, fps=fps,
                                        winner=winner, position=position, angle=angle, frames=frames,
-                                       VideoChain=df[(df['filename'] == filename)]['VideoChain'].iloc[0],
-                                       tracked_frames=df[(df['filename'] == filename)]['tracked_frames'].iloc[0], )
+                                       VideoChain=eval(df[(df['filename'] == filename)]['VideoChain'].iloc[0]),
+                                       tracked_frames=eval(df[(df['filename'] == filename)]['tracked_frames'].iloc[0]), )
                     return x
 
                 if 'Human_Trajectories' in address:

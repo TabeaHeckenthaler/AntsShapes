@@ -49,8 +49,12 @@ original_movies_dir_humanhand = '{0}{1}phys-guru-cs{2}ants{3}Tabea{4}Human Hand 
                                 '2022_04_04 (Department Retreat)'.format(path.sep, path.sep, path.sep, path.sep,
                                                                          path.sep, path.sep, path.sep)
 
-trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
-                                                                                        path.sep, path.sep)
+trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Alumni_Students{4}Aviram{5}Shapes Results'.format(path.sep,
+                                                                                                          path.sep,
+                                                                                                          path.sep,
+                                                                                                          path.sep,
+                                                                                                          path.sep,
+                                                                                                          path.sep)
 trackedPheidoleMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Pheidole Shapes Results'.format(path.sep,
                                                                                                       path.sep,
                                                                                                       path.sep,

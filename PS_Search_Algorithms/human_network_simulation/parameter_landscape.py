@@ -16,6 +16,8 @@ def find_means(df, normalize=True):
     state_percentages = pd.DataFrame(0, index=df['filename'], columns=states)
     for filename, ts in zip(df['filename'], df['state series']):
         state_percentages.loc[filename] = pd.Series(ts).value_counts(normalize=normalize)
+        # convert nans to 0s
+        state_percentages.loc[filename].fillna(0, inplace=True)
 
     state_percentages['b1/b2'] = (state_percentages['b1'] + state_percentages['b2'])/2
     # change position column 'b1/b2' to come after 'ac'
@@ -58,25 +60,43 @@ def compare(name, plot=False) -> float:
     return loss_value
 
 
+def check_parameter_space():
+    with open('loss_values.json', 'r') as json_file:
+        loss_values = np.array(json.load(json_file))
+        json_file.close()
+
+    # find indices with maximal values in loss_values
+    indices = np.stack(np.where(loss_values == np.nanmin(loss_values))).squeeze()
+    best_values = [pattern_recognitions[indices[0]], biass[indices[1]], weakening_factors[indices[2]]]
+    print('best values: ' + str(best_values))
+
+    # plot loss_values
+    fig_loss, ax_loss = plt.subplots()
+    ax_loss.imshow(loss_values, cmap='hot', interpolation='nearest')
+    ax_loss.set_xticks(np.arange(len(biass)))
+    ax_loss.set_yticks(np.arange(len(pattern_recognitions)))
+    ax_loss.set_xticklabels(biass)
+    ax_loss.set_yticklabels(pattern_recognitions)
+    ax_loss.set_xlabel('bias')
+    ax_loss.set_ylabel('pattern recognition')
+    ax_loss.set_title('loss values')
+    plt.show()
+    DEBUG = 1
+
+
 if __name__ == '__main__':
     resolution = 10
-    pattern_recognitions = np.linspace(0.1, 1, resolution)
-    # biass = np.linspace(1.05, 1.2, resolution)
-    biass = [1.1]
+    pattern_recognitions = np.linspace(0.01, 1, resolution)
+    # pattern_recognitions = [0.4]
+
+    biass = np.linspace(0, 0.99, resolution)
+    # biass = [0.9]
+
     # weakening_factors = np.linspace(0.00001, 0.1, resolution)
     # weakening_factors = [0.00001]
     weakening_factors = [0]
 
-    # with open('loss_values.json', 'r') as json_file:
-    #     loss_values = np.array(json.load(json_file))
-    #     json_file.close()
-    #
-    # # find indices with maximal values in loss_values
-    # indices = np.stack(np.where(loss_values == np.nanmin(loss_values))).squeeze()
-    # best_values = [pattern_recognitions[indices[0]], biass[indices[1]], weakening_factors[indices[2]]]
-    # print('best values: ' + str(best_values))
-
-    DEBUG = 1
+    # check_parameter_space()
 
     state_percentages_mean_exp = find_means(df_exp, normalize=False)
 

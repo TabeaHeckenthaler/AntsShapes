@@ -124,8 +124,8 @@ class Trajectory_gillespie(Trajectory):
         len_of_slicer = np.floor(length_of_movie_in_seconds/time_step).astype(int)
 
         # because we use the Medium sized phase space
-        position = self.position * {'XL': 1/4, 'L': 1/2, 'M': 1, 'S': 2}[self.size]
+        # position = self.position * {'XL': 1/4, 'L': 1/2, 'M': 1, 'S': 2, 'XS': 4}[self.size]
 
         slicer = np.cumsum([time_step*self.fps for _ in range(len_of_slicer)][:-1]).astype(int)
-        for pos, angle in zip(position[slicer], self.angle[slicer]):
+        for pos, angle in zip(self.position[slicer], self.angle[slicer]):
             yield pos[0], pos[1], angle

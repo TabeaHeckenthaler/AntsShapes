@@ -436,7 +436,7 @@ class Maze_parent(b2World):
                     Circle(position, fixture.shape.radius, color=colors[body.userData]).draw(d)
 
             if body.userData == 'load':
-                Point(np.array(body.position)).draw(d)
+                Point(np.array(body.position), color=(251, 0, 0)).draw(d)
 
         for point in points:
 

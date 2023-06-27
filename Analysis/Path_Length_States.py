@@ -1,5 +1,3 @@
-from Analysis.minimal_path_length.minimal_path_length import minimal_path_length_dict
-from Analysis.Efficiency.PathLength import path_length_dict
 from Analysis.PathPy.Path import create_bar_chart
 from Analysis.PathPy.Path import time_series_dict, state_series_dict, Path
 from trajectory_inheritance.exp_types import solver_geometry, exp_types
@@ -10,6 +8,11 @@ from DataFrame.plot_dataframe import save_fig
 from DataFrame.Altered_DataFrame import Altered_DataFrame
 from Analysis.average_carrier_number.averageCarrierNumber import myDataFrame
 from DataFrame.food_in_the_back import myDataFrame as df_food
+import json
+from Directories import minimal_path_length_dir
+
+with open(minimal_path_length_dir, 'r') as json_file:
+    minimal_path_length_dict = json.load(json_file)
 
 def time_spent_in_states(state_series, time_step=0.25):
     state_series = Path.only_states(state_series)

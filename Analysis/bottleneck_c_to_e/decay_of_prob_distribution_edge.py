@@ -4,6 +4,11 @@ from scipy.optimize import curve_fit
 from Analysis.bottleneck_c_to_e.correlation_edge_walk_decision_c_e_ac import *
 from Setup.Maze import Maze
 from ConfigSpace.ConfigSpace_SelectedStates import ConfigSpace_SelectedStates
+from skfmm import distance
+import matplotlib.lines as lines
+import cv2
+from PhysicsEngine.Display import Display
+import pygame
 
 
 def plot_traj_in_2D(traj, bool_to_plot=None, ax=None):
@@ -135,6 +140,7 @@ def save_coords():
             json.dump(all_coords_frames, json_file)
             json_file.close()
 
+
 def find_largest_x(x, y, theta, ps, c_or_cg):
     ind = ps.coords_to_indices(0, y, theta)
     available_x_ind = np.where(c_or_cg[:, ind[1], ind[2]])[0]
@@ -179,11 +185,10 @@ def fit_function_to_histogram(values: list, bins: list, func: callable, name: st
     plt.close()
 
 
-def find_distances(all_coords_x, all_coords_y, all_coords_theta, all_coords_frames):
+def find_distances(size, all_coords_x, all_coords_y, all_coords_theta, all_coords_frames, shift=True, condition='_x'):
     maze = Maze(solver='ant', geometry=('MazeDimensions_new2021_SPT_ant.xlsx',
                                         'LoadDimensions_new2021_SPT_ant.xlsx'),
                 size=size, shape='SPT')
-    norm = maze.slits[1] - maze.slits[0]
     # plot_2d_density(np.concatenatSe(all_coords_x), np.concatenate(all_coords_y), maze=maze, title=str(size))
 
     # write a function that returns for every set of y and theta a number in x,
@@ -194,42 +199,155 @@ def find_distances(all_coords_x, all_coords_y, all_coords_theta, all_coords_fram
     ps.load_final_labeled_space()
     c_or_cg = np.logical_or(ps.space_labeled == 'c', ps.space_labeled == 'cg')
 
-    all_distances = {}
+    # for every node in c_or_cg, find the distance to the boundary using the fast marching method
+    if condition == '':
+        dx = ps.indices_to_coords(1, 0, 0)[0]
+        distances_from_boundary = distance(c_or_cg, dx=[dx for _ in range(3)])
+        neg_distances_from_boundary = distance(~c_or_cg, dx=[dx for _ in range(3)])
+        distances_from_boundary[~c_or_cg] = -neg_distances_from_boundary[~c_or_cg]
 
-    for i, key in tqdm(enumerate(all_coords_x.keys()), desc=size):
+    elif condition == '_x':
+        norm = maze.slits[1] - maze.slits[0]
+        from PhysicsEngine.Display import Display
+        import pygame
+        d = Display('', 1, maze)
+        percentages = {}
+
+    all_distances = {}
+    for i, key in tqdm(enumerate(all_coords_x.keys()), desc=size, total=len(all_coords_x.keys())):
         xs = all_coords_x[key]
         ys = all_coords_y[key]
         thetas = all_coords_theta[key]
         frames = all_coords_frames[key]
 
         if len(frames) > 60:
-            x_max = [find_largest_x(x, y, theta, ps, c_or_cg) for x, y, theta in zip(xs, ys, thetas)]
-            distance_x_from_boundary = np.array([(x_max - x) / norm for x, x_max in zip(xs, x_max)])
+            if condition == '':
+                distance_from_boundary = [distances_from_boundary[ps.coords_to_indices(x, y, theta)] for x, y, theta in
+                                          zip(xs, ys, thetas)]
 
-            fig, axs = plt.subplots(1, 2, figsize=(20, 10))
-            values, bins, bar_container = axs[0].hist(distance_x_from_boundary, bins=100, density=True, label='original')
-            axs[1].plot(distance_x_from_boundary, label='original')
-            max_bin = bins[np.argmax(values)]
-            distance_x_from_boundary -= max_bin
-            values, bins, bar_container = axs[0].hist(distance_x_from_boundary, bins=100, density=True, label='shifted')
-            axs[1].plot(distance_x_from_boundary, label='shifted')
-            plt.savefig(folder + 'single_exp_shift\\' + size + '_' + key + '_histogram.png')
-            plt.close()
+                fig, axs = plt.subplots(1, 2, figsize=(20, 10))
+                values, bins, bar_container = axs[0].hist(distance_from_boundary, bins=100, density=True,
+                                                          label='original')
+                axs[1].plot(distance_from_boundary, label='original')
 
-            all_distances[key] = distance_x_from_boundary
+                if shift:
+                    # raise NotImplementedError
+                    max_bin = bins[np.argmax(values)]
+                    distance_from_boundary -= max_bin
+                    values, bins, bar_container = axs[0].hist(distance_from_boundary, bins=100, density=True,
+                                                              label='shifted')
+                    axs[1].plot(distance_from_boundary, label='shifted')
+                    DEBUG = 1
 
-    values, bins, bar_container = plt.hist(all_distances, bins=30, range=[0, 1], density=True)
-    plt.savefig(folder + 'distance_x_from_boundary' + str(size) + '.png')
+                plt.legend()
+                plt.savefig(
+                    folder + 'single_exp_shift' + condition + '\\' + size + '_' + key.replace(': ',
+                                                                                              '_') + '_histogram.png')
+                plt.close()
+
+                all_distances[key] = distance_from_boundary
+
+                values, bins, bar_container = plt.hist(np.hstack(all_distances.values()), bins=30, density=True)
+                # save values and bins
+                with open(folder + size + 'values' + condition + '.json', 'w') as json_file:
+                    json.dump(values.tolist(), json_file)
+                    json_file.close()
+
+                with open(folder + size + 'bins' + condition + '.json', 'w') as json_file:
+                    json.dump(bins.tolist(), json_file)
+                    json_file.close()
+
+            elif condition == '_x':
+                x_max = [find_largest_x(x, y, theta, ps, c_or_cg) for x, y, theta in zip(xs, ys, thetas)]
+                distance_from_boundary = np.array([(x_max - x) / norm for x, x_max in zip(xs, x_max)])
+                raise NotImplementedError
+
+
+def stack_of_images(xs, ys, thetas, maze, d) -> np.array:
+    imgs = []
+    for i in range(len(xs)):
+        maze.set_configuration([xs[i], ys[i]], thetas[i])
+        maze.draw(display=d)
+        img = d.get_image()
+        # only keep pixels that are red [255, 0, 0]
+        img_load = np.logical_and(img[:, :, 0] == 250, img[:, :, 1] == 0)
+
+        binary_image = np.uint8(img_load)
+        contours, hierarchy = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        img_load = np.zeros_like(binary_image)
+        img_load = cv2.drawContours(img_load.copy(), contours, 0, 1, thickness=cv2.FILLED)
+        imgs.append(img_load)
+        d.renew_screen()
+    return np.stack(imgs)
+
+
+def find_percentages(percentages_image, d, maze) -> list:
+    # find the percentage that slide on the correct spot
+    y2_up, y2_down, x2 = {'XL': [273, 410, 678],
+                          'L': [277, 413, 695],
+                          'M': [262, 390, 655],
+                          'S': [174, 276, 624],
+                          }[size]
+    # cut out square from average_image around (y1, x1) with size 5
+    cut_out_size = int(d.ppm * np.diff(maze.slits) / 20)
+    percentages = []
+    for y2 in [y2_up, y2_down]:
+        cut_out = percentages_image[y2 - cut_out_size: y2 + cut_out_size, x2 - cut_out_size: x2 + cut_out_size]
+        percentages.append(np.round(np.max(cut_out), 2).astype(float))
+    return percentages
+
+
+def plot_entire_maze_percentages(percentages_image, d, maze, key, condition, percentages):
+    average_image = 1 - np.stack([percentages_image for _ in range(3)], axis=2)  # extend to 3 dimensions for plotting
+    average_image_scaled = average_image / np.max(average_image)
+    d.renew_screen()
+    maze.set_configuration([-1, -1], 0)
+    maze.draw(display=d)
+    img = d.get_image()
+    maze_boundary = img[:, :, 0] == 0
+    average_image_scaled[maze_boundary] = [1, 0, 0]  # where maze_boundary is true, draw red on average_image
+    plt.imshow(average_image_scaled)
+    plt.gca().text(40, 40, percentages)
+    plt.savefig(folder + 'single_exp_shift' + condition + '\\' + key.replace(': ', '_') + '_histogram.png')
     plt.close()
 
-    # save values and bins
-    with open(folder + size + 'values.json', 'w') as json_file:
-        json.dump(values.tolist(), json_file)
-        json_file.close()
 
-    with open(folder + size + 'bins.json', 'w') as json_file:
-        json.dump(bins.tolist(), json_file)
-        json_file.close()
+def plot_histogram(percentages_image):
+    plt.hist(percentages_image.flatten(), bins=20)
+    plt.yscale('log')
+    plt.xlim([0, 1])
+    plt.savefig(folder + 'single_exp_shift' + condition + '\\' + key.replace(': ', '_') + '_values.png')
+    plt.close()
+
+
+def density_around_corner():
+    maze = Maze(solver='ant', geometry=('MazeDimensions_new2021_SPT_ant.xlsx',
+                                        'LoadDimensions_new2021_SPT_ant.xlsx'),
+                size=size, shape='SPT')
+    d = Display('', 1, maze)
+    percentages = {}
+
+    for i, key in tqdm(enumerate(all_coords_x.keys()), desc=size, total=len(all_coords_x.keys())):
+        xs = all_coords_x[key]
+        ys = all_coords_y[key]
+        thetas = all_coords_theta[key]
+        frames = all_coords_frames[key]
+
+        if len(frames) > 60:
+            imgs = stack_of_images(xs, ys, thetas, maze, d)
+            percentages_image = np.sum(imgs, axis=0) / imgs.shape[0]
+            percentages[key] = find_percentages(percentages_image, d, maze)
+
+            plot_histogram(percentages_image)
+            plot_entire_maze_percentages(percentages_image, d, maze, key, condition, percentages)
+
+    # save percentages in json file with name 'folder + 'single_exp_shift' + condition + '\\size'
+    with open(folder + 'single_exp_shift' + condition + '\\' + size + '_percentages.json', 'w') as file:
+        json.dump(percentages, file)
+
+    print(size)
+    print(percentages.values())
+
 
 def plot_excel_sheet_values(name: str):
     fit_results = pd.read_excel(folder + 'fit_results_' + name + '.xlsx', index_col=0)
@@ -290,17 +408,20 @@ def correct_trajectory1(traj, space, inside, ps):
 
 
 if __name__ == '__main__':
-    folder = 'results\\distances_in_x_from_boundary\\'
+    folder = 'results\\distances_from_boundary\\'
     # name = 'power_law'
     name = 'exp'
+    condition = '_x'
+
+    # '_x', ''
     fit_results = pd.DataFrame(columns=['a', 'b', 'a_err', 'b_err'])
     fit_results.to_excel(folder + 'fit_results_' + name + '.xlsx')
 
-    # ________________`load coordinates _______________________
-
-    # save_coords()
-
-    for size in ['XL', 'L', 'M', 'S']:
+    # # ________________load coordinates _______________________
+    #
+    # # save_coords()
+    #
+    for size in ['S', 'M', 'XL', 'L', ]:
         with open(folder + size + 'all_coords_x.json', 'r') as json_file:
             all_coords_x = json.load(json_file)
             json_file.close()
@@ -318,22 +439,69 @@ if __name__ == '__main__':
             json_file.close()
 
         # ________________calculate calc_distances _______________________
-        find_distances(all_coords_x, all_coords_y, all_coords_theta, all_coords_frames)
+        # filenames = {'L_SPT_4660001_LSpecialT_1_ants (part 1)': 50041,
+        #              'XL_SPT_4630012_XLSpecialT_1_ants (part 1)': 61275,
+        #              'S_SPT_5180005_SSpecialT_1_ants (part 1)': 17436,
+        #              'M_SPT_4690010_MSpecialT_1_ants': 5722,
+        #              }
+        #
+        # keys = [filename + ': ' + str(frame) for filename, frame in filenames.items()]
+        #
+        keys = list(all_coords_x.keys())
 
-        with open(folder + size + 'values.json', 'r') as json_file:
-            values = json.load(json_file)
-            json_file.close()
+        # reduce all_coords to the keys
+        all_coords_x = {key: all_coords_x[key] for key in keys if key in all_coords_x.keys()}
+        all_coords_y = {key: all_coords_y[key] for key in keys if key in all_coords_y.keys()}
+        all_coords_theta = {key: all_coords_theta[key] for key in keys if key in all_coords_theta.keys()}
+        all_coords_frames = {key: all_coords_frames[key] for key in keys if key in all_coords_frames.keys()}
 
-        with open(folder + size + 'bins.json', 'r') as json_file:
-            bins = json.load(json_file)
-            json_file.close()
+        if len(all_coords_x):
+            find_distances(size, all_coords_x, all_coords_y, all_coords_theta, all_coords_frames, condition='_x')
 
-        # ________________`fit function _______________________
-        # fit_function_to_histogram(values, bins, eval(name), name)
+# fig, ax = plt.subplots(figsize=(5, 5))
+# for size in ['XL', 'L', 'M', 'S']:
+#     with open(folder + size + 'values' + condition + '.json', 'r') as json_file:
+#         values = json.load(json_file)
+#         json_file.close()
+#
+#     with open(folder + size + 'bins' + condition + '.json', 'r') as json_file:
+#         bins = np.array(json.load(json_file))
+#         json_file.close()
+#
+#     # normalize histogram values
+#     values = np.array(values)
+#     y_values = values / np.sum(values)
+#
+#     dx = bins[1] - bins[0]
+#     x_values = bins[:-1]/dx
+#     ax.plot(x_values, y_values, '-o', label=size, markersize=3)
 
-    # plot_excel_sheet_values(name)
+# set minimal xlim to 0
+# plt.xlim(left=-2)
 
-    # what could be reasons that Small has really off values?
-    # I need to find a way to shift the values in x to the left, so that the values are closer to the boundary
+plt.xlabel('Distance from boundary (normalized)' + condition)
+plt.ylabel('Probability')
+plt.legend()
 
-    DEBUG = 1
+DEBUG = 1
+plt.savefig(folder + 'distance_from_boundary' + condition + '.png')
+plt.close()
+
+# # ________________fit function _______________________
+# for size in ['XL', 'L', 'M', 'S']:
+#     with open(folder + size + 'values' + condition + '.json', 'r') as json_file:
+#         values = json.load(json_file)
+#         json_file.close()
+#
+#     with open(folder + size + 'bins' + condition + '.json', 'r') as json_file:
+#         bins = json.load(json_file)
+#         json_file.close()
+#
+#     fit_function_to_histogram(values, bins, eval(name), name)
+#
+# plot_excel_sheet_values(name)
+
+# what could be reasons that Small has really off values?
+# I need to find a way to shift the values in x to the left, so that the values are closer to the boundary
+
+DEBUG = 1
