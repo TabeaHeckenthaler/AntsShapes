@@ -273,14 +273,17 @@ class Path:
             return dictio_ts, dictio_ss
 
     @classmethod
-    def plot_paths(cls, zipped, time_series_dict):
+    def plot_paths(cls, zipped, time_series_dict, fig_name_add=None):
         for solver, df_dict in zipped:
             for size, df in df_dict.items():
                 fig, ax = plt.subplots()
                 df['time series'] = df['filename'].map(time_series_dict)
 
                 create_bar_chart(df, ax)
-                save_fig(fig, 'bar_chart_' + solver + '_' + str(size))
+                fig_name = 'bar_chart_' + solver + '_' + str(size)
+                if fig_name_add is not None:
+                    fig_name += '_' + fig_name_add
+                save_fig(fig, fig_name)
 
         # shape = 'SPT'
         # df_all = df_all[df_all['shape'] == shape]

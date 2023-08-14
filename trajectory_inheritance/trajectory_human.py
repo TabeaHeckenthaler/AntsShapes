@@ -1,3 +1,5 @@
+import os
+
 from trajectory_inheritance.trajectory import Trajectory
 import numpy as np
 from os import path, listdir
@@ -74,6 +76,19 @@ class Trajectory_human(Trajectory):
                                                            num=frames[1]-frames[0])
 
         self.interpolate_over_NaN()
+
+    def open_tracked_video(self):
+        directory1 = '\\\\phys-guru-cs\\ants\\Tabea\\Human Experiments\\Output\\' + self.size + \
+                     '\\Videos\\' + self.filename + '_Corrected.avi'
+        directory2 = '\\\\phys-guru-cs\\ants\\Tabea\\Human Experiments\\Output\\' + self.size + \
+                     '\\Videos\\' + self.filename + '_Full.avi'
+
+        if path.exists(directory1):
+            os.startfile(directory1)
+        elif path.exists(directory2):
+            os.startfile(directory2)
+        else:
+            raise Exception('Cannot find video ' + directory1)
 
     def communication(self):
         from trajectory_inheritance.humans import get_excel_worksheet_index

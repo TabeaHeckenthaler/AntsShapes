@@ -7,14 +7,6 @@ from os import path
 import sys
 import imutils
 
-movie_names = ['XLH_4100022_1_ants.avi',
-               'XLH_4100023_1_ants.avi',
-               'XLH_4100026_1_ants.avi'
-               ]
-
-addresses = [path.join(trackedAntMovieDirectory, 'Slitted', 'H', 'XL', 'Output Videos', movie_name) for movie_name in
-             movie_names]
-cap_list = [cv2.VideoCapture(address) for address in addresses]
 
 
 def get_frame(c: cv2.VideoCapture, height: int = None):
@@ -53,6 +45,15 @@ def merge_frames(frames: list, final_output_shape: (int, int, int), shift: np.ar
 
 
 if __name__ == '__main__':
+    movie_names = ['XLH_4100022_1_ants.avi',
+                   'XLH_4100023_1_ants.avi',
+                   'XLH_4100026_1_ants.avi'
+                   ]
+
+    addresses = [path.join(trackedAntMovieDirectory, 'Slitted', 'H', 'XL', 'Output Videos', movie_name) for movie_name
+                 in
+                 movie_names]
+    cap_list = [cv2.VideoCapture(address) for address in addresses]
     height = 500
     frames0 = [get_frame(cap, height=height).shape for cap in cap_list]
     (h, w) = find_maximum_pixels(frames0)

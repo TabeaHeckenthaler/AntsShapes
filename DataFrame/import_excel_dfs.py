@@ -27,9 +27,10 @@ def find_minimal_pL(s):
     #     DEBUG = 1
     return df_minimal[index].iloc[0]['path length [length unit]']
 
+
 print('Do NOT use the time [s] column, it is not accurate. Use the frameNum dict instead.')
 
-df_all = pd.read_excel(path.join(lists_exp_dir, 'exp.xlsx'), engine='openpyxl')
+df_all = pd.read_excel(path.join(lists_exp_dir, 'exp.xlsx'), engine='openpyxl')  # missing new human experiments
 
 file_path_exp_ant_XL_winner = path.join(lists_exp_dir, 'exp_ant_XL_winner.xlsx')
 file_path_exp_ant_XL_looser = path.join(lists_exp_dir, 'exp_ant_XL_looser.xlsx')
@@ -90,10 +91,12 @@ exclude = ['M_SPT_4690001_MSpecialT_1_ants', 'M_SPT_4690011_MSpecialT_1_ants (pa
            'XL_SPT_5040012_XLSpecialT_1_ants', 'XL_SPT_5040003_XLSpecialT_1_ants (part 1)']
 # ant density in back room to low
 
-
 df_ant['size'][(df_ant['average Carrier Number'] == 1) & (df_ant['size'] == 'S')] = 'Single (1)'
 df_ant['size'][(df_ant['average Carrier Number'] > 1) & (df_ant['size'] == 'S')] = 'S (> 1)'
+
 df_ant_excluded = df_ant[~df_ant['filename'].isin(exclude)]
+# write to excel
+# df_ant_excluded.to_excel('ant_experiments.xlsx', index=False)
 
 df_ant_old = df_all[(df_all['solver'] == 'ant') & df_all['filename'].str.contains('SPT') &
                     (df_all['initial condition'] == 'back')]
@@ -132,8 +135,16 @@ dfs_human = {'Large C': df_exp_human_L_C,
              'Small': df_exp_human_S
              }
 
-df_human = df_all[df_all['solver'] == 'human']
-df_human = df_human[df_human['initial condition'] == 'back']
+# concatenate all the dataframes in dfs_human
+df_human = pd.concat(dfs_human.values())
+
+# # save to excel
+# df_human.to_excel('df_human.xlsx', index=False)
+
+# df_human1 = df_all[df_all['solver'] == 'human']
+# df_human1 = df_human1[df_human1['initial condition'] == 'back']
+
+# find difference between filenames in df_human['filename'] and df_human1['filename']
 
 file_path_exp_pheidole_XL_winner = path.join(lists_exp_dir, 'exp_pheidole_XL_winner_.xlsx')
 file_path_exp_pheidole_XL_looser = path.join(lists_exp_dir, 'exp_pheidole_XL_looser_.xlsx')

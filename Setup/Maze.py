@@ -751,3 +751,11 @@ class Maze_free_space(Maze_parent):
 # print({size: Maze(size=size, shape='SPT', solver='human',
 #                   geometry=('MazeDimensions_human.xlsx', 'LoadDimensions_human.xlsx')).average_radius()
 #        for size in ['Large', 'Medium', 'Small Far']})
+
+
+if __name__ == '__main__':
+    # open human maze
+    maze = Maze(size='M', shape='SPT', solver='ant',
+                geometry=('MazeDimensions_new2021_SPT_ant.xlsx', 'LoadDimensions_new2021_SPT_ant.xlsx'))
+
+    DEBUG = 1

@@ -12,7 +12,7 @@ import numpy as np
 from colors import colors_state
 
 states = {'ab', 'ac', 'b', 'be', 'b1', 'b2', 'c', 'cg', 'e', 'eb', 'eg', 'f', 'g', 'h'}
-columns = ['filename', 'size', 'solver', 'state', 'turning radius (norm by 2 pi)']
+columns = ['filename', 'size', 'solver', 'state', 'turning radius (norm by 2 pi)'] # 'turning radius (norm by 2 pi)' = accumulated rotation
 plt.rcParams.update({'font.size': 22, 'font.family': 'Times New Roman'})
 
 
@@ -34,7 +34,7 @@ class BackRoomTurning:
             theta = df_state_size['turning radius (norm by 2 pi)']
             ax.hist(theta, range=lim, bins=40,
                     color=c_states[states], label=states, alpha=0.5, density=True)
-            ax.set_xlabel('turning angle (norm by 2 pi)')
+            ax.set_xlabel('accumulated rotation (norm by 2 pi)')
             ax.set_ylabel('count')
             ax.legend()
             ax.set_title(f'{solver} {size}')
@@ -118,6 +118,8 @@ if __name__ == '__main__':
             brt.plot(results_size, a)
     plt.tight_layout()
     plt.savefig('images\\turning_angle\\' + 'turning_angle.png')
+    plt.savefig('images\\turning_angle\\' + 'turning_angle.pdf')
+    plt.savefig('images\\turning_angle\\' + 'turning_angle.svg')
     # for size, df in dfs_human.items():
     #     coords = e_p[e_p['size'] == size]['extremal point'].map(ExtremalPoints.to_list).tolist()
     #

@@ -1,6 +1,5 @@
 from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter
-from plotly import express as px
 
 
 def smooth_array(array, fps, kernel_size=None):

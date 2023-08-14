@@ -9,7 +9,6 @@ import sys
 from Directories import video_directory
 from Video_Editing.merge_videos import merge_frames
 from os import path
-from plotly import express as px
 import cv2
 
 
@@ -21,7 +20,7 @@ import cv2
 
 class Display:
     def __init__(self, name: str, fps: int, my_maze, wait=0, cs=None, videowriter=False, config=None, ts=None,
-                 frame=0, position=None):
+                 frame=0, position=None, bias=None):
         self.my_maze = my_maze
         self.fps = fps
         self.name = name
@@ -42,6 +41,7 @@ class Display:
         self.wait = wait
         self.i = frame
         self.ts = ts
+        self.bias = bias
         # if path is not None:
         #     path.frame_step = int(self.fps * path.time_step)
         if config is not None:
@@ -97,6 +97,13 @@ class Display:
     def renew_screen(self, movie_name=None, frame_index=None, color_background=(250, 250, 250)):
         self.screen.fill(color_background)
 
+        if self.bias is not None:
+            # draw a thick line on the top of the screen in blue
+            if self.bias == 'left':
+                pygame.draw.line(self.screen, colors['bias'], [0, 10], [self.width, 10], 5)
+            elif self.bias == 'right':
+                pygame.draw.line(self.screen, colors['bias'], [0, self.height-10], [self.width, self.height-10], 5)
+
         self.drawGrid()
         self.polygons = self.circles = self.points = self.arrows = []
 
@@ -112,7 +119,6 @@ class Display:
             state = self.ts[self.i]
             text_state = self.font.render('state: ' + state, True, colors['text'])
             self.screen.blit(text_state, [0, 100])
-
 
     def end_screen(self):
         if hasattr(self, 'VideoWriter'):

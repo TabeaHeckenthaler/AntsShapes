@@ -19,7 +19,13 @@ def get(filename):
     """
     if filename.startswith('sim'):
         size = filename.split('_')[1]
-        address = path.join(SaverDirectories['gillespie'], '2023_06_27', size, filename)
+        address = None
+        for sub_dir in os.listdir(SaverDirectories['gillespie']):
+            if os.path.exists(path.join(SaverDirectories['gillespie'], sub_dir, size, filename)) and address is None:
+                address = path.join(SaverDirectories['gillespie'], sub_dir, size, filename)
+        if address is None:
+            raise FileNotFoundError('Could not find file: ' + filename)
+
         with open(address, 'rb') as f:
             file = pickle.load(f)
 
@@ -163,6 +169,16 @@ def get(filename):
 
 
 if __name__ == '__main__':
-    filename = 'large_20220527112227_20220527112931'
+    filename = 'sim_XL_2023-07-09_17-23-18.704New'  # good
+    filename = 'sim_XL_2023-07-09_03-36-48.544New'  # mediocre
+    filename = 'sim_XL_2023-07-12_17-36-36.816New'  # bad
+    filename = 'sim_XL_2023-07-11_03-13-38.915New'  # apparently 21 entrances to eg
     x = get(filename)
-    x.play()
+    x.play(step=5)
+
+    # eg is strange
+    filename = 'sim_XL_2023-07-09_17-23-18.704New'  # good
+    x = get(filename)
+    x_new = x.cut_off(frame_indices=[25000, 40000])
+    x_new.play(step=5)
+    DEBUG = 2

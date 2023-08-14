@@ -5,10 +5,16 @@ Created on Sun Apr 26 18:41:04 2020
 @author: tabea
 """
 
-from Box2D import b2ContactListener
+# from Box2D import b2ContactListener
 import numpy as np
-from Analysis.GeneralFunctions import flatten
 from matplotlib import pyplot as plt
+
+
+def flatten(t: list):
+    if isinstance(t[0], list):
+        return [item for sublist in t for item in sublist]
+    else:
+        return t
 
 
 def threads_over_lists(fn):
@@ -87,21 +93,21 @@ def ClosestCorner(vertices, gravCenter):
     return closestCorner
 
 
-class myContactListener(b2ContactListener):
-    def __init__(self):
-        b2ContactListener.__init__(self)
-
-    def BeginContact(self, contact):
-        pass
-
-    def EndContact(self, contact):
-        pass
-
-    def PreSolve(self, contact, oldManifold):
-        pass
-
-    def PostSolve(self, contact, impulse):
-        pass
+# class myContactListener(b2ContactListener):
+#     def __init__(self):
+#         b2ContactListener.__init__(self)
+#
+#     def BeginContact(self, contact):
+#         pass
+#
+#     def EndContact(self, contact):
+#         pass
+#
+#     def PreSolve(self, contact, oldManifold):
+#         pass
+#
+#     def PostSolve(self, contact, impulse):
+#         pass
 
 
 def BoxIt(corners, stepSize, **kwargs):  # corners go from left bottom, to left top, to right top, to right bottom

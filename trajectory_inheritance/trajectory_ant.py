@@ -8,7 +8,6 @@ from Setup.Load import periodicity
 from Setup.Maze import Maze, Maze_free_space
 from PhysicsEngine.Display import Display
 from Analysis.GeneralFunctions import ranges
-from Setup.MazeFunctions import ConnectAngle
 
 length_unit = 'cm'
 trackedAntMovieDirectory = '{0}{1}phys-guru-cs{2}ants{3}Aviram{4}Shapes Results'.format(path.sep, path.sep, path.sep,
@@ -313,7 +312,7 @@ class Trajectory_ant(Trajectory):
             display.end_screen()
         return fc
 
-    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None):
+    def play(self, wait=0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None, bias=None):
         """
         Displays a given trajectory_inheritance (self)
         :Keyword Arguments:
@@ -341,7 +340,7 @@ class Trajectory_ant(Trajectory):
             x.position[:, 1] = x.position[:, 1] - np.min(x.position[:, 1])
 
         display = Display(x.filename, x.fps, my_maze, wait=wait, cs=cs, videowriter=videowriter, position=x.position,
-                          ts=ts)
+                          ts=ts, bias=bias)
         return x.run_trj(my_maze, display=display)
 
     def solving_time(self) -> float:

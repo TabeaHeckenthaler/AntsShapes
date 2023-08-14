@@ -9,7 +9,8 @@ from colors import colors_humans as colors
 
 direct_pre = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\pre_c_pathlength.json'
 direct_post = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\post_c_pathlength.json'
-direct_post_without = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\post_c_without_c_pathlength.json'
+direct_post_without = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\' \
+                      'post_c_without_c_pathlength.json'
 translation_dir = path.join(home, 'Analysis', 'Efficiency', 'translation.json')
 rotation_dir = path.join(home, 'Analysis', 'Efficiency', 'rotation.json')
 minimal_filename_dict = path.join(home, 'Analysis', 'minimal_path_length', 'minimal_filename_dict.json')

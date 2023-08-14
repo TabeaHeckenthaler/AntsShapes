@@ -9,12 +9,6 @@ from typing import Union
 df = pd.read_excel(df_dir)
 
 
-def reduce_legend(ax):
-    if ax is None:
-        ax = plt.gca()
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys())
 
 
 def save_fig(fig, name: str, svg=False):

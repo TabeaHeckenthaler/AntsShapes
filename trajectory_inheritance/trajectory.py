@@ -10,8 +10,7 @@ import os
 
 import pandas as pd
 from Analysis.smoothing import smooth_array
-from DataFrame.import_excel_dfs import df_all, df_minimal
-from Setup.MazeFunctions import ConnectAngle
+# from Setup.MazeFunctions import ConnectAngle
 import pickle
 from scipy.signal import medfilt
 from scipy.ndimage import gaussian_filter
@@ -25,7 +24,6 @@ from trajectory_inheritance.exp_types import is_exp_valid
 from copy import copy
 from datetime import datetime
 from matplotlib import pyplot as plt
-import plotly.express as px
 
 
 """ Making Directory Structure """
@@ -136,10 +134,11 @@ class Trajectory:
     def smooth(self, sec_smooth):
         if self.solver == 'gillespie':
             return
-        self.position[:, 0] = smooth_array(self.position[:, 0], sec_smooth * self.fps)
-        self.position[:, 1] = smooth_array(self.position[:, 1], sec_smooth * self.fps)
-        unwrapped_angle = ConnectAngle(self.angle, self.shape)
-        self.angle = smooth_array(unwrapped_angle, sec_smooth * self.fps)
+        self.position[:, 0] = smooth_array(self.position[:, 0], int(sec_smooth * self.fps))
+        self.position[:, 1] = smooth_array(self.position[:, 1], int(sec_smooth * self.fps))
+        # unwrapped_angle = ConnectAngle(self.angle, self.shape)
+        unwrapped_angle = np.unwrap(self.angle)
+        self.angle = smooth_array(unwrapped_angle, int(sec_smooth * self.fps))
 
     def interpolate_over_NaN(self):
         if np.any(np.isnan(self.position)) or np.any(np.isnan(self.angle)):
@@ -217,7 +216,8 @@ class Trajectory:
         new_position[:, 0] = gaussian_filter(new_position[:, 0], sigma=kernel_size//5)
         new_position[:, 1] = gaussian_filter(new_position[:, 1], sigma=kernel_size//5)
 
-        unwrapped_angle = ConnectAngle(angle, self.shape)
+        # unwrapped_angle = ConnectAngle(angle, self.shape)
+        unwrapped_angle = np.unwrap(angle)
         new_unwrapped_angle = medfilt(unwrapped_angle, kernel_size=kernel_size)
         new_unwrapped_angle = gaussian_filter(new_unwrapped_angle, sigma=kernel_size//5)
 
@@ -289,7 +289,8 @@ class Trajectory:
             position, unwrapped_angle = self.smoothed_pos_angle(self.position, self.angle, int(kernel_size))
         else:
             position = self.position
-            unwrapped_angle = ConnectAngle(self.angle, self.shape)
+            # unwrapped_angle = ConnectAngle(self.angle, self.shape)
+            unwrapped_angle = np.unwrap(self.angle)
         args = (position[:, 0], position[:, 1], unwrapped_angle * av_rad)
 
         # fig = px.scatter(x=self.frames, y=[position_filtered[:, 1], position_filtered[:, 0]])
@@ -311,12 +312,11 @@ class Trajectory:
         lengths.append(len(self.frames) - np.sum(lengths))
         return lengths[i]
 
-    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None):
+    def play(self, wait: int = 0, cs=None, step=1, videowriter=False, frames=None, ts=None, geometry=None, bias=None):
         """
         Displays a given trajectory_inheritance (self)
         :param videowriter:
         :param frames:
-        :param indices: which slice of frames would you like to display
         :param wait: how many milliseconds should we wait between displaying steps
         :param cs: Configuration space
         :param step: display only the ith frame
@@ -437,8 +437,8 @@ class Trajectory:
         return x
 
     def geometry(self):
+        from DataFrame.import_excel_dfs import df_all, df_minimal
         return df_minimal[df_minimal['filename'] == self.filename].iloc[0][['maze dimensions', 'load dimensions']].tolist()
-        pass
 
     def save(self, address=None) -> None:
         """

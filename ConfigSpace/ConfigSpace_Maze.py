@@ -185,7 +185,7 @@ class ConfigSpace_Maze(ConfigSpace):
         maze = Maze(size=size, shape=shape, solver=solver, geometry=geometry)
         if geometry == ('MazeDimensions_new2021_SPT_ant_perfect_scaling.xlsx',
                         'LoadDimensions_new2021_SPT_ant_perfect_scaling.xlsx'):
-            factor = {'Xl': 4, 'L': 2, 'M': 1, 'S': 0.5}[size]
+            factor = {'XL': 4, 'L': 2, 'M': 1, 'S': 0.5, 'XS': 0.25}[size]
             maze_M = Maze(size='M', shape=shape, solver=solver, geometry=geometry)
             if x_range is None:
                 x_range = (0, (maze_M.slits[-1] + max(maze_M.getLoadDim()) + 1)*factor)
@@ -568,7 +568,7 @@ class ConfigSpace_Maze(ConfigSpace):
         if path.exists(directory):
             (self.space, self.space_boundary, self.extent) = pickle.load(open(directory, 'rb'))
             if self.solver == 'gillespie':
-                factor = {'Xl': 4, 'L': 2, 'M': 1, 'S': 0.5}[self.size]
+                factor = {'XL': 4, 'L': 2, 'M': 1, 'S': 0.5, 'XS': 0.25}[self.size]
                 self.extent['x'] = tuple(d*factor for d in self.extent['x'])
                 self.extent['y'] = tuple(d*factor for d in self.extent['y'])
             self.initialize_maze_edges()
