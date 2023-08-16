@@ -183,6 +183,30 @@ if __name__ == '__main__':
     # pps.test_trajectory()
     # DEBUG = 1
 
+    # ######################### HUMAN EXPERIMENT #########################################
+
+    direct = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\human_pathlengths_all_states.json'
+    path_lengths = {}
+
+    for index, row in tqdm(list(df_human.iterrows())):
+        traj = get(row['filename'])
+        # filename = 'large_20230219122939_20230219123549'
+        filename = 'large_20211006172334_20211006173302'
+
+        traj = get(filename)
+        path_lengths[traj.filename] = {}
+        print(traj.filename)
+        pps = PathLength_per_state(traj)
+        pps.smooth(sec_smooth=2)
+        for state in tqdm(states, desc=traj.filename):
+            path_lengths[traj.filename][state] = pps.calculate_path_lengths_per_state(state)
+            # this is (translational, rotational)
+        DEBUG = 1
+
+    with open(direct, 'w') as json_file:
+        json.dump(path_lengths, json_file)
+        json_file.close()
+
     # ######################### ANTS EXPERIMENT #########################################
     direct = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\ant_pathlengths_all_states.json'
     path_lengths = {}
@@ -237,26 +261,6 @@ if __name__ == '__main__':
         path_lengths[traj.filename] = {}
         print(traj.filename)
         pps = PathLength_per_state(traj)
-        for state in tqdm(states, desc=traj.filename):
-            path_lengths[traj.filename][state] = pps.calculate_path_lengths_per_state(state)
-            # this is (translational, rotational)
-        DEBUG = 1
-
-    with open(direct, 'w') as json_file:
-        json.dump(path_lengths, json_file)
-        json_file.close()
-
-    # ######################### HUMAN EXPERIMENT #########################################
-
-    direct = 'C:\\Users\\tabea\\PycharmProjects\\AntsShapes\\Analysis\\Efficiency\\human_pathlengths_all_states.json'
-    path_lengths = {}
-
-    for index, row in tqdm(list(df_human.iterrows())):
-        traj = get(row['filename'])
-        path_lengths[traj.filename] = {}
-        print(traj.filename)
-        pps = PathLength_per_state(traj)
-        pps.smooth(sec_smooth=2)
         for state in tqdm(states, desc=traj.filename):
             path_lengths[traj.filename][state] = pps.calculate_path_lengths_per_state(state)
             # this is (translational, rotational)

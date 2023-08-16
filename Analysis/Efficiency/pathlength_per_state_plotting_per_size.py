@@ -239,22 +239,14 @@ def plot_histograms_ant_exp_sim(sim_condition, df_sim):
 def plot_histograms_human(df_human):
     fig_hist, axs_hist = plt.subplots(1, 2, figsize=(4 * 4, 6))
 
-    with open('human_trans.json', 'r') as f:
-        trans_ant = json.load(f)
-
-    with open('human_rot.json', 'r') as f:
-        rot_ant = json.load(f)
-
     with open('human_pathlengths_all_states.json', 'r') as f:
         json_file = json.load(f)
     filenames = json_file.keys()
 
     translation_in_states, rotation_in_states = calc_trans_rot_per_state_per_filename(filenames, json_file)
 
-    # find maximum value of translation_in_states['b']
-    max_key = max(translation_in_states['b'], key=translation_in_states['b'].get)
-
-    plot_histograms(df_human, df_human['filename'], translation_in_states, axs_hist[0], scale_trans_per_solver['human'], 'human')
+    plot_histograms(df_human, df_human['filename'], translation_in_states, axs_hist[0], scale_trans_per_solver['human'],
+                    'human')
     plot_histograms(df_human, df_human['filename'], rotation_in_states, axs_hist[1], scale_rot_per_solver['human'],
                     'human')
 
@@ -324,9 +316,9 @@ def plot_40th_ant_human():
 
 
 if __name__ == '__main__':
-    plot_CDFs_human()
-    plot_CDFs_exp_sim(date1, df_gillespie1)
-    plot_histograms_ant_exp_sim(date1, df_gillespie1)
+    # plot_CDFs_human()
+    # plot_CDFs_exp_sim(date1, df_gillespie1)
+    # plot_histograms_ant_exp_sim(date1, df_gillespie1)
     plot_histograms_human(df_human)
     plot_40th_ant_human()
 
